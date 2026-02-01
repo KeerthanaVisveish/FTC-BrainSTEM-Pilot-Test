@@ -62,7 +62,7 @@ public class PathParams {
     protected HeadingLerpType headingLerpType;
     protected PathType pathType;
     protected Pose2d controlPoint;
-    protected double tValueMaxOutTime;
+    protected double tValueStartTime, tValueMaxOutTime;
     protected double tangentHeadingDeactivateThreshold, applyCloseHeadingPIDErrorDeg;
     protected boolean prioritizeHeadingInBeginning;
     public PathParams() {

@@ -96,11 +96,12 @@ public class Waypoint {
         params.tangentHeadingDeactivateThreshold = t;
         return this;
     }
-    public Waypoint setControlPoint(Pose2d controlPoint, double tValueMaxOutTime) {
+    public Waypoint setControlPoint(Pose2d controlPoint, double tValueStartTime, double tValueMaxOutTime) {
         if(params.pathType == PathParams.PathType.CURVED)
             throw new IllegalStateException("path type already set to CURVED; cannot set multiple control points within one waypoint");
         params.pathType = PathParams.PathType.CURVED;
         params.controlPoint = controlPoint;
+        params.tValueStartTime = tValueStartTime;
         params.tValueMaxOutTime = tValueMaxOutTime;
         return this;
     }

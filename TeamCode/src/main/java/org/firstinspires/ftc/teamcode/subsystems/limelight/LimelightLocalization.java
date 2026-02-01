@@ -50,7 +50,7 @@ public class LimelightLocalization extends LLParent {
         public LocalizationState offLocalizationState = LocalizationState.PASSIVE_READING;
     }
 
-    public static LocalizationType localizationType = LocalizationType.CONTINUOUS;
+    public static LocalizationType localizationType = LocalizationType.ON_COMMAND;
     public static Params params = new Params();
     public Pose2d cameraPose, robotPose, rawCameraPose, rawRobotPose;
     private LLResult aprilTagResult;

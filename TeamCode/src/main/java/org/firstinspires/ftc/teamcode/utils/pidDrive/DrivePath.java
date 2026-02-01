@@ -85,9 +85,7 @@ public class DrivePath implements Action {
             targetHeadingRad = UtilFunctions.lerp(getCurParams().controlPoint.heading.toDouble(), getCurWaypoint().headingRad(), splineT);
 
             // re-calculating waypoint dir for curve
-            curWaypointDirRad = Math.atan2(getCurWaypoint().pose.position.y - robotY, getCurWaypoint().pose.position.x - robotX);
-            if (getCurParams().headingLerpType == PathParams.HeadingLerpType.REVERSE_TANGENT)
-                curWaypointDirRad = MathUtils.angleNormDeltaRad(curWaypointDirRad + Math.PI);
+            curWaypointDirRad = Math.atan2(targetY - robotY, targetX - robotX);
         }
 
         // translating target so that drivetrain is around origin
@@ -281,7 +279,7 @@ public class DrivePath implements Action {
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
 
-        splineT = Math.min(1, waypointTimer.seconds() / getCurParams().tValueMaxOutTime);
+        splineT = Math.min(1, Math.max(waypointTimer.seconds() - getCurParams().tValueStartTime, 0) / getCurParams().tValueMaxOutTime);
         return true;
     }
 
@@ -313,8 +311,6 @@ public class DrivePath implements Action {
         targetHeadingRad = getCurWaypoint().headingRad();
         prevWaypointPose = curWaypointIndex == 0 ? startPose : getWaypoint(curWaypointIndex - 1).pose;
         curWaypointDirRad = Math.atan2(getCurWaypoint().pose.position.y - prevWaypointPose.position.y, getCurWaypoint().pose.position.x - prevWaypointPose.position.x);
-        if (getCurParams().headingLerpType == PathParams.HeadingLerpType.REVERSE_TANGENT)
-            curWaypointDirRad = MathUtils.angleNormDeltaRad(curWaypointDirRad + Math.PI);
 
         splineT = 0;
     }
@@ -334,8 +330,12 @@ public class DrivePath implements Action {
         double headingDegWaypointError;
         if(getCurParams().pathType == PathParams.PathType.CURVED)
             headingDegWaypointError = Math.toDegrees(targetHeadingRad) - rHeadingDeg;
-        else if (setHeadingTangent)
-            headingDegWaypointError = Math.toDegrees(curWaypointDirRad) - rHeadingDeg;
+        else if (setHeadingTangent) {
+            if(waypoint.params.headingLerpType == PathParams.HeadingLerpType.TANGENT)
+                headingDegWaypointError = Math.toDegrees(curWaypointDirRad) - rHeadingDeg;
+            else
+                headingDegWaypointError = Math.toDegrees(MathUtils.angleNormDeltaRad(curWaypointDirRad + Math.PI)) - rHeadingDeg;
+        }
         else
             headingDegWaypointError = waypoint.headingDeg() - rHeadingDeg;
 

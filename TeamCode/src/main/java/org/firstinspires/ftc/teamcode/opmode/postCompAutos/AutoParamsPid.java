@@ -5,6 +5,11 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.Tolerance;
 
 public class AutoParamsPid {
     public static class Collect {
+        public double curvedCollect2ARad = Math.toRadians(45);
+        public double newCollectDrivePower = 0.8;
+        public double secondTValueStartTime = 0.27, secondTValueMaxOutTime = 0.5;
+        public double thirdTValueStartTime = 0.4, thirdTValueMaxOutTime = 0.5;
+        public double curvedCollect3ARad = Math.toRadians(40);
         public double loadingZoneCollectDrivePower = 0.3;
         public double collectDrivePower = 0.53, firstDrivePower = 0.6, waypointSlowDown = 0.4, farWaypointSlowDown = 0.8;
         public double collectWaypointTolX = 0.75, collectWaypointTolY = 2, collectWaypointTolHeading = 7;
@@ -16,7 +21,7 @@ public class AutoParamsPid {
         public double secondXBlue = 12, preSecondYBlue = -27.5, postSecondYBlue = -47.5;
         public double thirdXRed = 36, preThirdYRed = 28, postThirdYRed = 52;
         public double thirdXBlue = 36, preThirdYBlue = -28, postThirdYBlue = -52;
-        public double preCollect2NearRedXOffset = 2.5, preCollect2NearBlueXOffset = 2.5, preCollect2FarOffset = 4, preCollect3NearXOffset = 4;
+        public double preCollect2NearRedXOffset = 2.5, preCollect2NearBlueXOffset = 2.5, preCollect2FarOffset = 4, preCollect3NearXOffset = 7;
         public double preCollect3NearARed = Math.toRadians(85);
         public double preCollect3NearABlue = Math.toRadians(-85);
 
@@ -33,15 +38,15 @@ public class AutoParamsPid {
 //        public double gateCollectOpenFarXBlue = 8, gateCollectOpenFarYBlue = -61, gateCollectOpenFarABlue = Math.toRadians(-116);
         public double[] gateCollectOpenFarRed = { 8, 61, 116 };
         public double[] gateCollectOpenFarBlue = { 8, -61, -116 };
-        public double[] gateCollectOpenNearRed = { 7, 69, 90 };
+        public double[] gateCollectOpenNearRed = { 9, 57, 90 };
         public double[] gateCollectOpenNearBlue = { 7, -60, -90 };
 
-        public double[] gateCollectRed = { 13, 62, 135 };
+        public double[] gateCollectRed = { 13, 62, 90 };
         public double[] gateCollectBlue = { 13, -62, -135 };
 //        public double gateCollectXRed = 13, gateCollectYRed = 62, gateCollectARed = Math.toRadians(135);
 //        public double gateCollectXBlue = 13, gateCollectYBlue = -62, gateCollectABlue = Math.toRadians(-135);
-        public double[] gateCollectOpenControlPointRed = { 12, 36, 70 };
-        public double[] gateCollectOpenControlPointBlue = {12, -36, -70 };
+        public double[] gateCollectOpenControlPointRed = { 13, 36, 70 };
+        public double[] gateCollectOpenControlPointBlue = {13, -36, -70 };
         public double gateCollectOpenTMaxTime = 0.8;
     }
     public static class Shoot {
@@ -54,11 +59,11 @@ public class AutoParamsPid {
         public double shootNearXRed = -17, shootNearYRed = 23, shootNearXBlue = -17, shootNearYBlue = -23;
         public double shootNearLastXRed = -30, shootNearLastYRed = 16, shootNearLastXBlue = -30, shootNearLastYBlue = -16;
         public double shootMidLastXRed = -23, shootMidLastYRed = 15, shootMidLastXBlue = -23, shootMidLastYBlue = -15;
-        public double shootMidXRed = -8, shootMidYRed = 18.5, shootMidXBlue = -8, shootMidYBlue = -18.5;
+        public double shootMidXRed = -11, shootMidYRed = 21.5, shootMidXBlue = -8, shootMidYBlue = -18.5;
         public double shootFarXRed = 54, shootFarYRed = 16, shootFarXBlue = 54, shootFarYBlue = -16;
 
         // custom shooting angles
-        public double shootNearSetup1ARed = Math.toRadians(65), shootNearLastSetup1ARed = Math.toRadians(75), shootNearSetup2ARed = Math.toRadians(60), shootNearSetupGateARed = Math.toRadians(80), shootNearSetup3ARed = Math.toRadians(60), shootNearSetupLoadingARed = Math.toRadians(60);
+        public double shootNearSetup1ARed = Math.toRadians(65), shootNearLastSetup1ARed = Math.toRadians(75), shootNearSetup2ARed = Math.toRadians(60), shootNearSetupGateARed = Math.toRadians(75), shootNearSetup3ARed = Math.toRadians(60), shootNearSetupLoadingARed = Math.toRadians(60);
         public double shootFarSetup1ARed = Math.toRadians(180), shootFarSetup2ARed = Math.toRadians(170), shootFarSetup3ARed = Math.toRadians(150), shootFarSetupLoadingARed = Math.toRadians(95);
         public double shootNearSetup1ABlue = Math.toRadians(-65), shootNearLastSetup1ABlue = Math.toRadians(-75), shootNearSetup2ABlue = Math.toRadians(-70), shootNearSetupGateABlue = Math.toRadians(-80), shootNearSetup3ABlue = Math.toRadians(-60), shootNearSetupLoadingABlue = Math.toRadians(-60);
         public double shootFarSetup1ABlue = Math.toRadians(-180), shootFarSetup2ABlue = Math.toRadians(-170), shootFarSetup3ABlue = Math.toRadians(-150), shootFarSetupLoadingABlue = Math.toRadians(-95);

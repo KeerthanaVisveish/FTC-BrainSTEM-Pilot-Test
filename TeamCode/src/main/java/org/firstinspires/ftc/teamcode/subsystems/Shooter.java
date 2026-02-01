@@ -21,6 +21,7 @@ public class Shooter extends Component {
         public int startingShooterSpeedAdjustment = 0;
         public double minPower = -0.15, maxPower = 0.99;
         public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
+        public boolean disableHoodInterlock = true;
     }
     public static class TestingParams {
         public boolean testing = false;
@@ -96,7 +97,7 @@ public class Shooter extends Component {
         if(testingParams.testing) {
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
-        else if(robot.shootingSystem.physicsExitAngleRads[0] != -1)
+        else if(robot.shootingSystem.physicsExitAngleRads[0] != -1 || shooterParams.disableHoodInterlock)
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad));
         updateBallShotTracking();
     }

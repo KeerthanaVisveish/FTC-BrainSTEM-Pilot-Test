@@ -128,7 +128,7 @@ public class Turret extends Component {
     }
 
     public double calculateTurretPowerNew(int ticks, int currentEncoder) {
-        double extraPower = inRange ? powerTuning.kA * targetRelAngleRadAccel + powerTuning.kV * targetRelAngleRadVel + powerTuning.kAJoystick * robot.g1.gamepad.right_stick_x : 0;
+        double extraPower = inRange ? powerTuning.kA * targetRelAngleRadAccel + powerTuning.kV * targetRelAngleRadVel : 0;
         extraPower = MathUtils.lerp(0, extraPower, Math.min(lerpTimer.seconds() / powerTuning.transitionTime, 1));
         extraPower = Range.clip(extraPower, -0.99, 0.99);
         return extraPower + calculateTurretPower(ticks, currentEncoder);
