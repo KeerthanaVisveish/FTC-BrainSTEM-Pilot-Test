@@ -118,32 +118,32 @@ public class LimelightClassifier extends LLParent {
         return turretPose.position.y + dy;
     }
 }
-
 /*
 import cv2
 import numpy as np
 import math
 
+min_hue = 255
+max_hue = 0
+min_sat = 255
+max_sat = 0
+min_bright = 255
+max_bright = 0
+
 def runPipeline(image, llrobot):
-    is_red = llrobot[0] > 0
-    is_close = llrobot[1] > 0
-    dist = llrobot[2]
+    original_img = image
+    # is_red = llrobot[0] == 1
+    # is_close = llrobot[1] == 1
+    # dist = llrobot[2]
+
+    is_red = True
+    is_close = True
+    dist = 0
 
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # mask image based on classifier========================
-    lower_bounds = (90,130,100)
-    upper_bounds = (130,255,210)
-    lower_bounds2 = None
-    upper_bounds2 = None
-    if is_red:
-        lower_bounds = (160, 170, 150)
-        upper_bounds = (180, 255, 255)
-        lower_bounds2 = (0, 170, 150)
-        upper_bounds2 = (10, 255, 255)
-
-    valid_region_mask, successful = get_classifier_mask(img_hsv, is_close, lower_bounds, upper_bounds, lower_bounds2, upper_bounds2)
-    show_sample_pixel(valid_region_mask, img_hsv, 612, 400)
+    valid_region_mask, classifier_col_mask, successful = get_classifier_mask(img_hsv, is_close, is_red)
     image = cv2.bitwise_and(image, image, mask=valid_region_mask)
 
     if not successful:
@@ -153,8 +153,18 @@ def runPipeline(image, llrobot):
     image = cv2.GaussianBlur(image, (3, 3), 0)
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    green_contours = get_contours(img_hsv, is_close, (50, 35, 90), (80, 255, 255))
-    purple_contours = get_contours(img_hsv, is_close, (140, 35, 90), (170, 255, 240))
+    green_lower_bound = (50, 35, 160)
+    green_upper_bound = (110, 255, 255)
+    purple_lower_bound1 = (150, 80, 60)
+    purple_upper_bound1 = (180, 150, 230)
+    purple_lower_bound2 = (0, 80, 60)
+    purple_upper_bound2 = (10, 150, 230)
+    green_contours = get_contours(img_hsv, is_close, green_lower_bound, green_upper_bound, None, None)
+    purple_contours = get_contours(img_hsv, is_close, purple_lower_bound1, purple_upper_bound1, purple_lower_bound2, purple_upper_bound2)
+
+    sample_x = 750
+    sample_y = 700
+    show_sample_pixel(image, img_hsv, sample_x, sample_y, show_info=False)
 
     sorted_contours = []
     sorted_contours.extend(green_contours)
@@ -166,9 +176,6 @@ def runPipeline(image, llrobot):
     for contour in sorted_contours:
         areas.append(cv2.contourArea(contour))
         total_area += areas[-1]
-
-    #for i in range(len(sorted_contours)):
-    #    print(f"{i}: {areas[i]}")
 
     # contour segmentation================================
     rects = []
@@ -193,27 +200,52 @@ def runPipeline(image, llrobot):
     draw_combined_contours(image, sorted_contours)
     draw_rects(image, rects)
 
-    show_sample_pixel(image, img_hsv, 600, 400)
     #valid_region = cv2.cvtColor(valid_region_mask, cv2.COLOR_GRAY2BGR)
-    return contour_at_point(600, 400), image, [ total_num_balls ]
+    return contour_at_point(sample_x, sample_y), image, [ total_num_balls ]
 
-def get_classifier_mask(image, is_close, lower_bounds, upper_bounds, lower_bounds2=None, upper_bounds2=None):
+def get_classifier_mask(image, is_close, is_red):
+    lower_bounds = (100,130,100)
+    upper_bounds = (130,255,210)
+    lower_bounds2 = None
+    upper_bounds2 = None
+    if is_red:
+        # lower_bounds2 = (179, 100, 140)
+        # upper_bounds2 = (179, 255, 255)
+        lower_bounds = (0, 100, 140)
+        upper_bounds = (10, 255, 255)
+        lower_bounds2 = None
+        upper_bounds2 = None
+
     width = len(image[0])
     height = len(image)
-    crop_left = 250
+    crop_left = 200
+    crop_right = width - 200
+    triangle_height = 300
+    triangle_width = 400
+
     img = image.copy()
-    crop_right = width - 250
     cv2.rectangle(img, (0, 0), (crop_left, height), 0, -1)
     cv2.rectangle(img, (crop_right, 0), (width, height), 0, -1)
+
+    middle = width / 2
+    pts = np.array(
+        [[middle-triangle_width*0.5, height],
+        [middle, height - triangle_height],
+        [middle+triangle_width*0.5, height]],
+        dtype=np.int32
+    ).reshape((-1, 1, 2))
+
+    cv2.fillPoly(img, [pts], color=0)
 
     classifier_mask = cv2.inRange(img, lower_bounds, upper_bounds)
     if lower_bounds2 is not None and upper_bounds2 is not None:
         mask2 = cv2.inRange(img, lower_bounds2, upper_bounds2)
         classifier_mask = cv2.bitwise_or(classifier_mask, mask2)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (8, 8))
+    kernel2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 12))
     classifier_mask = cv2.morphologyEx(classifier_mask, cv2.MORPH_OPEN, kernel)
-    classifier_mask = cv2.morphologyEx(classifier_mask, cv2.MORPH_CLOSE, kernel)
+    classifier_mask = cv2.morphologyEx(classifier_mask, cv2.MORPH_CLOSE, kernel2)
 
     contours, _ = cv2.findContours(classifier_mask,
     cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -260,22 +292,22 @@ def get_classifier_mask(image, is_close, lower_bounds, upper_bounds, lower_bound
         dx = r2x - r1x
         dy = r2y - r1y
 
-        r1x -= dx * 0.1
-        r1y -= dy * 0.1
-        r2x += dx * 0.1
-        r2y += dy * 0.1
+        r1x -= dx * 0.25
+        r1y -= dy * 0.25
+        r2x += dx * 0.25
+        r2y += dy * 0.25
 
         min_width = 800
         if abs(r2x - r1x) < min_width:
-            print(abs(r2x - r1x))
-            return mask, False
+            #print(abs(r2x - r1x))
+            return mask, classifier_mask, False
 
-        extra_space_down = 60
+        extra_space_down = 10
         r1y += extra_space_down
         r2y += extra_space_down
 
-        extra_width = 150 if is_close else 150
-        height = 170 if is_close else 150
+        extra_width = 0 if is_close else 150
+        height = 200 if is_close else 150
 
         r1x -= extra_width
         r2x += extra_width
@@ -285,7 +317,7 @@ def get_classifier_mask(image, is_close, lower_bounds, upper_bounds, lower_bound
         r4x = r1x
         r4y = r1y - height
 
-        """
+
         cv2.polylines(
             classifier_mask,
             [approx],
@@ -294,11 +326,14 @@ def get_classifier_mask(image, is_close, lower_bounds, upper_bounds, lower_bound
             thickness=2
         )
 
+        cv2.circle(classifier_mask, (int(p1[0]), int(p1[1])), 20, (255, 0, 255), -1)
+        cv2.circle(classifier_mask, (int(p2[0]), int(p2[1])), 20, (255, 0, 255), -1)
+
         cv2.circle(classifier_mask, (int(r1x), int(r1y)), 20, (0, 0, 255), -1)
         cv2.circle(classifier_mask, (int(r2x), int(r2y)), 20, (0, 0, 255), -1)
         cv2.circle(classifier_mask, (int(r3x), int(r3y)), 20, (0, 0, 255), -1)
         cv2.circle(classifier_mask, (int(r4x), int(r4y)), 20, (0, 0, 255), -1)
-        """
+
         pts = np.array(
             [[r1x, r1y],
             [r2x, r2y],
@@ -309,13 +344,13 @@ def get_classifier_mask(image, is_close, lower_bounds, upper_bounds, lower_bound
 
         cv2.fillPoly(mask, [pts], color=255)
 
-    return mask, True
+    return mask, classifier_mask, True
 
-def get_contours(hsv, is_close, lower_bounds, upper_bounds, lower_bounds2=None, upper_bounds2=None):
+def get_contours(hsv, is_close, lower_bounds, upper_bounds, lower_bounds2, upper_bounds2):
     img_threshold = cv2.inRange(hsv, lower_bounds, upper_bounds)
-    #if lower_bounds2 is not None and upper_bounds2 is not None:
-    #    mask2 = cv2.inRange(hsv, lower_bounds2, upper_bounds2)
-    #    img_threshold = cv2.bitwise_or(img_threshold, mask2)
+    if lower_bounds2 is not None and upper_bounds2 is not None:
+       mask2 = cv2.inRange(hsv, lower_bounds2, upper_bounds2)
+       img_threshold = cv2.bitwise_or(img_threshold, mask2)
 
     grow_size = (10, 10) if is_close else (8, 8)
     shrink_size = (15, 15) if is_close else (8, 8)
@@ -459,11 +494,31 @@ def rotate_rects(pivot, angle_rad, rects):
 
     return rotated_rects
 # drawing functions========================
-def show_sample_pixel(image, img_hsv, samplex, sampley):
+def show_sample_pixel(image, img_hsv, samplex, sampley, show_info):
     h, s, b = img_hsv[sampley, samplex]
-    cv2.rectangle(image, (0, 60), (360, 120), (0, 0, 0), -1)
+
+    global min_hue
+    global max_hue
+    global min_sat
+    global max_sat
+    global min_bright
+    global max_bright
+    min_hue = min(h, min_hue)
+    max_hue = max(h, max_hue)
+    min_sat = min(s, min_sat)
+    max_sat = max(s, max_sat)
+    min_bright = min(b, min_bright)
+    max_bright = max(b, max_bright)
+
+    if show_info:
+        draw_side_text(image, f"color: {h:3d} {s:3d} {b:3d}", 60, 360)
+        draw_side_text(image, f"min col: {min_hue:3d} {min_sat:3d} {min_bright:3d}", 130, 400)
+        draw_side_text(image, f"max col: {max_hue:3d} {max_sat:3d} {max_bright:3d}", 200, 400)
+
+def draw_side_text(image, text, y, width):
+    cv2.rectangle(image, (0, y), (width, y + 60), (0, 0, 0), -1)
     cv2.putText(
-        image, f"color: {h} {s} {b}", (20, 100),
+        image, text, (20, y + 40),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.0, (0, 255, 0), 2,
         cv2.LINE_AA
@@ -553,5 +608,4 @@ def longest_2edges_from_approx(approx):
             best_edge = (tuple(p1), tuple(p2))
 
     return max_len, best_edge, max_len2, best_edge2
-
  */
