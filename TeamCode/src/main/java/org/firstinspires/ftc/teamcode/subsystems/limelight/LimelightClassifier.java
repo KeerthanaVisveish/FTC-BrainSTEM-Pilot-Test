@@ -66,7 +66,7 @@ public class LimelightClassifier extends LLParent {
         inValidClassifierRegion = inValidClassifierRegion(robotPose);
 
         pythonInputs = new double[3];
-        pythonInputs[0] = robot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
+        pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
         pythonInputs[1] = inCloseZone(robotPose) ? 1 : -1; // close or far zone
         pythonInputs[2] = 72 - Math.abs(getCameraY()); // distance from classifier
 
@@ -76,7 +76,8 @@ public class LimelightClassifier extends LLParent {
         classifierDetectionOutput = result.getPythonOutput();
 
         int curFrameNumBalls = (int) classifierDetectionOutput[0];
-        numBalls[curFrameNumBalls]++;
+        if(curFrameNumBalls != -1)
+            numBalls[curFrameNumBalls]++;
         numFramesRunning++;
     }
 

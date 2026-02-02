@@ -68,6 +68,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
+        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
+
         waitForStart();
         robot.turret.update();
         while (opModeIsActive()) {
