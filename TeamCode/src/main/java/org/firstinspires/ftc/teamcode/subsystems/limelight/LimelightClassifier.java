@@ -34,7 +34,7 @@ public class LimelightClassifier extends LLParent {
         classifierDetectionOutput = new double[0];
         numBalls = new int[10];
         numFramesRunning = 0;
-        pythonInputs = new double[3];
+        pythonInputs = new double[2];
     }
 
     public void resetForNewRead() {
@@ -65,10 +65,9 @@ public class LimelightClassifier extends LLParent {
         // pausing limelight if cannot read classifier
         inValidClassifierRegion = inValidClassifierRegion(robotPose);
 
-        pythonInputs = new double[3];
+        pythonInputs = new double[2];
         pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
-        pythonInputs[1] = inCloseZone(robotPose) ? 1 : -1; // close or far zone
-        pythonInputs[2] = 72 - Math.abs(getCameraY()); // distance from classifier
+        pythonInputs[1] = getCameraY();
 
         limelight.updatePythonInputs(pythonInputs);
 
