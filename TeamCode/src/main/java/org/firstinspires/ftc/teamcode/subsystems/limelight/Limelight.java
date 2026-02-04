@@ -28,7 +28,7 @@ public class Limelight extends Component {
 
     // i should tune the camera so that it gives me the turret center position
     public final Limelight3A limelight;
-    public static int startingPipeline = 0;
+    public static int startingPipeline = 1;
     private int pipeline;
     public final LimelightLocalization localization; // april tag localization
     public final LimelightClassifier classifier; // counts # balls in classifier
