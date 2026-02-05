@@ -102,11 +102,6 @@ public class Limelight extends Component {
         limelight.pipelineSwitch(num);
     }
 
-    public void takePic() {
-        limelight.captureSnapshot(snapshotParams.snapshotName + "-" + snapshotParams.snapshotNum);
-        snapshotParams.snapshotNum++;
-    }
-
     public void addLimelightInfo(Canvas fieldOverlay) {
         switch (pipeline) {
             case 0:
