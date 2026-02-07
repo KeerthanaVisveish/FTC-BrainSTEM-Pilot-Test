@@ -31,7 +31,7 @@ import java.util.List;
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = true;
+            printLimelight = false;
     public static double[] blueCornerResetPose = { 64.25, 62.75, -90 };
     public static double[] redCornerResetPose = { 64.25, -62.75, 90 };
     public static double firstShootTolerance = 0.1, physicsShootTolerance = 0.05;
@@ -68,7 +68,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
-        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
+//        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
 
         waitForStart();
         robot.turret.update();
@@ -105,27 +105,28 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine();
             telemetry.addLine("KALMAN-------");
             if(robot.drive.pinpoint().kalmanAccelEstimation != null) {
-                telemetry.addData("kalman pred vel x", robot.drive.pinpoint().kalmanVelPrediction.x);
-                telemetry.addData("kalman pred vel y", robot.drive.pinpoint().kalmanVelPrediction.y);
-                telemetry.addData("kalman pred vel heading", robot.drive.pinpoint().kalmanVelPrediction.headingRad);
-                telemetry.addData("kalman est vel x", robot.drive.pinpoint().kalmanVelEstimation.x);
-                telemetry.addData("kalman est vel y", robot.drive.pinpoint().kalmanVelEstimation.y);
-                telemetry.addData("kalman est vel heading", robot.drive.pinpoint().kalmanVelEstimation.headingRad);
-                telemetry.addData("kalman raw vel x", robot.drive.pinpoint().getMostRecentVelocity().x);
-                telemetry.addData("kalman raw vel y", robot.drive.pinpoint().getMostRecentVelocity().y);
-                telemetry.addData("kalman raw vel heading", robot.drive.pinpoint().getMostRecentVelocity().headingRad);
-                telemetry.addLine();
-                telemetry.addData("kalman pred accel x", robot.drive.pinpoint().kalmanAccelPrediction.x);
-                telemetry.addData("kalman pred accel y", robot.drive.pinpoint().kalmanAccelPrediction.y);
-                telemetry.addData("kalman pred accel heading", robot.drive.pinpoint().kalmanAccelPrediction.headingRad);
-                telemetry.addData("kalman est accel x", robot.drive.pinpoint().kalmanAccelEstimation.x);
-                telemetry.addData("kalman est accel y", robot.drive.pinpoint().kalmanAccelEstimation.y);
-                telemetry.addData("kalman est accel heading", robot.drive.pinpoint().kalmanAccelEstimation.headingRad);
-                telemetry.addData("kalman raw accel x", robot.drive.pinpoint().getMostRecentAcceleration().x);
-                telemetry.addData("kalman raw accel y", robot.drive.pinpoint().getMostRecentAcceleration().y);
-                telemetry.addData("kalman raw accel heading", robot.drive.pinpoint().getMostRecentAcceleration().headingRad);
+//                telemetry.addData("kalman pred vel x", robot.drive.pinpoint().kalmanVelPrediction.x);
+//                telemetry.addData("kalman pred vel y", robot.drive.pinpoint().kalmanVelPrediction.y);
+//                telemetry.addData("kalman pred vel heading", robot.drive.pinpoint().kalmanVelPrediction.headingRad);
+//                telemetry.addData("kalman est vel x", robot.drive.pinpoint().kalmanVelEstimation.x);
+//                telemetry.addData("kalman est vel y", robot.drive.pinpoint().kalmanVelEstimation.y);
+//                telemetry.addData("kalman est vel heading", robot.drive.pinpoint().kalmanVelEstimation.headingRad);
+//                telemetry.addData("kalman raw vel x", robot.drive.pinpoint().getMostRecentVelocity().x);
+//                telemetry.addData("kalman raw vel y", robot.drive.pinpoint().getMostRecentVelocity().y);
+//                telemetry.addData("kalman raw vel heading", robot.drive.pinpoint().getMostRecentVelocity().headingRad);
+//                telemetry.addLine();
+//                telemetry.addData("kalman pred accel x", robot.drive.pinpoint().kalmanAccelPrediction.x);
+//                telemetry.addData("kalman pred accel y", robot.drive.pinpoint().kalmanAccelPrediction.y);
+//                telemetry.addData("kalman pred accel heading", robot.drive.pinpoint().kalmanAccelPrediction.headingRad);
+//                telemetry.addData("kalman est accel x", robot.drive.pinpoint().kalmanAccelEstimation.x);
+//                telemetry.addData("kalman est accel y", robot.drive.pinpoint().kalmanAccelEstimation.y);
+//                telemetry.addData("kalman est accel heading", robot.drive.pinpoint().kalmanAccelEstimation.headingRad);
+//                telemetry.addData("kalman raw accel x", robot.drive.pinpoint().getMostRecentAcceleration().x);
+//                telemetry.addData("kalman raw accel y", robot.drive.pinpoint().getMostRecentAcceleration().y);
+//                telemetry.addData("kalman raw accel heading", robot.drive.pinpoint().getMostRecentAcceleration().headingRad);
             }
 
+            telemetry.addData("dt", robot.shootingSystem.dt);
             updateDashboardField();
 
 //            telemetry.addData("FPS", MathUtils.format2(framesRunning / timeRunning));

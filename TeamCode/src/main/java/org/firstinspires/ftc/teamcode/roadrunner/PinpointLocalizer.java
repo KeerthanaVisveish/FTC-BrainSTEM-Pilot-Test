@@ -33,6 +33,8 @@ public final class PinpointLocalizer implements Localizer {
         public double accelXYProcessNoise = 0.2, accelHeadingProcessNoise = 0.1;
         public double velXYMeasurementNoise = 0.1, velHeadingMeasurementNoise = 0.05;
 
+        public double accelTau = .1;
+
 
     }
     public static class Params {
