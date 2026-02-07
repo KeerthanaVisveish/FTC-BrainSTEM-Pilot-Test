@@ -16,9 +16,14 @@ import java.util.Arrays;
 
 @Config
 public class LimelightClassifier extends LLParent {
+    public enum ReceiveState {
+        NO_DATA,
+        VALID,
+        NO_CLASSIFIER,
+        OCCLUDED_BALLS
+    }
     public static class Params {
-        public double forwardDistFromTurret = 0;
-        public double closeX = -12, closeY = 24, closeRadius = 12;
+        public double closeX = -12, closeY = 24, closeRadius = 24;
         public double farX = 60, farY = 12, farRadius = 6;
         public int numFramesPerRead = 3;
     }
@@ -28,13 +33,16 @@ public class LimelightClassifier extends LLParent {
     private double[] pythonInputs;
     private double[] classifierDetectionOutput;
     private int[] numBalls; // numBalls[n] = the number of times n balls has been seen in the classifier from the limelight snapscript
+    private int curFrameNumBalls;
     private int numFramesRunning;
+    private ReceiveState receiveState;
     public LimelightClassifier(BrainSTEMRobot robot, Limelight3A limelight) {
         super(robot, limelight);
         classifierDetectionOutput = new double[0];
         numBalls = new int[10];
         numFramesRunning = 0;
         pythonInputs = new double[2];
+        receiveState = ReceiveState.NO_DATA;
     }
 
     public void resetForNewRead() {
@@ -62,31 +70,38 @@ public class LimelightClassifier extends LLParent {
     public void update() {
         Pose2d robotPose = robot.drive.localizer.getPose();
 
-        // pausing limelight if cannot read classifier
         inValidClassifierRegion = inValidClassifierRegion(robotPose);
+        if (inValidClassifierRegion) {
+            pythonInputs = new double[2];
+            pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
+            pythonInputs[1] = getCameraY();
 
-        pythonInputs = new double[2];
-        pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
-        pythonInputs[1] = getCameraY();
+            limelight.updatePythonInputs(pythonInputs);
 
-        limelight.updatePythonInputs(pythonInputs);
+            LLResult result = limelight.getLatestResult();
+            classifierDetectionOutput = result.getPythonOutput();
 
-        LLResult result = limelight.getLatestResult();
-        classifierDetectionOutput = result.getPythonOutput();
-
-        int curFrameNumBalls = (int) classifierDetectionOutput[0];
-        if(curFrameNumBalls != -1)
-            numBalls[curFrameNumBalls]++;
-        numFramesRunning++;
+            curFrameNumBalls = (int) classifierDetectionOutput[0];
+            switch (curFrameNumBalls) {
+                case -2: receiveState = ReceiveState.OCCLUDED_BALLS; break;
+                case -1: receiveState = ReceiveState.NO_CLASSIFIER; break;
+                default: receiveState = ReceiveState.VALID; break;
+            }
+            if (receiveState == ReceiveState.VALID)
+                numBalls[curFrameNumBalls]++;
+            numFramesRunning++;
+        }
     }
 
     @Override
     public void updateTelemetry(Telemetry telemetry) {
+        telemetry.addData("cur frame num balls", curFrameNumBalls);
+        telemetry.addData("most common num balls", getMostCommonNumBalls());
+        telemetry.addData("num ball results", Arrays.toString(numBalls));
+        telemetry.addData("receive state", receiveState);
         telemetry.addData("in valid classifier region", inValidClassifierRegion);
         telemetry.addData("python inputs", Arrays.toString(pythonInputs));
         telemetry.addData("python outputs", Arrays.toString(classifierDetectionOutput));
-        telemetry.addData("num ball results", Arrays.toString(numBalls));
-        telemetry.addData("most common num balls", getMostCommonNumBalls());
     }
 
     public void addClassifierInfo(Canvas fieldOverlay) {
@@ -111,11 +126,8 @@ public class LimelightClassifier extends LLParent {
     }
     private double getCameraY() {
         Pose2d robotPose = robot.drive.localizer.getPose();
-        int turretEncoder = robot.shootingSystem.getTurretEncoderRaw();
-        Pose2d turretPose = ShootingMath.getTurretPose(robotPose, turretEncoder);
-        double turretAngleRad = Turret.getTurretRelativeAngleRad(turretEncoder) + robotPose.heading.toDouble();
-        double dy = params.forwardDistFromTurret * Math.sin(turretAngleRad);
-        return turretPose.position.y + dy;
+        Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.currentRelativeAngleRad);
+        return Limelight.getLimelightPose(turretPose).position.y;
     }
 }
 /*

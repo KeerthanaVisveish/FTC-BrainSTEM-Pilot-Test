@@ -36,9 +36,9 @@ public class BrainSTEMRobot {
     private final Telemetry telemetry;
     public GamepadTracker g1;
 
-    public BrainSTEMRobot(Alliance alliance, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
+    public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
         this.telemetry = telemetry;
-        BrainSTEMRobot.alliance = alliance;
+        BrainSTEMRobot.alliance = allianceColor;
         subsystems = new ArrayList<>();
 
         drive = new MecanumDrive(hardwareMap, initialPose);
