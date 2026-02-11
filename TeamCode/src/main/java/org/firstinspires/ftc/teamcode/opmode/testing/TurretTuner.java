@@ -13,7 +13,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="Turret tuner", group="Testing")
 public class TurretTuner extends LinearOpMode {
     public boolean oscillateTurret = true;
-    public int oscillateEndpoint = 200;
     public static double targetVel = 0, targetPos = 0;
     public static double kP = 0, kS = 0, kV = 0;
     @Override
@@ -23,6 +22,9 @@ public class TurretTuner extends LinearOpMode {
         DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "turret");
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        targetPos = Math.abs(targetPos);
+        targetVel = Math.abs(targetVel);
+
         waitForStart();
         while(opModeIsActive()) {
 
@@ -30,12 +32,19 @@ public class TurretTuner extends LinearOpMode {
             double currentVel = turret.getVelocity();
 
             double positionError = targetPos - currentPos;
-            double velocityError = targetVel - currentVel;
-            double power = positionError * kP + Math.signum(positionError) * kS + velocityError * kV;
+            if(oscillateTurret && Math.signum(positionError) != Math.signum(targetPos)) {
+                targetPos *= -1;
+                targetVel *= -1;
+                positionError = targetPos - currentPos;
+            }
+            double power = positionError * kP + Math.signum(positionError) * kS + targetVel * kV;
             turret.setPower(power);
 
             telemetry.addData("pos error", positionError);
-            telemetry.addData("vel error", velocityError);
+            telemetry.addData("target pos", targetPos);
+            telemetry.addData("target vel", targetVel);
+            telemetry.addData("cur pos", currentPos);
+            telemetry.addData("cur vel", currentVel);
             telemetry.addData("power", turret.getPower());
             telemetry.update();
         }
