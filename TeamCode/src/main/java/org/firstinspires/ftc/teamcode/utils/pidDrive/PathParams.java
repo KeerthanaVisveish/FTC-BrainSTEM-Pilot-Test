@@ -28,7 +28,7 @@ public class PathParams {
         public double bigSpeedKp = 0.02, smallSpeedKp = 0.013, bigSpeedKd = 0, smallSpeedKd = 0.0001;
         public double speedKi = 0, speedKf = 0.075;
         public double correctiveKp = 0.02;
-        public boolean useCorrectiveKp = true;
+        public double correctiveStrength = 1;
         public double applyCloseSpeedPIDError = 5;
         public double closeHeadingKp = 0.01, closeHeadingKi = 0, closeHeadingKd = 0.001, headingKf = 0.1;
         public double farHeadingKp = 0.012, farHeadingKi = 0, farHeadingKd = 0;
@@ -60,7 +60,7 @@ public class PathParams {
     protected double bigSpeedKp, smallSpeedKp, bigSpeedKd, smallSpeedKd;
     protected double speedKi, speedKf;
     protected double correctiveKp;
-    protected boolean useCorrectiveKp;
+    protected double correctiveStrength = 1; // percent between [0, 1] - decides strongly the corrective vector is weighted relative to the drive vector
     protected double closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf;
     protected double applyCloseSpeedPIDError;
     protected HeadingLerpType headingLerpType;
@@ -91,7 +91,7 @@ public class PathParams {
     }
     private void initializeDefault() {
         correctiveKp = defaultParams.correctiveKp;
-        useCorrectiveKp = defaultParams.useCorrectiveKp;
+        correctiveStrength = defaultParams.correctiveStrength;
         maxTime = defaultParams.maxTime;
         minLinearPower = defaultParams.minSpeed;
         maxLinearPower = defaultParams.maxSpeed;

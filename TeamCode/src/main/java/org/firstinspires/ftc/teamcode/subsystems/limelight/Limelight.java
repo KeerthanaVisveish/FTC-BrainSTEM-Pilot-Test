@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Component;
+import org.firstinspires.ftc.teamcode.utils.math.GeometryUtils;
+import org.firstinspires.ftc.teamcode.utils.math.Vec;
 
 @Config
 public class Limelight extends Component {
@@ -140,14 +142,19 @@ public class Limelight extends Component {
 
         double axialOffset = height / Math.tan(Math.toRadians(-ty));
         double lateralOffset = Math.hypot(axialOffset, height) * Math.tan(Math.toRadians(tx));
-        Vector2d relativeOffset = new Vector2d(lateralOffset, axialOffset);
 
-        double cos = Math.cos(cameraPose.heading.toDouble());
-        double sin = Math.sin(cameraPose.heading.toDouble());
-        // cos, -sin
-        // sin,  cos
-        Vector2d fieldPosition = new Vector2d(relativeOffset.x * cos - relativeOffset.y * sin, relativeOffset.x * sin + relativeOffset.y * cos);
-        fieldPosition = new Vector2d(fieldPosition.y*1, -fieldPosition.x);
+        Vector2d relativeOffset = new Vector2d(axialOffset, -lateralOffset);
+        Vector2d fieldPosition = GeometryUtils.robotVectorToFieldVector(relativeOffset, cameraPose.heading.toDouble());
+
         return fieldPosition.plus(cameraPose.position);
+//        Vector2d relativeOffset = new Vector2d(lateralOffset, axialOffset);
+
+//        double cos = Math.cos(cameraPose.heading.toDouble());
+//        double sin = Math.sin(cameraPose.heading.toDouble());
+//        // cos, -sin
+//        // sin,  cos
+//        Vector2d fieldPosition = new Vector2d(relativeOffset.x * cos - relativeOffset.y * sin, relativeOffset.x * sin + relativeOffset.y * cos);
+//        fieldPosition = new Vector2d(fieldPosition.y*1, -fieldPosition.x);
+//        return fieldPosition.plus(cameraPose.position);
     }
 }

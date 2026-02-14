@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.utils.math;
 
+import com.acmerobotics.roadrunner.Vector2d;
+
 public class GeometryUtils {
 
     /**
@@ -34,6 +36,20 @@ public class GeometryUtils {
         double angle = Math.atan2(fy - y0, fx - x0);
 
         return new double[] {distance, angle, fx, fy};
+    }
+    public static Vector2d robotVectorToFieldVector(Vector2d robotVector, double rHeadingRad) {
+        double cos = Math.cos(rHeadingRad);
+        double sin = Math.sin(rHeadingRad);
+        // cos, -sin
+        // sin,  cos
+        return new Vector2d(robotVector.x * cos - robotVector.y * sin, robotVector.x * sin + robotVector.y * cos);
+    }
+    public static Vector2d fieldVectorToRobotVector(Vector2d fieldVector, double rHeadingRad) {
+        double cos = Math.cos(-rHeadingRad);
+        double sin = Math.sin(-rHeadingRad);
+        // cos, -sin
+        // sin,  cos
+        return new Vector2d(fieldVector.x * cos - fieldVector.y * sin, fieldVector.x * sin + fieldVector.y * cos);
     }
 }
 

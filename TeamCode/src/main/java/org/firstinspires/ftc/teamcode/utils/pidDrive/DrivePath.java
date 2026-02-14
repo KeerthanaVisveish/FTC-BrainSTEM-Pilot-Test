@@ -26,7 +26,6 @@ import java.util.Arrays;
 @Config
 public class DrivePath implements Action {
     public static boolean showRobotPose = true;
-    public static double moveLeftSign = 1, moveForwardSign = 1, turnLeftSign = 1;
     private final MecanumDrive drivetrain;
     private final PinpointLocalizer odo;
     private final Telemetry telemetry;
@@ -39,6 +38,7 @@ public class DrivePath implements Action {
     private Pose2d startPose, prevWaypointPose;
     private double splineT;
     private double targetX, targetY, targetHeadingRad;
+    private Vector2d driveVector, correctiveVector, combinedDirectionVector;
     private boolean followingCurvedPath;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
@@ -80,7 +80,9 @@ public class DrivePath implements Action {
             dist += waypoints.get(i).getDistToNextWaypoint();
         return dist;
     }
-    private Vector2d updateTargetDir(double robotX, double robotY, double headingRad) {
+    // x: axial
+    // y: negative lateral
+    private Vector2d updateTargetDriveDir(double robotX, double robotY, double headingRad) {
         if(getCurParams().pathType == PathParams.PathType.CURVED) {
             followingCurvedPath = true;
             targetX = UtilFunctions.lerp(getCurParams().controlPoint.position.x, getCurWaypoint().x(), splineT);
@@ -94,18 +96,34 @@ public class DrivePath implements Action {
             followingCurvedPath = false;
 
         // translating target so that drivetrain is around origin
-//        double xFromRobot = targetX - robotX;
-//        double yFromRobot = targetY - robotY;
         double xFromRobot = Math.cos(curWaypointDirRad);
         double yFromRobot = Math.sin(curWaypointDirRad);
-        // rotating target around origin
-        double rotatedXFromRobot = xFromRobot * Math.cos(-headingRad) - yFromRobot * Math.sin(-headingRad);
-        double rotatedYFromRobot = xFromRobot * Math.sin(-headingRad) + yFromRobot * Math.cos(-headingRad);
-        //
-        // translating target back to absolute; this returns the direction to the next waypoint IN THE ROBOT'S COORDINATE PLANE
-        Vector2d targetDir = new Vector2d(rotatedXFromRobot, rotatedYFromRobot);
+        Vector2d targetDir = GeometryUtils.fieldVectorToRobotVector(new Vector2d(xFromRobot, yFromRobot), headingRad);
         double targetDirMag = Math.hypot(targetDir.x, targetDir.y);
-        return targetDir.div(targetDirMag); // normalize
+        return targetDir.div(targetDirMag);
+    }
+    // gets the corrective drive powers in the robot's coordinate plane
+    // x: axial
+    // y: -lateral
+    private Vector2d getCorrectiveVector(double rx, double ry, double rHeadingRad) {
+        Vector2d prevPos = prevWaypointPose.position;
+        Vector2d targetPos = getCurWaypoint().pose.position;
+        double[] info = GeometryUtils.pointToLineDistanceAndAngle(
+                new double[] { prevPos.x, prevPos.y },
+                new double[] { targetPos.x, targetPos.y },
+                new double[] { rx, ry }
+        );
+        double distance = info[0];
+        double angle = info[1];
+        double correctiveMagnitude = distance * getCurParams().correctiveKp;
+
+        // corrective vector in the fields coordinate plane
+        double correctiveX = correctiveMagnitude * Math.cos(angle);
+        double correctiveY = correctiveMagnitude * Math.sin(angle);
+
+        // rotate vector by negative robot heading to get relative corrective powers
+        Vector2d unscaled = GeometryUtils.fieldVectorToRobotVector(new Vector2d(correctiveX, correctiveY), rHeadingRad);
+        return unscaled.times(getCurParams().correctiveStrength);
     }
 
     @Override
@@ -187,7 +205,6 @@ public class DrivePath implements Action {
             else
                 waypointDistancePID.setPIDValues(getCurParams().bigSpeedKp, getCurParams().speedKi, getCurParams().bigSpeedKd);
 
-
             double a = totalDistancePID.update(totalDistanceAway);
             double b = waypointDistancePID.update(waypointDistAway);
             double slowDownT = getCurParams().slowDownPercent;
@@ -199,34 +216,25 @@ public class DrivePath implements Action {
             else if (linearPower < 0)
                 linearPower = Range.clip(linearPower, -maxLinearPower, -getCurParams().minLinearPower);
         }
-        // finding direction that motor powers should be applied in
-        Vector2d targetDir = updateTargetDir(rx, ry, rHeadingRad);
-        double lateralPower = targetDir.y * linearPower * getCurParams().lateralWeight * moveLeftSign;
-        double axialPower = targetDir.x * linearPower * getCurParams().axialWeight * moveForwardSign;
 
-        // calculating corrective drive vector
-        if (!followingCurvedPath) {
-            Vector2d prevPos = prevWaypointPose.position;
-            Vector2d targetPos = getCurWaypoint().pose.position;
-            double[] info = GeometryUtils.pointToLineDistanceAndAngle(
-                    new double[] { prevPos.x, prevPos.y },
-                    new double[] { targetPos.x, targetPos.y },
-                    new double[] { rx, ry }
-            );
-            double distance = info[0];
-            double angle = info[1];
-            double correctiveMagnitude = distance * getCurParams().correctiveKp;
-            double correctiveX = correctiveMagnitude * Math.cos(angle);
-            double correctiveY = correctiveMagnitude * Math.sin(angle);
-            
-        }
+        // calculating drive vector
+        Vector2d targetDriveDir = updateTargetDriveDir(rx, ry, rHeadingRad);
+        driveVector = new Vector2d(
+                targetDriveDir.x * linearPower * getCurParams().axialWeight,
+                targetDriveDir.y * linearPower * getCurParams().lateralWeight
+        );
 
-        // rescaling to maximize motor power while preserving direction
-        double powerMag = Math.hypot(lateralPower, axialPower);
-        if(powerMag > 1) {
-            lateralPower /= powerMag;
-            axialPower /= powerMag;
-        }
+        // calculating corrective vector
+        if (!followingCurvedPath)
+            correctiveVector = getCorrectiveVector(rx, ry, rHeadingRad);
+        else
+            correctiveVector = new Vector2d(0, 0);
+
+        // final vector
+        combinedDirectionVector = driveVector.plus(correctiveVector);
+        double powerMag = Math.hypot(combinedDirectionVector.x, combinedDirectionVector.y);
+        if(powerMag > 1)
+            combinedDirectionVector = combinedDirectionVector.div(powerMag);
 
         // calculate angular speed (heading)
         double headingPower = 0;
@@ -241,9 +249,8 @@ public class DrivePath implements Action {
             headingPower = headingSign * Range.clip(Math.abs(headingPower), getCurParams().minHeadingPower, getCurParams().maxHeadingPower);
             headingPower *= headingPowerDirFlip;
         }
-        headingPower *= turnLeftSign;
 
-        drivetrain.setDrivePowers(new PoseVelocity2d(new Vector2d(axialPower, lateralPower), headingPower));
+        drivetrain.setDrivePowers(new PoseVelocity2d(combinedDirectionVector, headingPower));
         
         if (telemetry != null) {
             telemetry.addData("curved", getCurParams().pathType == PathParams.PathType.CURVED);
@@ -278,7 +285,6 @@ public class DrivePath implements Action {
 
             telemetry.update();
         }
-
         if (showRobotPose) {
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();
