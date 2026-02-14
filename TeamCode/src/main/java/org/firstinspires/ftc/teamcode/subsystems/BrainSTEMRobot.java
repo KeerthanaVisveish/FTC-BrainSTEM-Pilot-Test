@@ -73,8 +73,7 @@ public class BrainSTEMRobot {
 
 
         Pose2d pose = drive.localizer.getPose();
-
-        telemetry.addData("pose", MathUtils.format3(pose.position.x) + ", " + MathUtils.format3(pose.position.y) + " | " + MathUtils.format3(pose.heading.toDouble()));
+        telemetry.addData("Robot Pose", MathUtils.format3(pose.position.x) + ", " + MathUtils.format3(pose.position.y) + " | " + MathUtils.format3(pose.heading.toDouble()));
         if(enableSubsystems)
             for (Component c : subsystems)
                 c.update();
@@ -92,8 +91,8 @@ public class BrainSTEMRobot {
         Drawing.drawRobotSimple(fieldOverlay, shootingSystem.turretPose, 5);
         fieldOverlay.setStroke("purple");
         Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.ballExitPos, 0), 3);
-        fieldOverlay.setStroke("purple");
-        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.futureBallExitPos, 0), 3);
+//        fieldOverlay.setStroke("purple");
+//        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.futureBallExitPos, 0), 3);
 
         limelight.addLimelightInfo(fieldOverlay);
 

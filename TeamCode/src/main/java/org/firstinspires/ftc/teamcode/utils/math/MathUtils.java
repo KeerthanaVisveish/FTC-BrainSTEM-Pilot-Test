@@ -79,6 +79,11 @@ public class MathUtils {
             return "null";
         return format3(pose.position.x) + ", " + format3(pose.position.y) + " " + format3(Math.toDegrees(pose.heading.toDouble()));
     }
+    public static String formatVec3(Vector2d vec) {
+        if(vec == null)
+            return "null";
+        return format3(vec.x) + ", " + format3(vec.y);
+    }
     public static Pose2d createPose(double[] pose) {
         if (pose.length != 3)
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");

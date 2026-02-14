@@ -27,6 +27,8 @@ public class PathParams {
     public static class DefaultParams {
         public double bigSpeedKp = 0.02, smallSpeedKp = 0.013, bigSpeedKd = 0, smallSpeedKd = 0.0001;
         public double speedKi = 0, speedKf = 0.075;
+        public double correctiveKp = 0.02;
+        public boolean useCorrectiveKp = true;
         public double applyCloseSpeedPIDError = 5;
         public double closeHeadingKp = 0.01, closeHeadingKi = 0, closeHeadingKd = 0.001, headingKf = 0.1;
         public double farHeadingKp = 0.012, farHeadingKi = 0, farHeadingKd = 0;
@@ -40,7 +42,7 @@ public class PathParams {
         public double tValueMaxOutTime = 1;
         public double tangentHeadingActivateThreshold = 23;
         public boolean prioritizeHeadingInBeginning = false;
-        public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.5;
+        public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.3;
     }
     public static DefaultParams defaultParams = new DefaultParams();
     protected double lateralWeight, axialWeight;
@@ -57,6 +59,8 @@ public class PathParams {
 
     protected double bigSpeedKp, smallSpeedKp, bigSpeedKd, smallSpeedKd;
     protected double speedKi, speedKf;
+    protected double correctiveKp;
+    protected boolean useCorrectiveKp;
     protected double closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf;
     protected double applyCloseSpeedPIDError;
     protected HeadingLerpType headingLerpType;
@@ -86,6 +90,8 @@ public class PathParams {
         initializeDefault();
     }
     private void initializeDefault() {
+        correctiveKp = defaultParams.correctiveKp;
+        useCorrectiveKp = defaultParams.useCorrectiveKp;
         maxTime = defaultParams.maxTime;
         minLinearPower = defaultParams.minSpeed;
         maxLinearPower = defaultParams.maxSpeed;
@@ -106,29 +112,5 @@ public class PathParams {
     }
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;
-    }
-
-    @NonNull
-    @Override
-    public PathParams clone() {
-        PathParams newParams = new PathParams(bigSpeedKp, smallSpeedKp, speedKi, bigSpeedKd, smallSpeedKd, speedKf, closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf);
-        newParams.maxTime = maxTime;
-        newParams.minLinearPower = minLinearPower;
-        newParams.maxLinearPower = maxLinearPower;
-        newParams.minHeadingPower = minHeadingPower;
-        newParams.maxHeadingPower = maxHeadingPower;
-        newParams.lateralWeight = lateralWeight;
-        newParams.axialWeight = axialWeight;
-        newParams.passPosition = passPosition;
-        newParams.customEndCondition = customEndCondition;
-        newParams.applyCloseSpeedPIDError = applyCloseSpeedPIDError;
-        newParams.headingLerpType = headingLerpType;
-        newParams.pathType = pathType;
-        newParams.tValueMaxOutTime = tValueMaxOutTime;
-        newParams.controlPoint = new Pose2d(controlPoint.position, controlPoint.heading.toDouble());
-        newParams.tangentHeadingDeactivateThreshold = tangentHeadingDeactivateThreshold;
-        newParams.applyCloseHeadingPIDErrorDeg = applyCloseHeadingPIDErrorDeg;
-        newParams.prioritizeHeadingInBeginning = prioritizeHeadingInBeginning;
-        return newParams;
     }
 }

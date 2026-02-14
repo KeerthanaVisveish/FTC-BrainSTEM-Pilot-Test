@@ -84,6 +84,10 @@ public class Waypoint {
         params.customEndCondition = endCondition;
         return this;
     }
+    public Waypoint setUseCorrectiveKp(boolean useCorrectiveKp) {
+        params.useCorrectiveKp = useCorrectiveKp;
+        return this;
+    }
     public Waypoint setHeadingLerp(PathParams.HeadingLerpType lerpType) {
         params.headingLerpType = lerpType;
         return this;

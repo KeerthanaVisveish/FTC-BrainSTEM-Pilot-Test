@@ -31,7 +31,8 @@ import java.util.List;
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = false;
+            printLimelight = true;
+    public static boolean streamCameraToFTCDashboard = true;
     public static double[] blueCornerResetPose = { 64.25, 62.75, -90 };
     public static double[] redCornerResetPose = { 64.25, -62.75, 90 };
     public static double firstShootTolerance = 0.1, physicsShootTolerance = 0.05;
@@ -68,7 +69,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
-//        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
+        if (streamCameraToFTCDashboard)
+            FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
 
         waitForStart();
         robot.turret.update();
@@ -137,6 +139,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             PoseStorage.autoY = p.position.y;
             PoseStorage.autoHeading = p.heading.toDouble();
         }
+        robot.limelight.limelight.stop();
     }
 
     private void updateDrive() {

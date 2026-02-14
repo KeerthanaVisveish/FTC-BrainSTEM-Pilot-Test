@@ -17,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
+import org.firstinspires.ftc.teamcode.utils.math.GeometryUtils;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class DrivePath implements Action {
     private Pose2d startPose, prevWaypointPose;
     private double splineT;
     private double targetX, targetY, targetHeadingRad;
+    private boolean followingCurvedPath;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -80,6 +82,7 @@ public class DrivePath implements Action {
     }
     private Vector2d updateTargetDir(double robotX, double robotY, double headingRad) {
         if(getCurParams().pathType == PathParams.PathType.CURVED) {
+            followingCurvedPath = true;
             targetX = UtilFunctions.lerp(getCurParams().controlPoint.position.x, getCurWaypoint().x(), splineT);
             targetY = UtilFunctions.lerp(getCurParams().controlPoint.position.y, getCurWaypoint().y(), splineT);
             targetHeadingRad = UtilFunctions.lerp(getCurParams().controlPoint.heading.toDouble(), getCurWaypoint().headingRad(), splineT);
@@ -87,6 +90,8 @@ public class DrivePath implements Action {
             // re-calculating waypoint dir for curve
             curWaypointDirRad = Math.atan2(targetY - robotY, targetX - robotX);
         }
+        else
+            followingCurvedPath = false;
 
         // translating target so that drivetrain is around origin
 //        double xFromRobot = targetX - robotX;
@@ -199,12 +204,28 @@ public class DrivePath implements Action {
         double lateralPower = targetDir.y * linearPower * getCurParams().lateralWeight * moveLeftSign;
         double axialPower = targetDir.x * linearPower * getCurParams().axialWeight * moveForwardSign;
 
+        // calculating corrective drive vector
+        if (!followingCurvedPath) {
+            Vector2d prevPos = prevWaypointPose.position;
+            Vector2d targetPos = getCurWaypoint().pose.position;
+            double[] info = GeometryUtils.pointToLineDistanceAndAngle(
+                    new double[] { prevPos.x, prevPos.y },
+                    new double[] { targetPos.x, targetPos.y },
+                    new double[] { rx, ry }
+            );
+            double distance = info[0];
+            double angle = info[1];
+            double correctiveMagnitude = distance * getCurParams().correctiveKp;
+            double correctiveX = correctiveMagnitude * Math.cos(angle);
+            double correctiveY = correctiveMagnitude * Math.sin(angle);
+            
+        }
+
         // rescaling to maximize motor power while preserving direction
         double powerMag = Math.hypot(lateralPower, axialPower);
         if(powerMag > 1) {
             lateralPower /= powerMag;
             axialPower /= powerMag;
-            powerMag = 1;
         }
 
         // calculate angular speed (heading)

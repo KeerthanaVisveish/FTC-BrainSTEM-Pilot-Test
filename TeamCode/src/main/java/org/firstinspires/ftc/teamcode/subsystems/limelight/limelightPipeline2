@@ -1,0 +1,131 @@
+import cv2
+import numpy as np
+import math
+
+# color masking
+gaussian_blur_kernel = (3, 3)
+green_lb = (70, 100, 140)
+green_ub = (95, 255, 255)
+purple_lb = (132, 40, 90)
+purple_ub = (150, 255, 255)
+
+# color mask processing
+use_erode_dilate = True
+mask_erode1 = (6, 6)
+mask_dilate = (14, 14)
+mask_erode2 = (8, 8)
+min_area = 750
+
+# debug info
+show_mask = False
+draw_debug = False
+
+def runPipeline(image, llrobot):
+    # finding color contours===============================
+    image = cv2.GaussianBlur(image, gaussian_blur_kernel, 0)
+    img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    color_mask = get_color_mask(img_hsv, green_lb, green_ub, purple_lb, purple_ub)
+
+    final_img = image
+    if show_mask:
+        final_img = cv2.cvtColor(color_mask, cv2.COLOR_GRAY2BGR)
+
+    blob_info = get_blob_info(color_mask, final_img if draw_debug else None)
+
+    python_outputs = np.array(blob_info).flatten()
+    return contour_at_point(0, 0), final_img, python_outputs
+
+def get_color_mask(hsv, lower_bounds, upper_bounds, lower_bounds2, upper_bounds2):
+    mask1 = cv2.inRange(hsv, lower_bounds, upper_bounds)
+    mask2 = cv2.inRange(hsv, lower_bounds2, upper_bounds2)
+    mask = cv2.bitwise_or(mask1, mask2)
+
+    if use_erode_dilate:
+        if mask_erode1[0] > 0 and mask_erode1[1] > 0:
+            shrink = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_erode1)
+            mask = cv2.erode(mask, shrink)
+
+        if mask_dilate[0] > 0 and mask_dilate[1] > 0:
+            grow = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_dilate)
+            mask = cv2.dilate(mask, grow)
+
+        if mask_erode2[0] > 0 and mask_erode2[1] > 0:
+            shrink2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_erode2)
+            mask = cv2.erode(mask, shrink2)
+    return mask
+
+# returns 2d list returning centroid x, y, and area of contour
+def get_blob_info(mask, draw_img=None):
+    contours, _ = cv2.findContours(mask,
+    cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    info = []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if (area > min_area):
+            successful = True
+            cx, cy = centroid_xy(c)
+            info.append([cx, cy, area])
+
+    # sort blob info by area (biggest first)
+    info.sort(key=lambda c: c[2], reverse=True)
+
+    if draw_img is not None:
+        for i in range(len(info)):
+            cx = info[i][0]
+            cy = info[i][1]
+            area = info[i][2]
+
+            cv2.putText(
+                draw_img,
+                f"{i+1}: {int(area)}",
+                (int(cx), int(cy)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6, (0, 255, 255), 2,
+                cv2.LINE_AA
+            )
+
+    return info
+
+# drawing functions========================
+def show_sample_pixel(image, img_hsv, samplex, sampley):
+    h, s, b = img_hsv[sampley, samplex]
+    cv2.rectangle(image, (0, 60), (360, 120), (0, 0, 0), -1)
+    cv2.putText(
+        image, f"color: {h} {s} {b}", (20, 100),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1.0, (0, 255, 0), 2,
+        cv2.LINE_AA
+    )
+# utility functions=========================
+def centroid_x(contour):
+    M = cv2.moments(contour)
+    if M["m00"] == 0:
+        return 0.0
+    return M["m10"] / M["m00"]
+
+def centroid_y(contour):
+    M = cv2.moments(contour)
+    if M["m00"] == 0:
+        return 0.0
+    return M["m01"] / M["m00"]
+
+def centroid_xy(contour):
+    M = cv2.moments(contour)
+    if M["m00"] == 0:
+        return 0.0, 0.0
+    cx = M["m10"] / M["m00"]
+    cy = M["m01"] / M["m00"]
+    return cx, cy
+
+def contour_at_point(x, y, size=6):
+    # contour shape: (N, 1, 2) int32
+    s = size
+    pts = np.array([
+        [x - s, y - s],
+        [x + s, y - s],
+        [x + s, y + s],
+        [x - s, y + s],
+    ], dtype=np.int32).reshape((-1, 1, 2))
+    return pts

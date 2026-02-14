@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Component;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
 @Config
 public class Limelight extends Component {
@@ -21,14 +20,20 @@ public class Limelight extends Component {
         public boolean clearSnapshots = false;
     }
     public static class HardwareParams {
-        public double distFromTurret = 5.9148; // old: 5.892;
+        public double distFromTurret = 5.9148;
+        public int resolutionWidth = 640;
+        public int resolutionHeight = 480;
+        public double hFOV = 54.5;
+        public double vFOV = 42;
+        public double cameraHeight = 11.9685;
+
     }
     public static SnapshotParams snapshotParams = new SnapshotParams();
     public static HardwareParams hardwareParams = new HardwareParams();
 
     // i should tune the camera so that it gives me the turret center position
     public final Limelight3A limelight;
-    public static int startingPipeline = 1;
+    public static int startingPipeline = 2;
     private int pipeline;
     public final LimelightLocalization localization; // april tag localization
     public final LimelightClassifier classifier; // counts # balls in classifier
@@ -43,7 +48,6 @@ public class Limelight extends Component {
         classifier = new LimelightClassifier(robot, limelight);
         ballDetection = new LimelightBallDetection(robot, limelight);
 
-        pipeline = -1;
         switchPipeline(startingPipeline);
         limelight.start();
     }
@@ -90,15 +94,7 @@ public class Limelight extends Component {
     }
 
     public void switchPipeline(int num) {
-        if (pipeline == num)
-            return;
-
         pipeline = num;
-        if (num == -1)
-            limelight.stop();
-        else if (!limelight.isRunning())
-            limelight.start();
-
         limelight.pipelineSwitch(num);
     }
 
@@ -111,6 +107,7 @@ public class Limelight extends Component {
                 classifier.addClassifierInfo(fieldOverlay);
                 break;
             case 2:
+                ballDetection.addBallInfo(fieldOverlay);
                 break;
         }
     }
@@ -124,5 +121,33 @@ public class Limelight extends Component {
         double dx = Math.cos(angle) * hardwareParams.distFromTurret;
         double dy = Math.sin(angle) * hardwareParams.distFromTurret;
         return new Pose2d(turretPose.position.x + dx, turretPose.position.y + dy, angle);
+    }
+
+
+    // gets the horizontal angle of a pixel in degrees
+    public static double pixelXToTx(double pixelX) {
+        // focal length in pixels = resolution * 0.5 / tan(horizontal fov * 0.5)
+        double focalLengthXPixels = hardwareParams.resolutionWidth * 0.5 / Math.tan(Math.toRadians(hardwareParams.hFOV * 0.5));
+        return Math.toDegrees(Math.atan((pixelX - hardwareParams.resolutionWidth * 0.5) / focalLengthXPixels));
+    }
+    // gets the vertical angle of a pixel in degrees
+    public static double pixelYToTy(double pixelY) {
+        double focalLengthYPixels = hardwareParams.resolutionHeight * 0.5 / Math.tan(Math.toRadians(hardwareParams.vFOV * 0.5));
+        return Math.toDegrees(Math.atan((hardwareParams.resolutionHeight * 0.5 - pixelY) / focalLengthYPixels));
+    }
+    public static Vector2d calculateBallFieldPosition(Pose2d cameraPose, double tx, double ty) {
+        double height = hardwareParams.cameraHeight - 2.5;
+
+        double axialOffset = height / Math.tan(Math.toRadians(-ty));
+        double lateralOffset = Math.hypot(axialOffset, height) * Math.tan(Math.toRadians(tx));
+        Vector2d relativeOffset = new Vector2d(lateralOffset, axialOffset);
+
+        double cos = Math.cos(cameraPose.heading.toDouble());
+        double sin = Math.sin(cameraPose.heading.toDouble());
+        // cos, -sin
+        // sin,  cos
+        Vector2d fieldPosition = new Vector2d(relativeOffset.x * cos - relativeOffset.y * sin, relativeOffset.x * sin + relativeOffset.y * cos);
+        fieldPosition = new Vector2d(fieldPosition.y*1, -fieldPosition.x);
+        return fieldPosition.plus(cameraPose.position);
     }
 }
