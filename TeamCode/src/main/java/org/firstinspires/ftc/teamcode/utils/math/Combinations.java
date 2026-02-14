@@ -1,20 +1,8 @@
-package com.example;
+package org.firstinspires.ftc.teamcode.utils.math;
 
-import com.acmerobotics.roadrunner.Vector2d;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-public class Test {
-    public static void main(String[] args) {
-        List<Integer> nums = new ArrayList<>(Arrays.asList(
-           1, 2, 3, 4
-        ));
-        List<List<Integer>> combinations = getCombinations(nums, 5);
-        for (List<Integer> combo : combinations)
-            System.out.println(combo);
-    }
+public class Combinations {
 
     public static <T> List<List<T>> getCombinations(List<T> items, int k) {
         List<List<T>> result = new ArrayList<>();
@@ -41,3 +29,4 @@ public class Test {
         }
     }
 }
+

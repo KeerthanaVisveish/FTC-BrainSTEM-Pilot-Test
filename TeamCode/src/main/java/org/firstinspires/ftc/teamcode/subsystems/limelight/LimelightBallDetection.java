@@ -11,14 +11,20 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.utils.math.Combinations;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.math.PathFinder;
+import org.firstinspires.ftc.teamcode.utils.math.Vec;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 @Config
 public class LimelightBallDetection extends LLParent {
     public static class Params {
         public int maxBlobs = 5;
+        public int numPiecesOfInfoPerBlob = 3;
         public boolean showPythonOutputs = false;
     }
 
@@ -53,13 +59,13 @@ public class LimelightBallDetection extends LLParent {
         int numNonZeroEntries = 0;
         while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
             numNonZeroEntries++;
-         numBlobs = numNonZeroEntries / 3;
+         numBlobs = numNonZeroEntries / params.numPiecesOfInfoPerBlob;
          if (numBlobs > params.maxBlobs)
              numBlobs = params.maxBlobs;
 
         blobs = new Blob[numBlobs];
         for (int i=0; i<numBlobs; i++) {
-            int index = i * 3;
+            int index = i * params.numPiecesOfInfoPerBlob;
             double px = pythonOutputs[index];
             double py = pythonOutputs[index + 1];
             double area = pythonOutputs[index + 2];
@@ -78,6 +84,42 @@ public class LimelightBallDetection extends LLParent {
         if (i >= blobs.length)
             return null;
         return new Vector2d(blobs[i].x, blobs[i].y);
+    }
+
+    public Vector2d[] findShortestPath(int maxNumBlobsInPath) {
+        // get all of the possible combinations of paths
+        int combinationLength = Math.max(maxNumBlobsInPath, blobs.length);
+        List<List<Blob>> combinations = Combinations.getCombinations(new ArrayList<>(Arrays.asList(blobs)), combinationLength);
+        if (combinations.isEmpty())
+            return null;
+
+        // find the shortest path for all of the possible combinations
+        List<PathFinder.PathResult> results = new ArrayList<>();
+        for (int i=0; i<combinations.size(); i++) {
+            List<Blob> combo = combinations.get(i);
+            Vector2d[] nodes = new Vector2d[combo.size()];
+            for (int j=0; j<nodes.length; j++)
+                nodes[j] = new Vector2d(combo.get(j).x, combo.get(j).y);
+            results.add(PathFinder.findShortestPath(nodes));
+        }
+
+        // find the shortest path out of all of the different combinations
+        PathFinder.PathResult shortestResult = results.get(0);
+        for (int i=1; i<results.size(); i++) {
+            if (results.get(i).distance() < shortestResult.distance()) {
+                shortestResult = results.get(i);
+            }
+        }
+
+        // convert the shortest path into a useful format
+        int[] pathIndexes = shortestResult.path();
+        Vector2d[] shortestPath = new Vector2d[pathIndexes.length];
+        for (int i=0; i<pathIndexes.length; i++) {
+            int index = pathIndexes[i];
+            Blob blob = blobs[index];
+            shortestPath[i] = new Vector2d(blob.x, blob.y);
+        }
+        return shortestPath;
     }
 
     @Override
