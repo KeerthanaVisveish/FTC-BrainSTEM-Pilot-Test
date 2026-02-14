@@ -47,7 +47,7 @@ public class ShootingSystem {
         public double resolution = 0.005;
     }
     public static class GeneralParams {
-        public double distInRes = 100, approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
+        public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
         public int lookAheadAvgNum = 5;
         public double rawLookAheadTime = 0.25; // time to look ahead for pose prediction
         public double shooterTau = 0.2;
@@ -84,6 +84,7 @@ public class ShootingSystem {
     private ServoImplCacher hoodLeftServo, hoodRightServo;
     public final Vector2d corner;
     public Vector3d goalPosIn;
+    public Vector2d futureExitPosRelativeToGoal;
     public double impactAngleRad;
     public Pose2d futureRobotPose;
 
@@ -331,7 +332,7 @@ public class ShootingSystem {
         ballExitPos = ShootingMath.getExitPositionInches(turretPose, approxBallExitAng);
         futureBallExitPos = ShootingMath.getExitPositionInches(futureTurretPose, approxBallExitAng);
 
-        odoVel = robot.drive.pinpoint().getNextVelAdvanced();
+        odoVel = robot.drive.pinpoint().getMostRecentVelocity();
         Vector2d robotVelCm = new Vector2d(odoVel.x, odoVel.y);
         Vector2d relativeExitPos = ballExitPos.minus(robotPose.position);
         Vector2d robotTanVel = new Vector2d(-relativeExitPos.y, relativeExitPos.x*1).times(odoVel.headingRad); // v = r * w
@@ -341,11 +342,10 @@ public class ShootingSystem {
 
         double deltaX = goalPosIn.x - ballExitPos.x;
         double deltaY = goalPosIn.z - ballExitPos.y;
-        exitPosGoalDistIn = Math.floor(Math.hypot(deltaX, deltaY) * generalParams.distInRes) / generalParams.distInRes;
+        exitPosGoalDistIn = Math.hypot(deltaX, deltaY);
 
-        double futureDx = goalPosIn.x - futureBallExitPos.x;
-        double futureDy = goalPosIn.z - futureBallExitPos.y;
-        futureExitPosGoalDistIn = Math.floor(Math.hypot(futureDx, futureDy) * generalParams.distInRes) / generalParams.distInRes;
+        futureExitPosRelativeToGoal = new Vector2d(futureBallExitPos.x - goalPosIn.x, futureBallExitPos.y - goalPosIn.z);
+        futureExitPosGoalDistIn = Math.hypot(futureExitPosRelativeToGoal.x, futureExitPosRelativeToGoal.y);
     }
 
     private void updateLookAheadTime(boolean useLookAhead) {
