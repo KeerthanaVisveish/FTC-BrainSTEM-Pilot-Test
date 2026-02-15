@@ -11,8 +11,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Component;
-import org.firstinspires.ftc.teamcode.utils.math.GeometryUtils;
-import org.firstinspires.ftc.teamcode.utils.math.Vec;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
 @Config
 public class Limelight extends Component {

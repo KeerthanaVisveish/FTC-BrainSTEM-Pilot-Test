@@ -17,7 +17,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
-import org.firstinspires.ftc.teamcode.utils.math.GeometryUtils;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 
 import java.util.ArrayList;

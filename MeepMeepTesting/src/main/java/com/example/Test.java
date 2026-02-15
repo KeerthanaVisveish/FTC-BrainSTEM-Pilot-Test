@@ -2,42 +2,23 @@ package com.example;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class Test {
     public static void main(String[] args) {
-        List<Integer> nums = new ArrayList<>(Arrays.asList(
-           1, 2, 3, 4
-        ));
-        List<List<Integer>> combinations = getCombinations(nums, 5);
-        for (List<Integer> combo : combinations)
-            System.out.println(combo);
-    }
-
-    public static <T> List<List<T>> getCombinations(List<T> items, int k) {
-        List<List<T>> result = new ArrayList<>();
-        backtrack(items, k, 0, new ArrayList<>(), result);
-        return result;
-    }
-
-    private static <T> void backtrack(
-            List<T> items,
-            int k,
-            int start,
-            List<T> current,
-            List<List<T>> result
-    ) {
-        if (current.size() == k) {
-            result.add(new ArrayList<>(current)); // copy
-            return;
-        }
-
-        for (int i = start; i < items.size(); i++) {
-            current.add(items.get(i));
-            backtrack(items, k, i + 1, current, result);
-            current.remove(current.size() - 1);
+        Vector2d startPosition = new Vector2d(20, 40);
+        Vector2d[] nodes = {
+                new Vector2d(10, 10),
+                new Vector2d(40, 20),
+        };
+        double startTime = System.currentTimeMillis();
+        Vector2d[] shortestPath = PathFinder.findShortestPath(startPosition, nodes, 3);
+        double endTime = System.currentTimeMillis();
+        System.out.println("calculation dt (ms): " + (endTime - startTime));
+        System.out.println("FINAL PATH");
+        if (shortestPath == null)
+            System.out.println("path is null");
+        else {
+            for (int i = 0; i < shortestPath.length; i++)
+                System.out.println(i + ": (" + shortestPath[i].x + ", " + shortestPath[i].y + ")");
         }
     }
 }

@@ -11,14 +11,12 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.utils.math.Combinations;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.math.PathFinder;
 import org.firstinspires.ftc.teamcode.utils.math.Vec;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @Config
 public class LimelightBallDetection extends LLParent {
@@ -26,6 +24,7 @@ public class LimelightBallDetection extends LLParent {
         public int maxBlobs = 5;
         public int numPiecesOfInfoPerBlob = 3;
         public boolean showPythonOutputs = false;
+        public double minDistFromFieldWall = 2.5;
     }
 
     public static Params params = new Params();
@@ -43,7 +42,6 @@ public class LimelightBallDetection extends LLParent {
             this.x = x;
             this.y = y;
             this.area = area;
-
         }
         @NonNull
         @Override
@@ -59,9 +57,9 @@ public class LimelightBallDetection extends LLParent {
         int numNonZeroEntries = 0;
         while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
             numNonZeroEntries++;
-         numBlobs = numNonZeroEntries / params.numPiecesOfInfoPerBlob;
-         if (numBlobs > params.maxBlobs)
-             numBlobs = params.maxBlobs;
+        numBlobs = numNonZeroEntries / params.numPiecesOfInfoPerBlob;
+        if (numBlobs > params.maxBlobs)
+            numBlobs = params.maxBlobs;
 
         blobs = new Blob[numBlobs];
         for (int i=0; i<numBlobs; i++) {
@@ -69,57 +67,18 @@ public class LimelightBallDetection extends LLParent {
             double px = pythonOutputs[index];
             double py = pythonOutputs[index + 1];
             double area = pythonOutputs[index + 2];
-
-            double tx = Limelight.pixelXToTx(px);
-            double ty = Limelight.pixelYToTy(py);
-            Pose2d cameraPose = Limelight.getLimelightPose(robot.shootingSystem.turretPose);
-            Vector2d fieldPosition = Limelight.calculateBallFieldPosition(cameraPose, tx, ty);
-
-            Blob blob = new Blob(fieldPosition.x, fieldPosition.y, area);
-            blobs[i] = blob;
+            blobs[i] = createBlob(px, py, area);
         }
     }
 
-    public Vector2d getBlobPosition(int i) {
-        if (i >= blobs.length)
-            return null;
-        return new Vector2d(blobs[i].x, blobs[i].y);
-    }
+    private Blob createBlob(double px, double py, double area) {
+        double tx = Limelight.pixelXToTx(px);
+        double ty = Limelight.pixelYToTy(py);
+        Pose2d cameraPose = Limelight.getLimelightPose(robot.shootingSystem.turretPose);
+        Vector2d fieldPosition = Limelight.calculateBallFieldPosition(cameraPose, tx, ty);
+        Vector2d projectedFieldPosition = GeometryUtils.projectOntoField(robot.drive.localizer.getPose().position, fieldPosition, params.minDistFromFieldWall);
 
-    public Vector2d[] findShortestPath(int maxNumBlobsInPath) {
-        // get all of the possible combinations of paths
-        int combinationLength = Math.max(maxNumBlobsInPath, blobs.length);
-        List<List<Blob>> combinations = Combinations.getCombinations(new ArrayList<>(Arrays.asList(blobs)), combinationLength);
-        if (combinations.isEmpty())
-            return null;
-
-        // find the shortest path for all of the possible combinations
-        List<PathFinder.PathResult> results = new ArrayList<>();
-        for (int i=0; i<combinations.size(); i++) {
-            List<Blob> combo = combinations.get(i);
-            Vector2d[] nodes = new Vector2d[combo.size()];
-            for (int j=0; j<nodes.length; j++)
-                nodes[j] = new Vector2d(combo.get(j).x, combo.get(j).y);
-            results.add(PathFinder.findShortestPath(nodes));
-        }
-
-        // find the shortest path out of all of the different combinations
-        PathFinder.PathResult shortestResult = results.get(0);
-        for (int i=1; i<results.size(); i++) {
-            if (results.get(i).distance() < shortestResult.distance()) {
-                shortestResult = results.get(i);
-            }
-        }
-
-        // convert the shortest path into a useful format
-        int[] pathIndexes = shortestResult.path();
-        Vector2d[] shortestPath = new Vector2d[pathIndexes.length];
-        for (int i=0; i<pathIndexes.length; i++) {
-            int index = pathIndexes[i];
-            Blob blob = blobs[index];
-            shortestPath[i] = new Vector2d(blob.x, blob.y);
-        }
-        return shortestPath;
+        return new Blob(projectedFieldPosition.x, projectedFieldPosition.y, area);
     }
 
     @Override
@@ -144,5 +103,18 @@ public class LimelightBallDetection extends LLParent {
         for (Blob blob : blobs) {
             fieldOverlay.strokeCircle(blob.x, blob.y, 2.5);
         }
+    }
+
+    public Vector2d getBlobPosition(int i) {
+        if (i >= blobs.length)
+            return null;
+        return new Vector2d(blobs[i].x, blobs[i].y);
+    }
+
+    public Vector2d[] getShortestPath(int maxBlobsInPath) {
+        Vector2d[] nodes = new Vector2d[blobs.length];
+        for (int i=0; i<blobs.length; i++)
+            nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
+        return PathFinder.findShortestPath(robot.drive.localizer.getPose().position, nodes, maxBlobsInPath);
     }
 }
