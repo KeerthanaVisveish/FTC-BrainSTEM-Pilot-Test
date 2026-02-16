@@ -42,7 +42,9 @@ public class Waypoint {
        return pose.heading.toDouble();
     }
 
-    protected void setDistToNextWaypoint(double dist) { distToNextWaypoint = dist; }
+    protected void setNextWaypoint(Waypoint waypoint) {
+        distToNextWaypoint = Math.hypot(waypoint.x() - x(), waypoint.y() - y());
+    }
     protected double getDistToNextWaypoint() {
         return distToNextWaypoint;
     }

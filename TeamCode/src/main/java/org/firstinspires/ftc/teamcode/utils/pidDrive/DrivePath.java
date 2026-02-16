@@ -39,6 +39,7 @@ public class DrivePath implements Action {
     private double targetX, targetY, targetHeadingRad;
     private Vector2d driveVector, correctiveVector, combinedDirectionVector;
     private boolean followingCurvedPath;
+    private boolean shouldUpdatePose = true;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -49,11 +50,8 @@ public class DrivePath implements Action {
 
         this.waypoints = new ArrayList<>();
         this.waypoints.addAll(Arrays.asList(waypoints));
-        for(int i = 0; i < this.waypoints.size() - 1; i++) {
-            Waypoint cur = this.waypoints.get(i);
-            Waypoint next = this.waypoints.get(i+1);
-            cur.setDistToNextWaypoint(Math.hypot(cur.x() - next.x(), cur.y() - next.y()));
-        }
+        for(int i = 0; i < this.waypoints.size() - 1; i++)
+            this.waypoints.get(i).setNextWaypoint(this.waypoints.get(i+1));
 
         curWaypointIndex = 0;
 
@@ -62,8 +60,33 @@ public class DrivePath implements Action {
         startPose = new Pose2d(0, 0, 0);
         curWaypointDirRad = 0;
     }
-    private Waypoint getWaypoint(int index) {
+    public void setShouldUpdatePose(boolean shouldUpdatePose) {
+        this.shouldUpdatePose = shouldUpdatePose;
+    }
+    // adds another waypoint to the end of the list
+    public void addWaypoint(Waypoint waypoint) {
+        addWaypoint(waypoint, waypoints.size());
+    }
+    // inserts a waypoint at the given index and pushes everything at and after that index back
+    public void addWaypoint(Waypoint waypoint, int index) {
+        waypoints.add(index, waypoint);
+        if (waypoints.size() == 1)
+            return;
+        Waypoint prevWaypoint = getWaypoint(index - 1);
+        Waypoint nextWaypoint = getWaypoint(index + 1);
+        if (prevWaypoint != null)
+            prevWaypoint.setNextWaypoint(waypoint);
+        if (nextWaypoint != null)
+            waypoint.setNextWaypoint(nextWaypoint);
+
+    }
+    public Waypoint getWaypoint(int index) {
+        if (index < 0 || index >= waypoints.size())
+            return null;
         return waypoints.get(index);
+    }
+    public ArrayList<Waypoint> getWaypoints() {
+        return waypoints;
     }
     private Waypoint getCurWaypoint() {
         return waypoints.get(Math.min(waypoints.size() - 1, curWaypointIndex));
@@ -127,7 +150,9 @@ public class DrivePath implements Action {
 
     @Override
     public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-        drivetrain.updatePoseEstimate();
+        if (shouldUpdatePose) {
+            drivetrain.updatePoseEstimate();
+        }
         Pose2d robotPose = odo.getPose();
         double rx = robotPose.position.x, ry = robotPose.position.y, rHeadingRad = MathUtils.angleNormRad(robotPose.heading.toDouble()), rHeadingDeg = Math.toDegrees(rHeadingRad);
 

@@ -11,19 +11,15 @@ public class PathFinder {
         // get all of the possible combinations of paths
         int combinationLength = Math.min(maxNodesInPath, nodes.length);
         List<List<Vector2d>> combinations = getCombinations(new ArrayList<>(Arrays.asList(nodes)), combinationLength);
-        if (combinations.isEmpty())
+        if (combinations.isEmpty() || combinations.get(0).isEmpty())
             return null;
 
         // find the shortest path for all of the possible combinations
         List<PathFinder.PathResult> results = new ArrayList<>(); // array of path results, parallel with combinations
         for (int i=0; i<combinations.size(); i++) {
-            List<Vector2d> combo = combinations.get(i);
 
-            Vector2d[] comboWithRobot = new Vector2d[combo.size() + 1];
-            comboWithRobot[0] = startPosition;
-            for (int j=0; j<combo.size(); j++)
-                comboWithRobot[j + 1] = combo.get(j);
-            results.add(PathFinder.findShortestPath(comboWithRobot));
+            Vector2d[] combo = combinations.get(i).toArray(new Vector2d[0]);
+            results.add(PathFinder.findShortestPath(startPosition, combo));
         }
 
         // find the shortest path out of all of the different combinations
@@ -37,11 +33,12 @@ public class PathFinder {
         }
 
         // convert the shortest path into a useful format
-        int[] pathIndexes = shortestResult.path(); // path includes start position as first index
-        Vector2d[] shortestPath = new Vector2d[pathIndexes.length - 1]; // do not want to include start position in final path
+        int[] pathIndexes = shortestResult.path();
+        System.out.println(Arrays.toString(pathIndexes));
+        Vector2d[] shortestPath = new Vector2d[pathIndexes.length];
         for (int i=0; i<shortestPath.length; i++) {
-            int index = pathIndexes[i + 1]; // account for start position
-            shortestPath[i] = shortestCombo.get(index - 1); // account for start position
+            int index = pathIndexes[i];
+            shortestPath[i] = shortestCombo.get(index);
         }
         return shortestPath;
     }
@@ -73,7 +70,7 @@ public class PathFinder {
     }
 
     // finding the shortest path given a list of nodes of length N
-    public static PathResult findShortestPath(Vector2d[] nodes) {
+    public static PathResult findShortestPath(Vector2d start, Vector2d[] nodes) {
         int n = nodes.length;
         int[] indices = new int[n];
         for (int i = 0; i < n; i++) {
@@ -82,13 +79,14 @@ public class PathFinder {
 
         PathResult best = new PathResult(Double.POSITIVE_INFINITY, null);
 
-        permute(indices, 0, nodes, best);
+        permute(indices, 0, start, nodes, best);
 
         return best;
     }
-    private static void permute(int[] arr, int start, Vector2d[] nodes, PathResult best) {
-        if (start == arr.length) {
-            double dist = pathLength(arr, nodes);
+
+    private static void permute(int[] arr, int startIdx, Vector2d start, Vector2d[] nodes, PathResult best) {
+        if (startIdx == arr.length) {
+            double dist = pathLengthFromStart(start, arr, nodes);
             if (dist < best.bestDistance) {
                 best.bestDistance = dist;
                 best.bestPath = arr.clone();
@@ -96,21 +94,30 @@ public class PathFinder {
             return;
         }
 
-        for (int i = start; i < arr.length; i++) {
-            swap(arr, start, i);
-            permute(arr, start + 1, nodes, best);
-            swap(arr, start, i);
+        for (int i = startIdx; i < arr.length; i++) {
+            swap(arr, startIdx, i);
+            permute(arr, startIdx + 1, start, nodes, best);
+            swap(arr, startIdx, i);
         }
     }
-    private static double pathLength(int[] order, Vector2d[] nodes) {
+
+    private static double pathLengthFromStart(Vector2d start, int[] order, Vector2d[] nodes) {
         double sum = 0.0;
+
+        // Start → first node
+        Vector2d first = nodes[order[0]];
+        sum += Math.hypot(first.x - start.x, first.y - start.y);
+
+        // Between nodes
         for (int i = 0; i < order.length - 1; i++) {
             Vector2d n1 = nodes[order[i]];
             Vector2d n2 = nodes[order[i + 1]];
             sum += Math.hypot(n2.x - n1.x, n2.y - n1.y);
         }
+
         return sum;
     }
+
     private static void swap(int[] arr, int i, int j) {
         int tmp = arr[i];
         arr[i] = arr[j];

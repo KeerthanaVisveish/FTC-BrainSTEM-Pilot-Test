@@ -4,10 +4,11 @@ import com.acmerobotics.roadrunner.Vector2d;
 
 public class Test {
     public static void main(String[] args) {
-        Vector2d startPosition = new Vector2d(20, 40);
+        Vector2d startPosition = new Vector2d(52, 8);
         Vector2d[] nodes = {
-                new Vector2d(10, 10),
-                new Vector2d(40, 20),
+//                new Vector2d(70, 40),
+//                new Vector2d(30, 60),
+//                new Vector2d(36, 70)
         };
         double startTime = System.currentTimeMillis();
         Vector2d[] shortestPath = PathFinder.findShortestPath(startPosition, nodes, 3);

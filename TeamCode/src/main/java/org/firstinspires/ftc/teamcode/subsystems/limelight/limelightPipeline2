@@ -2,44 +2,50 @@ import cv2
 import numpy as np
 import math
 
+# cropping
+min_y = 260
+
 # color masking
 gaussian_blur_kernel = (3, 3)
-green_lb = (70, 100, 140)
+green_lb = (70, 80, 90)
 green_ub = (95, 255, 255)
-purple_lb = (132, 40, 90)
-purple_ub = (150, 255, 255)
+purple_lb = (132, 45, 70)
+purple_ub = (155, 255, 255)
 
 # color mask processing
 use_erode_dilate = True
 mask_erode1 = (6, 6)
-mask_dilate = (14, 14)
-mask_erode2 = (8, 8)
+mask_dilate = (10, 10)
+mask_erode2 = (10, 10)
 min_area = 750
 
 # debug info
-show_mask = False
+show_mask = True
 draw_debug = False
 
 def runPipeline(image, llrobot):
     # finding color contours===============================
     image = cv2.GaussianBlur(image, gaussian_blur_kernel, 0)
+    cv2.rectangle(image, (0, 0), (640, min_y), (0, 0, 0), -1)
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    color_mask = get_color_mask(img_hsv, green_lb, green_ub, purple_lb, purple_ub)
+    green_mask = get_color_mask(img_hsv, green_lb, green_ub)
+    purple_mask = get_color_mask(img_hsv, purple_lb, purple_ub)
 
     final_img = image
     if show_mask:
-        final_img = cv2.cvtColor(color_mask, cv2.COLOR_GRAY2BGR)
+        mask = cv2.bitwise_or(green_mask, purple_mask)
+        final_img = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-    blob_info = get_blob_info(color_mask, final_img if draw_debug else None)
+    green_blob_info = get_blob_info(green_mask, final_img if draw_debug else None)
+    purple_blob_info = get_blob_info(purple_mask, final_img if draw_debug else None)
+    blob_info = green_blob_info + purple_blob_info
 
     python_outputs = np.array(blob_info).flatten()
     return contour_at_point(0, 0), final_img, python_outputs
 
-def get_color_mask(hsv, lower_bounds, upper_bounds, lower_bounds2, upper_bounds2):
-    mask1 = cv2.inRange(hsv, lower_bounds, upper_bounds)
-    mask2 = cv2.inRange(hsv, lower_bounds2, upper_bounds2)
-    mask = cv2.bitwise_or(mask1, mask2)
+def get_color_mask(hsv, lower_bounds, upper_bounds):
+    mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
 
     if use_erode_dilate:
         if mask_erode1[0] > 0 and mask_erode1[1] > 0:

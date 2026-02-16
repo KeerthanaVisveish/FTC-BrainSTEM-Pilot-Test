@@ -72,6 +72,14 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (streamCameraToFTCDashboard)
             FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
 
+        while (opModeInInit()) {
+            if (gamepad1.start && gamepad1.backWasPressed())
+                robot.shootingSystem.resetTurretEncoder();
+            robot.shootingSystem.updateInfo(false);
+            telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+            telemetry.update();
+        }
+
         waitForStart();
         robot.turret.update();
         while (opModeIsActive()) {

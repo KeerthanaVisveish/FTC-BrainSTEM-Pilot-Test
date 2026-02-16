@@ -27,8 +27,8 @@ public class Turret extends Component {
         public double staticU = .14, staticB = .06, staticK = .01, staticX0 = 100;
         public double kPM = 0, kPB = 0.001, kV = 0.0003, kVP = 0.001;
         public double decelTime = .2;
-        public double[] kfLookupEncoders = new double[] {0, 0, 0, 0, 0};
-        public double[] kfLookupPowers = new double[] {0, 0, 0, 0, 0};
+//        public double[] kfLookupEncoders = new double[] {0, 0, 0, 0, 0};
+//        public double[] kfLookupPowers = new double[] {0, 0, 0, 0, 0};
     }
     public static TestingParams testingParams = new TestingParams();
 //    public static GoalParams goalParams = new GoalParams();
@@ -46,7 +46,7 @@ public class Turret extends Component {
     public double currentEncoder, currentVelocity;
     private double positionError, velocityError;
     private double kP, kF, dir;
-    private InterpLUT kFLookup;
+//    private InterpLUT kFLookup;
 
     public double targetRelAngleRad;
 
@@ -56,10 +56,10 @@ public class Turret extends Component {
 
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
-        kFLookup = new InterpLUT();
-        for(int i = 0; i < powerTuning.kfLookupEncoders.length; i++)
-            kFLookup.add(powerTuning.kfLookupEncoders[i], powerTuning.kfLookupPowers[i]);
-        kFLookup.createLUT();
+//        kFLookup = new InterpLUT();
+//        for(int i = 0; i < powerTuning.kfLookupEncoders.length; i++)
+//            kFLookup.add(powerTuning.kfLookupEncoders[i], powerTuning.kfLookupPowers[i]);
+//        kFLookup.createLUT();
 
         turretState = TurretState.CENTER;
     }
@@ -108,7 +108,8 @@ public class Turret extends Component {
         kP = Math.max(0, powerTuning.kPM * Math.abs(positionError) + powerTuning.kPB);
 //        kF = getLogisticKf(currentEncoder, dir);
         double input = currentEncoder * dir; // reversing input if traveling in the opposite direction
-        kF = kFLookup.get(input) * dir;
+        kF = 0;
+//        kF = kFLookup.get(input) * dir;
         return kP * positionError + kF + powerTuning.kV * targetVelocity + powerTuning.kVP * velocityError;
     }
     private double getLogisticKf(double encoder, double direction) {

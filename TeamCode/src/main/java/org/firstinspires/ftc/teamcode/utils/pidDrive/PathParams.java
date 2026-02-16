@@ -42,7 +42,7 @@ public class PathParams {
         public double tValueMaxOutTime = 1;
         public double tangentHeadingActivateThreshold = 23;
         public boolean prioritizeHeadingInBeginning = false;
-        public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.3;
+        public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.1;
     }
     public static DefaultParams defaultParams = new DefaultParams();
     protected double lateralWeight, axialWeight;

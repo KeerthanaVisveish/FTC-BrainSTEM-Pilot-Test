@@ -11,29 +11,29 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Component;
+import org.firstinspires.ftc.teamcode.utils.math.Vec;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
 @Config
 public class Limelight extends Component {
-    public static class SnapshotParams {
-        public String snapshotName = "near zone";
-        public int snapshotNum = 0;
-        public boolean clearSnapshots = false;
-    }
     public static class HardwareParams {
         public double distFromTurret = 5.9148;
         public int resolutionWidth = 640;
         public int resolutionHeight = 480;
+        public double verticalAngleOffset = -1.5;
+        public double axialDistanceOffset = 5;
         public double hFOV = 54.5;
         public double vFOV = 42;
         public double cameraHeight = 11.9685;
-
     }
-    public static SnapshotParams snapshotParams = new SnapshotParams();
+    public static class DrawingParams {
+        public double FOVDist = 24;
+    }
     public static HardwareParams hardwareParams = new HardwareParams();
+    public static DrawingParams drawingParams = new DrawingParams();
 
     // i should tune the camera so that it gives me the turret center position
-    public final Limelight3A limelight;
+    public static Limelight3A limelight = null;
     public static int startingPipeline = 2;
     private int pipeline;
     public final LimelightLocalization localization; // april tag localization
@@ -43,7 +43,8 @@ public class Limelight extends Component {
     // classifier detection data
     public Limelight(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        if (limelight == null)
+            limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         localization = new LimelightLocalization(robot, limelight);
         classifier = new LimelightClassifier(robot, limelight);
@@ -76,11 +77,6 @@ public class Limelight extends Component {
     }
     @Override
     public void update() {
-        if (snapshotParams.clearSnapshots) {
-            limelight.deleteSnapshots();
-            snapshotParams.clearSnapshots = false;
-        }
-
         switch (pipeline) {
             case 0:
                 localization.update();
@@ -111,6 +107,24 @@ public class Limelight extends Component {
                 ballDetection.addBallInfo(fieldOverlay);
                 break;
         }
+
+        if (drawingParams.FOVDist > 0) {
+            Pose2d cameraPose = getLimelightPose(robot.shootingSystem.turretPose);
+            Vector2d cameraPos = cameraPose.position;
+            double maxAngleRad = cameraPose.heading.toDouble() + Math.toRadians(hardwareParams.hFOV * 0.5);
+            double minAngleRad = cameraPose.heading.toDouble() - Math.toRadians(hardwareParams.hFOV * 0.5);
+            Vector2d maxPoint = cameraPose.position.plus(new Vector2d(
+                    drawingParams.FOVDist * Math.cos(maxAngleRad),
+                    drawingParams.FOVDist * Math.sin(maxAngleRad)
+            ));
+            Vector2d minPoint = cameraPose.position.plus(new Vector2d(
+                    drawingParams.FOVDist * Math.cos(minAngleRad),
+                    drawingParams.FOVDist * Math.sin(minAngleRad)
+            ));
+            fieldOverlay.setStroke("black");
+            fieldOverlay.strokeLine(cameraPos.x, cameraPos.y, maxPoint.x, maxPoint.y);
+            fieldOverlay.strokeLine(cameraPos.x, cameraPos.y, minPoint.x, minPoint.y);
+        }
     }
     public static Pose2d getTurretPose(Pose2d cameraPose) {
         double dx = Math.cos(cameraPose.heading.toDouble()) * hardwareParams.distFromTurret;
@@ -134,26 +148,19 @@ public class Limelight extends Component {
     // gets the vertical angle of a pixel in degrees
     public static double pixelYToTy(double pixelY) {
         double focalLengthYPixels = hardwareParams.resolutionHeight * 0.5 / Math.tan(Math.toRadians(hardwareParams.vFOV * 0.5));
-        return Math.toDegrees(Math.atan((hardwareParams.resolutionHeight * 0.5 - pixelY) / focalLengthYPixels));
+        double ty = Math.toDegrees(Math.atan((hardwareParams.resolutionHeight * 0.5 - pixelY) / focalLengthYPixels));
+        return ty + hardwareParams.verticalAngleOffset;
     }
     public static Vector2d calculateBallFieldPosition(Pose2d cameraPose, double tx, double ty) {
         double height = hardwareParams.cameraHeight - 2.5;
 
         double axialOffset = height / Math.tan(Math.toRadians(-ty));
+        axialOffset += hardwareParams.axialDistanceOffset;
         double lateralOffset = Math.hypot(axialOffset, height) * Math.tan(Math.toRadians(tx));
 
         Vector2d relativeOffset = new Vector2d(axialOffset, -lateralOffset);
         Vector2d fieldPosition = GeometryUtils.robotVectorToFieldVector(relativeOffset, cameraPose.heading.toDouble());
 
         return fieldPosition.plus(cameraPose.position);
-//        Vector2d relativeOffset = new Vector2d(lateralOffset, axialOffset);
-
-//        double cos = Math.cos(cameraPose.heading.toDouble());
-//        double sin = Math.sin(cameraPose.heading.toDouble());
-//        // cos, -sin
-//        // sin,  cos
-//        Vector2d fieldPosition = new Vector2d(relativeOffset.x * cos - relativeOffset.y * sin, relativeOffset.x * sin + relativeOffset.y * cos);
-//        fieldPosition = new Vector2d(fieldPosition.y*1, -fieldPosition.x);
-//        return fieldPosition.plus(cameraPose.position);
     }
 }
