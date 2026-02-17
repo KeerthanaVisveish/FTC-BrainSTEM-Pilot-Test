@@ -1,6 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems.limelight;
-
-import androidx.annotation.NonNull;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection;
 
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
@@ -11,6 +9,8 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.LLParent;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
