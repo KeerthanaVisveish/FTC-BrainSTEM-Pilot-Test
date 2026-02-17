@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.utils.math;
+package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
@@ -16,7 +16,7 @@ public class PathFinder {
             return null;
 
         // find the shortest path for all of the possible combinations
-        List<PathFinder.PathResult> results = new ArrayList<>(); // array of path results, parallel with combinations
+        List<PathResult> results = new ArrayList<>(); // array of path results, parallel with combinations
         for (int i=0; i<combinations.size(); i++) {
 
             Vector2d[] combo = combinations.get(i).toArray(new Vector2d[0]);
@@ -24,7 +24,7 @@ public class PathFinder {
         }
 
         // find the shortest path out of all of the different combinations
-        PathFinder.PathResult shortestResult = results.get(0);
+        PathResult shortestResult = results.get(0);
         List<Vector2d> shortestCombo = combinations.get(0);
         for (int i=1; i<results.size(); i++) {
             if (results.get(i).distance() < shortestResult.distance()) {

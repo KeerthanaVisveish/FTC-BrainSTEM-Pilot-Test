@@ -1,6 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection;
-
-import androidx.annotation.NonNull;
+package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -69,6 +67,8 @@ public class PathGeneration {
         int end = (int) sorted[sorted.length-1].x + 1;
 
         int numLanes = (int) ((end - laneWidth - start + 2) / increment);
+        if (numLanes < 0)
+            numLanes = 1;
         ArrayList<ArrayList<Vector2d>> ballsInLanes = new ArrayList<>();
 
         for (int i=0; i<numLanes; i++) {
@@ -137,7 +137,6 @@ public class PathGeneration {
         public double maxAbsY() {
             return balls[balls.length - 1].y;
         }
-        @NonNull
         @Override
         public String toString() {
             return "avgx: " + avgX + " | num balls: " + numBalls();

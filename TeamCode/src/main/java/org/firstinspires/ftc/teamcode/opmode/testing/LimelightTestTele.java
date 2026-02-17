@@ -24,9 +24,8 @@ public class LimelightTestTele extends LinearOpMode {
         FtcDashboard.getInstance().startCameraStream(limelight3A, 5);
 
         while (opModeIsActive()) {
-            if (gamepad1.a) {
+            if (gamepad1.a)
                 limelight3A.reloadPipeline();
-            }
 
             limelight3A.updatePythonInputs(pythonInputs);
             LLResult result = limelight3A.getLatestResult();
