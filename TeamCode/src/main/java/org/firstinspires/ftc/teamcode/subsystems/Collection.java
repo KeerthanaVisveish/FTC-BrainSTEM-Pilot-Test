@@ -55,7 +55,7 @@ public class Collection extends Component {
     public static class Params{
         public double ENGAGED_POS = 0.1;
         public double DISENGAGED_POS = 0.65;
-        public double DELAY_PERIOD = 0.2;
+        public double DELAY_PERIOD = 0.5;
         public double INTAKE_SLOW_SPEED = 0.3, normIntakePow = 0.95, impossibleShotIntakePow = 0.7;
         public double OUTTAKE_SPEED = -0.5;
         public double LASER_BALL_THRESHOLD = 2.5;
@@ -263,6 +263,7 @@ public class Collection extends Component {
     public boolean intakeHas3Balls() {
         return has3Balls;
     }
+
 
     public void checkForIntakeBalls(double currentTime) {
         if (isBackBallDetected() && isFrontBallDetected()) {

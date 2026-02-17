@@ -18,7 +18,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Blob;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.PathGeneration;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
@@ -60,9 +62,16 @@ public class LoadingZoneBallCollection extends OpMode {
     @Override
     public void loop() {
 
-        Vector2d[] path = robot.limelight.ballDetection.getShortestPath(3);
+        Vector2d robotPosition = robot.drive.localizer.getPose().position;
+
+        Blob[] blobs = robot.limelight.ballDetection.getBlobs();
+        Vector2d[] nodes = new Vector2d[blobs.length];
+        for (int i=0; i<blobs.length; i++)
+            nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
+
+        Vector2d[] path = PathGeneration.getShortestPath(robotPosition, nodes, 3);
         boolean successful = path != null && path.length > 0;
-        DrivePath autoCollectPath = successful ? robot.limelight.ballDetection.generateDrivePath(path, false) : null;
+        DrivePath autoCollectPath = successful ? PathGeneration.generateComplexDrivePath(robotPosition, robot.drive, path, false) : null;
 
         if (autoCollectAction == null) {
             if (gamepad1.left_trigger > 0.2)

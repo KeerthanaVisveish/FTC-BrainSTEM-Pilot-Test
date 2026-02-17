@@ -7,7 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class PathFinder {
-    public static Vector2d[] findShortestPath(Vector2d startPosition, Vector2d[] nodes, int maxNodesInPath) {
+    // extra distance of path = total change in angle * changeInAngleDegCost
+    public static Vector2d[] findShortestPath(Vector2d startPosition, Vector2d[] nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
         // get all of the possible combinations of paths
         int combinationLength = Math.min(maxNodesInPath, nodes.length);
         List<List<Vector2d>> combinations = getCombinations(new ArrayList<>(Arrays.asList(nodes)), combinationLength);
@@ -19,7 +20,7 @@ public class PathFinder {
         for (int i=0; i<combinations.size(); i++) {
 
             Vector2d[] combo = combinations.get(i).toArray(new Vector2d[0]);
-            results.add(PathFinder.findShortestPath(startPosition, combo));
+            results.add(PathFinder.findShortestPath(startPosition, combo, extraDistPerChangeInAngleDeg));
         }
 
         // find the shortest path out of all of the different combinations
@@ -70,33 +71,36 @@ public class PathFinder {
     }
 
     // finding the shortest path given a list of nodes of length N
-    public static PathResult findShortestPath(Vector2d start, Vector2d[] nodes) {
+    public static PathResult findShortestPath(Vector2d start, Vector2d[] nodes, double extraDistPerChangeInAngleDeg) {
         int n = nodes.length;
         int[] indices = new int[n];
         for (int i = 0; i < n; i++) {
             indices[i] = i;
         }
 
-        PathResult best = new PathResult(Double.POSITIVE_INFINITY, null);
+        PathResult best = new PathResult(Double.POSITIVE_INFINITY, 0, null);
 
-        permute(indices, 0, start, nodes, best);
+        permute(indices, 0, start, nodes, best, extraDistPerChangeInAngleDeg);
 
         return best;
     }
 
-    private static void permute(int[] arr, int startIdx, Vector2d start, Vector2d[] nodes, PathResult best) {
+    private static void permute(int[] arr, int startIdx, Vector2d start, Vector2d[] nodes, PathResult best, double extraDistPerChangeInAngleDeg) {
         if (startIdx == arr.length) {
             double dist = pathLengthFromStart(start, arr, nodes);
-            if (dist < best.bestDistance) {
-                best.bestDistance = dist;
-                best.bestPath = arr.clone();
+            double totalAngleChange = totalAngleChangeRadFromStart(start, arr, nodes);
+            double changeInAngleCost = extraDistPerChangeInAngleDeg * Math.toDegrees(totalAngleChange);
+            dist += changeInAngleCost;
+            if (dist < best.distance) {
+                best.distance = dist;
+                best.path = arr.clone();
             }
             return;
         }
 
         for (int i = startIdx; i < arr.length; i++) {
             swap(arr, startIdx, i);
-            permute(arr, startIdx + 1, start, nodes, best);
+            permute(arr, startIdx + 1, start, nodes, best, extraDistPerChangeInAngleDeg);
             swap(arr, startIdx, i);
         }
     }
@@ -117,6 +121,24 @@ public class PathFinder {
 
         return sum;
     }
+    public static double totalAngleChangeRadFromStart(Vector2d start, int[] order, Vector2d[] nodes) {
+        double totalAngleChangeRad = 0;
+
+        double prevAngle = 0;
+        for (int i=0; i<order.length; i++) {
+            Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start;
+            Vector2d n2 = nodes[order[i]];
+            double angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
+            if (i > 0) {
+                double changeInAngle = angle - prevAngle;
+                if (Math.abs(changeInAngle) > Math.PI)
+                    changeInAngle = Math.signum(changeInAngle) * Math.PI * 2 - Math.abs(changeInAngle);
+                totalAngleChangeRad += Math.abs(changeInAngle);
+            }
+            prevAngle = angle;
+        }
+        return totalAngleChangeRad;
+    }
 
     private static void swap(int[] arr, int i, int j) {
         int tmp = arr[i];
@@ -124,18 +146,23 @@ public class PathFinder {
         arr[j] = tmp;
     }
     public static class PathResult {
-        double bestDistance;
-        int[] bestPath;
+        double distance;
+        double totalAngleChange;
+        int[] path;
 
-        PathResult(double d, int[] p) {
-            bestDistance = d;
-            bestPath = p;
+        PathResult(double distance, double totalAngleChange, int[] path) {
+            this.distance = distance;
+            this.totalAngleChange = totalAngleChange;
+            this.path = path;
         }
         public double distance() {
-            return bestDistance;
+            return distance;
+        }
+        public double totalAngleChange() {
+            return totalAngleChange;
         }
         public int[] path() {
-            return bestPath;
+            return path;
         }
     }
 }
