@@ -64,16 +64,14 @@ public class LoadingZoneBallCollection extends OpMode {
     @Override
     public void loop() {
 
-        Vector2d robotPosition = robot.drive.localizer.getPose().position;
+        Pose2d robotPose = robot.drive.localizer.getPose();
 
         Blob[] blobs = robot.limelight.ballDetection.getBlobs();
         Vector2d[] nodes = new Vector2d[blobs.length];
         for (int i=0; i<blobs.length; i++)
             nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
 
-        Vector2d[] path = PathGeneration.getShortestPath(robotPosition, nodes, 3);
-        boolean successful = path != null && path.length > 0;
-        ArrayList<Pose2d> autoCollectPathPoses = successful ? PathGeneration.generateComplexPathPoses(BrainSTEMRobot.alliance == Alliance.RED, robotPosition, path) : null;
+        ArrayList<Pose2d> autoCollectPathPoses = PathGeneration.getSimplifiedAutoCollectPathPoses(BrainSTEMRobot.alliance == Alliance.RED, robotPose, nodes,100, 3);
         DrivePath autoCollectDrive = null;
         if (autoCollectPathPoses != null) {
             autoCollectDrive = new DrivePath(robot.drive);
@@ -124,7 +122,6 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.update(false);
 
         telemetry.addData("time running", getRuntime());
-        telemetry.addData("path", Arrays.toString(path));
         telemetry.addData("drive path", autoCollectPathPoses);
         robot.limelight.printInfo();
         telemetry.update();
@@ -134,13 +131,13 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.addRobotInfo(fieldOverlay);
         if (autoCollectAction == null) {
             if (autoCollectPathPoses != null) {
-                for (Vector2d pos : path) {
-                    fieldOverlay.setStroke("purple");
-                    fieldOverlay.strokeCircle(pos.x, pos.y, 2.5);
+                for (Vector2d pos : nodes) {
+                    fieldOverlay.setFill("purple");
+                    fieldOverlay.fillCircle(pos.x, pos.y, 2.5);
                 }
                 for (int i = 0; i < autoCollectPathPoses.size() - 1; i++) {
                     Vector2d start = autoCollectPathPoses.get(i).position;
-                    Vector2d end = autoCollectPathPoses.get(i).position;
+                    Vector2d end = autoCollectPathPoses.get(i + 1).position;
                     fieldOverlay.setStroke("black");
                     fieldOverlay.strokeLine(start.x, start.y, end.x, end.y);
                     fieldOverlay.setStroke(i == 0 ? "black" : "gray");
