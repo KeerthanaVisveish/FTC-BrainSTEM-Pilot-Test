@@ -314,7 +314,7 @@ public class ShootingSystem {
     private void updateTurretProperties(Pose2d robotPose) {
         turretMotor.updateInfo();
 
-        turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.currentRelativeAngleRad);
+        turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         futureTurretPose = new Pose2d(ShootingMath.getTurretPose(futureRobotPose, 0).position, Math.atan2(goalPosIn.z, goalPosIn.x));
 
         double approxBallExitAng = distState == Dist.FAR ? generalParams.approxFarExitAngRad : generalParams.approxNearExitAngRad;

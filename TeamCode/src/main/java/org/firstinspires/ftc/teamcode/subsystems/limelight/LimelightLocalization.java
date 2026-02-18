@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.subsystems.limelight;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -17,7 +16,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 
@@ -304,7 +302,7 @@ public class LimelightLocalization extends LLParent {
     }
     private Pose2d calculateRobotPose(Pose2d cameraPose) {
         Pose2d turretPose = Limelight.getTurretPose(cameraPose);
-        return ShootingMath.getRobotPose(turretPose, robot.turret.currentRelativeAngleRad);
+        return ShootingMath.getRobotPose(turretPose, robot.turret.curRelAngleRad);
     }
     private boolean canUpdateDrivetrainReliably() {
         OdoInfo odoVel = robot.drive.pinpoint().getMostRecentVelocity();
@@ -331,7 +329,7 @@ public class LimelightLocalization extends LLParent {
         Pose2d robotPoseToDraw = robotPose == null ? new Pose2d(0, 0, 0) : new Pose2d(robotPose.position, robotPose.heading);
         Drawing.drawRobot(fieldOverlay, robotPoseToDraw);
 
-        Pose2d turretPose = ShootingMath.getTurretPose(robotPoseToDraw, robot.turret.currentRelativeAngleRad);
+        Pose2d turretPose = ShootingMath.getTurretPose(robotPoseToDraw, robot.turret.curRelAngleRad);
         Drawing.drawRobotSimple(fieldOverlay, turretPose, 3);
 
         Pose2d limelightPose = Limelight.getLimelightPose(turretPose);
