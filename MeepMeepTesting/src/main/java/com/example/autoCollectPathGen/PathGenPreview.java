@@ -15,17 +15,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
+/*
+controls
+mouse: create points/drag points around
+backspace: delete selected point
+delete: delete all points
+Q: toggle debug info
+C: show complex path
+S: show simplified path
+1: draw previous path node's robot
+2: draw next path node's robot
+ */
 public class PathGenPreview extends JPanel
         implements MouseListener, MouseMotionListener, KeyListener {
     static final Path SAVE_FILE = Paths.get("MeepMeepTesting", "data", "pathGenSaveInfo.txt");
 
-    static final int DRAW_SCALE = 4;
-    static final double ROBOT_RADIUS = 8;
-    static final double BALL_RADIUS = 2;
-    static final double PATH_NODE_RADIUS = 2;
-    static final double SELECTED_STROKE = 0.5;
+    static Vector2d bottomLeft = new Vector2d(0, 0);
+    static double windowSize = 72;
+    static double drawScale = 4;
+    static final double robotHitboxRadius = 8;
+    static final double robotWidth = 13.5, robotLength = 16;
+    static final double ballRadius = 2;
+    static final double pathNodeRadius = 2;
+    static final double strokeSize = 0.5;
     private final List<Pose2d> balls = new ArrayList<>();
     private Pose2d robot = new Pose2d(0, 0, 0);
     private int selectedPoseIndex = -2;
@@ -37,9 +53,13 @@ public class PathGenPreview extends JPanel
     }
     private CreateMode createMode = CreateMode.BALL;
     private boolean drawSimplifiedPath = true;
+    private int drawRobotNodeIndex = 0;
+    private boolean drawInfo = false;
 
     public PathGenPreview(String backgroundImagePath) {
-        setPreferredSize(new Dimension(144 * DRAW_SCALE, 144 * DRAW_SCALE));
+        loadFromFile();
+
+        setPreferredSize(new Dimension(fieldToDrawSize(windowSize), fieldToDrawSize(windowSize)));
         setBackground(Color.WHITE);
 
         setFocusable(true);
@@ -51,13 +71,11 @@ public class PathGenPreview extends JPanel
 
         if (backgroundImagePath != null) {
             try {
-                background = ImageIO.read(PathGenPreview.class.getResource(backgroundImagePath));
+                background = ImageIO.read(Objects.requireNonNull(PathGenPreview.class.getResource(backgroundImagePath)));
             } catch (IOException e) {
                 System.err.println("Failed to load image: " + backgroundImagePath);
             }
         }
-
-        loadFromFile();
     }
     private void loadFromFile() {
         try {
@@ -79,16 +97,27 @@ public class PathGenPreview extends JPanel
         try (BufferedReader br = Files.newBufferedReader(SAVE_FILE)) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] parts = line.trim().split("\\s+");
-                if (parts.length < 4) continue;
+                String[] parts = line.trim().split(" ");
+                System.out.println(Arrays.toString(parts));
 
-                double x = Double.parseDouble(parts[1]);
-                double y = Double.parseDouble(parts[2]);
-                double h = Double.parseDouble(parts[3]);
-
-                if (parts[0].equals("ROBOT")) {
+                if (parts[0].equals("BOTTOM_LEFT")) {
+                    double x = Double.parseDouble(parts[1]);
+                    double y = Double.parseDouble(parts[2]);
+                    bottomLeft = new Vector2d(x, y);
+                }
+                else if (parts[0].equals("DRAW_SCALE"))
+                    drawScale = Double.parseDouble(parts[1]);
+                else if (parts[0].equals("WINDOW_SIZE"))
+                    windowSize = Double.parseDouble(parts[1]);
+                else if (parts[0].equals("ROBOT")) {
+                    double x = Double.parseDouble(parts[1]);
+                    double y = Double.parseDouble(parts[2]);
+                    double h = Double.parseDouble(parts[3]);
                     robot = new Pose2d(x, y, h);
                 } else if (parts[0].equals("BALL")) {
+                    double x = Double.parseDouble(parts[1]);
+                    double y = Double.parseDouble(parts[2]);
+                    double h = Double.parseDouble(parts[3]);
                     balls.add(new Pose2d(x, y, h));
                 }
             }
@@ -100,12 +129,12 @@ public class PathGenPreview extends JPanel
 
     private void saveToFile() {
         try (BufferedWriter bw = Files.newBufferedWriter(SAVE_FILE)) {
-            bw.write(String.format("ROBOT %.6f %.6f %.6f%n",
-                    robot.position.x, robot.position.y, robot.heading.toDouble()));
-
+            bw.write(String.format("BOTTOM_LEFT %.6f %.6f%n", bottomLeft.x, bottomLeft.y));
+            bw.write(String.format("DRAW_SCALE %.6f%n", drawScale));
+            bw.write(String.format("WINDOW_SIZE %.6f%n", windowSize));
+            bw.write(String.format("ROBOT %.6f %.6f %.6f%n", robot.position.x, robot.position.y, robot.heading.toDouble()));
             for (Pose2d ball : balls) {
-                bw.write(String.format("BALL %.6f %.6f %.6f%n",
-                        ball.position.x, ball.position.y, ball.heading.toDouble()));
+                bw.write(String.format("BALL %.6f %.6f %.6f%n", ball.position.x, ball.position.y, ball.heading.toDouble()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -117,30 +146,37 @@ public class PathGenPreview extends JPanel
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-
-        if (background != null)
-            g2.drawImage(background, 0, 0, getWidth(), getHeight(), null);
+        if (background != null) {
+            double ratio = background.getWidth() / 144.;
+            int x = (int) ((bottomLeft.x + 72.) * ratio);
+            int y = (int) ((bottomLeft.y + 72.) * ratio);
+            int w = (int) (windowSize * ratio);
+            int h = (int) (windowSize * ratio);
+            g2.drawImage(background, 0, 0, getWidth(), getWidth(), x, y, x + w, y + h, null);
+        }
 
         drawRobotAndBalls(g2);
         drawGeneratedPath(g2);
         drawBallsUsed(g2);
 
-        g2.setColor(Color.BLACK);
-        g2.fillRect(0, 0, 120, 400);
-        g2.setColor(Color.WHITE);
-        g2.drawString("Mode: " + createMode, 10, 15);
-        g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 35);
-        g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 55);
-        for (int i=0; i<balls.size(); i++) {
-            g2.drawString("Ball: " + MathUtils.formatPose(balls.get(i)), 10, 75 + i * 20);
+        if (drawInfo) {
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, 120, 400);
+            g2.setColor(Color.WHITE);
+            g2.drawString("Mode: " + createMode, 10, 15);
+            g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 35);
+            g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 55);
+            for (int i = 0; i < balls.size(); i++) {
+                g2.drawString("Ball: " + MathUtils.formatPose(balls.get(i)), 10, 75 + i * 20);
+            }
         }
     }
 
     private void drawRobotAndBalls(Graphics2D g2) {
         g2.setColor(Color.GRAY);
-        int strokeSize = (int) (DRAW_SCALE * SELECTED_STROKE);
+        int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
-        drawPose(g2, robot, ROBOT_RADIUS);
+        drawRobot(g2, robot);
 
         boolean selectedABall = selectedPoseIndex >= 0;
         boolean selectedRobot = selectedPoseIndex == -1;
@@ -152,42 +188,48 @@ public class PathGenPreview extends JPanel
 
         for (int i=0; i<balls.size(); i++) {
             g2.setColor(Color.MAGENTA); // selected
-            drawPosition(g2, balls.get(i).position, BALL_RADIUS, true);
+            drawPosition(g2, balls.get(i).position, ballRadius, true);
         }
 
         g2.setColor(Color.WHITE);
-        if (selectedABall)
-            drawPosition(g2, selectedPose.position, BALL_RADIUS + SELECTED_STROKE, false);
-        else if (selectedRobot) {
-            drawPosition(g2, selectedPose.position, ROBOT_RADIUS + SELECTED_STROKE, false);
-        }
+        if (selectedABall || selectedRobot)
+            drawPosition(g2, selectedPose.position, ballRadius + PathGenPreview.strokeSize, false);
     }
     private void drawGeneratedPath(Graphics2D g2) {
         Vector2d[] ballPositions = new Vector2d[balls.size()];
         for (int i=0; i<balls.size(); i++)
             ballPositions[i] = balls.get(i).position;
-        ArrayList<Pose2d> poses = PathGeneration.getAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
-        if (poses == null)
+
+        ArrayList<Pose2d> posesToDraw;
+        if (drawSimplifiedPath)
+            posesToDraw = PathGeneration.getSimplifiedAutoCollectPathPoses(true, 13, 16, robot, ballPositions, 100, 3);
+        else
+            posesToDraw = PathGeneration.getAutoCollectPathPoses(true, 13, 16, robot, ballPositions, 100, 3);
+        if (posesToDraw == null)
             return;
 
-        ArrayList<Pose2d> simplifiedPathPoses = PathGeneration.simplifyPathPoses(robot, poses);
-
-        ArrayList<Pose2d> posesToDraw = new ArrayList<>(drawSimplifiedPath ? simplifiedPathPoses : poses);
         posesToDraw.add(0, robot);
         for (int i=0; i<posesToDraw.size(); i++) {
             Pose2d pose = posesToDraw.get(i);
             Pose2d next = i == posesToDraw.size() - 1 ? null : posesToDraw.get(i + 1);
 
             if (next != null) {
-                Point p1 = fieldToDraw(pose.position);
-                Point p2 = fieldToDraw(next.position);
+                Point p1 = fieldToDrawPosition(pose.position);
+                Point p2 = fieldToDrawPosition(next.position);
                 g2.setColor(Color.BLACK);
                 g2.drawLine(p1.x, p1.y, p2.x, p2.y);
             }
 
             g2.setColor(Color.GRAY);
-            drawPose(g2, pose, PATH_NODE_RADIUS);
+            drawPose(g2, pose, pathNodeRadius);
         }
+
+        if (drawRobotNodeIndex < 0)
+            drawRobotNodeIndex = 0;
+        if (drawRobotNodeIndex >= posesToDraw.size())
+            drawRobotNodeIndex = posesToDraw.size() - 1;
+        if (drawRobotNodeIndex > 0)
+            drawRobot(g2, posesToDraw.get(drawRobotNodeIndex));
     }
     private void drawBallsUsed(Graphics2D g2) {
         if (PathGeneration.ballsUsed != null) {
@@ -196,27 +238,65 @@ public class PathGenPreview extends JPanel
                 drawPosition(g2, ball, 1, true);
         }
     }
-    private Point fieldToDraw(Vector2d field) {
-        return new Point((int) (field.x + 72.) * DRAW_SCALE, (int) (-field.y + 72.) * DRAW_SCALE);
+    private Point fieldToDrawPosition(Vector2d field) {
+        return new Point((int) ((field.x - bottomLeft.x) * drawScale), (int) ((-field.y - bottomLeft.y) * drawScale));
     }
-    private Vector2d drawToField(Point point) {
-        return new Vector2d(1.*point.x / DRAW_SCALE - 72, -1.*point.y / DRAW_SCALE + 72);
+    private Vector2d drawToFieldPosition(Point point) {
+        return new Vector2d(1.*point.x / drawScale + bottomLeft.x, -1.*point.y / drawScale - bottomLeft.y);
+    }
+    /*
+    private Point fieldToDrawPosition(Vector2d field) {
+        return new Point((int) ((field.x + 72.) * drawScale), (int) ((-field.y + 72.) * drawScale));
+    }
+    private Vector2d drawToFieldPosition(Point point) {
+        return new Vector2d(1.*point.x / drawScale - 72, -1.*point.y / drawScale + 72);
+    }
+     */
+    private int fieldToDrawSize(double size) {
+        return (int) (size * drawScale);
+    }
+    private double drawToFieldSize(int size) {
+        return 1.*size / drawScale;
     }
     private void drawPosition(Graphics2D g2, Vector2d position, double radiusField, boolean filled) {
-        Point draw = fieldToDraw(position);
-        int radius = (int) (radiusField * DRAW_SCALE);
+        Point draw = fieldToDrawPosition(position);
+        int radius = fieldToDrawSize(radiusField);
         if (filled)
             g2.fillOval(draw.x - radius, draw.y - radius, radius * 2, radius * 2);
         else
             g2.drawOval(draw.x - radius, draw.y - radius, radius * 2, radius * 2);
     }
     private void drawPose(Graphics2D g2, Pose2d pose, double radiusField) {
-        Point draw = fieldToDraw(pose.position);
-        int radius = (int) (radiusField * DRAW_SCALE);
+        Point draw = fieldToDrawPosition(pose.position);
+        int radius = fieldToDrawSize(radiusField);
         g2.drawOval(draw.x - radius, draw.y - radius, radius * 2, radius * 2);
-        int dx = (int) (pose.heading.component1() * radiusField * DRAW_SCALE);
-        int dy = -(int) (pose.heading.component2() * radiusField * DRAW_SCALE);
+        int dx = fieldToDrawSize(pose.heading.component1() * radiusField);
+        int dy = -fieldToDrawSize(pose.heading.component2() * radiusField);
         g2.drawLine(draw.x, draw.y, draw.x + dx, draw.y + dy);
+    }
+    private void drawRobot(Graphics2D g2, Pose2d pose) {
+        Vector2d position = pose.position;
+        double halfW = robotWidth * 0.5;
+        double halfL = robotLength * 0.5;
+
+        Vector2d[] corners = new Vector2d[] {
+                new Vector2d(halfL, -halfW), // fr
+                new Vector2d(halfL, halfW), // fl
+                new Vector2d(-halfL, halfW), // bl
+                new Vector2d(-halfL, -halfW), // br
+        };
+
+        for (int j=0; j<corners.length; j++)
+            corners[j] = GeometryUtils.robotVectorToFieldVector(corners[j], pose.heading.toDouble()).plus(position);
+
+        for (int i=0; i<corners.length; i++) {
+            Point start = fieldToDrawPosition(corners[i]);
+            Point end = fieldToDrawPosition(corners[(i + 1) % 4]);
+            g2.drawLine(start.x, start.y, end.x, end.y);
+        }
+        Point center = fieldToDrawPosition(position);
+        Point front = fieldToDrawPosition(corners[0].plus(corners[1]).div(2));
+        g2.drawLine(center.x, center.y, front.x, front.y);
     }
 
     @Override
@@ -227,8 +307,8 @@ public class PathGenPreview extends JPanel
         selectedPoseIndex = -2;
         for (int i=0; i<balls.size(); i++) {
             Pose2d pose = balls.get(i);
-            Point point = fieldToDraw(pose.position);
-            int radius = (int) (DRAW_SCALE * BALL_RADIUS);
+            Point point = fieldToDrawPosition(pose.position);
+            int radius = fieldToDrawSize(ballRadius);
 
             if (mouse.distance(point) <= radius) {
                 createMode = CreateMode.BALL;
@@ -238,12 +318,12 @@ public class PathGenPreview extends JPanel
             }
         }
 
-        int radius = (int) (ROBOT_RADIUS * DRAW_SCALE);
-        if (fieldToDraw(robot.position).distance(mouse) <= radius) {
+        int radius = fieldToDrawSize(robotHitboxRadius);
+        if (fieldToDrawPosition(robot.position).distance(mouse) <= radius) {
             selectedPoseIndex = -1; // select robot
         } else {
             // Add new circle if in BALL mode
-            Vector2d creationPos = drawToField(mouse.getLocation());
+            Vector2d creationPos = drawToFieldPosition(mouse.getLocation());
             Pose2d creationPose = new Pose2d(creationPos.x, creationPos.y, 0);
             if (createMode == CreateMode.BALL) {
                 balls.add(creationPose);
@@ -258,12 +338,11 @@ public class PathGenPreview extends JPanel
         repaint();
 
     }
-
     @Override
     public void mouseDragged(MouseEvent e) {
         if (selectedPoseIndex == -2) return;
 
-        Vector2d field = drawToField(new Point(e.getX(), e.getY()));
+        Vector2d field = drawToFieldPosition(new Point(e.getX(), e.getY()));
 
         if (selectedPoseIndex >= 0) {
             Pose2d old = balls.get(selectedPoseIndex);
@@ -276,8 +355,6 @@ public class PathGenPreview extends JPanel
         saveToFile();
         repaint();
     }
-
-
     @Override
     public void mouseReleased(MouseEvent e){}
 
@@ -287,43 +364,82 @@ public class PathGenPreview extends JPanel
 
         boolean shouldRepaint = false;
         int keyCode = e.getKeyCode();
-        if (keyCode == KeyEvent.VK_DELETE) {
-            balls.clear();
-            selectedPoseIndex = -2;
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_BACK_SPACE) {
-            createMode = CreateMode.BALL;
+        switch (keyCode) {
+            case KeyEvent.VK_DELETE:
+                balls.clear();
+                selectedPoseIndex = -2;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_BACK_SPACE:
+                createMode = CreateMode.BALL;
 
-            balls.remove(selectedPoseIndex);
-            selectedPoseIndex = -2;
-            shouldRepaint = true;
+                balls.remove(selectedPoseIndex);
+                selectedPoseIndex = -2;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_L:
+                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(1));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_J:
+                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() + Math.toRadians(1));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_P:
+                drawSimplifiedPath = !drawSimplifiedPath;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_MINUS:
+                drawRobotNodeIndex--;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_PLUS:
+                drawRobotNodeIndex++;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_I:
+                drawInfo = !drawInfo;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_W:
+                bottomLeft = bottomLeft.plus(new Vector2d(0, -2));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_A:
+                bottomLeft = bottomLeft.plus(new Vector2d(-2, 0));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_S:
+                bottomLeft = bottomLeft.plus(new Vector2d(0, 2));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_D:
+                bottomLeft = bottomLeft.plus(new Vector2d(2, 0));
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_E:
+                windowSize -= 4;
+                windowSize = Math.max(24, Math.min(144, windowSize));
+                bottomLeft = bottomLeft.plus(new Vector2d(2, 2));
+                drawScale = getWidth() / windowSize;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_Q:
+                windowSize += 4;
+                windowSize = Math.max(24, Math.min(144, windowSize));
+                bottomLeft = bottomLeft.plus(new Vector2d(-2, -2));
+                drawScale = getWidth() / windowSize;
+                shouldRepaint = true;
+                break;
         }
-        else if (keyCode == KeyEvent.VK_R) {
-            createMode = CreateMode.ROBOT;
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_B) {
-            createMode = CreateMode.BALL;
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_D) {
-            robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(1));
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_A) {
-            robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() + Math.toRadians(1));
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_S) {
-            drawSimplifiedPath = true;
-            shouldRepaint = true;
-        }
-        else if (keyCode == KeyEvent.VK_C) {
-            drawSimplifiedPath = false;
-            shouldRepaint = true;
-        }
-
+        if (bottomLeft.x < -72)
+            bottomLeft = new Vector2d(-72, bottomLeft.y);
+        if (bottomLeft.y < -72)
+            bottomLeft = new Vector2d(bottomLeft.x, -72);
+        if (bottomLeft.x + windowSize > 72)
+            bottomLeft = new Vector2d(72 - windowSize, bottomLeft.y);
+        if (bottomLeft.y + windowSize > 72)
+            bottomLeft = new Vector2d(bottomLeft.x,  72 - windowSize);
 
         if (shouldRepaint) {
             saveToFile();
@@ -348,6 +464,7 @@ public class PathGenPreview extends JPanel
             JFrame frame = new JFrame("Circle Editor");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new PathGenPreview("/com/example/autoCollectPathGen/img.png"));
+            frame.setResizable(false);
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);

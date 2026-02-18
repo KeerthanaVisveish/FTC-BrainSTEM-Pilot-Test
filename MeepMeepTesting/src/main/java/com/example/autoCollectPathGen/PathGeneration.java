@@ -11,22 +11,23 @@ public class PathGeneration {
     public static class AutoCollectParams {
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 8 extra inches
         public double laneIncrement = 1, laneWidth = 6;
-        public double groupAsClusterDist = 6.5;
+        public double groupAsClusterDist = 20;
         public double groupAsClusterAngle = 45;
         public double constrainClusterApproachAngleThreshold = 50;
         public double maxPathSimplificationEpsilon = 1; // max dist from original path to simplified path
-        public double maxHeadingChangeSimplification = 4;
-        public double ignoreHeadingSimplificationDistance = 24;
+        public double maxHeadingChangeSimplification = 5;
+
+        public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
 
         public double collectPoseOffsetDistance = 8;
         public double normalPreCollectOffset = 4;
 
         public double cornerBallDistance = 10;
-        public double cornerBallPreCollectOffset = 8;
+        public double cornerBallPreCollectOffset = 6;
 
         public double classifierWallDistance = 7;
-        public double classifierWallMaxApproachAngleDiff = 45;
-        public double classifierWallPreCollectOffset = 5;
+        public double classifierWallMaxApproachAngleDiff = 30;
+        public double classifierWallPreCollectOffset = 6;
 
         public double backWallDistance = 7;
         public double backWallCollectAngle = 45;
@@ -38,7 +39,13 @@ public class PathGeneration {
 
     public static Vector2d[] ballsUsed = null; // used to draw balls on FTC dashboard
 
-    public static ArrayList<Pose2d> getAutoCollectPathPoses(boolean onRedAlliance, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
+    public static ArrayList<Pose2d> getSimplifiedAutoCollectPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
+        ArrayList<Pose2d> pathPoses = getAutoCollectPathPoses(onRedAlliance, robotWidth, robotLength, startPose, points, simplePathingThreshold, maxPointsInPath);
+        if (pathPoses == null)
+            return null;
+        return simplifyPathPoses(startPose, pathPoses);
+    }
+    public static ArrayList<Pose2d> getAutoCollectPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
         if (points.length == 0) {
             ballsUsed = null;
             return null;
@@ -63,7 +70,7 @@ public class PathGeneration {
         // more complex pathfinding approach
         // when there are not enough balls for sliding window, actually find ideal combo of balls and drive path
         ArrayList<Vector2d> path = getShortestPath(startPose, points, maxPointsInPath);
-        return generateComplexPathPoses(onRedAlliance, startPosition, path);
+        return generateComplexPathPoses(onRedAlliance, robotWidth, robotLength, startPosition, path);
     }
 
     // use a sliding window of width laneWidth moving at a speed of increment
@@ -165,7 +172,7 @@ public class PathGeneration {
         return new ArrayList<>(Arrays.asList(preCollect1, collect1, collect2));
     }
 
-    public static ArrayList<Vector2d> getShortestPath(Pose2d startPose, Vector2d[] nodes, int maxBlobsInPath) {
+    private static ArrayList<Vector2d> getShortestPath(Pose2d startPose, Vector2d[] nodes, int maxBlobsInPath) {
         return PathFinder.findShortestPath(startPose, nodes, maxBlobsInPath, params.changeInAngleDegCost);
     }
     private enum PointType {
@@ -174,7 +181,7 @@ public class PathGeneration {
         CLASSIFIER_WALL,
         BACK_WALL
     }
-    public static ArrayList<Pose2d> generateComplexPathPoses(boolean onRedAlliance, Vector2d robotPos, ArrayList<Vector2d> path) {
+    private static ArrayList<Pose2d> generateComplexPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Vector2d robotPos, ArrayList<Vector2d> path) {
         ArrayList<Pose2d> pathPoses = new ArrayList<>();
         Vector2d cornerPosition = new Vector2d(72, onRedAlliance ? 72 : -72);
         ArrayList<Vector2d> clusteredPositions = new ArrayList<>();
@@ -222,6 +229,7 @@ public class PathGeneration {
                 double[] minMaxDistance = getMinMaxClusterDistancesFromCenter(curBall, defaultApproachAngle, clusteredPositions);
                 preCollectExtraOffset = Math.abs(minMaxDistance[0]);
                 collectExtraOffset = Math.abs(minMaxDistance[1]);
+//                System.out.println(i + ": " + preCollectExtraOffset + " | " + collectExtraOffset);
 
                 clusteredPositions.clear();
                 clusteredCollectAngleInfo.clear();
@@ -239,10 +247,20 @@ public class PathGeneration {
             double preCollectToCollectAngle = collectInfo[1];
             double collectAngle = collectInfo[2];
 
-            Pose2d collectPose = getCollectPose(curBall, collectAngle, collectExtraOffset);
+            Pose2d collectPose = getCollectPose(curBall, collectAngle, -collectExtraOffset);
             Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset);
-            pathPoses.add(preCollectPose);
-            pathPoses.add(collectPose);
+
+            Pose2d wallSafeCollectPose = getWallSafePose(robotWidth, robotLength, collectPose);
+            Pose2d wallSafePreCollectPose = getWallSafePose(robotWidth, robotLength, collectPose);
+            if (!wallSafePreCollectPose.equals(preCollectPose)) {
+                Vector2d vec = curBall.minus(wallSafePreCollectPose.position);
+                double actualCollectAngle = Math.atan2(vec.y, vec.x);
+                wallSafeCollectPose = getCollectPose(curBall, actualCollectAngle, -collectExtraOffset);
+                wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, actualCollectAngle, preCollectOffset + preCollectExtraOffset);
+            }
+
+            pathPoses.add(wallSafePreCollectPose);
+            pathPoses.add(wallSafeCollectPose);
         }
 
         ballsUsed = path.toArray(new Vector2d[0]);
@@ -350,7 +368,7 @@ public class PathGeneration {
         }
         return new double[] { preCollectOffset, preCollectToCollectAngle, collectAngle };
     }
-    static ArrayList<Pose2d> simplifyPathPoses(Pose2d startPose, ArrayList<Pose2d> pathPoses) {
+    private static ArrayList<Pose2d> simplifyPathPoses(Pose2d startPose, ArrayList<Pose2d> pathPoses) {
         ArrayList<Pose2d> simplified = new ArrayList<>();
 //        System.out.println("path poses");
 //        for (Pose2d pose : pathPoses)
@@ -367,11 +385,14 @@ public class PathGeneration {
             Pose2d next = getCollectorPose(pathPoses.get(i + 1));
 
             Vector2d prevToCur = cur.position.minus(prev.position);
-            double distFromPrevToCur = Math.hypot(prevToCur.x, prevToCur.y);
+//            double distFromPrevToCur = Math.hypot(prevToCur.x, prevToCur.y);
 
-            double angleDiff = MathUtils.findAngleRadDiff(cur.heading.toDouble(), prev.heading.toDouble());
-            if (Math.abs(angleDiff) > Math.toRadians(params.maxHeadingChangeSimplification)
-                    && distFromPrevToCur <= params.ignoreHeadingSimplificationDistance) {
+            double angleDiff1 = MathUtils.findAngleRadDiff(cur.heading.toDouble(), prev.heading.toDouble());
+            double angleDiff2 = MathUtils.findAngleRadDiff(next.heading.toDouble(), cur.heading.toDouble());
+//            System.out.println(i + ": " + Math.toDegrees(cur.heading.toDouble()));
+//            System.out.println(i + ": " + Math.toDegrees(angleDiff1) + " | " + Math.toDegrees(angleDiff2));
+            double angleSimplification = Math.toRadians(params.maxHeadingChangeSimplification);
+            if (Math.abs(angleDiff1) > angleSimplification || Math.abs(angleDiff2) > angleSimplification) {
                 simplified.add(pathPoses.get(i));
                 continue;
             }
@@ -389,6 +410,47 @@ public class PathGeneration {
         }
         simplified.add(pathPoses.get(pathPoses.size() - 1));
         return simplified;
+    }
+    private static Pose2d getWallSafePose(double robotWidth, double robotLength, Pose2d pose) {
+        Vector2d position = pose.position;
+        double halfW = robotWidth * 0.5;
+        double halfL = robotLength * 0.5;
+
+        Vector2d[] positionsToCheck = new Vector2d[] {
+                new Vector2d(halfL, -halfW),
+                new Vector2d(halfL, halfW),
+                new Vector2d(-halfL, -halfW),
+                new Vector2d(halfL, halfW)
+        };
+        double d = Math.hypot(halfW, halfL) - params.wallPoseBuffer;
+        if (position.x > -72 + d && position.x < 72 - d && position.y > -72 + d && position.y < 72 - d)
+            return pose;
+
+        Vector2d[] requiredOffsets = new Vector2d[positionsToCheck.length];
+        for (int j=0; j<positionsToCheck.length; j++) {
+            Vector2d pos = GeometryUtils.robotVectorToFieldVector(positionsToCheck[j], pose.heading.toDouble()).plus(position);
+            double wallY = Math.signum(pos.y) * (72 + params.wallPoseBuffer);
+
+            double dx = (72 + params.wallPoseBuffer) - pos.x;
+            double dy = wallY - pos.y;
+            dx = Math.min(0, dx);
+            if (wallY > 0)
+                dy = Math.min(0, dy);
+            else
+                dy = Math.max(0, dy);
+            requiredOffsets[j] = new Vector2d(dx, dy);
+        }
+        double requiredDx = requiredOffsets[0].x;
+        double requiredDy = requiredOffsets[0].y;
+        for (Vector2d offset : requiredOffsets) {
+            requiredDx = Math.min(offset.x, requiredDx);
+            if (Math.abs(offset.y) > Math.abs(requiredDy))
+                requiredDy = offset.y;
+        }
+//            System.out.println(i + ": " + requiredDx + ", " + requiredDy);
+
+        return new Pose2d(position.x + requiredDx, position.y + requiredDy, pose.heading.toDouble());
+
     }
 
     private static Pose2d getCollectPose(Vector2d ballPosition, double angle, double extraOffset) {
