@@ -52,8 +52,7 @@ public class LED extends Component {
             return;
         }
 
-        double error = Math.abs(robot.shooter.shooterPID.getTarget() - robot.shootingSystem.curExitSpeedMps);
-        if (robot.shooter.shooterState == Shooter.ShooterState.UPDATE && error > BrainSTEMTeleOp.firstShootTolerance) {
+        if (robot.shooter.shooterState == Shooter.ShooterState.UPDATE && !robot.shootingSystem.shooterGood()) {
             if (shooterFlashTimer.seconds() > shooterFlashOnTime + shooterFlashOffTime)
                 shooterFlashTimer.reset();
             else if (shooterFlashTimer.seconds() > shooterFlashOnTime) {
@@ -76,9 +75,9 @@ public class LED extends Component {
                 setLed(yellow);
         }
         else if (robot.collection.intakeHas3Balls())
-                setLed(purple);
-            else
-                setLed(red);
+            setLed(purple);
+        else
+            setLed(red);
     }
     public void setLed(double position) {
         left_led.setPosition(position);

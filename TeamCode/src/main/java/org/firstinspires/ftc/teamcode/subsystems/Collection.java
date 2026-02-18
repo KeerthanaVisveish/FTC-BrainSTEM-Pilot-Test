@@ -16,13 +16,15 @@ public class Collection extends Component {
     public static double shootOuttakeTimeAuto = 0.12;
     public static double postShootOuttakeWaitAuto = 0.1;
     public static double shootOuttakeTime = 0.12;
+    public static boolean autoEngageClutch = true;
+    public static double autoEngageClutchMaxX = 0;
 
     public enum CollectionState {
         OFF, INTAKE_SLOW, INTAKE, OUTTAKE, TRANSFER
     }
 
     public enum ClutchState {
-        ENGAGED, UNENGAGED
+        ENGAGED, UNENGAGED, WAITING_TO_ENGAGE
     }
 
     public enum FlickerState {
@@ -56,7 +58,7 @@ public class Collection extends Component {
         public double ENGAGED_POS = 0.1;
         public double DISENGAGED_POS = 0.65;
         public double DELAY_PERIOD = 0.5;
-        public double INTAKE_SLOW_SPEED = 0.3, normIntakePow = 0.95, impossibleShotIntakePow = 0.7;
+        public double INTAKE_SLOW_SPEED = 0.3, normIntakePow = 0.95, impossibleShotIntakePow = 0.6;
         public double OUTTAKE_SPEED = -0.5;
         public double LASER_BALL_THRESHOLD = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -129,6 +131,7 @@ public class Collection extends Component {
                 clutchLeft.setPosition(params.ENGAGED_POS);
                 break;
             case UNENGAGED:
+            case WAITING_TO_ENGAGE:
                 clutchRight.setPosition(params.DISENGAGED_POS);
                 clutchLeft.setPosition(params.DISENGAGED_POS);
                 break;
@@ -165,6 +168,26 @@ public class Collection extends Component {
 
     @Override
     public void update() {
+        if(!robot.turret.inRange)
+            setClutchState(ClutchState.UNENGAGED);
+        else if (autoEngageClutch && clutchState == ClutchState.UNENGAGED &&
+                robot.drive.localizer.getPose().position.x < autoEngageClutchMaxX) {
+            setClutchState(ClutchState.ENGAGED);
+            setCollectionState(CollectionState.INTAKE);
+        }
+
+        boolean turretAccurate = Math.abs(robot.turret.positionError) <= Turret.turretParams.maxClutchEngageError;
+        if (turretAccurate) {
+            if (clutchState == ClutchState.WAITING_TO_ENGAGE) {
+                setClutchState(ClutchState.ENGAGED);
+                setCollectionState(CollectionState.INTAKE);
+            }
+        }
+        else if (clutchState == ClutchState.ENGAGED) {
+            setClutchState(ClutchState.WAITING_TO_ENGAGE);
+            setCollectionState(CollectionState.OFF);
+        }
+
         if (getCollectionState() != CollectionState.OFF || framesRunning % params.offDistanceSensorUpdatePeriod == 0) {
             backLeftLaserDist = voltageToDistance(backBottomLaser.getVoltage());
             backRightLaserDist = voltageToDistance(backTopLaser.getVoltage());
@@ -181,9 +204,7 @@ public class Collection extends Component {
                 break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED
-                        && (robot.shootingSystem.physicsExitAngleRads[0] == -1
-                        && robot.shootingSystem.actualTargetExitSpeedMps - robot.shootingSystem.curExitSpeedMps > BrainSTEMTeleOp.physicsShootTolerance
-                        || !robot.turret.inRange))
+                        && (!robot.shootingSystem.shooterGood() || !robot.turret.inRange()))
                     collectorMotor.setPower(params.impossibleShotIntakePow);
                 else
                     collectorMotor.setPower(params.normIntakePow);
@@ -192,7 +213,7 @@ public class Collection extends Component {
 
         switch (getClutchState()) {
             case ENGAGED:
-                 if(clutch_timer.seconds() < shootOuttakeTime && outtakeAfterClutchEngage)
+                if(clutch_timer.seconds() < shootOuttakeTime && outtakeAfterClutchEngage)
                     setCollectionState(CollectionState.OUTTAKE);
                 else if(getCollectionState() == CollectionState.OUTTAKE)
                     setCollectionState(CollectionState.OFF);

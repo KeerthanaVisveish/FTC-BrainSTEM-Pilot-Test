@@ -30,12 +30,11 @@ import java.util.List;
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
-            printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = true;
-    public static boolean streamCameraToFTCDashboard = true;
+            printShooter = false, printTurret = true, printShootingSystem = false,
+            printLimelight = false;
+    public static boolean streamCameraToFTCDashboard = false;
     public static double[] blueCornerResetPose = { 64.25, 62.75, -90 };
     public static double[] redCornerResetPose = { 64.25, -62.75, 90 };
-    public static double firstShootTolerance = 0.1, physicsShootTolerance = 0.05;
     public static double noMoveJoystickThreshold = 0.1;
 
     BrainSTEMRobot robot;
@@ -44,7 +43,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     GamepadTracker gp2;
     private final Alliance alliance;
     private boolean currentlyMoving;
-    private List<LynxModule> allHubs;
 
     public BrainSTEMTeleOp(Alliance alliance) {
         this.alliance = alliance;
@@ -209,7 +207,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (gp2.isFirstA())
                 if (robot.collection.getCollectionState() == Collection.CollectionState.INTAKE)
                     robot.collection.setCollectionState(Collection.CollectionState.OFF);
-                else if ((ShootingSystem.testingParams.usingLookup ? Math.abs(robot.shootingSystem.curExitSpeedMps - robot.shooter.shooterPID.getTarget()) <= firstShootTolerance : robot.shootingSystem.physicsExitAngleRads[0] != -1 || Math.abs(robot.shootingSystem.actualTargetExitSpeedMps - robot.shootingSystem.curExitSpeedMps) < physicsShootTolerance) && robot.turret.inRange())
+                else if (robot.shootingSystem.shooterGood() && robot.turret.inRange())
                     robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
         }
         if (gp2.isFirstB())

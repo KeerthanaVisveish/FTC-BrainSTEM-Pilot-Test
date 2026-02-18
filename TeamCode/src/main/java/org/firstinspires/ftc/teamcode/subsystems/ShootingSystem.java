@@ -28,7 +28,6 @@ public class ShootingSystem {
     public static class TestingParams {
         public boolean usingLookup = false;
         public boolean enableShootingWhileMovingNear = true, enableShootingWhileMovingFar = false;
-        public boolean dynamicHood = true;
     }
     public static class GoalParams {
         public double nearRedX = -63, nearRedY = 63;
@@ -45,8 +44,10 @@ public class ShootingSystem {
         public double downPWM = 900, upPWM = 2065;
         public double minExitAngRad = Math.toRadians(35), maxExitAngRad = Math.toRadians(85);
         public double resolution = 0.005;
+        public double robotVelThresholdToSetHood = 2;
     }
     public static class GeneralParams {
+        public double firstShootTolerance = 0.1, physicsShootTolerance = 0.1;
         public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
         public int lookAheadAvgNum = 5;
         public double rawLookAheadTime = 0.25; // time to look ahead for pose prediction
@@ -193,15 +194,6 @@ public class ShootingSystem {
 
         Pose2d robotPose = robot.drive.localizer.getPose();
         futureRobotPose = robot.drive.pinpoint().getNextPoseSimple(currentLookAhead);
-//        OdoInfo stabilizedVel = calcStabilizedJoystickVel(robot.g1.gamepad.left_stick_x, -robot.g1.gamepad.left_stick_y, -robot.g1.gamepad.right_stick_x);
-//        OdoInfo curVel = robot.drive.pinpoint().previousVelocities.isEmpty() ? new OdoInfo(0, 0, 0) : robot.drive.pinpoint().previousVelocities.get(0);
-//        double accel;
-//        if(Math.abs(stabilizedVel.x - curVel.x) < jvParams.accelNoise
-//                && Math.abs(stabilizedVel.y - curVel.y) < jvParams.accelNoise
-//                && Math.abs(stabilizedVel.headingRad - curVel.headingRad) < jvParams.accelNoise)
-//            accel = 0;
-//        else
-//            accel =
 
         updateGoalProperties(robotPose.position);
 
@@ -221,8 +213,8 @@ public class ShootingSystem {
 
         shootingWhileMoving =
                 robot.collection.getClutchState() == Collection.ClutchState.ENGAGED &&
-                robot.turret.inRange &&
-                ((distState != Dist.FAR && testingParams.enableShootingWhileMovingNear) || (distState == Dist.FAR && testingParams.enableShootingWhileMovingFar));
+                        robot.turret.inRange &&
+                        ((distState != Dist.FAR && testingParams.enableShootingWhileMovingNear) || (distState == Dist.FAR && testingParams.enableShootingWhileMovingFar));
         Vector2d robotExitPosVel = robotVelAtExitPosIps.times(shootingWhileMoving ? 0.0254 : 0);
         if(testingParams.usingLookup)
             updateLookupProperties(desiredBallDir, robotExitPosVel);
@@ -241,9 +233,8 @@ public class ShootingSystem {
         double[] launchVector = ShootingMath.calculateLaunchVector(futureDist, relGoalHeightM, impactAngleRad);
 
         ballTargetExitSpeedMps = launchVector[0];
+        ballExitAngleRad = launchVector[1];
         if(shootWhileMoving) {
-            ballExitAngleRad = launchVector[1];
-
             actualTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, launchVector[1], launchVector[0], robotExitPosVel);
             double baseLength = Math.hypot(actualTargetExitVelMps.x, actualTargetExitVelMps.z);
             hoodExitAngleRad = Range.clip(Math.atan2(actualTargetExitVelMps.y, baseLength), hoodParams.minExitAngRad, hoodParams.maxExitAngRad);
@@ -255,38 +246,36 @@ public class ShootingSystem {
         }
         else {
             efficiencyCoef = calcEfficiencyCoef(launchVector[1]); // initial guess for efficiency coefficient
-            ballExitAngleRad = launchVector[1];
-            curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
+            curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef); // initial guess for current shooter speed
 
-            if (testingParams.dynamicHood) {
-                // determining whether to use high arc or low arc
-                double highArcExitAng = ShootingMath.calculateBallExitAngleRad(true, relGoalHeightM, futureDist, curExitSpeedMps);
-                if (highArcExitAng != -1) {
-                    double lowArcExitAng = ShootingMath.calculateBallExitAngleRad(false, relGoalHeightM, futureDist, curExitSpeedMps);
-                    double highArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, highArcExitAng);
-                    double lowArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, lowArcExitAng);
-                    usingHighArc = Math.abs(highArcImpactAng - impactAngleRad) < Math.abs(lowArcImpactAng - impactAngleRad);
+            // determining whether to use high arc or low arc
+            double highArcExitAng = ShootingMath.calculateBallExitAngleRad(true, relGoalHeightM, futureDist, curExitSpeedMps);
+            if (highArcExitAng != -1) {
+                double lowArcExitAng = ShootingMath.calculateBallExitAngleRad(false, relGoalHeightM, futureDist, curExitSpeedMps);
+                double highArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, highArcExitAng);
+                double lowArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, lowArcExitAng);
+                usingHighArc = Math.abs(highArcImpactAng - impactAngleRad) < Math.abs(lowArcImpactAng - impactAngleRad);
 
-                    // estimating hood ang and current shooter speed
-                    physicsExitAngleRads[0] = usingHighArc ? highArcExitAng : lowArcExitAng;
-                    ballExitAngleRad = physicsExitAngleRads[0];
+                // estimating hood ang and current shooter speed
+                physicsExitAngleRads[0] = usingHighArc ? highArcExitAng : lowArcExitAng;
+                ballExitAngleRad = physicsExitAngleRads[0];
+                efficiencyCoef = calcEfficiencyCoef(ballExitAngleRad);
+                curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
+
+                for (int i = 1; i < generalParams.numApproximations; i++) {
+                    physicsExitAngleRads[i] = ShootingMath.calculateBallExitAngleRad(usingHighArc, relGoalHeightM, futureDist, curExitSpeedMps);
+                    if (physicsExitAngleRads[i] == -1) {
+                        for (int j = i + 1; j < generalParams.numApproximations; j++)
+                            physicsExitAngleRads[j] = -1;
+                        break;
+                    }
+                    ballExitAngleRad = physicsExitAngleRads[i];
                     efficiencyCoef = calcEfficiencyCoef(ballExitAngleRad);
                     curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
+                }
+            } else
+                Arrays.fill(physicsExitAngleRads, -1);
 
-                    for (int i = 1; i < generalParams.numApproximations; i++) {
-                        physicsExitAngleRads[i] = ShootingMath.calculateBallExitAngleRad(usingHighArc, relGoalHeightM, futureDist, curExitSpeedMps);
-                        if (physicsExitAngleRads[i] == -1) {
-                            for (int j = i + 1; j < generalParams.numApproximations; j++)
-                                physicsExitAngleRads[j] = -1;
-                            break;
-                        }
-                        ballExitAngleRad = physicsExitAngleRads[i];
-                        efficiencyCoef = calcEfficiencyCoef(ballExitAngleRad);
-                        curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
-                    }
-                } else
-                    Arrays.fill(physicsExitAngleRads, -1);
-            }
 
             // old code with no flexibility for shooting while moving
             actualTargetExitSpeedMps = ballTargetExitSpeedMps;
@@ -402,6 +391,7 @@ public class ShootingSystem {
         telemetry.addData("shooting while moving", shootingWhileMoving);
         telemetry.addData("efficiency coef", efficiencyCoef);
         telemetry.addData("absolute turret target rad", actualTurretTargetAngleRad);
+        telemetry.addData("absolute turret target deg", Math.toDegrees(actualTurretTargetAngleRad));
         telemetry.addData("robot-relative target exit speed mps", actualTargetExitSpeedMps);
         telemetry.addData("ball exit angle rad", ballExitAngleRad);
         telemetry.addData("physics exit angle rad", MathUtils.format3(physicsExitAngleRads));
@@ -426,8 +416,9 @@ public class ShootingSystem {
     public void resetTurretEncoder() {
         turretMotor.resetEncoders();
     }
-    public void setTurretPower(double p) {
-        turretMotor.setPower(p);
+    public void setTurretVoltage(double voltage) {
+        double power = voltage / robot.drive.voltageSensor.getVoltage();
+        turretMotor.setPower(power);
     }
     public double getTurretPower() {
         return turretMotor.getPower();
@@ -443,12 +434,12 @@ public class ShootingSystem {
         double rawE = generalParams.efficiencyCoefM * ballExitAngleRad + generalParams.efficiencyCoefB;
         return Range.clip(generalParams.minEfficiencyCoef, rawE, generalParams.maxEfficiencyCoef);
     }
-    public OdoInfo calcStabilizedJoystickVel(double ljx, double ljy, double rjx) {
-        return new OdoInfo(
-                jvParams.xM * ljx + jvParams.xB,
-                jvParams.yM * ljy + jvParams.yB,
-                jvParams.aM * rjx + jvParams.aB
-        );
+    public double getShooterErrorMps() {
+        return actualTargetExitSpeedMps - curExitSpeedMps;
+    }
+    public boolean shooterGood() {
+        double shooterError = getShooterErrorMps();
+        return (ShootingSystem.testingParams.usingLookup ? shooterError <= generalParams.firstShootTolerance : robot.shootingSystem.physicsExitAngleRads[0] != -1 || shooterError < generalParams.physicsShootTolerance);
     }
 
     public void setShooterPowerRaw(double p) {

@@ -21,7 +21,6 @@ public class Shooter extends Component {
         public int startingShooterSpeedAdjustment = 0;
         public double minPower = -0.15, maxPower = 0.99;
         public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
-        public boolean disableHoodInterlock = true;
     }
     public static class TestingParams {
         public boolean testing = false;
@@ -39,6 +38,7 @@ public class Shooter extends Component {
 
     public final PIDController shooterPID;
     private double nearVelocityAdjustment, farVelocityAdjustment;
+    private boolean disableHoodInterlock;
     private int ballsShot;
     public double lastMax, lastMin, lastDecel, velDropTime;
     private final ArrayList<Double> allVelDrops, allPostShotVels, allLastDecels, allVelDropTimes;
@@ -97,7 +97,7 @@ public class Shooter extends Component {
         if(testingParams.testing) {
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
-        else if(robot.shootingSystem.physicsExitAngleRads[0] != -1 || shooterParams.disableHoodInterlock)
+        else if(robot.shootingSystem.shootingWhileMoving || robot.shootingSystem.physicsExitAngleRads[0] != -1 || robot.shootingSystem.robotSpeedAtExitPosIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad));
         updateBallShotTracking();
     }
@@ -116,7 +116,7 @@ public class Shooter extends Component {
             velDropTime = (System.currentTimeMillis() - mSOfLastMax) / 1000;
             lastDecel = velDrop / velDropTime;
             if(velDrop >= shooterParams.shotVelDropThreshold
-            || shooterPID.getTarget() - lastMin >= shooterParams.noiseVariance) {
+                    || shooterPID.getTarget() - lastMin >= shooterParams.noiseVariance) {
                 ballsShot++;
                 allVelDrops.add(velDrop);
                 allPostShotVels.add(lastMin);
@@ -161,5 +161,9 @@ public class Shooter extends Component {
         if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
             nearVelocityAdjustment += amount;
         farVelocityAdjustment += amount;
+    }
+
+    public void setDisableHoodInterlock(boolean disableHoodInterlock) {
+        this.disableHoodInterlock = disableHoodInterlock;
     }
 }
