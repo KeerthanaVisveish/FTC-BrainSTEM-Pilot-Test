@@ -11,7 +11,7 @@ public class PathGeneration {
     public static class AutoCollectParams {
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 8 extra inches
         public double laneIncrement = 1, laneWidth = 6;
-        public double groupAsClusterDist = 20;
+        public double groupAsClusterDist = 8;
         public double groupAsClusterAngle = 45;
         public double constrainClusterApproachAngleThreshold = 50;
         public double maxPathSimplificationEpsilon = 1; // max dist from original path to simplified path
@@ -19,19 +19,17 @@ public class PathGeneration {
 
         public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
 
-        public double collectPoseOffsetDistance = 8;
-        public double normalPreCollectOffset = 4;
+        public double collectPoseOffsetDistance = 7;
+        public double preCollectOffset = 5;
 
-        public double cornerBallDistance = 10;
-        public double cornerBallPreCollectOffset = 6;
+        public double cornerBallDistance = 6.5;
 
-        public double classifierWallDistance = 7;
-        public double classifierWallMaxApproachAngleDiff = 30;
-        public double classifierWallPreCollectOffset = 6;
+        public double classifierWallDistance = 4;
+        public double classifierWallMaxApproachAngleDiff = 10;
 
-        public double backWallDistance = 7;
+        public double backWallDistance = 5;
+        public double backWallCollectYOffset = 2;
         public double backWallCollectAngle = 45;
-        public double backWallPreCollectOffset = 7;
         public double backWallStrafeCollectMinApproachAngle = 45;
 
     }
@@ -168,7 +166,7 @@ public class PathGeneration {
 
         Pose2d collect1 = getCollectPose(ball1, angle, 0);
         Pose2d collect2 = getCollectPose(ball2, angle, 0);
-        Pose2d preCollect1 = getPreCollectPose(collect1, angle, params.normalPreCollectOffset);
+        Pose2d preCollect1 = getPreCollectPose(collect1, angle, params.preCollectOffset);
         return new ArrayList<>(Arrays.asList(preCollect1, collect1, collect2));
     }
 
@@ -246,18 +244,18 @@ public class PathGeneration {
             double preCollectOffset = collectInfo[0];
             double preCollectToCollectAngle = collectInfo[1];
             double collectAngle = collectInfo[2];
+            double collectXOffset = collectInfo[3];
+            double collectYOffset = collectInfo[4];
 
             Pose2d collectPose = getCollectPose(curBall, collectAngle, -collectExtraOffset);
-            Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset);
+            collectPose = new Pose2d(collectPose.position.plus(new Vector2d(collectXOffset, collectYOffset)), collectPose.heading);
+            Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset + collectExtraOffset);
 
-            Pose2d wallSafeCollectPose = getWallSafePose(robotWidth, robotLength, collectPose);
-            Pose2d wallSafePreCollectPose = getWallSafePose(robotWidth, robotLength, collectPose);
-            if (!wallSafePreCollectPose.equals(preCollectPose)) {
-                Vector2d vec = curBall.minus(wallSafePreCollectPose.position);
-                double actualCollectAngle = Math.atan2(vec.y, vec.x);
-                wallSafeCollectPose = getCollectPose(curBall, actualCollectAngle, -collectExtraOffset);
-                wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, actualCollectAngle, preCollectOffset + preCollectExtraOffset);
-            }
+            Pose2d wallSafeCollectPose = getWallSafePose(robotWidth, robotLength, collectPose, collectAngle);
+            Pose2d wallSafePreCollectPose = getWallSafePose(robotWidth, robotLength, preCollectPose, collectAngle);
+            if (!wallSafeCollectPose.equals(collectPose))
+                wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset);
+
 
             pathPoses.add(wallSafePreCollectPose);
             pathPoses.add(wallSafeCollectPose);
@@ -326,15 +324,15 @@ public class PathGeneration {
         double wallAngle = curBall.y > 0 ? Math.toRadians(90) : Math.toRadians(-90);
         double preCollectToCollectAngle;
         double collectAngle;
-        double preCollectOffset;
+        double preCollectOffset = params.preCollectOffset;
+        double collectXOffset = 0;
+        double collectYOffset = 0;
         switch (pointType) {
             case CORNER:
-                preCollectOffset = params.cornerBallPreCollectOffset;
                 collectAngle = wallAngle;
                 preCollectToCollectAngle = collectAngle;
                 break;
             case CLASSIFIER_WALL:
-                preCollectOffset = params.classifierWallPreCollectOffset;
                 double angleDiff = defaultApproachAngle - wallAngle;
                 double maxAngle = Math.toRadians(params.classifierWallMaxApproachAngleDiff);
                 if (Math.abs(angleDiff) > maxAngle)
@@ -343,16 +341,12 @@ public class PathGeneration {
                 preCollectToCollectAngle = collectAngle;
                 break;
             case BACK_WALL:
-                preCollectOffset = params.backWallPreCollectOffset;
                 if (Math.abs(defaultApproachAngle) > Math.toRadians(params.backWallStrafeCollectMinApproachAngle)) {
                     double dy = curBall.y - prevPathPoint.y;
+                    collectYOffset = Math.signum(dy) + params.backWallCollectYOffset;
+                    preCollectOffset += collectYOffset;
                     collectAngle = Math.toRadians(params.backWallCollectAngle) * Math.signum(dy);
-                    Pose2d collectPose = getCollectPose(curBall, collectAngle,0);
-
-                    if (prevPathPoint.x <= collectPose.position.x)
-                        preCollectToCollectAngle = Math.atan2(collectPose.position.y - prevPathPoint.y, collectPose.position.x - prevPathPoint.x);
-                    else
-                        preCollectToCollectAngle = Math.toRadians(90) * Math.signum(dy);
+                    preCollectToCollectAngle = Math.toRadians(90) * Math.signum(dy);
                 }
                 else {
                     collectAngle = defaultApproachAngle;
@@ -363,10 +357,9 @@ public class PathGeneration {
             default:
                 collectAngle = defaultApproachAngle;
                 preCollectToCollectAngle = collectAngle;
-                preCollectOffset = params.normalPreCollectOffset;
                 break;
         }
-        return new double[] { preCollectOffset, preCollectToCollectAngle, collectAngle };
+        return new double[] { preCollectOffset, preCollectToCollectAngle, collectAngle, collectXOffset, collectYOffset };
     }
     private static ArrayList<Pose2d> simplifyPathPoses(Pose2d startPose, ArrayList<Pose2d> pathPoses) {
         ArrayList<Pose2d> simplified = new ArrayList<>();
@@ -411,16 +404,16 @@ public class PathGeneration {
         simplified.add(pathPoses.get(pathPoses.size() - 1));
         return simplified;
     }
-    private static Pose2d getWallSafePose(double robotWidth, double robotLength, Pose2d pose) {
+    public static Pose2d getWallSafePose(double robotWidth, double robotLength, Pose2d pose, double desiredCollectAngle) {
         Vector2d position = pose.position;
         double halfW = robotWidth * 0.5;
         double halfL = robotLength * 0.5;
 
         Vector2d[] positionsToCheck = new Vector2d[] {
-                new Vector2d(halfL, -halfW),
-                new Vector2d(halfL, halfW),
-                new Vector2d(-halfL, -halfW),
-                new Vector2d(halfL, halfW)
+                new Vector2d(halfL, -halfW), // fr
+                new Vector2d(halfL, halfW), // fl
+                new Vector2d(-halfL, -halfW), // br
+                new Vector2d(-halfL, halfW) // bl
         };
         double d = Math.hypot(halfW, halfL) - params.wallPoseBuffer;
         if (position.x > -72 + d && position.x < 72 - d && position.y > -72 + d && position.y < 72 - d)
@@ -447,7 +440,6 @@ public class PathGeneration {
             if (Math.abs(offset.y) > Math.abs(requiredDy))
                 requiredDy = offset.y;
         }
-//            System.out.println(i + ": " + requiredDx + ", " + requiredDy);
 
         return new Pose2d(position.x + requiredDx, position.y + requiredDy, pose.heading.toDouble());
 

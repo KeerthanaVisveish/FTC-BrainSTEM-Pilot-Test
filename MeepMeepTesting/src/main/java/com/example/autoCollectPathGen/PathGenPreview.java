@@ -35,7 +35,10 @@ public class PathGenPreview extends JPanel
     static final Path SAVE_FILE = Paths.get("MeepMeepTesting", "data", "pathGenSaveInfo.txt");
 
     static Vector2d bottomLeft = new Vector2d(0, 0);
+    static Vector2d bottomLeftDraw = new Vector2d(0, 0);
     static double windowSize = 72;
+    static int extraViewBuffer = 20;
+    static boolean constrainBallsInsideField = true;
     static double drawScale = 4;
     static final double robotHitboxRadius = 8;
     static final double robotWidth = 13.5, robotLength = 16;
@@ -98,12 +101,12 @@ public class PathGenPreview extends JPanel
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.trim().split(" ");
-                System.out.println(Arrays.toString(parts));
 
                 if (parts[0].equals("BOTTOM_LEFT")) {
                     double x = Double.parseDouble(parts[1]);
                     double y = Double.parseDouble(parts[2]);
                     bottomLeft = new Vector2d(x, y);
+                    bottomLeftDraw = bottomLeft;
                 }
                 else if (parts[0].equals("DRAW_SCALE"))
                     drawScale = Double.parseDouble(parts[1]);
@@ -125,8 +128,6 @@ public class PathGenPreview extends JPanel
             e.printStackTrace();
         }
     }
-
-
     private void saveToFile() {
         try (BufferedWriter bw = Files.newBufferedWriter(SAVE_FILE)) {
             bw.write(String.format("BOTTOM_LEFT %.6f %.6f%n", bottomLeft.x, bottomLeft.y));
@@ -148,12 +149,19 @@ public class PathGenPreview extends JPanel
         Graphics2D g2 = (Graphics2D) g;
         if (background != null) {
             double ratio = background.getWidth() / 144.;
-            int x = (int) ((bottomLeft.x + 72.) * ratio);
-            int y = (int) ((bottomLeft.y + 72.) * ratio);
+            int x = (int) ((bottomLeftDraw.x + 72.) * ratio);
+            int y = (int) ((bottomLeftDraw.y + 72.) * ratio);
             int w = (int) (windowSize * ratio);
             int h = (int) (windowSize * ratio);
             g2.drawImage(background, 0, 0, getWidth(), getWidth(), x, y, x + w, y + h, null);
         }
+
+        g2.setColor(Color.LIGHT_GRAY);
+        drawPosition(g2, new Vector2d(72, 72), PathGeneration.params.cornerBallDistance, false);
+        drawPosition(g2, new Vector2d(72, -72), PathGeneration.params.cornerBallDistance, false);
+        drawLine(g2, new Vector2d(72 - PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance));
+        drawLine(g2, new Vector2d(-72 + PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance));
+        drawLine(g2, new Vector2d(-72 + PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance));
 
         drawRobotAndBalls(g2);
         drawGeneratedPath(g2);
@@ -177,7 +185,8 @@ public class PathGenPreview extends JPanel
         int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
         drawRobot(g2, robot);
-
+        Pose2d wallSafePose = PathGeneration.getWallSafePose(robotWidth, robotLength, robot, robot.heading.toDouble());
+        drawRobot(g2, wallSafePose);
         boolean selectedABall = selectedPoseIndex >= 0;
         boolean selectedRobot = selectedPoseIndex == -1;
         Pose2d selectedPose = null;
@@ -239,10 +248,10 @@ public class PathGenPreview extends JPanel
         }
     }
     private Point fieldToDrawPosition(Vector2d field) {
-        return new Point((int) ((field.x - bottomLeft.x) * drawScale), (int) ((-field.y - bottomLeft.y) * drawScale));
+        return new Point((int) ((field.x - bottomLeftDraw.x) * drawScale), (int) ((-field.y - bottomLeftDraw.y) * drawScale));
     }
     private Vector2d drawToFieldPosition(Point point) {
-        return new Vector2d(1.*point.x / drawScale + bottomLeft.x, -1.*point.y / drawScale - bottomLeft.y);
+        return new Vector2d(1.*point.x / drawScale + bottomLeftDraw.x, -1.*point.y / drawScale - bottomLeftDraw.y);
     }
     /*
     private Point fieldToDrawPosition(Vector2d field) {
@@ -289,14 +298,16 @@ public class PathGenPreview extends JPanel
         for (int j=0; j<corners.length; j++)
             corners[j] = GeometryUtils.robotVectorToFieldVector(corners[j], pose.heading.toDouble()).plus(position);
 
-        for (int i=0; i<corners.length; i++) {
-            Point start = fieldToDrawPosition(corners[i]);
-            Point end = fieldToDrawPosition(corners[(i + 1) % 4]);
-            g2.drawLine(start.x, start.y, end.x, end.y);
-        }
+        for (int i=0; i<corners.length; i++)
+            drawLine(g2, corners[i], corners[(i + 1) % 4]);
         Point center = fieldToDrawPosition(position);
         Point front = fieldToDrawPosition(corners[0].plus(corners[1]).div(2));
         g2.drawLine(center.x, center.y, front.x, front.y);
+    }
+    private void drawLine(Graphics2D g2, Vector2d p1, Vector2d p2) {
+        Point start = fieldToDrawPosition(p1);
+        Point end = fieldToDrawPosition(p2);
+        g2.drawLine(start.x, start.y, end.x, end.y);
     }
 
     @Override
@@ -326,6 +337,13 @@ public class PathGenPreview extends JPanel
             Vector2d creationPos = drawToFieldPosition(mouse.getLocation());
             Pose2d creationPose = new Pose2d(creationPos.x, creationPos.y, 0);
             if (createMode == CreateMode.BALL) {
+                if (constrainBallsInsideField) {
+                    creationPose = new Pose2d(
+                            Math.max(-72, Math.min(72, creationPose.position.x)),
+                            Math.max(-72, Math.min(72, creationPose.position.y)),
+                            0
+                    );
+                }
                 balls.add(creationPose);
                 selectedPoseIndex = balls.size() - 1;
             } else {
@@ -336,7 +354,6 @@ public class PathGenPreview extends JPanel
 
         saveToFile();
         repaint();
-
     }
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -345,6 +362,11 @@ public class PathGenPreview extends JPanel
         Vector2d field = drawToFieldPosition(new Point(e.getX(), e.getY()));
 
         if (selectedPoseIndex >= 0) {
+            if (constrainBallsInsideField)
+                field = new Vector2d(
+                        Math.max(-72, Math.min(72, field.x)),
+                        Math.max(-72, Math.min(72, field.y))
+                );
             Pose2d old = balls.get(selectedPoseIndex);
             balls.set(selectedPoseIndex, new Pose2d(field.x, field.y, old.heading.toDouble()));
         }
@@ -360,8 +382,6 @@ public class PathGenPreview extends JPanel
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (selectedPoseIndex == -2) return;
-
         boolean shouldRepaint = false;
         int keyCode = e.getKeyCode();
         switch (keyCode) {
@@ -371,11 +391,12 @@ public class PathGenPreview extends JPanel
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_BACK_SPACE:
-                createMode = CreateMode.BALL;
-
-                balls.remove(selectedPoseIndex);
-                selectedPoseIndex = -2;
-                shouldRepaint = true;
+                if (selectedPoseIndex != -2) {
+                    createMode = CreateMode.BALL;
+                    balls.remove(selectedPoseIndex);
+                    selectedPoseIndex = -2;
+                    shouldRepaint = true;
+                }
                 break;
             case KeyEvent.VK_L:
                 robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(1));
@@ -389,11 +410,11 @@ public class PathGenPreview extends JPanel
                 drawSimplifiedPath = !drawSimplifiedPath;
                 shouldRepaint = true;
                 break;
-            case KeyEvent.VK_MINUS:
+            case KeyEvent.VK_9:
                 drawRobotNodeIndex--;
                 shouldRepaint = true;
                 break;
-            case KeyEvent.VK_PLUS:
+            case KeyEvent.VK_0:
                 drawRobotNodeIndex++;
                 shouldRepaint = true;
                 break;
@@ -432,14 +453,11 @@ public class PathGenPreview extends JPanel
                 shouldRepaint = true;
                 break;
         }
-        if (bottomLeft.x < -72)
-            bottomLeft = new Vector2d(-72, bottomLeft.y);
-        if (bottomLeft.y < -72)
-            bottomLeft = new Vector2d(bottomLeft.x, -72);
-        if (bottomLeft.x + windowSize > 72)
-            bottomLeft = new Vector2d(72 - windowSize, bottomLeft.y);
-        if (bottomLeft.y + windowSize > 72)
-            bottomLeft = new Vector2d(bottomLeft.x,  72 - windowSize);
+
+        bottomLeftDraw = new Vector2d(
+                Math.max(-72 - extraViewBuffer, Math.min(72 + extraViewBuffer - windowSize, bottomLeft.x)),
+                Math.max(-72 - extraViewBuffer, Math.min(72 + extraViewBuffer - windowSize, bottomLeft.y))
+        );
 
         if (shouldRepaint) {
             saveToFile();
@@ -466,6 +484,7 @@ public class PathGenPreview extends JPanel
             frame.add(new PathGenPreview("/com/example/autoCollectPathGen/img.png"));
             frame.setResizable(false);
             frame.pack();
+            frame.setFocusable(true);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
