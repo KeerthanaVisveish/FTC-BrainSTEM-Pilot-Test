@@ -27,7 +27,6 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.Waypoint;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
@@ -39,6 +38,8 @@ public class LoadingZoneBallCollection extends OpMode {
     private AutoCommands autoCommands;
 
     private Action autoCollectAction = null;
+    private Vector2d[] mostRecentNodes;
+    private ArrayList<Pose2d> mostRecentAutoCollectPathPoses;
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -46,6 +47,8 @@ public class LoadingZoneBallCollection extends OpMode {
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(startPose));
         autoCommands = new AutoCommands(robot, telemetry);
         FtcDashboard.getInstance().startCameraStream(Limelight.limelight, streamFPS);
+        mostRecentNodes = new Vector2d[0];
+        mostRecentAutoCollectPathPoses = new ArrayList<>();
     }
 
     @Override
@@ -66,16 +69,18 @@ public class LoadingZoneBallCollection extends OpMode {
 
         Pose2d robotPose = robot.drive.localizer.getPose();
 
-        Blob[] blobs = robot.limelight.ballDetection.getBlobs();
-        Vector2d[] nodes = new Vector2d[blobs.length];
-        for (int i=0; i<blobs.length; i++)
-            nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
+        if (autoCollectAction == null) {
+            Blob[] blobs = robot.limelight.ballDetection.getBlobs();
+            Vector2d[] nodes = new Vector2d[blobs.length];
+            for (int i = 0; i < blobs.length; i++)
+                nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
 
-        ArrayList<Pose2d> autoCollectPathPoses = PathGeneration.getSimplifiedAutoCollectPathPoses(BrainSTEMRobot.alliance == Alliance.RED, robotPose, nodes,100, 3);
+            mostRecentAutoCollectPathPoses = PathGeneration.getSimplifiedAutoCollectPathPoses(BrainSTEMRobot.alliance == Alliance.RED, robotPose, nodes, 100, 3);
+        }
         DrivePath autoCollectDrive = null;
-        if (autoCollectPathPoses != null) {
+        if (mostRecentAutoCollectPathPoses != null) {
             autoCollectDrive = new DrivePath(robot.drive);
-            for (Pose2d pose : autoCollectPathPoses)
+            for (Pose2d pose : mostRecentAutoCollectPathPoses)
                 autoCollectDrive.addWaypoint(new Waypoint(pose).setMinLinearPower(0.1).setMaxTime(2));
         }
         if (autoCollectAction == null) {
@@ -122,33 +127,15 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.update(false);
 
         telemetry.addData("time running", getRuntime());
-        telemetry.addData("drive path", autoCollectPathPoses);
+        telemetry.addData("drive path", mostRecentAutoCollectPathPoses);
         robot.limelight.printInfo();
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
         robot.addRobotInfo(fieldOverlay);
-        if (autoCollectAction == null) {
-            if (autoCollectPathPoses != null) {
-                for (Vector2d pos : nodes) {
-                    fieldOverlay.setFill("purple");
-                    fieldOverlay.fillCircle(pos.x, pos.y, 2.5);
-                }
-                for (int i = 0; i < autoCollectPathPoses.size() - 1; i++) {
-                    Vector2d start = autoCollectPathPoses.get(i).position;
-                    Vector2d end = autoCollectPathPoses.get(i + 1).position;
-                    fieldOverlay.setStroke("black");
-                    fieldOverlay.strokeLine(start.x, start.y, end.x, end.y);
-                    fieldOverlay.setStroke(i == 0 ? "black" : "gray");
-                    fieldOverlay.strokeCircle(start.x, start.y, 3);
-                }
-                fieldOverlay.setStroke("gray");
-                Vector2d last = autoCollectPathPoses.get(autoCollectPathPoses.size() - 1).position;
-                fieldOverlay.strokeCircle(last.x, last.y, 3);
-            }
-        }
-
+        if (mostRecentAutoCollectPathPoses != null)
+                robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, mostRecentAutoCollectPathPoses);
         FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
 }

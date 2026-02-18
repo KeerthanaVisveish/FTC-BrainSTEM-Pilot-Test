@@ -8,12 +8,14 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LLParent;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 @Config
@@ -89,9 +91,28 @@ public class LimelightBallDetection extends LLParent {
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {
-            fieldOverlay.setStroke("gray");
+            fieldOverlay.setFill("purple");
             for (Blob blob : blobs)
-                fieldOverlay.strokeCircle(blob.x, blob.y, 2.5);
+                fieldOverlay.fillCircle(blob.x, blob.y, 2.5);
+        }
+    }
+    public void drawPath(Canvas fieldOverlay, Pose2d startPose, ArrayList<Pose2d> autoCollectPathPoses) {
+        ArrayList<Pose2d> posesToDraw = new ArrayList<>(autoCollectPathPoses);
+        posesToDraw.add(0, startPose);
+        for (int i = 0; i < posesToDraw.size() - 1; i++) {
+            Vector2d start = posesToDraw.get(i).position;
+            Vector2d end = posesToDraw.get(i + 1).position;
+            fieldOverlay.setStroke("black");
+            fieldOverlay.strokeLine(start.x, start.y, end.x, end.y);
+            if (i > 0) {
+                fieldOverlay.setStroke("gray");
+                Drawing.drawRobotSimple(fieldOverlay, posesToDraw.get(i), 3);
+            }
+        }
+        if (!posesToDraw.isEmpty()) {
+            fieldOverlay.setStroke("gray");
+            Pose2d last = autoCollectPathPoses.get(autoCollectPathPoses.size() - 1);
+            Drawing.drawRobotSimple(fieldOverlay, last, 3);
         }
     }
     public Blob[] getBlobs() {
