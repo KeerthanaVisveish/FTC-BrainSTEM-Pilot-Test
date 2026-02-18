@@ -127,7 +127,7 @@ public class LimelightClassifier extends LLParent {
     }
     private double getCameraY() {
         Pose2d robotPose = robot.drive.localizer.getPose();
-        Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.currentRelativeAngleRad);
+        Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         return Limelight.getLimelightPose(turretPose).position.y;
     }
 }
