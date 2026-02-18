@@ -8,16 +8,22 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PathGenPreview extends JPanel
         implements MouseListener, MouseMotionListener, KeyListener {
+    static final Path SAVE_FILE = Paths.get("MeepMeepTesting", "data", "pathGenSaveInfo.txt");
 
     static final int DRAW_SCALE = 4;
-    static final double ROBOT_RADIUS = 6.5;
-    static final double BALL_RADIUS = 2.5;
+    static final double ROBOT_RADIUS = 8;
+    static final double BALL_RADIUS = 2;
     static final double PATH_NODE_RADIUS = 2;
     static final double SELECTED_STROKE = 0.5;
     private final List<Pose2d> balls = new ArrayList<>();
@@ -30,6 +36,7 @@ public class PathGenPreview extends JPanel
         BALL
     }
     private CreateMode createMode = CreateMode.BALL;
+    private boolean drawSimplifiedPath = true;
 
     public PathGenPreview(String backgroundImagePath) {
         setPreferredSize(new Dimension(144 * DRAW_SCALE, 144 * DRAW_SCALE));
@@ -49,7 +56,62 @@ public class PathGenPreview extends JPanel
                 System.err.println("Failed to load image: " + backgroundImagePath);
             }
         }
+
+        loadFromFile();
     }
+    private void loadFromFile() {
+        try {
+            // Ensure data/ directory exists
+            Files.createDirectories(SAVE_FILE.getParent());
+
+            // Ensure file exists
+            if (!Files.exists(SAVE_FILE)) {
+                Files.createFile(SAVE_FILE);
+                return;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        balls.clear();
+
+        try (BufferedReader br = Files.newBufferedReader(SAVE_FILE)) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.trim().split("\\s+");
+                if (parts.length < 4) continue;
+
+                double x = Double.parseDouble(parts[1]);
+                double y = Double.parseDouble(parts[2]);
+                double h = Double.parseDouble(parts[3]);
+
+                if (parts[0].equals("ROBOT")) {
+                    robot = new Pose2d(x, y, h);
+                } else if (parts[0].equals("BALL")) {
+                    balls.add(new Pose2d(x, y, h));
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void saveToFile() {
+        try (BufferedWriter bw = Files.newBufferedWriter(SAVE_FILE)) {
+            bw.write(String.format("ROBOT %.6f %.6f %.6f%n",
+                    robot.position.x, robot.position.y, robot.heading.toDouble()));
+
+            for (Pose2d ball : balls) {
+                bw.write(String.format("BALL %.6f %.6f %.6f%n",
+                        ball.position.x, ball.position.y, ball.heading.toDouble()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -61,14 +123,16 @@ public class PathGenPreview extends JPanel
 
         drawRobotAndBalls(g2);
         drawGeneratedPath(g2);
+        drawBallsUsed(g2);
 
         g2.setColor(Color.BLACK);
         g2.fillRect(0, 0, 120, 400);
         g2.setColor(Color.WHITE);
         g2.drawString("Mode: " + createMode, 10, 15);
-        g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 35);
+        g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 35);
+        g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 55);
         for (int i=0; i<balls.size(); i++) {
-            g2.drawString("Ball: " + MathUtils.formatPose(balls.get(i)), 10, 55 + i * 20);
+            g2.drawString("Ball: " + MathUtils.formatPose(balls.get(i)), 10, 75 + i * 20);
         }
     }
 
@@ -98,18 +162,21 @@ public class PathGenPreview extends JPanel
             drawPosition(g2, selectedPose.position, ROBOT_RADIUS + SELECTED_STROKE, false);
         }
     }
-
     private void drawGeneratedPath(Graphics2D g2) {
         Vector2d[] ballPositions = new Vector2d[balls.size()];
         for (int i=0; i<balls.size(); i++)
             ballPositions[i] = balls.get(i).position;
-        ArrayList<Pose2d> poses = PathGeneration.getAutoCollectPathPoses(true, robot, ballPositions, 3, 3);
+        ArrayList<Pose2d> poses = PathGeneration.getAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
         if (poses == null)
             return;
 
-        for (int i=0; i<poses.size(); i++) {
-            Pose2d pose = poses.get(i);
-            Pose2d next = i == poses.size() - 1 ? null : poses.get(i + 1);
+        ArrayList<Pose2d> simplifiedPathPoses = PathGeneration.simplifyPathPoses(robot, poses);
+
+        ArrayList<Pose2d> posesToDraw = new ArrayList<>(drawSimplifiedPath ? simplifiedPathPoses : poses);
+        posesToDraw.add(0, robot);
+        for (int i=0; i<posesToDraw.size(); i++) {
+            Pose2d pose = posesToDraw.get(i);
+            Pose2d next = i == posesToDraw.size() - 1 ? null : posesToDraw.get(i + 1);
 
             if (next != null) {
                 Point p1 = fieldToDraw(pose.position);
@@ -120,6 +187,13 @@ public class PathGenPreview extends JPanel
 
             g2.setColor(Color.GRAY);
             drawPose(g2, pose, PATH_NODE_RADIUS);
+        }
+    }
+    private void drawBallsUsed(Graphics2D g2) {
+        if (PathGeneration.ballsUsed != null) {
+            g2.setColor(Color.GREEN);
+            for (Vector2d ball : PathGeneration.ballsUsed)
+                drawPosition(g2, ball, 1, true);
         }
     }
     private Point fieldToDraw(Vector2d field) {
@@ -143,7 +217,6 @@ public class PathGenPreview extends JPanel
         int dx = (int) (pose.heading.component1() * radiusField * DRAW_SCALE);
         int dy = -(int) (pose.heading.component2() * radiusField * DRAW_SCALE);
         g2.drawLine(draw.x, draw.y, draw.x + dx, draw.y + dy);
-
     }
 
     @Override
@@ -181,6 +254,7 @@ public class PathGenPreview extends JPanel
             }
         }
 
+        saveToFile();
         repaint();
 
     }
@@ -199,6 +273,7 @@ public class PathGenPreview extends JPanel
             robot = new Pose2d(field.x, field.y, robot.heading.toDouble());
         }
 
+        saveToFile();
         repaint();
     }
 
@@ -206,33 +281,54 @@ public class PathGenPreview extends JPanel
     @Override
     public void mouseReleased(MouseEvent e){}
 
-    // ---------------- Keyboard handling ----------------
-
     @Override
     public void keyPressed(KeyEvent e) {
         if (selectedPoseIndex == -2) return;
 
         boolean shouldRepaint = false;
-        if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE ||
-            e.getKeyCode() == KeyEvent.VK_DELETE) {
+        int keyCode = e.getKeyCode();
+        if (keyCode == KeyEvent.VK_DELETE) {
+            balls.clear();
+            selectedPoseIndex = -2;
+            shouldRepaint = true;
+        }
+        else if (keyCode == KeyEvent.VK_BACK_SPACE) {
             createMode = CreateMode.BALL;
 
             balls.remove(selectedPoseIndex);
             selectedPoseIndex = -2;
             shouldRepaint = true;
         }
-
-        if (e.getKeyCode() == KeyEvent.VK_R) {
+        else if (keyCode == KeyEvent.VK_R) {
             createMode = CreateMode.ROBOT;
             shouldRepaint = true;
         }
-        else if (e.getKeyCode() == KeyEvent.VK_B) {
+        else if (keyCode == KeyEvent.VK_B) {
             createMode = CreateMode.BALL;
             shouldRepaint = true;
         }
+        else if (keyCode == KeyEvent.VK_D) {
+            robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(1));
+            shouldRepaint = true;
+        }
+        else if (keyCode == KeyEvent.VK_A) {
+            robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() + Math.toRadians(1));
+            shouldRepaint = true;
+        }
+        else if (keyCode == KeyEvent.VK_S) {
+            drawSimplifiedPath = true;
+            shouldRepaint = true;
+        }
+        else if (keyCode == KeyEvent.VK_C) {
+            drawSimplifiedPath = false;
+            shouldRepaint = true;
+        }
 
-        if (shouldRepaint)
+
+        if (shouldRepaint) {
+            saveToFile();
             repaint();
+        }
     }
 
     @Override public void keyTyped(KeyEvent e) {}

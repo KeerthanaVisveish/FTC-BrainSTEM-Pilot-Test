@@ -19,6 +19,14 @@ public class MathUtils {
             rad -= 2 * Math.PI;
         return rad;
     }
+
+    public static double findAngleRadDiff(double angle2, double angle1) {
+        double angleDiff = angle2 - angle1;
+        double absDiff = Math.abs(angleDiff);
+        if (absDiff > Math.PI)
+            angleDiff = Math.signum(angleDiff) * (2 * Math.PI - absDiff);
+        return angleDiff;
+    }
     public static String format1(Number num) {
         return format(num, 1);
     }
@@ -26,8 +34,8 @@ public class MathUtils {
         return format(num, 2);
     }
     public static String format3(Number num) { return format(num, 3); }
-    public static String formatVec(Vector2d v) {
-        return "[" + format3(v.x) + ", " + format3(v.y) + "]";
+    public static String formatVec2(Vector2d v) {
+        return "[" + format2(v.x) + ", " + format2(v.y) + "]";
     }
     public static String format(Number num, int decimalPlaces) {
         StringBuilder decimals = new StringBuilder();
@@ -72,7 +80,7 @@ public class MathUtils {
     public static String formatPose(Pose2d pose) {
         if (pose == null)
             return "null";
-        return format1(pose.position.x) + ", " + format1(pose.position.y) + " " + format1(Math.toDegrees(pose.heading.toDouble()));
+        return "(" + format1(pose.position.x) + ", " + format1(pose.position.y) + ") | " + format1(Math.toDegrees(pose.heading.toDouble()));
     }
     public static String formatPose2(Pose2d pose) {
         if (pose == null)

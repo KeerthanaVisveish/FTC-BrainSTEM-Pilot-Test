@@ -1,5 +1,6 @@
 package com.example.autoCollectPathGen;
 
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
 import java.util.ArrayList;
@@ -8,7 +9,7 @@ import java.util.List;
 
 public class PathFinder {
     // extra distance of path = total change in angle * changeInAngleDegCost
-    public static Vector2d[] findShortestPath(Vector2d startPosition, Vector2d[] nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
+    public static ArrayList<Vector2d> findShortestPath(Pose2d startPose, Vector2d[] nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
         // get all of the possible combinations of paths
         int combinationLength = Math.min(maxNodesInPath, nodes.length);
         List<List<Vector2d>> combinations = getCombinations(new ArrayList<>(Arrays.asList(nodes)), combinationLength);
@@ -20,7 +21,7 @@ public class PathFinder {
         for (int i=0; i<combinations.size(); i++) {
 
             Vector2d[] combo = combinations.get(i).toArray(new Vector2d[0]);
-            results.add(PathFinder.findShortestPath(startPosition, combo, extraDistPerChangeInAngleDeg));
+            results.add(PathFinder.findShortestPath(startPose, combo, extraDistPerChangeInAngleDeg));
         }
 
         // find the shortest path out of all of the different combinations
@@ -35,11 +36,10 @@ public class PathFinder {
 
         // convert the shortest path into a useful format
         int[] pathIndexes = shortestResult.path();
-        System.out.println(Arrays.toString(pathIndexes));
-        Vector2d[] shortestPath = new Vector2d[pathIndexes.length];
-        for (int i=0; i<shortestPath.length; i++) {
+        ArrayList<Vector2d> shortestPath = new ArrayList<>();
+        for (int i=0; i<pathIndexes.length; i++) {
             int index = pathIndexes[i];
-            shortestPath[i] = shortestCombo.get(index);
+            shortestPath.add(shortestCombo.get(index));
         }
         return shortestPath;
     }
@@ -71,7 +71,7 @@ public class PathFinder {
     }
 
     // finding the shortest path given a list of nodes of length N
-    public static PathResult findShortestPath(Vector2d start, Vector2d[] nodes, double extraDistPerChangeInAngleDeg) {
+    public static PathResult findShortestPath(Pose2d start, Vector2d[] nodes, double extraDistPerChangeInAngleDeg) {
         int n = nodes.length;
         int[] indices = new int[n];
         for (int i = 0; i < n; i++) {
@@ -85,9 +85,9 @@ public class PathFinder {
         return best;
     }
 
-    private static void permute(int[] arr, int startIdx, Vector2d start, Vector2d[] nodes, PathResult best, double extraDistPerChangeInAngleDeg) {
+    private static void permute(int[] arr, int startIdx, Pose2d start, Vector2d[] nodes, PathResult best, double extraDistPerChangeInAngleDeg) {
         if (startIdx == arr.length) {
-            double dist = pathLengthFromStart(start, arr, nodes);
+            double dist = pathLengthFromStart(start.position, arr, nodes);
             double totalAngleChange = totalAngleChangeRadFromStart(start, arr, nodes);
             double changeInAngleCost = extraDistPerChangeInAngleDeg * Math.toDegrees(totalAngleChange);
             dist += changeInAngleCost;
@@ -121,20 +121,19 @@ public class PathFinder {
 
         return sum;
     }
-    public static double totalAngleChangeRadFromStart(Vector2d start, int[] order, Vector2d[] nodes) {
+    public static double totalAngleChangeRadFromStart(Pose2d start, int[] order, Vector2d[] nodes) {
         double totalAngleChangeRad = 0;
 
-        double prevAngle = 0;
+        double prevAngle = start.heading.toDouble();
         for (int i=0; i<order.length; i++) {
-            Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start;
+            Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start.position;
             Vector2d n2 = nodes[order[i]];
             double angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
-            if (i > 0) {
-                double changeInAngle = angle - prevAngle;
-                if (Math.abs(changeInAngle) > Math.PI)
-                    changeInAngle = Math.signum(changeInAngle) * Math.PI * 2 - Math.abs(changeInAngle);
-                totalAngleChangeRad += Math.abs(changeInAngle);
-            }
+
+            double changeInAngle = angle - prevAngle;
+            if (Math.abs(changeInAngle) > Math.PI)
+                changeInAngle = Math.signum(changeInAngle) * (Math.PI * 2 - Math.abs(changeInAngle));
+            totalAngleChangeRad += Math.abs(changeInAngle);
             prevAngle = angle;
         }
         return totalAngleChangeRad;
