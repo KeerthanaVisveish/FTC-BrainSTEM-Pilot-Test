@@ -374,16 +374,6 @@ public class ShootingSystem {
         telemetry.addData("-----raw x accel", robot.drive.pinpoint().getMostRecentAcceleration().x);
         telemetry.addData("-----raw y accel", robot.drive.pinpoint().getMostRecentAcceleration().y);
         telemetry.addData("-----raw heading accel", robot.drive.pinpoint().getMostRecentAcceleration().headingRad);
-        telemetry.addData("-----filtered x accel", robot.drive.pinpoint().filteredAccel.x);
-        telemetry.addData("-----filtered y accel", robot.drive.pinpoint().filteredAccel.y);
-        telemetry.addData("-----filtered h accel", robot.drive.pinpoint().filteredAccel.headingRad);
-        double[] xAccels = robot.drive.pinpoint().getPreviousXAccels();
-        double[] yAccels = robot.drive.pinpoint().getPreviousYAccels();
-        double[] headingAccels = robot.drive.pinpoint().getPreviousHeadingAccels();
-        double[] frames = new double[xAccels.length];
-        telemetry.addData("-----X ACCEL COVARIANCE", MathUtils.covariance(frames, xAccels));
-        telemetry.addData("-----Y ACCEL COVARIANCE", MathUtils.covariance(frames, yAccels));
-        telemetry.addData("-----HEADING ACCEL COVARIANCE", MathUtils.covariance(frames, headingAccels));
 
         telemetry.addData("shooting while moving", shootingWhileMoving);
         telemetry.addData("efficiency coef", efficiencyCoef);
@@ -391,6 +381,7 @@ public class ShootingSystem {
         telemetry.addData("absolute turret target deg", Math.toDegrees(actualTurretTargetAngleRad));
         telemetry.addData("robot-relative target exit speed mps", actualTargetExitSpeedMps);
         telemetry.addData("ball exit angle rad", ballExitAngleRad);
+        telemetry.addData("robot speed at exit pos", robotSpeedAtExitPosIps);
         telemetry.addData("physics exit angle rad", MathUtils.format3(physicsExitAngleRads));
         telemetry.addData("ball meters from goal", exitPosGoalDistIn * 0.0254);
         telemetry.addData("ball inches from goal", exitPosGoalDistIn);

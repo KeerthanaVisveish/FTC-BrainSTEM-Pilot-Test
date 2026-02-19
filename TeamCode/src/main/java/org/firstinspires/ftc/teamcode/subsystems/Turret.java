@@ -83,7 +83,8 @@ public class Turret extends Component {
     public double positionError, velocityError;
     private double kP;
     private double kF;
-    private double pVoltage, vFFVoltage, vFBVoltage;
+    private double pVoltage;
+//    private double vFFVoltage, vFBVoltage;
     private double vRVoltage, vTVoltage;
     private final InterpLUT kFPosLookup, kfNegLookup;
 
@@ -176,14 +177,6 @@ public class Turret extends Component {
         vRVoltage = powerTuning.rotKV * targetVelocityFromRotation;
         vTVoltage = powerTuning.transKV * targetVelocityFromTranslation;
         return kF + pVoltage + vRVoltage + vTVoltage;
-
-//        double kV = Math.abs(targetVelocity) < powerTuning.switchKVThreshold ? powerTuning.bigKV : powerTuning.smallKV;
-//        vFFVoltage = kV * targetVelocity;
-
-//        velocityError = targetVelocity == 0 ? 0 : targetVelocity - currentVelocity;
-//        vFBVoltage = Math.abs(velocityError) > powerTuning.ignoreFBVelocityThreshold ? 0 : powerTuning.kVP * velocityError;
-
-//        return kF + pVoltage + vFFVoltage + vFBVoltage;
     }
     private double getLogisticKP(double errorMag) {
         return powerTuning.A / (1 + Math.exp(-powerTuning.k * (errorMag - powerTuning.x0)) ) + powerTuning.B;
@@ -239,7 +232,6 @@ public class Turret extends Component {
 //        }
 //        else
 //            usingMotionProfiling = false;
-//        targetAccel = (targetVelocity - prevTargetVelocity) / robot.shootingSystem.dt;
     }
 
     @Override
@@ -249,15 +241,14 @@ public class Turret extends Component {
         telemetry.addLine("-----");
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
         telemetry.addData("p Voltage", pVoltage);
-        telemetry.addData("v ff Voltage", vFFVoltage);
-        telemetry.addData("v fb Voltage", vFBVoltage);
+        telemetry.addData("v rot Voltage", vRVoltage);
+        telemetry.addData("v trans Voltage", vTVoltage);
         telemetry.addData("kP", kP);
         telemetry.addData("kf", kF);
         telemetry.addLine("-----");
         telemetry.addData("target encoder", targetEncoder);
         telemetry.addData("target velocity from rot", targetVelocityFromRotation);
         telemetry.addData("target velocity from trans", targetVelocityFromTranslation);
-//        telemetry.addData("target angular velocity", targetAngularVelocity);
 //        telemetry.addLine("-----");
         telemetry.addData("current encoder", currentEncoder);
         telemetry.addData("current velocity", currentVelocity);
@@ -265,7 +256,7 @@ public class Turret extends Component {
 //        telemetry.addData("turret current relative angle deg", Math.toDegrees(curRelAngleRad));
 //        telemetry.addData("turret target relative angle deg", Math.toDegrees(targetRelAngleRad));
 //        telemetry.addLine("-----");
-//        telemetry.addData("angle degree error", positionError / turretTicksPerDegree);
+        telemetry.addData("angle degree error", Math.toDegrees(positionError / turretParams.ticksPerRad));
         telemetry.addData("encoder error", positionError);
         telemetry.addData("velocity error", velocityError);
         telemetry.addData("voltage", robot.getFilteredVoltage());
@@ -274,7 +265,7 @@ public class Turret extends Component {
         telemetry.addData("using motion profiling", usingMotionProfiling ? 100 : 0);
         telemetry.addData("odo heading rad", robot.shootingSystem.odoVel.headingRad);
 //        telemetry.addLine("-----");
-//        telemetry.addData("inRange", inRange());
+        telemetry.addData("inRange", inRange());
     }
 
     public void changeEncoderAdjustment(int amount) {
