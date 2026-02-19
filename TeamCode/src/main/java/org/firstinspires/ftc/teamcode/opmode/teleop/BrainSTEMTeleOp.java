@@ -79,6 +79,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         waitForStart();
+        robot.startOpmode();
         robot.turret.update();
         while (opModeIsActive()) {
             gp1.update();

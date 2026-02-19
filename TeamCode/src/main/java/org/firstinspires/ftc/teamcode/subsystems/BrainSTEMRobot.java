@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
@@ -22,7 +23,7 @@ public class BrainSTEMRobot {
     public static double width = 13, length = 16; // inches
     public static boolean enablePinpoint = true, enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
-
+    public static double voltageAlpha = .99, voltageDataBuildupTime = 1;
     public Turret turret;
     public Shooter shooter;
     public ShootingSystem shootingSystem;
@@ -35,6 +36,9 @@ public class BrainSTEMRobot {
     private final ArrayList<Component> subsystems;
     private final Telemetry telemetry;
     public GamepadTracker g1;
+
+    private double rawVoltage, filteredVoltage;
+    private final ElapsedTime timer;
 
     public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
         this.telemetry = telemetry;
@@ -62,11 +66,20 @@ public class BrainSTEMRobot {
             subsystems.add(limelight);
         if (enableLED)
             subsystems.add(led);
+
+        timer = new ElapsedTime();
+        timer.reset();
+    }
+    public void startOpmode() {
+        timer.reset();
     }
     public void setG1(GamepadTracker g1) {
         this.g1 = g1;
     }
     public void update(boolean useTurretLookAhead) {
+        rawVoltage = drive.voltageSensor.getVoltage();
+        double a = timer.seconds() < voltageDataBuildupTime ? 0 : voltageAlpha;
+        filteredVoltage = filteredVoltage * a + (1 - a) * rawVoltage;
         if(enablePinpoint)
             drive.updatePoseEstimate();
         shootingSystem.updateInfo(useTurretLookAhead);
@@ -122,5 +135,11 @@ public class BrainSTEMRobot {
                 shootingSystem.ballExitPos.x + 1.5 * speedMag * Math.cos(shootingSystem.actualTurretTargetAngleRad),
                 shootingSystem.ballExitPos.y + 1.5 * speedMag * Math.sin(shootingSystem.actualTurretTargetAngleRad)
         );
+    }
+    public double getFilteredVoltage() {
+        return filteredVoltage;
+    }
+    public double getRawVoltage() {
+        return rawVoltage;
     }
 }

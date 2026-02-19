@@ -199,6 +199,7 @@ public abstract class AutoPid extends LinearOpMode {
         telemetry.addLine("READY TO RUN");
         telemetry.update();
         waitForStart();
+        robot.startOpmode();
         autoTimer.reset();
 
         robot.shooter.setBallsShot(0); // always start with 3 preloads

@@ -27,7 +27,6 @@ import java.util.Arrays;
 public class ShootingSystem {
     public static class TestingParams {
         public boolean usingLookup = false;
-        public boolean enableShootingWhileMovingNear = true, enableShootingWhileMovingFar = false;
     }
     public static class GoalParams {
         public double nearRedX = -63, nearRedY = 63;
@@ -37,7 +36,7 @@ public class ShootingSystem {
         public double midBlueX = -66, midBlueY = -65;
         public double farBlueX = -67, farBlueY = -63;
         public double nearHeight = 38, midHeight = 39, farHeight = 42;
-        public double nearImpactAng = Math.toRadians(-30), midImpactAng = -Math.toRadians(25), farImpactAng = Math.toRadians(-25);
+        public double nearImpactAng = Math.toRadians(-30), midImpactAng = Math.toRadians(-25), farImpactAng = Math.toRadians(-24);
         public double nearStateThreshold = 58;
     }
     public static class HoodParams {
@@ -211,20 +210,16 @@ public class ShootingSystem {
 
         double desiredBallDir = Math.atan2(goalPosIn.z - futureBallExitPos.y, goalPosIn.x - futureBallExitPos.x);
 
-        shootingWhileMoving =
-                robot.collection.getClutchState() == Collection.ClutchState.ENGAGED &&
-                        robot.turret.inRange &&
-                        ((distState != Dist.FAR && testingParams.enableShootingWhileMovingNear) || (distState == Dist.FAR && testingParams.enableShootingWhileMovingFar));
-        Vector2d robotExitPosVel = robotVelAtExitPosIps.times(shootingWhileMoving ? 0.0254 : 0);
         if(testingParams.usingLookup)
-            updateLookupProperties(desiredBallDir, robotExitPosVel);
+            updateLookupProperties(desiredBallDir, robotVelAtExitPosIps);
         else
-            updatePhysicsProperties(desiredBallDir, shootingWhileMoving, robotExitPosVel);
+            updatePhysicsProperties(desiredBallDir, robotVelAtExitPosIps);
     }
 
     // pro: yes velocity-based hood adjustment
     // con: math is weird
-    private void updatePhysicsProperties(double desiredBallDir, boolean shootWhileMoving, Vector2d robotExitPosVel) {
+    private void updatePhysicsProperties(double desiredBallDir, Vector2d robotExitPosVel) {
+        shootingWhileMoving = distState == Dist.NEAR || distState == Dist.MID;
         // get delta y of projectory (need approximate exit height of the ball)
         double exitHeightM = ShootingMath.approximateExitHeightM(distState == Dist.NEAR);
         relGoalHeightM = (goalPosIn.y * 0.0254 - exitHeightM);
@@ -234,7 +229,9 @@ public class ShootingSystem {
 
         ballTargetExitSpeedMps = launchVector[0];
         ballExitAngleRad = launchVector[1];
-        if(shootWhileMoving) {
+        if(shootingWhileMoving) {
+            if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED)
+                robotExitPosVel = new Vector2d(0, 0);
             actualTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, launchVector[1], launchVector[0], robotExitPosVel);
             double baseLength = Math.hypot(actualTargetExitVelMps.x, actualTargetExitVelMps.z);
             hoodExitAngleRad = Range.clip(Math.atan2(actualTargetExitVelMps.y, baseLength), hoodParams.minExitAngRad, hoodParams.maxExitAngRad);
@@ -417,7 +414,7 @@ public class ShootingSystem {
         turretMotor.resetEncoders();
     }
     public void setTurretVoltage(double voltage) {
-        double power = voltage / robot.drive.voltageSensor.getVoltage();
+        double power = voltage / robot.getFilteredVoltage();
         turretMotor.setPower(power);
     }
     public double getTurretPower() {
