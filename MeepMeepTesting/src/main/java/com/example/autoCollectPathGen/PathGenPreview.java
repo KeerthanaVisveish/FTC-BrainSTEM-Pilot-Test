@@ -24,11 +24,12 @@ controls
 mouse: create points/drag points around
 backspace: delete selected point
 delete: delete all points
-Q: toggle debug info
-C: show complex path
-S: show simplified path
-1: draw previous path node's robot
-2: draw next path node's robot
+I: toggle debug info
+WASD: pan camera
+E/Q: zoom in/out
+J/K: rotate robot right/left
+P: toggle complex/simplified path
+0/9: move current path point to draw robot pose at
  */
 public class PathGenPreview extends JPanel
         implements MouseListener, MouseMotionListener, KeyListener {
@@ -185,7 +186,7 @@ public class PathGenPreview extends JPanel
         int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
         drawRobot(g2, robot);
-        Pose2d wallSafePose = PathGeneration.getWallSafePose(robotWidth, robotLength, robot, robot.heading.toDouble());
+        Pose2d wallSafePose = PathGeneration.getWallSafePose(robot);
         drawRobot(g2, wallSafePose);
         boolean selectedABall = selectedPoseIndex >= 0;
         boolean selectedRobot = selectedPoseIndex == -1;
@@ -211,9 +212,9 @@ public class PathGenPreview extends JPanel
 
         ArrayList<Pose2d> posesToDraw;
         if (drawSimplifiedPath)
-            posesToDraw = PathGeneration.getSimplifiedAutoCollectPathPoses(true, 13, 16, robot, ballPositions, 100, 3);
+            posesToDraw = PathGeneration.getSimplifiedAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
         else
-            posesToDraw = PathGeneration.getAutoCollectPathPoses(true, 13, 16, robot, ballPositions, 100, 3);
+            posesToDraw = PathGeneration.getAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
         if (posesToDraw == null)
             return;
 
@@ -266,6 +267,9 @@ public class PathGenPreview extends JPanel
     }
     private double drawToFieldSize(int size) {
         return 1.*size / drawScale;
+    }
+    private void drawPosition(Graphics2D g2, Vector2d position, double radiusField) {
+        drawPosition(g2, position, radiusField, false);
     }
     private void drawPosition(Graphics2D g2, Vector2d position, double radiusField, boolean filled) {
         Point draw = fieldToDrawPosition(position);
@@ -423,32 +427,32 @@ public class PathGenPreview extends JPanel
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_W:
-                bottomLeft = bottomLeft.plus(new Vector2d(0, -2));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(0, -2));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_A:
-                bottomLeft = bottomLeft.plus(new Vector2d(-2, 0));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(-2, 0));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_S:
-                bottomLeft = bottomLeft.plus(new Vector2d(0, 2));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(0, 2));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_D:
-                bottomLeft = bottomLeft.plus(new Vector2d(2, 0));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(2, 0));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_E:
                 windowSize -= 4;
                 windowSize = Math.max(24, Math.min(144, windowSize));
-                bottomLeft = bottomLeft.plus(new Vector2d(2, 2));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(2, 2));
                 drawScale = getWidth() / windowSize;
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_Q:
                 windowSize += 4;
                 windowSize = Math.max(24, Math.min(144, windowSize));
-                bottomLeft = bottomLeft.plus(new Vector2d(-2, -2));
+                bottomLeft = bottomLeftDraw.plus(new Vector2d(-2, -2));
                 drawScale = getWidth() / windowSize;
                 shouldRepaint = true;
                 break;

@@ -76,6 +76,9 @@ public class MathUtils {
         for (double v : l) sum += v;
         return sum / l.length;
     }
+    public static double vecMag(Vector2d v) {
+        return Math.hypot(v.x, v.y);
+    }
 
     public static String formatPose(Pose2d pose) {
         if (pose == null)

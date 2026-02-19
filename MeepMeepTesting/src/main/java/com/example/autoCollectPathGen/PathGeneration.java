@@ -9,11 +9,16 @@ import java.util.Comparator;
 
 public class PathGeneration {
     public static class AutoCollectParams {
+        public double robotWidth = 13.5;
+        public double robotLength = 16;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 8 extra inches
         public double laneIncrement = 1, laneWidth = 6;
         public double groupAsClusterDist = 8;
         public double groupAsClusterAngle = 45;
         public double constrainClusterApproachAngleThreshold = 50;
+        public double activateStrafeCollectDist = 13, activateStrafeAngleDiff = 45;
+        public double strafeCollectAngleOffset = 30;
+        public double strafeCollectDriveThroughDist = 3;
         public double maxPathSimplificationEpsilon = 1; // max dist from original path to simplified path
         public double maxHeadingChangeSimplification = 5;
 
@@ -24,26 +29,30 @@ public class PathGeneration {
 
         public double cornerBallDistance = 6.5;
 
+
+        public double wallStrafeCollectMinApproachAngle = 45; // used for classifier and back wall
+        public double wallCollectAngle = 45;
+
+
+
         public double classifierWallDistance = 4;
+        public double classifierWallStrafeDist = 13;
         public double classifierWallMaxApproachAngleDiff = 10;
 
         public double backWallDistance = 5;
-        public double backWallCollectYOffset = 2;
-        public double backWallCollectAngle = 45;
-        public double backWallStrafeCollectMinApproachAngle = 45;
 
     }
     public static AutoCollectParams params = new AutoCollectParams();
 
     public static Vector2d[] ballsUsed = null; // used to draw balls on FTC dashboard
 
-    public static ArrayList<Pose2d> getSimplifiedAutoCollectPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
-        ArrayList<Pose2d> pathPoses = getAutoCollectPathPoses(onRedAlliance, robotWidth, robotLength, startPose, points, simplePathingThreshold, maxPointsInPath);
+    public static ArrayList<Pose2d> getSimplifiedAutoCollectPathPoses(boolean onRedAlliance, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
+        ArrayList<Pose2d> pathPoses = getAutoCollectPathPoses(onRedAlliance, startPose, points, simplePathingThreshold, maxPointsInPath);
         if (pathPoses == null)
             return null;
         return simplifyPathPoses(startPose, pathPoses);
     }
-    public static ArrayList<Pose2d> getAutoCollectPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
+    public static ArrayList<Pose2d> getAutoCollectPathPoses(boolean onRedAlliance, Pose2d startPose, Vector2d[] points, int simplePathingThreshold, int maxPointsInPath) {
         if (points.length == 0) {
             ballsUsed = null;
             return null;
@@ -68,7 +77,7 @@ public class PathGeneration {
         // more complex pathfinding approach
         // when there are not enough balls for sliding window, actually find ideal combo of balls and drive path
         ArrayList<Vector2d> path = getShortestPath(startPose, points, maxPointsInPath);
-        return generateComplexPathPoses(onRedAlliance, robotWidth, robotLength, startPosition, path);
+        return generateComplexPathPoses(onRedAlliance, startPosition, path);
     }
 
     // use a sliding window of width laneWidth moving at a speed of increment
@@ -179,7 +188,7 @@ public class PathGeneration {
         CLASSIFIER_WALL,
         BACK_WALL
     }
-    private static ArrayList<Pose2d> generateComplexPathPoses(boolean onRedAlliance, double robotWidth, double robotLength, Vector2d robotPos, ArrayList<Vector2d> path) {
+    private static ArrayList<Pose2d> generateComplexPathPoses(boolean onRedAlliance, Vector2d robotPos, ArrayList<Vector2d> path) {
         ArrayList<Pose2d> pathPoses = new ArrayList<>();
         Vector2d cornerPosition = new Vector2d(72, onRedAlliance ? 72 : -72);
         ArrayList<Vector2d> clusteredPositions = new ArrayList<>();
@@ -190,13 +199,14 @@ public class PathGeneration {
             Vector2d nextBall = i < path.size() - 1 ? path.get(i + 1) : null;
             Vector2d prevPathPoint = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).position : robotPos;
 
-            double defaultApproachAngle = -100;
+            double defaultApproachAngle = Math.atan2(curBall.y - prevPathPoint.y, curBall.x - prevPathPoint.x);
             double preCollectExtraOffset = 0;
             double collectExtraOffset = 0;
 
             // keep merging balls into clusters as long as they are close enough
             if (nextBall != null) {
                 Vector2d curToNextBall = nextBall.minus(curBall);
+                double curToNextAngle = Math.atan2(curToNextBall.y, curToNextBall.x);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
                 if (curToNextBallDist < params.groupAsClusterDist) {
                     if (!clusteredPositions.contains(curBall))
@@ -204,13 +214,12 @@ public class PathGeneration {
                     clusteredPositions.add(nextBall);
                     Vector2d prevPathPointToCurBall = curBall.minus(prevPathPoint);
                     double prevToCurAngle = Math.atan2(prevPathPointToCurBall.y, prevPathPointToCurBall.x);
-                    double curToNextAngle = Math.atan2(curToNextBall.y, curToNextBall.x);
-                    double angleDiff = Math.abs(MathUtils.findAngleRadDiff(curToNextAngle, prevToCurAngle));
+                    double absAngleDiff = Math.abs(MathUtils.findAngleRadDiff(curToNextAngle, prevToCurAngle));
 
-                    if (angleDiff < Math.toRadians(params.constrainClusterApproachAngleThreshold))
-                        clusteredCollectAngleInfo.add(new double[]{curToNextAngle, angleDiff});
+                    if (absAngleDiff < Math.toRadians(params.constrainClusterApproachAngleThreshold))
+                        clusteredCollectAngleInfo.add(new double[]{curToNextAngle, absAngleDiff});
 
-                    path.set(i + 1, getMergedBall(nextBall, clusteredPositions, angleDiff));
+                    path.set(i + 1, getMergedBall(nextBall, clusteredPositions, absAngleDiff));
                     path.remove(i);
                     i--;
                     continue;
@@ -219,28 +228,31 @@ public class PathGeneration {
 
             // this only runs if current cluster has been finished merging
             // once current cluster has finished, find approach information
+            boolean isACluster = false;
             if (!clusteredPositions.isEmpty()) {
-                if (!clusteredCollectAngleInfo.isEmpty())
-                    defaultApproachAngle = getBestClusterApproachAngle(clusteredCollectAngleInfo);
+                isACluster = true;
 
+                // only a valid cluster approach angle was found AND the ball is not near any walls, use it
+                PointType pointType = getPointType(curBall, cornerPosition);
+                if (!clusteredCollectAngleInfo.isEmpty() && pointType == PointType.NORMAL) {
+                    Double potentiallyBetterApproachAngle = getBestClusterApproachAngle(curBall, clusteredPositions, clusteredCollectAngleInfo);
+                    if (potentiallyBetterApproachAngle != null)
+                        defaultApproachAngle = potentiallyBetterApproachAngle;
+                }
                 // find extra pre collect offset dist
                 double[] minMaxDistance = getMinMaxClusterDistancesFromCenter(curBall, defaultApproachAngle, clusteredPositions);
                 preCollectExtraOffset = Math.abs(minMaxDistance[0]);
                 collectExtraOffset = Math.abs(minMaxDistance[1]);
-//                System.out.println(i + ": " + preCollectExtraOffset + " | " + collectExtraOffset);
 
                 clusteredPositions.clear();
                 clusteredCollectAngleInfo.clear();
             }
 
-            if (defaultApproachAngle == -100)
-                defaultApproachAngle = Math.atan2(curBall.y - prevPathPoint.y, curBall.x - prevPathPoint.x);
-
             // categorize point
             PointType pointType = getPointType(curBall, cornerPosition);
 
             // build collect and pre collect poses based on the type of point
-            double[] collectInfo = getCollectInfo(pointType, curBall, prevPathPoint, defaultApproachAngle);
+            double[] collectInfo = getCollectInfo(pointType, isACluster, curBall, nextBall, prevPathPoint, defaultApproachAngle);
             double preCollectOffset = collectInfo[0];
             double preCollectToCollectAngle = collectInfo[1];
             double collectAngle = collectInfo[2];
@@ -251,12 +263,12 @@ public class PathGeneration {
             collectPose = new Pose2d(collectPose.position.plus(new Vector2d(collectXOffset, collectYOffset)), collectPose.heading);
             Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset + collectExtraOffset);
 
-            Pose2d wallSafeCollectPose = getWallSafePose(robotWidth, robotLength, collectPose, collectAngle);
-            Pose2d wallSafePreCollectPose = getWallSafePose(robotWidth, robotLength, preCollectPose, collectAngle);
-            if (!wallSafeCollectPose.equals(collectPose))
+            Pose2d wallSafeCollectPose = getWallSafePose(collectPose);
+            Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
+            if (!wallSafeCollectPose.equals(collectPose)) {
                 wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, preCollectToCollectAngle, preCollectOffset + preCollectExtraOffset);
-
-
+                wallSafePreCollectPose = getWallSafePose(wallSafePreCollectPose);
+            }
             pathPoses.add(wallSafePreCollectPose);
             pathPoses.add(wallSafeCollectPose);
         }
@@ -279,17 +291,26 @@ public class PathGeneration {
             newBall = nextBall;
         return newBall;
     }
-    private static double getBestClusterApproachAngle(ArrayList<double[]> clusteredCollectAngleInfo) {
-        double minDiff = clusteredCollectAngleInfo.get(0)[1];
-        double bestAngle = clusteredCollectAngleInfo.get(0)[0];
-        for (int j = 1; j < clusteredCollectAngleInfo.size(); j++) {
+    private static Double getBestClusterApproachAngle(Vector2d clusterCenter, ArrayList<Vector2d> clusteredPositions, ArrayList<double[]> clusteredCollectAngleInfo) {
+        double minAbsDiff = -1;
+        double bestApproachAngle = -1;
+        for (int j=0; j<clusteredCollectAngleInfo.size(); j++) {
             double[] info = clusteredCollectAngleInfo.get(j);
-            if (info[1] < minDiff) {
-                minDiff = info[1];
-                bestAngle = info[0];
+            double approachAngle = info[0];
+            double absAngleDiff = info[1];
+            double[] minMaxDistance = getMinMaxClusterDistancesFromCenter(clusterCenter, approachAngle, clusteredPositions);
+            Pose2d collectPose = getCollectPose(clusterCenter, approachAngle, 0);
+            Pose2d preCollectPose = getPreCollectPose(collectPose, approachAngle, Math.abs(minMaxDistance[0]));
+            Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
+            if (wallSafePreCollectPose != preCollectPose)
+                continue;
+
+            if (absAngleDiff < minAbsDiff || minAbsDiff == -1) {
+                minAbsDiff = absAngleDiff;
+                bestApproachAngle = approachAngle;
             }
         }
-        return bestAngle;
+        return minAbsDiff == -1 ? null : bestApproachAngle;
     }
     private static double[] getMinMaxClusterDistancesFromCenter(Vector2d clusterCenter, double approachAngle, ArrayList<Vector2d> clusterPositions) {
         Vector2d dir = new Vector2d(Math.cos(approachAngle), Math.sin(approachAngle));
@@ -319,9 +340,10 @@ public class PathGeneration {
             pointType = PointType.BACK_WALL;
         return pointType;
     }
-    // pre collect offset, pre collect, collect
-    private static double[] getCollectInfo(PointType pointType, Vector2d curBall, Vector2d prevPathPoint, double defaultApproachAngle) {
+
+    private static double[] getCollectInfo(PointType pointType, boolean isACluster, Vector2d curBall, Vector2d nextBall, Vector2d prevPathPoint, double defaultApproachAngle) {
         double wallAngle = curBall.y > 0 ? Math.toRadians(90) : Math.toRadians(-90);
+        Vector2d curToNextBall = nextBall == null ? null : nextBall.minus(curBall);
         double preCollectToCollectAngle;
         double collectAngle;
         double preCollectOffset = params.preCollectOffset;
@@ -333,19 +355,43 @@ public class PathGeneration {
                 preCollectToCollectAngle = collectAngle;
                 break;
             case CLASSIFIER_WALL:
-                double angleDiff = defaultApproachAngle - wallAngle;
-                double maxAngle = Math.toRadians(params.classifierWallMaxApproachAngleDiff);
-                if (Math.abs(angleDiff) > maxAngle)
-                    angleDiff = Math.signum(angleDiff) * maxAngle;
-                collectAngle = wallAngle + angleDiff;
-                preCollectToCollectAngle = collectAngle;
+                double dx = curToNextBall == null ? curBall.x - prevPathPoint.x : curToNextBall.x;
+                collectXOffset = Math.signum(dx) * params.strafeCollectDriveThroughDist;
+                preCollectOffset += collectXOffset;
+                if (Math.signum(dx) == 1)
+                    collectAngle = params.wallCollectAngle;
+                else
+                    collectAngle = Math.PI - params.wallCollectAngle;
+                collectAngle *= Math.signum(wallAngle);
+                preCollectToCollectAngle = Math.signum(dx) == 1 ? 0 : Math.PI;
+
+                // if dist(cur ball, next ball) < threshold: strafe collect
+                // else: use constrained wall angle
+//                if (nextBall != null && MathUtils.vecMag(curToNextBall) < params.classifierWallStrafeDist) {
+//                    collectXOffset = Math.signum(curToNextBall.x) * params.strafeCollectDriveThroughDist;
+//                    preCollectOffset += collectXOffset;
+//                    if (Math.signum(curToNextBall.x) == 1)
+//                        collectAngle = params.wallCollectAngle;
+//                    else
+//                        collectAngle = Math.PI - params.wallCollectAngle;
+//                    collectAngle *= Math.signum(wallAngle);
+//                    preCollectToCollectAngle = Math.signum(curToNextBall.x) == 1 ? 0 : Math.PI;
+//                }
+//                else {
+//                    double angleDiff = defaultApproachAngle - wallAngle;
+//                    double maxAngle = Math.toRadians(params.classifierWallMaxApproachAngleDiff);
+//                    if (Math.abs(angleDiff) > maxAngle)
+//                        angleDiff = Math.signum(angleDiff) * maxAngle;
+//                    collectAngle = wallAngle + angleDiff;
+//                    preCollectToCollectAngle = collectAngle;
+//                }
                 break;
             case BACK_WALL:
-                if (Math.abs(defaultApproachAngle) > Math.toRadians(params.backWallStrafeCollectMinApproachAngle)) {
+                if (Math.abs(defaultApproachAngle) > Math.toRadians(params.wallStrafeCollectMinApproachAngle)) {
                     double dy = curBall.y - prevPathPoint.y;
-                    collectYOffset = Math.signum(dy) + params.backWallCollectYOffset;
+                    collectYOffset = Math.signum(dy) + params.strafeCollectDriveThroughDist;
                     preCollectOffset += collectYOffset;
-                    collectAngle = Math.toRadians(params.backWallCollectAngle) * Math.signum(dy);
+                    collectAngle = Math.toRadians(params.wallCollectAngle) * Math.signum(dy);
                     preCollectToCollectAngle = Math.toRadians(90) * Math.signum(dy);
                 }
                 else {
@@ -355,11 +401,37 @@ public class PathGeneration {
                 break;
             case NORMAL:
             default:
+                if (nextBall != null && !isACluster) {
+                    Vector2d prevToCurBall = curBall.minus(prevPathPoint);
+                    double prevToCurAngle = Math.atan2(prevToCurBall.y, prevToCurBall.x);
+                    double curToNextAngle = Math.atan2(curToNextBall.y, curToNextBall.x);
+                    double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
+                    double angleDifference = MathUtils.findAngleRadDiff(curToNextAngle, prevToCurAngle);
+                    if (curToNextBallDist < params.activateStrafeCollectDist && Math.abs(angleDifference) > params.activateStrafeAngleDiff) {
+                        Pose2d[] strafeCollectPoses = generateStrafeCollectPoses(prevPathPoint, curBall, curToNextAngle);
+                    }
+                }
                 collectAngle = defaultApproachAngle;
                 preCollectToCollectAngle = collectAngle;
                 break;
         }
         return new double[] { preCollectOffset, preCollectToCollectAngle, collectAngle, collectXOffset, collectYOffset };
+    }
+    public static Pose2d[] generateStrafeCollectPoses(Vector2d prevPathPosition, Vector2d point, double collectAngle) {
+        Vector2d collectDir = new Vector2d(Math.cos(collectAngle), Math.sin(collectAngle));
+        Vector2d preCollect = point.minus(collectDir.times(params.strafeCollectDriveThroughDist));
+        Vector2d postCollect = point.plus(collectDir.times(params.strafeCollectDriveThroughDist));
+        double potentialCollectAngle1 = collectAngle + Math.toRadians(params.strafeCollectAngleOffset);
+        double potentialCollectAngle2 = collectAngle - Math.toRadians(params.strafeCollectAngleOffset);
+        Vector2d potentialPreCollect1 = getCollectPose(preCollect, potentialCollectAngle1, 0).position;
+        Vector2d potentialPreCollect2 = getCollectPose(preCollect, potentialCollectAngle2, 0).position;
+        Vector2d prevToC1 = potentialPreCollect1.minus(prevPathPosition);
+        Vector2d prevToC2 = potentialPreCollect2.minus(prevPathPosition);
+        double d1 = Math.hypot(prevToC1.x, prevToC1.y);
+        double d2 = Math.hypot(prevToC2.x, prevToC2.y);
+        Pose2d preCollectPose = d1 < d2 ? new Pose2d(potentialPreCollect1.x, potentialPreCollect1.y, potentialCollectAngle1) : new Pose2d(potentialPreCollect2.x, potentialPreCollect2.y, potentialCollectAngle2);
+        Pose2d postCollectPose = getCollectPose(postCollect, preCollectPose.heading.toDouble(), 0);
+        return new Pose2d[] { preCollectPose, postCollectPose };
     }
     private static ArrayList<Pose2d> simplifyPathPoses(Pose2d startPose, ArrayList<Pose2d> pathPoses) {
         ArrayList<Pose2d> simplified = new ArrayList<>();
@@ -404,10 +476,10 @@ public class PathGeneration {
         simplified.add(pathPoses.get(pathPoses.size() - 1));
         return simplified;
     }
-    public static Pose2d getWallSafePose(double robotWidth, double robotLength, Pose2d pose, double desiredCollectAngle) {
+    public static Pose2d getWallSafePose(Pose2d pose) {
         Vector2d position = pose.position;
-        double halfW = robotWidth * 0.5;
-        double halfL = robotLength * 0.5;
+        double halfW = params.robotWidth * 0.5;
+        double halfL = params.robotLength * 0.5;
 
         Vector2d[] positionsToCheck = new Vector2d[] {
                 new Vector2d(halfL, -halfW), // fr
