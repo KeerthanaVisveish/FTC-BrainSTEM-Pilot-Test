@@ -44,7 +44,7 @@ public class PathGenPreview extends JPanel
     static double drawScale = 4;
     static final double robotHitboxRadius = 8;
     static final double robotWidth = 13.5, robotLength = 16;
-    static final double ballRadius = 2;
+    static final double ballRadius = 2.5;
     static final double pathNodeRadius = 2;
     static final double strokeSize = 0.5;
     private final List<Pose2d> balls = new ArrayList<>();
@@ -52,12 +52,7 @@ public class PathGenPreview extends JPanel
     private int selectedPoseIndex = -2;
     private BufferedImage background;
 
-    public enum CreateMode {
-        ROBOT,
-        BALL
-    }
-    private CreateMode createMode = CreateMode.BALL;
-    private boolean drawSimplifiedPath = false;
+    private boolean drawSimplifiedPath = true;
     private int drawRobotNodeIndex = 0;
     private boolean drawInfo = false;
     private int numRandomBallsToGenerate = 0;
@@ -173,7 +168,6 @@ public class PathGenPreview extends JPanel
             g2.setColor(Color.BLACK);
             g2.fillRect(0, 0, 120, 400);
             g2.setColor(Color.WHITE);
-            g2.drawString("Mode: " + createMode, 10, 15);
             g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 35);
             g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 55);
             for (int i = 0; i < balls.size(); i++) {
@@ -211,7 +205,7 @@ public class PathGenPreview extends JPanel
         for (int i=0; i<balls.size(); i++)
             ballPositions[i] = balls.get(i).position;
 
-        ArrayList<Pose2d> posesToDraw = PathGeneration.getAutoCollectPoses(drawSimplifiedPath, robot, ballPositions, 3);
+        ArrayList<Pose2d> posesToDraw = PathGeneration.getAutoCollectPoses(drawSimplifiedPath, robot, ballPositions);
         if (posesToDraw == null)
             return;
 
@@ -309,7 +303,6 @@ public class PathGenPreview extends JPanel
             int radius = fieldToDrawSize(ballRadius);
 
             if (mouse.distance(point) <= radius) {
-                createMode = CreateMode.BALL;
                 selectedPoseIndex = i;
                 repaint();
                 return;
@@ -323,14 +316,12 @@ public class PathGenPreview extends JPanel
             // Add new circle if in BALL mode
             Vector2d creationPos = drawToFieldPosition(mouse.getLocation());
             Pose2d creationPose = new Pose2d(creationPos.x, creationPos.y, 0);
-            if (createMode == CreateMode.BALL) {
-                if (constrainBallsInsideField) {
-                    creationPose = new Pose2d(
-                            Math.max(-72, Math.min(72, creationPose.position.x)),
-                            Math.max(-72, Math.min(72, creationPose.position.y)),
-                            0
-                    );
-                }
+            if (constrainBallsInsideField) {
+                creationPose = new Pose2d(
+                        Math.max(-72, Math.min(72, creationPose.position.x)),
+                        Math.max(-72, Math.min(72, creationPose.position.y)),
+                        0
+                );
                 balls.add(creationPose);
                 selectedPoseIndex = balls.size() - 1;
             } else {
@@ -379,7 +370,6 @@ public class PathGenPreview extends JPanel
                 break;
             case KeyEvent.VK_BACK_SPACE:
                 if (selectedPoseIndex != -2) {
-                    createMode = CreateMode.BALL;
                     balls.remove(selectedPoseIndex);
                     selectedPoseIndex = -2;
                     shouldRepaint = true;
@@ -463,8 +453,14 @@ public class PathGenPreview extends JPanel
                         if (!generateRedRandomBalls)
                             y *= -1;
                         for (Pose2d ball : balls) {
-                            if (MathUtils.vecMag(ball.position.minus(new Vector2d(x, y))) < 5) {
-                                hittingAnotherBall = true;
+                            Vector2d curBall = new Vector2d(x, y);
+                            Vector2d curBallToBall = ball.position.minus(curBall);
+                            double dist = MathUtils.vecMag(curBallToBall);
+                            if (dist < 5) {
+                                curBall = curBall.plus(curBallToBall.div(dist).times(5 - dist));
+                                curBallToBall = ball.position.minus(curBall);
+                                dist = MathUtils.vecMag(curBallToBall);
+                                hittingAnotherBall = dist < 5;
                                 break;
                             }
                         }

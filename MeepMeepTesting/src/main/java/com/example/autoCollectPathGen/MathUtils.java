@@ -83,6 +83,15 @@ public class MathUtils {
             total.append(format3(num)).append(", ");
         return total.substring(0, total.length() - 2);
     }
+    public static String formatRad2(double rad) {
+        return format2(Math.toDegrees(rad));
+    }
+    public static String formatRad3(double rad) {
+        return format3(Math.toDegrees(rad));
+    }
+    public static String formatRad4(double rad) {
+        return format(Math.toDegrees(rad), 4);
+    }
 
     public static double lerp(double a, double b, double t) {
         return a + (b - a) * t;

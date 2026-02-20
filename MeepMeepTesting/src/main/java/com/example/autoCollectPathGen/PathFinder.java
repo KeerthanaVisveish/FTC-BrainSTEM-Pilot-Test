@@ -9,10 +9,10 @@ import java.util.List;
 
 public class PathFinder {
     // extra distance of path = total change in angle * changeInAngleDegCost
-    public static ArrayList<Vector2d> findShortestPath(Pose2d startPose, Vector2d[] nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
+    public static ArrayList<Vector2d> findShortestPath(Pose2d startPose, ArrayList<Vector2d> nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
         // get all of the possible combinations of paths
-        int combinationLength = Math.min(maxNodesInPath, nodes.length);
-        List<List<Vector2d>> combinations = getCombinations(new ArrayList<>(Arrays.asList(nodes)), combinationLength);
+        int combinationLength = Math.min(maxNodesInPath, nodes.size());
+        List<List<Vector2d>> combinations = getCombinations(nodes, combinationLength);
         if (combinations.isEmpty() || combinations.get(0).isEmpty())
             return null;
 
@@ -44,10 +44,10 @@ public class PathFinder {
         return shortestPath;
     }
 
-    // finding all possible combinations of length L given a list of length N
-    public static <T> List<List<T>> getCombinations(List<T> items, int k) {
+    // finding all possible combinations of length L given a list of items.size()
+    public static <T> List<List<T>> getCombinations(List<T> items, int L) {
         List<List<T>> result = new ArrayList<>();
-        backtrack(items, k, 0, new ArrayList<>(), result);
+        backtrack(items, L, 0, new ArrayList<>(), result);
         return result;
     }
 
@@ -134,23 +134,6 @@ public class PathFinder {
             prevAngle = angle;
         }
         return totalAngleChangeRad;
-        /*
-        double totalAngleChangeRad = 0;
-
-        double prevAngle = start.heading.toDouble();
-        for (int i=0; i<order.length; i++) {
-            Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start.position;
-            Vector2d n2 = nodes[order[i]];
-            double angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
-
-            double changeInAngle = angle - prevAngle;
-            if (Math.abs(changeInAngle) > Math.PI)
-                changeInAngle = Math.signum(changeInAngle) * (Math.PI * 2 - Math.abs(changeInAngle));
-            totalAngleChangeRad += Math.abs(changeInAngle);
-            prevAngle = angle;
-        }
-        return totalAngleChangeRad;
-         */
     }
 
     private static void swap(int[] arr, int i, int j) {
