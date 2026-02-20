@@ -57,11 +57,11 @@ public class PathGenPreview extends JPanel
         BALL
     }
     private CreateMode createMode = CreateMode.BALL;
-    private boolean drawSimplifiedPath = true;
+    private boolean drawSimplifiedPath = false;
     private int drawRobotNodeIndex = 0;
     private boolean drawInfo = false;
     private int numRandomBallsToGenerate = 0;
-    private boolean generateRedRandomBalls = true;
+    private boolean generateRedRandomBalls = false;
     public PathGenPreview(String backgroundImagePath) {
         loadFromFile();
 
@@ -211,11 +211,7 @@ public class PathGenPreview extends JPanel
         for (int i=0; i<balls.size(); i++)
             ballPositions[i] = balls.get(i).position;
 
-        ArrayList<Pose2d> posesToDraw;
-        if (drawSimplifiedPath)
-            posesToDraw = PathGeneration.getSimplifiedAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
-        else
-            posesToDraw = PathGeneration.getAutoCollectPathPoses(true, robot, ballPositions, 100, 3);
+        ArrayList<Pose2d> posesToDraw = PathGeneration.getAutoCollectPoses(drawSimplifiedPath, robot, ballPositions, 3);
         if (posesToDraw == null)
             return;
 
@@ -454,14 +450,16 @@ public class PathGenPreview extends JPanel
             case KeyEvent.VK_R: generateRedRandomBalls = true; break;
             case KeyEvent.VK_B: generateRedRandomBalls = false; break;
             case KeyEvent.VK_G:
+                drawRobotNodeIndex = 0;
+                selectedPoseIndex = -2;
                 balls.clear();
                 for (int i=0; i<numRandomBallsToGenerate; i++) {
                     boolean hittingAnotherBall;
                     double x, y;
                     do {
                         hittingAnotherBall = false;
-                        x = Math.random() * 48 + 24;
-                        y = Math.random() * 36 + 36;
+                        x = Math.random() * 45.5 + 24;
+                        y = Math.random() * 33.5 + 36;
                         if (!generateRedRandomBalls)
                             y *= -1;
                         for (Pose2d ball : balls) {
