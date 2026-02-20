@@ -1,14 +1,8 @@
 package org.firstinspires.ftc.teamcode.utils.pidDrive;
 
-import androidx.annotation.NonNull;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.utils.math.Vec;
-
-import java.util.Vector;
 import java.util.function.BooleanSupplier;
 
 @Config

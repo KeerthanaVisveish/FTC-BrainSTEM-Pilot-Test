@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.teleop;
 
-import static org.firstinspires.ftc.teamcode.utils.math.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
@@ -11,7 +11,6 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
@@ -21,11 +20,9 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
-
-import java.util.List;
 
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {

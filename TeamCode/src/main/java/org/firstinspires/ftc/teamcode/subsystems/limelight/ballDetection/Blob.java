@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 public class Blob {
     public final double tx, ty, x, y, area;

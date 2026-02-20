@@ -5,7 +5,7 @@ import androidx.annotation.NonNull;
 
 import com.acmerobotics.roadrunner.Pose2d;
 
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 public class Waypoint {
     public Pose2d pose;

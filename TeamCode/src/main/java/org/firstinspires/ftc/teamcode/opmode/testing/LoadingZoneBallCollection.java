@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.testing;
 
-import static org.firstinspires.ftc.teamcode.utils.math.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
@@ -75,7 +75,7 @@ public class LoadingZoneBallCollection extends OpMode {
             for (int i = 0; i < blobs.length; i++)
                 nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
 
-            mostRecentAutoCollectPathPoses = PathGeneration.getSimplifiedAutoCollectPathPoses(BrainSTEMRobot.alliance == Alliance.RED, robotPose, nodes, 100, 3);
+            mostRecentAutoCollectPathPoses = PathGeneration.getAutoCollectPoses(true, robotPose, nodes);
         }
         DrivePath autoCollectDrive = null;
         if (mostRecentAutoCollectPathPoses != null) {

@@ -1,9 +1,10 @@
-package org.firstinspires.ftc.teamcode.utils.math;
+package org.firstinspires.ftc.teamcode.utils.pidDrive;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 // helps for concise, easy printing to telemetry
@@ -19,13 +20,39 @@ public class MathUtils {
             rad -= 2 * Math.PI;
         return rad;
     }
-
-    public static double findAngleRadDiff(double angle2, double angle1) {
-        double angleDiff = angle2 - angle1;
-        double absDiff = Math.abs(angleDiff);
-        if (absDiff > Math.PI)
-            angleDiff = Math.signum(angleDiff) * (2 * Math.PI - absDiff);
-        return angleDiff;
+//    public static void main(String[] args) {
+//        double step = Math.toRadians(40);
+//
+//        for (double i=0; i<2 * Math.PI; i+=step) {
+//            for (double j=0; j<2 * Math.PI; j+=step) {
+//                System.out.println(Math.toDegrees(i) + " - " + Math.toDegrees(j) + " = " + Math.toDegrees(angleRadDiff(i, j)));
+//
+//            }
+//        }
+//    }
+    public static double angleRadDiff(Vector2d v2, Vector2d v1) {
+        double a2 = Math.atan2(v2.y, v2.x);
+        double a1 = Math.atan2(v1.y, v1.x);
+        return angleNormDeltaRad(a2 - a1);
+    }
+    public static double v1ToV2Angle(Vector2d v1, Vector2d v2) {
+        Vector2d v1ToV2 = v2.minus(v1);
+        return Math.atan2(v1ToV2.y, v1ToV2.x);
+    }
+    public static double vecAngle(Vector2d v) {
+        return Math.atan2(v.y, v.x);
+    }
+    public static double vecMag(Vector2d v) {
+        return Math.hypot(v.x, v.y);
+    }
+    public static Vector2d getAverage(ArrayList<Vector2d> vecs) {
+        double totalX = 0;
+        double totalY = 0;
+        for (Vector2d vec : vecs) {
+            totalX += vec.x;
+            totalY += vec.y;
+        }
+        return new Vector2d(totalX / vecs.size(), totalY / vecs.size());
     }
     public static String format1(Number num) {
         return format(num, 1);
@@ -55,6 +82,15 @@ public class MathUtils {
         for (double num : nums)
             total.append(format3(num)).append(", ");
         return total.substring(0, total.length() - 2);
+    }
+    public static String formatRad2(double rad) {
+        return format2(Math.toDegrees(rad));
+    }
+    public static String formatRad3(double rad) {
+        return format3(Math.toDegrees(rad));
+    }
+    public static String formatRad4(double rad) {
+        return format(Math.toDegrees(rad), 4);
     }
 
     public static double lerp(double a, double b, double t) {

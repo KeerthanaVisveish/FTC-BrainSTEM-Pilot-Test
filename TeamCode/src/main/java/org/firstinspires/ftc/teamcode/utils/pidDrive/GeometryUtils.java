@@ -4,19 +4,12 @@ import com.acmerobotics.roadrunner.Vector2d;
 
 public class GeometryUtils {
 
-    public static Vector2d robotVectorToFieldVector(Vector2d robotVector, double rHeadingRad) {
-        double cos = Math.cos(rHeadingRad);
-        double sin = Math.sin(rHeadingRad);
+    public static Vector2d rotateVector(Vector2d vector, double angle) {
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
         // cos, -sin
         // sin,  cos
-        return new Vector2d(robotVector.x * cos - robotVector.y * sin, robotVector.x * sin + robotVector.y * cos);
-    }
-    public static Vector2d fieldVectorToRobotVector(Vector2d fieldVector, double rHeadingRad) {
-        double cos = Math.cos(-rHeadingRad);
-        double sin = Math.sin(-rHeadingRad);
-        // cos, -sin
-        // sin,  cos
-        return new Vector2d(fieldVector.x * cos - fieldVector.y * sin, fieldVector.x * sin + fieldVector.y * cos);
+        return new Vector2d(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
     }
 
     /**

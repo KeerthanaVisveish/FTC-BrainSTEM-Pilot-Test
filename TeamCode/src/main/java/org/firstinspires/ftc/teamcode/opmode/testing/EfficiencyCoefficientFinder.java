@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.testing;
 
-import static org.firstinspires.ftc.teamcode.utils.math.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -14,7 +14,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 @TeleOp(name="Power Efficiency Finder", group="TestingParams")
 @Config

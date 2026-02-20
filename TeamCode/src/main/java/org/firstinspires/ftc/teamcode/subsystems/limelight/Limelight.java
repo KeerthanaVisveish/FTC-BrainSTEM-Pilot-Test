@@ -160,8 +160,6 @@ public class Limelight extends Component {
         double lateralOffset = Math.hypot(axialOffset, height) * Math.tan(Math.toRadians(tx));
 
         Vector2d relativeOffset = new Vector2d(axialOffset, -lateralOffset);
-        Vector2d fieldPosition = GeometryUtils.robotVectorToFieldVector(relativeOffset, cameraPose.heading.toDouble());
-
-        return fieldPosition.plus(cameraPose.position);
+        return GeometryUtils.rotateVector(relativeOffset, -cameraPose.heading.toDouble()).plus(cameraPose.position);
     }
 }

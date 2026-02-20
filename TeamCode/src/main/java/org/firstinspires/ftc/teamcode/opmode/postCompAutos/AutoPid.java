@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.postCompAutos;
 
-import static org.firstinspires.ftc.teamcode.utils.math.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import androidx.annotation.NonNull;
 
@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.Tolerance;

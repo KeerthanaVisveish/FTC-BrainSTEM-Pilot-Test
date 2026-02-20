@@ -17,7 +17,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.roadrunner.PinpointLocalizer;
-import org.firstinspires.ftc.teamcode.utils.math.MathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,9 +106,9 @@ public class DrivePath implements Action {
     private Vector2d updateTargetDriveDir(double robotX, double robotY, double headingRad) {
         if(getCurParams().pathType == PathParams.PathType.CURVED) {
             followingCurvedPath = true;
-            targetX = UtilFunctions.lerp(getCurParams().controlPoint.position.x, getCurWaypoint().x(), splineT);
-            targetY = UtilFunctions.lerp(getCurParams().controlPoint.position.y, getCurWaypoint().y(), splineT);
-            targetHeadingRad = UtilFunctions.lerp(getCurParams().controlPoint.heading.toDouble(), getCurWaypoint().headingRad(), splineT);
+            targetX = MathUtils.lerp(getCurParams().controlPoint.position.x, getCurWaypoint().x(), splineT);
+            targetY = MathUtils.lerp(getCurParams().controlPoint.position.y, getCurWaypoint().y(), splineT);
+            targetHeadingRad = MathUtils.lerp(getCurParams().controlPoint.heading.toDouble(), getCurWaypoint().headingRad(), splineT);
 
             // re-calculating waypoint dir for curve
             curWaypointDirRad = Math.atan2(targetY - robotY, targetX - robotX);
@@ -120,7 +119,7 @@ public class DrivePath implements Action {
         // translating target so that drivetrain is around origin
         double xFromRobot = Math.cos(curWaypointDirRad);
         double yFromRobot = Math.sin(curWaypointDirRad);
-        Vector2d targetDir = GeometryUtils.fieldVectorToRobotVector(new Vector2d(xFromRobot, yFromRobot), headingRad);
+        Vector2d targetDir = GeometryUtils.rotateVector(new Vector2d(xFromRobot, yFromRobot), -headingRad);
         double targetDirMag = Math.hypot(targetDir.x, targetDir.y);
         return targetDir.div(targetDirMag);
     }
@@ -144,7 +143,7 @@ public class DrivePath implements Action {
         double correctiveY = correctiveMagnitude * Math.sin(angle);
 
         // rotate vector by negative robot heading to get relative corrective powers
-        Vector2d unscaled = GeometryUtils.fieldVectorToRobotVector(new Vector2d(correctiveX, correctiveY), rHeadingRad);
+        Vector2d unscaled = GeometryUtils.rotateVector(new Vector2d(correctiveX, correctiveY), -rHeadingRad);
         return unscaled.times(getCurParams().correctiveStrength);
     }
 
