@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -30,6 +29,8 @@ E/Q: zoom in/out
 J/K: rotate robot right/left
 P: toggle complex/simplified path
 0/9: move current path point to draw robot pose at
+numbers 1-8: specify how many random balls to generate
+R: generate random balls
  */
 public class PathGenPreview extends JPanel
         implements MouseListener, MouseMotionListener, KeyListener {
@@ -59,7 +60,8 @@ public class PathGenPreview extends JPanel
     private boolean drawSimplifiedPath = true;
     private int drawRobotNodeIndex = 0;
     private boolean drawInfo = false;
-
+    private int numRandomBallsToGenerate = 0;
+    private boolean generateRedRandomBalls = true;
     public PathGenPreview(String backgroundImagePath) {
         loadFromFile();
 
@@ -142,7 +144,6 @@ public class PathGenPreview extends JPanel
             e.printStackTrace();
         }
     }
-
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -254,22 +255,8 @@ public class PathGenPreview extends JPanel
     private Vector2d drawToFieldPosition(Point point) {
         return new Vector2d(1.*point.x / drawScale + bottomLeftDraw.x, -1.*point.y / drawScale - bottomLeftDraw.y);
     }
-    /*
-    private Point fieldToDrawPosition(Vector2d field) {
-        return new Point((int) ((field.x + 72.) * drawScale), (int) ((-field.y + 72.) * drawScale));
-    }
-    private Vector2d drawToFieldPosition(Point point) {
-        return new Vector2d(1.*point.x / drawScale - 72, -1.*point.y / drawScale + 72);
-    }
-     */
     private int fieldToDrawSize(double size) {
         return (int) (size * drawScale);
-    }
-    private double drawToFieldSize(int size) {
-        return 1.*size / drawScale;
-    }
-    private void drawPosition(Graphics2D g2, Vector2d position, double radiusField) {
-        drawPosition(g2, position, radiusField, false);
     }
     private void drawPosition(Graphics2D g2, Vector2d position, double radiusField, boolean filled) {
         Point draw = fieldToDrawPosition(position);
@@ -300,7 +287,7 @@ public class PathGenPreview extends JPanel
         };
 
         for (int j=0; j<corners.length; j++)
-            corners[j] = GeometryUtils.robotVectorToFieldVector(corners[j], pose.heading.toDouble()).plus(position);
+            corners[j] = GeometryUtils.rotateVector(corners[j], pose.heading.toDouble()).plus(position);
 
         for (int i=0; i<corners.length; i++)
             drawLine(g2, corners[i], corners[(i + 1) % 4]);
@@ -403,11 +390,11 @@ public class PathGenPreview extends JPanel
                 }
                 break;
             case KeyEvent.VK_L:
-                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(1));
+                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() - Math.toRadians(3));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_J:
-                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() + Math.toRadians(1));
+                robot = new Pose2d(robot.position.x, robot.position.y, robot.heading.toDouble() + Math.toRadians(3));
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_P:
@@ -454,6 +441,38 @@ public class PathGenPreview extends JPanel
                 windowSize = Math.max(24, Math.min(144, windowSize));
                 bottomLeft = bottomLeftDraw.plus(new Vector2d(-2, -2));
                 drawScale = getWidth() / windowSize;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_1: numRandomBallsToGenerate = 1; break;
+            case KeyEvent.VK_2: numRandomBallsToGenerate = 2; break;
+            case KeyEvent.VK_3: numRandomBallsToGenerate = 3; break;
+            case KeyEvent.VK_4: numRandomBallsToGenerate = 4; break;
+            case KeyEvent.VK_5: numRandomBallsToGenerate = 5; break;
+            case KeyEvent.VK_6: numRandomBallsToGenerate = 6; break;
+            case KeyEvent.VK_7: numRandomBallsToGenerate = 7; break;
+            case KeyEvent.VK_8: numRandomBallsToGenerate = 8; break;
+            case KeyEvent.VK_R: generateRedRandomBalls = true; break;
+            case KeyEvent.VK_B: generateRedRandomBalls = false; break;
+            case KeyEvent.VK_G:
+                balls.clear();
+                for (int i=0; i<numRandomBallsToGenerate; i++) {
+                    boolean hittingAnotherBall;
+                    double x, y;
+                    do {
+                        hittingAnotherBall = false;
+                        x = Math.random() * 48 + 24;
+                        y = Math.random() * 36 + 36;
+                        if (!generateRedRandomBalls)
+                            y *= -1;
+                        for (Pose2d ball : balls) {
+                            if (MathUtils.vecMag(ball.position.minus(new Vector2d(x, y))) < 5) {
+                                hittingAnotherBall = true;
+                                break;
+                            }
+                        }
+                    } while (hittingAnotherBall);
+                    balls.add(new Pose2d(x, y, 0));
+                }
                 shouldRepaint = true;
                 break;
         }

@@ -128,6 +128,19 @@ public class PathFinder {
         for (int i=0; i<order.length; i++) {
             Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start.position;
             Vector2d n2 = nodes[order[i]];
+            double angle = MathUtils.vecAngle(n2.minus(n1));
+            double changeInAngle = MathUtils.angleNormDeltaRad(angle - prevAngle);
+            totalAngleChangeRad += Math.abs(changeInAngle);
+            prevAngle = angle;
+        }
+        return totalAngleChangeRad;
+        /*
+        double totalAngleChangeRad = 0;
+
+        double prevAngle = start.heading.toDouble();
+        for (int i=0; i<order.length; i++) {
+            Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start.position;
+            Vector2d n2 = nodes[order[i]];
             double angle = Math.atan2(n2.y - n1.y, n2.x - n1.x);
 
             double changeInAngle = angle - prevAngle;
@@ -137,6 +150,7 @@ public class PathFinder {
             prevAngle = angle;
         }
         return totalAngleChangeRad;
+         */
     }
 
     private static void swap(int[] arr, int i, int j) {
