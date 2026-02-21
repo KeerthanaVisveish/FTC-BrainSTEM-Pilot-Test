@@ -9,11 +9,13 @@ import java.util.Arrays;
 
 // helps for concise, easy printing to telemetry
 public class MathUtils {
+    // normalizes between [0, 2pi]
     public static double angleNormRad(double rad) {
         if(rad >= 0 && rad < Math.PI * 2)
             return rad;
         return (rad % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     }
+    // normalizes between (-pi, pi]
     public static double angleNormDeltaRad(double rad) {
         rad = angleNormRad(rad);
         if (rad > Math.PI)

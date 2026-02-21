@@ -9,7 +9,7 @@ import java.util.List;
 
 public class PathFinder {
     // extra distance of path = total change in angle * changeInAngleDegCost
-    public static ArrayList<Vector2d> findShortestPath(Pose2d startPose, ArrayList<Vector2d> nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg) {
+    public static ArrayList<Vector2d> findShortestPath(Pose2d startPose, ArrayList<Vector2d> nodes, int maxNodesInPath, double extraDistPerChangeInAngleDeg, double desiredAngleRad, double desiredAngleDifferenceCost) {
         // get all of the possible combinations of paths
         int combinationLength = Math.min(maxNodesInPath, nodes.size());
         List<List<Vector2d>> combinations = getCombinations(nodes, combinationLength);
@@ -21,7 +21,7 @@ public class PathFinder {
         for (int i=0; i<combinations.size(); i++) {
 
             Vector2d[] combo = combinations.get(i).toArray(new Vector2d[0]);
-            results.add(PathFinder.findShortestPath(startPose, combo, extraDistPerChangeInAngleDeg));
+            results.add(PathFinder.findShortestPath(startPose, combo, extraDistPerChangeInAngleDeg, desiredAngleRad, desiredAngleDifferenceCost));
         }
 
         // find the shortest path out of all of the different combinations
@@ -71,7 +71,7 @@ public class PathFinder {
     }
 
     // finding the shortest path given a list of nodes of length N
-    public static PathResult findShortestPath(Pose2d start, Vector2d[] nodes, double extraDistPerChangeInAngleDeg) {
+    public static PathResult findShortestPath(Pose2d start, Vector2d[] nodes, double extraDistPerChangeInAngleDeg, double desiredAngle, double desiredAngleDiffCost) {
         int n = nodes.length;
         int[] indices = new int[n];
         for (int i = 0; i < n; i++) {
@@ -80,17 +80,29 @@ public class PathFinder {
 
         PathResult best = new PathResult(Double.POSITIVE_INFINITY, 0, null);
 
-        permute(indices, 0, start, nodes, best, extraDistPerChangeInAngleDeg);
+        permute(indices, 0, start, nodes, best, extraDistPerChangeInAngleDeg, desiredAngle, desiredAngleDiffCost);
 
         return best;
     }
 
-    private static void permute(int[] arr, int startIdx, Pose2d start, Vector2d[] nodes, PathResult best, double extraDistPerChangeInAngleDeg) {
+    private static void permute(int[] arr, int startIdx, Pose2d start, Vector2d[] nodes, PathResult best, double extraDistPerChangeInAngleDeg, double desiredAngle, double desiredAngleDiffCost) {
         if (startIdx == arr.length) {
             double dist = pathLengthFromStart(start.position, arr, nodes);
-            double totalAngleChange = totalAngleChangeRadFromStart(start, arr, nodes);
-            double changeInAngleCost = extraDistPerChangeInAngleDeg * Math.toDegrees(totalAngleChange);
+            double[] angles = getAngles(start, arr, nodes);
+            double totalAngleChange = 0;
+            double totalAngleDiffFromDesiredAngle = 0;
+            for (int i=0; i<angles.length; i++) {
+                double prevAngle = i == 0 ? start.heading.toDouble() : angles[i - 1];
+                double angle = angles[i];
+                double angleDiff = MathUtils.angleNormDeltaRad(angle - prevAngle);
+                totalAngleChange += Math.abs(angleDiff);
+                double desiredAngleDiff = MathUtils.angleNormDeltaRad(desiredAngle - angle);
+                totalAngleDiffFromDesiredAngle += Math.abs(desiredAngleDiff);
+            }
+            double changeInAngleCost = Math.toDegrees(totalAngleChange) * extraDistPerChangeInAngleDeg;
+            double diffFromDesiredAngleCost = Math.toDegrees(totalAngleDiffFromDesiredAngle) * desiredAngleDiffCost;
             dist += changeInAngleCost;
+            dist += diffFromDesiredAngleCost;
             if (dist < best.distance) {
                 best.distance = dist;
                 best.path = arr.clone();
@@ -100,7 +112,7 @@ public class PathFinder {
 
         for (int i = startIdx; i < arr.length; i++) {
             swap(arr, startIdx, i);
-            permute(arr, startIdx + 1, start, nodes, best, extraDistPerChangeInAngleDeg);
+            permute(arr, startIdx + 1, start, nodes, best, extraDistPerChangeInAngleDeg, desiredAngle, desiredAngleDiffCost);
             swap(arr, startIdx, i);
         }
     }
@@ -121,19 +133,15 @@ public class PathFinder {
 
         return sum;
     }
-    public static double totalAngleChangeRadFromStart(Pose2d start, int[] order, Vector2d[] nodes) {
-        double totalAngleChangeRad = 0;
-
-        double prevAngle = start.heading.toDouble();
+    public static double[] getAngles(Pose2d start, int[] order, Vector2d[] nodes) {
+        double[] angles = new double[order.length];
         for (int i=0; i<order.length; i++) {
             Vector2d n1 = i > 0 ? nodes[order[i - 1]] : start.position;
             Vector2d n2 = nodes[order[i]];
             double angle = MathUtils.vecAngle(n2.minus(n1));
-            double changeInAngle = MathUtils.angleNormDeltaRad(angle - prevAngle);
-            totalAngleChangeRad += Math.abs(changeInAngle);
-            prevAngle = angle;
+            angles[i] = angle;
         }
-        return totalAngleChangeRad;
+        return angles;
     }
 
     private static void swap(int[] arr, int i, int j) {
