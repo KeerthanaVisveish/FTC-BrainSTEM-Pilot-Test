@@ -2,6 +2,8 @@ package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
+import java.util.ArrayList;
+
 public class GeometryUtils {
 
     public static Vector2d rotateVector(Vector2d vector, double angle) {
@@ -12,39 +14,46 @@ public class GeometryUtils {
         return new Vector2d(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
     }
 
-    /**
-     * finds the information about the perpendicular bisector of a line given the line and a third point
-     * @param A line start point [x, y]
-     * @param B line end point   [x, y]
-     * @param P external point  [x, y]
-     * @return Result object containing distance, angle (radians), and foot point
-     */
-    public static double[] pointToLineDistanceAndAngle(
-            double[] A, double[] B, double[] P) {
+    // returns if a circle is fully inside a polygon
+    public static boolean isCircleInsidePolygon(ArrayList<Vector2d> polygon, Vector2d circleCenter, double circleRadius) {
+        int n = polygon.size();
+        if (n < 3) return false;
 
-        double x1 = A[0], y1 = A[1];
-        double x2 = B[0], y2 = B[1];
-        double x0 = P[0], y0 = P[1];
+        boolean inside = false;
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            Vector2d pi = polygon.get(i);
+            Vector2d pj = polygon.get(j);
 
-        double dx = x2 - x1;
-        double dy = y2 - y1;
+            boolean intersect = ((pi.y > circleCenter.y) != (pj.y > circleCenter.y)) &&
+                    (circleCenter.x < (pj.x - pi.x) * (circleCenter.y - pi.y) / (pj.y - pi.y) + pi.x);
 
-        // Perpendicular distance
-        double distance = Math.abs(dx * (y1 - y0) - (x1 - x0) * dy)
-                / Math.hypot(dx, dy);
+            if (intersect) inside = !inside;
+        }
+        if (!inside) return false;
 
-        // Foot of the perpendicular
-        double t = ((x0 - x1) * dx + (y0 - y1) * dy)
-                / (dx * dx + dy * dy);
+        for (int i = 0; i < n; i++) {
+            Vector2d a = polygon.get(i);
+            Vector2d b = polygon.get((i + 1) % n);
 
-        double fx = x1 + t * dx;
-        double fy = y1 + t * dy;
+            if (distancePointToSegment(circleCenter, a, b) < circleRadius) {
+                return false;
+            }
+        }
 
-        // Angle from point P to foot F (radians)
-        double angle = Math.atan2(fy - y0, fx - x0);
-
-        return new double[] {distance, angle, fx, fy};
+        return true;
     }
+    public static double distancePointToSegment(Vector2d p, Vector2d a, Vector2d b) {
+        Vector2d ab = b.minus(a);
+        Vector2d ap = p.minus(a);
+
+        double t = ap.dot(ab) / ab.dot(ab);
+        t = Math.max(0, Math.min(1, t));
+
+        Vector2d closest = a.plus(ab.times(t));
+        return Math.hypot(p.x - closest.x, p.y - closest.y);
+    }
+
+
 
     // ensures the point is inside the field
     // if it isn't, it projects it onto the field by finding the line between the origin and the vector

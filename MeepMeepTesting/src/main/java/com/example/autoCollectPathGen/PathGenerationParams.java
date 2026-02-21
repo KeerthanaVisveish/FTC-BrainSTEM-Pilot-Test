@@ -2,18 +2,25 @@ package com.example.autoCollectPathGen;
 
 import java.util.function.DoubleUnaryOperator;
 
-public class AutoCollectParams {
+public class PathGenerationParams {
         public double robotWidth = 13.5;
         public double robotLength = 16;
+
+        public double normalLaneWidth = 5;
+        public double againstBackWallLaneWidth = 9;
+        public double laneAgainstBackWallMaxDist = 8;
+        public double laneIncrement = 1;
+
         public double maxPathRegenerationAttempts = 5;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
-        public double desiredAngle = 45;
-        public double changeInDesiredAngleDegCost = 8. / 90.; // 90 degrees -> 8 extra inches
+        public double desiredAngle = 45; // don't actually want to use this
+        public double changeInDesiredAngleDegCost = 0 / 90.; // don't actually want to use this
 
         public double collectPoseOffsetDistance = 7;
         public double preCollectOffset = 5;
         public double lastCollectPoseExtraDriveThrough = 4;
 
+        public double failedClusterGroupAsOneDist = 5.5;
         public double clusterStrafingDist = 10;
         public double strafeCollectMaxAngleOffset = 30;
         public double strafeCollectDriveThroughDist = 3;
