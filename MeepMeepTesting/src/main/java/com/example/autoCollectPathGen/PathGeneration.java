@@ -309,7 +309,6 @@ public class PathGeneration {
                     wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, collectInfo.preCollectToCollectAngle, totalPreCollectOffset);
                     wallSafePreCollectPose = getWallSafePose(wallSafePreCollectPose);
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.OUT_OF_BOUNDS, curBall));
-//                    System.out.println("adding out of bounds problem ball: " + curBall);
                 }
 
                 if (ballType == BallType.CLASSIFIER_WALL && prevBallType != BallType.CLASSIFIER_WALL) {
@@ -445,7 +444,7 @@ public class PathGeneration {
             }
             exactCenter = new Vector2d(totalX, totalY).div(includedBallsInfo.size()); // not used right now but might use later if we get wider intake
 
-            collectPose = getCollectPose(actualEnd, collectAngle, 0);
+            collectPose = getWallSafePose(getCollectPose(actualEnd, collectAngle, 0)); // not great but its fine
             Pose2d startCollectPose = getCollectPose(actualStart, collectAngle, 0);
             preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
@@ -491,12 +490,12 @@ public class PathGeneration {
         double wallAngle = curBall.y > 0 ? Math.toRadians(90) : Math.toRadians(-90);
         Vector2d curToNextBall = nextBall == null ? null : nextBall.minus(curBall);
         double curToNextBallDist = curToNextBall == null ? Double.MAX_VALUE : MathUtils.vecMag(curToNextBall);
-        double preCollectToCollectAngle;
-        double collectAngle;
+        double preCollectToCollectAngle = 0;
+        double collectAngle = 0;
         double preCollectOffset = params.preCollectOffset;
         double collectXOffset = 0;
         double collectYOffset = 0;
-        Types.Approach approachType;
+        Types.Approach approachType = Types.Approach.NORMAL;
         switch (ballType) {
             case CORNER:
                 approachType = Types.Approach.CORNER_CONSTRAINED;
@@ -506,9 +505,10 @@ public class PathGeneration {
                 break;
             case CLASSIFIER_WALL:
                 double angleD = Math.abs(MathUtils.angleNormDeltaRad(defaultApproachAngle - wallAngle));
-                if (angleD > Math.toRadians(params.wallStrafeCollectMinApproachAngle)
+                boolean useStrafeApproach = angleD > Math.toRadians(params.wallStrafeCollectMinApproachAngle)
                         || nextBallType == BallType.CORNER || nextBallType == BallType.CLASSIFIER_WALL
-                        || (nextBallType == BallType.BACK_WALL && curToNextBallDist < params.distToNextPointForceClassifierStrafe)) {
+                        || (nextBallType == BallType.BACK_WALL && curToNextBallDist < params.distToNextPointForceClassifierStrafe);
+                if (useStrafeApproach) {
                     approachType = Types.Approach.CLASSIFIER_WALL_STRAFE;
                     double dx = curToNextBall == null ? curBall.x - prevPathPoint.x : curToNextBall.x;
                     collectXOffset = Math.signum(dx) * params.strafeCollectDriveThroughDist;
@@ -519,11 +519,19 @@ public class PathGeneration {
                         collectAngle = Math.PI - Math.toRadians(params.wallCollectAngle);
                     collectAngle *= Math.signum(wallAngle);
                     preCollectToCollectAngle = Math.signum(dx) == 1 ? 0 : Math.PI;
+
+                    Pose2d collectPose = getCollectPose(curBall, collectAngle, 0);
+                    collectPose = new Pose2d(collectPose.position, collectPose.heading);
+                    Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, params.preCollectOffset);
+                    if (preCollectPose.position.x != getWallSafePose(preCollectPose).position.x)
+                        useStrafeApproach = false;
                 }
-                else {
+
+                if (!useStrafeApproach) {
                     approachType = Types.Approach.NORMAL;
                     collectAngle = defaultApproachAngle;
                     preCollectToCollectAngle = collectAngle;
+                    collectXOffset = 0;
                 }
                 break;
             case BACK_WALL:
@@ -579,9 +587,9 @@ public class PathGeneration {
 
             // skip any poses between classifier or back wall strafes
             if (prev != null) {
-                if (prev.ballType == BallType.CLASSIFIER_WALL && next.ballType == BallType.CLASSIFIER_WALL)
+                if (prev.approachType == Types.Approach.CLASSIFIER_WALL_STRAFE && next.approachType == Types.Approach.CLASSIFIER_WALL_STRAFE)
                     continue;
-                if (prev.ballType == BallType.BACK_WALL && next.ballType == BallType.BACK_WALL)
+                if (prev.approachType == Types.Approach.BACK_WALL_STRAFE && next.approachType == Types.Approach.BACK_WALL_STRAFE)
                     continue;
             }
 
