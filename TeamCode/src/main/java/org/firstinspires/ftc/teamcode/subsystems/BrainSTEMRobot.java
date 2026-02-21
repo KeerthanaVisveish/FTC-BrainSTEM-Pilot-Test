@@ -130,11 +130,12 @@ public class BrainSTEMRobot {
         double speedMag = shootingSystem.actualTargetExitSpeedMps;
         fieldOverlay.setStroke("red");
         fieldOverlay.strokeLine(
-                shootingSystem.ballExitPos.x,
-                shootingSystem.ballExitPos.y,
-                shootingSystem.ballExitPos.x + 1.5 * speedMag * Math.cos(shootingSystem.actualTurretTargetAngleRad),
-                shootingSystem.ballExitPos.y + 1.5 * speedMag * Math.sin(shootingSystem.actualTurretTargetAngleRad)
+                shootingSystem.turretPose.position.x,
+                shootingSystem.turretPose.position.y,
+                shootingSystem.turretPose.position.x + shootingSystem.robotVelCm.x,
+                shootingSystem.turretPose.position.y + shootingSystem.robotVelCm.y
         );
+
     }
     public double getFilteredVoltage() {
         return filteredVoltage;

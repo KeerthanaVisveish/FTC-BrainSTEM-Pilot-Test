@@ -152,7 +152,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             return;
         }
         currentlyMoving = Math.abs(gamepad1.left_stick_x) > noMoveJoystickThreshold || Math.abs(gamepad1.left_stick_y) > noMoveJoystickThreshold || Math.abs(gamepad1.right_stick_x) > noMoveJoystickThreshold;
-        double amp = robot.shootingSystem.shootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
+        double amp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
         robot.drive.setDrivePowers(new PoseVelocity2d(
                 new Vector2d(
                         -gamepad1.left_stick_y,
