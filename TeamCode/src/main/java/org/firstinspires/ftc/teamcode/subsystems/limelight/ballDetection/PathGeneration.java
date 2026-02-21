@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
@@ -9,10 +8,9 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.function.DoubleUnaryOperator;
 
 public class PathGeneration {
-    public static AutoCollectParams params = new AutoCollectParams();
+    public static PathGenerationParams params = new PathGenerationParams();
     public static Vector2d[] ballsUsed = null; // used to draw balls on FTC dashboard
 
     public enum PoseType {

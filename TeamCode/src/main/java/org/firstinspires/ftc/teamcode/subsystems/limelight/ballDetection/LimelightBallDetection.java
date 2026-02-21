@@ -26,7 +26,7 @@ public class LimelightBallDetection extends LLParent {
         public boolean showPythonOutputs = false;
         public double minDistFromFieldWall = 2.5;
         public boolean drawBalls = false;
-        public boolean projectBallsInsideField = false;
+        public boolean projectBallsInsideField = true;
     }
 
     public static Params params = new Params();
@@ -91,10 +91,17 @@ public class LimelightBallDetection extends LLParent {
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {
-            fieldOverlay.setFill("purple");
-            for (Blob blob : blobs)
-                fieldOverlay.fillCircle(blob.x, blob.y, 2.5);
+            Vector2d[] balls = new Vector2d[blobs.length];
+            for (int i=0; i<balls.length; i++)
+                balls[i] = blobs[i].pos();
+            drawBalls(fieldOverlay, balls);
         }
+    }
+
+    public void drawBalls(Canvas fieldOverlay, Vector2d[] balls) {
+        fieldOverlay.setFill("purple");
+        for (Vector2d ball : balls)
+            fieldOverlay.fillCircle(ball.x, ball.y, 2.5);
     }
     public void drawPath(Canvas fieldOverlay, Pose2d startPose, ArrayList<Pose2d> autoCollectPathPoses) {
         ArrayList<Pose2d> posesToDraw = new ArrayList<>(autoCollectPathPoses);

@@ -134,8 +134,8 @@ public class LoadingZoneBallCollection extends OpMode {
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
         robot.addRobotInfo(fieldOverlay);
-        if (mostRecentAutoCollectPathPoses != null)
-                robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, mostRecentAutoCollectPathPoses);
+        robot.limelight.ballDetection.drawBalls(fieldOverlay, mostRecentNodes);
+        robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, mostRecentAutoCollectPathPoses);
         FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
 }
