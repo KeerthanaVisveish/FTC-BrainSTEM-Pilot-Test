@@ -47,6 +47,7 @@ public class MathUtils {
     public static double vecMag(Vector2d v) {
         return Math.hypot(v.x, v.y);
     }
+    public static double vecDist(Vector2d v1, Vector2d v2) { return vecMag(v2.minus(v1)); }
     public static Vector2d getAverage(ArrayList<Vector2d> vecs) {
         double totalX = 0;
         double totalY = 0;

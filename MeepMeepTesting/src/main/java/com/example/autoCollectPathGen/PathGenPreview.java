@@ -209,16 +209,18 @@ public class PathGenPreview extends JPanel
             Vector2d ball = balls.get(i).position;
             boolean isProblemBall = false;
             boolean isIgnoredBall = false;
-            for (ProblemBall problemBall : path.problemBalls) {
-                if (ball.equals(problemBall.ballPosition)) {
-                    isProblemBall = true;
-                    break;
+            if (path != null) {
+                for (ProblemBall problemBall : path.problemBalls) {
+                    if (ball.equals(problemBall.ballPosition)) {
+                        isProblemBall = true;
+                        break;
+                    }
                 }
-            }
-            for (Vector2d ignoredBall : path.ignoredBalls) {
-                if (ignoredBall.equals(ball)) {
-                    isIgnoredBall = true;
-                    break;
+                for (Vector2d ignoredBall : path.ignoredBalls) {
+                    if (ignoredBall.equals(ball)) {
+                        isIgnoredBall = true;
+                        break;
+                    }
                 }
             }
             if (isIgnoredBall)

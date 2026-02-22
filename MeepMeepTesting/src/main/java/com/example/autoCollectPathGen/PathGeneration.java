@@ -19,52 +19,36 @@ public class PathGeneration {
         ArrayList<Vector2d> allBalls = new ArrayList<>(Arrays.asList(ballsArray));
 
         Lane[] densestLanes = getDensestLanes(allBalls);
-        if (densestLanes[0].numBalls() >= 3) {
-            Lane bestLane = getBestLane(startPose.position, densestLanes);
-            return generateLanePath(bestLane);
-        }
+        Lane bestLane = getBestLane(startPose.position, densestLanes);
+        if (densestLanes[0].numBalls() >= 3)
+            return generateLanePath(startPose, bestLane);
+        if (allBalls.size() == 2 && bestLane.numBalls() == 2)
+            return generateLanePath(startPose, bestLane);
 
-        int numPoints;
-        int numCombinations;
         int numAttempts = 0;
         PathInfo optimalPathInfo = null;
         int leastProblemBalls = -1;
+        int mostGoodBalls = -1;
         ArrayList<Vector2d> balls = new ArrayList<>(Arrays.asList(ballsArray));
-        ArrayList<ProblemBall> prevGenerationProblemBalls = new ArrayList<>();
+        ArrayList<Vector2d> ignoredBalls = new ArrayList<>();
         do {
-//            System.out.println("re attempt " + numAttempts);
-            // remove most severe problem balls
-            int lowestSeverityOrdinal = 100;
-//            System.out.println("previous problem balls: ");
-            for (ProblemBall problemBall : prevGenerationProblemBalls) {
-//                System.out.println(problemBall.severity + ": " + problemBall.ballPosition);
-                if (problemBall.severity.ordinal() <= lowestSeverityOrdinal)
-                    lowestSeverityOrdinal = problemBall.severity.ordinal();
-            }
-//            System.out.println("lowest ordinal: " + lowestSeverityOrdinal);
-            ArrayList<Vector2d> ignoredBalls = new ArrayList<>();
-            for (ProblemBall problemBall : prevGenerationProblemBalls)
-                if (problemBall.severity.ordinal() == lowestSeverityOrdinal) {
-                    balls.remove(problemBall.ballPosition);
-                    ignoredBalls.add(problemBall.ballPosition);
-                }
-//            System.out.println("considering " + balls);
-//            System.out.println("ignoring " + ignoredBalls);
-            numPoints = Math.min(3, balls.size());
-            numCombinations = PathFinder.getCombinations(balls, numPoints).size();
-            if (numCombinations == 0)
+//            System.out.println("regeneration " + numAttempts);
+
+            ArrayList<Vector2d> rawBallPath = PathFinder.findShortestPath(startPose, balls, 3, params.changeInAngleDegCost, 0,0);
+            if (rawBallPath == null)
                 break;
 
-            double desiredAngle = Math.signum(balls.get(0).y) * Math.toRadians(params.desiredAngle);
-            ArrayList<Vector2d> rawBallPath = PathFinder.findShortestPath(startPose, balls, 3, params.changeInAngleDegCost, desiredAngle, params.changeInDesiredAngleDegCost);
-            if (rawBallPath == null)
-                return null;
-
             // generate path
-            PathInfo pathInfo = generatePath(startPose.position, allBalls, rawBallPath);
+            PathInfo pathInfo = generatePath(startPose, allBalls, rawBallPath);
             pathInfo.setIgnoredBalls(ignoredBalls);
             int numProblemBalls = pathInfo.problemBalls.size();
-            if (leastProblemBalls == -1 || numProblemBalls < leastProblemBalls) {
+            int numGoodBalls = pathInfo.ballPath.size() - numProblemBalls;
+//            System.out.println("num problem: " + numProblemBalls);
+//            System.out.println("num good: " + numGoodBalls);
+            if (leastProblemBalls == -1 ||
+                    numGoodBalls > mostGoodBalls ||
+                    numGoodBalls == mostGoodBalls && numProblemBalls > leastProblemBalls) {
+                mostGoodBalls = numGoodBalls;
                 leastProblemBalls = numProblemBalls;
                 optimalPathInfo = pathInfo;
             }
@@ -74,14 +58,32 @@ public class PathGeneration {
                 break;
 
             // un-optimal
-            prevGenerationProblemBalls = pathInfo.problemBalls;
+            int lowestSeverityOrdinal = 100;
+            for (ProblemBall problemBall : pathInfo.problemBalls) {
+                System.out.println(problemBall.severity + ": " + problemBall.ballPosition);
+                if (problemBall.severity.ordinal() <= lowestSeverityOrdinal)
+                    lowestSeverityOrdinal = problemBall.severity.ordinal();
+            }
+//            System.out.println("lowest ordinal: " + lowestSeverityOrdinal);
+            for (ProblemBall problemBall : pathInfo.problemBalls)
+                if (problemBall.severity.ordinal() == lowestSeverityOrdinal) {
+                    balls.remove(problemBall.ballPosition);
+                    ignoredBalls.add(problemBall.ballPosition);
+                }
+//            System.out.println("considering " + balls);
+//            System.out.println("ignoring " + ignoredBalls);
 
             numAttempts++;
-        } while (numAttempts <= params.maxPathRegenerationAttempts);
+        } while (!balls.isEmpty() && numAttempts <= params.maxPathRegenerationAttempts);
 
-        optimalPathInfo.setSimplifiedPathPoses(simplifyPathPoses(startPose, optimalPathInfo.pathPoses)); // never actually going to be null
-//        System.out.println(optimalPathInfo.problemBalls);
-        return optimalPathInfo;
+        if (optimalPathInfo == null)
+            return null;
+
+        int complexNumBalls = optimalPathInfo.ballPath.size();
+        int laneNumBalls = bestLane.numBalls();
+        System.out.println("complex balls: " + complexNumBalls);
+        System.out.println("lane balls: " + laneNumBalls);
+        return complexNumBalls > laneNumBalls ? optimalPathInfo : generateLanePath(startPose, bestLane);
     }
 
     // use a sliding window of width laneWidth moving at a speed of increment
@@ -174,41 +176,84 @@ public class PathGeneration {
             return "avgx: " + avgX + " | num balls: " + numBalls();
         }
     }
-    private static PathInfo generateLanePath(Lane lane) {
+    private static PathInfo generateLanePath(Pose2d startPose, Lane lane) {
         double angle = Math.signum(lane.balls[0].y) * Math.toRadians(90);
         Vector2d ball1 = new Vector2d(lane.avgX, lane.minAbsY());
         Vector2d ball2 = new Vector2d(lane.avgX, lane.maxAbsY());
-        ballsUsed = new Vector2d[] { ball1, ball2 };
+        ballsUsed = lane.balls;
 
         Pose2d collect1 = getCollectPose(ball1, angle, 0);
         Pose2d collect2 = getCollectPose(ball2, angle, 0);
         Pose2d preCollect1 = getPreCollectPose(collect1, angle, params.preCollectOffset);
-        Pose2d wallSafeCollect2 = getWallSafePose(collect2);
+        Pose2d wallSafeCollect2 = getWallSafePose(collect1);
+        Pose2d wallSafeCollect3 = getWallSafePose(collect2);
         Pose2d wallSafePreCollect = getWallSafePose(preCollect1);
 
         PathPose pathPose1 = new PathPose(wallSafePreCollect, Types.PoseType.PRECOLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
         PathPose pathPose2 = new PathPose(wallSafeCollect2, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
-        ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose2));
-        PathInfo pathInfo = new PathInfo(pathPoses, new ArrayList<>());
-        pathInfo.setSimplifiedPathPoses(pathPoses);
-        return pathInfo;
+        PathPose pathPose3 = new PathPose(wallSafeCollect3, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
+        ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose2, pathPose3));
+        return new PathInfo(startPose, new ArrayList<>(Arrays.asList(lane.balls)), pathPoses, new ArrayList<>());
     }
-    private static PathInfo generatePath(Vector2d robotPos, ArrayList<Vector2d> allBalls, ArrayList<Vector2d> originalPath) {
+    private static PathInfo generatePath(Pose2d robotPose, ArrayList<Vector2d> allBalls, ArrayList<Vector2d> originalBallPath) {
+        Vector2d robotPos = robotPose.position;
         ArrayList<PathPose> pathPoses = new ArrayList<>();
         ArrayList<ProblemBall> problemBalls = new ArrayList<>();
-        if (originalPath.isEmpty())
-            return new PathInfo(pathPoses, problemBalls);
-        ArrayList<Vector2d> path = new ArrayList<>(originalPath);
+        if (originalBallPath.isEmpty())
+            return new PathInfo(robotPose, originalBallPath, pathPoses, problemBalls);
+        ArrayList<Vector2d> ballPath = new ArrayList<>(originalBallPath);
 
         ArrayList<Vector2d> allBallsInCluster = new ArrayList<>();
         ArrayList<ClusterApproach> clusterApproaches = new ArrayList<>();
 
-        for (int i=0; i<path.size(); i++) {
+
+        // reject balls along the wall that are too far away from each other
+        // also reject balls along the wall and in the corner that are too close to each other
+        if (ballPath.size() >= 2) {
+            for (int i=1; i<ballPath.size(); i++) {
+                Vector2d prevBall = ballPath.get(i - 1);
+                Vector2d curBall = ballPath.get(i);
+                BallType prevType = getBallType(prevBall);
+                BallType type = getBallType(curBall);
+
+                if (type != BallType.NORMAL && prevType != BallType.NORMAL) {
+                    double dist = MathUtils.vecMag(curBall.minus(prevBall));
+                    System.out.println(prevType + " => " + type + " | " + dist);
+
+                    if (dist > params.rejectTwoClassifierBallsDist) {
+                        if (ballPath.size() == 2) {
+                            // choose closer one
+                            double curDist = MathUtils.vecDist(curBall, robotPos);
+                            double prevDist = MathUtils.vecDist(prevBall, robotPos);
+                            if (curDist < prevDist) {
+                                ballPath.remove(i - 1);
+                                break;
+                            }
+                            ballPath.remove(i);
+                            break;
+                        }
+                        if (i == 1) {
+                            ballPath.remove(0);
+                            break;
+                        }
+                        ballPath.remove(2);
+                        break;
+                    }
+                    else if (prevType == BallType.CORNER && type == BallType.CLASSIFIER_WALL && dist < params.rejectCornerTooCloseToClassifierBallDist) {
+                        System.out.println("corner classifier too close, removing index " + (i - 1));
+                        ballPath.remove(i - 1);
+                    }
+                }
+            }
+        }
+
+
+        for (int i=0; i<ballPath.size(); i++) {
             Vector2d prevPathPoint = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).pose.position : robotPos;
-            Vector2d curBall = path.get(i);
-            Vector2d nextBall = i < path.size() - 1 ? path.get(i + 1) : null;
+            Vector2d curBall = ballPath.get(i);
+            Vector2d nextBall = i < ballPath.size() - 1 ? ballPath.get(i + 1) : null;
             BallType ballType = getBallType(curBall);
-            BallType prevBallType = getBallType(i > 0 ? path.get(i - 1) : robotPos);
+            BallType prevBallType = getBallType(i > 0 ? ballPath.get(i - 1) : robotPos);
             BallType nextBallType = nextBall == null ? null : getBallType(nextBall);
             if (ballType == BallType.CORNER)
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.CORNER, curBall));
@@ -221,7 +266,6 @@ public class PathGeneration {
                 Vector2d curToNextBall = nextBall.minus(curBall);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
                 if (curToNextBallDist < params.clusterStrafingDist) {
-                    // && nextPointType == PointType.NORMAL
                     if (ballType == BallType.NORMAL) {
                         if (!allBallsInCluster.contains(curBall))
                             allBallsInCluster.add(curBall);
@@ -302,6 +346,8 @@ public class PathGeneration {
                     case BACK_WALL:
                         validWallSafePose = wallSafePreCollectPose.position.y == preCollectPose.position.y;
                         break;
+                    case CORNER:
+                        validWallSafePose = true; break;
                     default:
                         validWallSafePose = wallSafeCollectPose.equals(collectPose);
                 }
@@ -316,7 +362,7 @@ public class PathGeneration {
                     ArrayList<Vector2d> polygon = new ArrayList<>(Arrays.asList(robotCorners));
                     polygon.add(1, robotPos);
                     for (Vector2d ballToCheck : allBalls) {
-                        if (originalPath.contains(ballToCheck) || getBallType(ballToCheck) != BallType.CLASSIFIER_WALL)
+                        if (originalBallPath.contains(ballToCheck) || getBallType(ballToCheck) != BallType.CLASSIFIER_WALL)
                             continue;
                         boolean hitting = GeometryUtils.isCircleInsidePolygon(polygon, ballToCheck, 1);
                         if (hitting)
@@ -342,8 +388,8 @@ public class PathGeneration {
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball));
         }
 
-        ballsUsed = path.toArray(new Vector2d[0]);
-        return new PathInfo(pathPoses, problemBalls);
+        ballsUsed = ballPath.toArray(new Vector2d[0]);
+        return new PathInfo(robotPose, ballPath, pathPoses, problemBalls);
     }
     private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches, ArrayList<Vector2d> allBallsInCluster) {
         ClusterApproach bestApproach = null;
@@ -571,7 +617,7 @@ public class PathGeneration {
             this.collectOffset = new Vector2d(collectXOffset, collectYOffset);
         }
     }
-    private static ArrayList<PathPose> simplifyPathPoses(Pose2d startPose, ArrayList<PathPose> pathPoses) {
+    protected static ArrayList<PathPose> simplifyPathPoses(Pose2d startPose, ArrayList<PathPose> pathPoses) {
         ArrayList<PathPose> simplified = new ArrayList<>();
         if (pathPoses.isEmpty())
             return simplified;
@@ -579,6 +625,7 @@ public class PathGeneration {
             simplified.add(pathPoses.get(0));
             return simplified;
         }
+
         for (int i=0; i<pathPoses.size()-1; i++) {
             Pose2d prevPose = i > 0 ? pathPoses.get(i - 1).pose : startPose;
             PathPose prev = i > 0 ? pathPoses.get(i - 1) : null;
@@ -592,27 +639,24 @@ public class PathGeneration {
                 if (prev.approachType == Types.Approach.BACK_WALL_STRAFE && next.approachType == Types.Approach.BACK_WALL_STRAFE)
                     continue;
             }
+            if (cur.approachType == Types.Approach.CLASSIFIER_WALL_STRAFE && next.approachType == Types.Approach.CORNER_CONSTRAINED) {
+                simplified.add(pathPoses.get(i));
+                continue;
+            }
 
             Vector2d prevToCur = cur.pose.position.minus(prevPose.position);
             Vector2d curToNext = next.pose.position.minus(cur.pose.position);
+
             double headingDiff = MathUtils.angleNormDeltaRad(cur.pose.heading.toDouble() - prevPose.heading.toDouble());
             double approachAngleDiff = MathUtils.angleRadDiff(curToNext, prevToCur);
 
-            double headingSimplification = Math.toRadians(params.maxPreCollectHeadingDifference.applyAsDouble(MathUtils.vecMag(prevToCur)));
+            double headingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(MathUtils.vecMag(prevToCur)));
             double approachAngleSimplification = Math.toRadians(params.maxCollectApproachDifference);
             boolean approachAnglesCloseEnough = Math.abs(approachAngleDiff) < approachAngleSimplification;
             boolean headingCloseEnough = Math.abs(headingDiff) < headingSimplification;
-            if (cur.poseType == Types.PoseType.PRECOLLECT) {
-//                    System.out.println(i + " | PRE COLLECT: " + MathUtils.formatRad2(headingDiff) + " | < " + MathUtils.formatRad2(headingSimplification));
-                if (headingCloseEnough)
-                    continue;
+            if (headingCloseEnough && approachAnglesCloseEnough) {
+                continue;
             }
-            else if (cur.poseType == Types.PoseType.COLLECT || cur.poseType == Types.PoseType.EDGE_CASE_PRECOLLECT) {
-//                    System.out.println(i + " | " + curType + ": " + MathUtils.formatRad2(approachAngleDiff) + " | < " + params.maxCollectApproachDifference);
-                if (headingCloseEnough && approachAnglesCloseEnough)
-                    continue;
-            }
-
 
             simplified.add(pathPoses.get(i));
         }
