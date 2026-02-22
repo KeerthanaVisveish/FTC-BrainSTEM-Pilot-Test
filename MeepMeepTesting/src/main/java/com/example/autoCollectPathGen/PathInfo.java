@@ -13,14 +13,15 @@ public class PathInfo {
     }
     public final PathType pathType;
     public final Pose2d startPose;
-    public final ArrayList<Vector2d> ballPath;
+    public final ArrayList<Vector2d> originalBallPath, ballPath;
     public final ArrayList<PathPose> pathPoses;
     public final ArrayList<PathPose> simplifiedPathPoses;
     public final ArrayList<ProblemBall> problemBalls;
     public final ArrayList<Vector2d> ignoredBalls;
-    public PathInfo(PathType pathType, Pose2d startPose, ArrayList<Vector2d> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
+    public PathInfo(PathType pathType, Pose2d startPose, ArrayList<Vector2d> originalBallPath, ArrayList<Vector2d> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
         this.pathType = pathType;
         this.startPose = startPose;
+        this.originalBallPath = originalBallPath;
         this.ballPath = ballPath;
         this.pathPoses = pathPoses;
         this.problemBalls = problemBalls;

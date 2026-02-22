@@ -9,14 +9,11 @@ import java.util.Comparator;
 
 public class PathGeneration {
     public static PathGenerationParams params = new PathGenerationParams();
-    public static ArrayList<Vector2d> ballsUsed = null; // used to draw balls on FTC dashboard
     public static Pose2d pathfinderStartPose = null;
     public static PathInfo getAutoCollectPath(Pose2d robotPose, Vector2d[] ballsArray) {
         pathfinderStartPose = robotPose;
-        if (ballsArray.length == 0) {
-            ballsUsed = null;
+        if (ballsArray.length == 0)
             return null;
-        }
 
         ArrayList<Vector2d> allBalls = new ArrayList<>(Arrays.asList(ballsArray));
 
@@ -87,7 +84,6 @@ public class PathGeneration {
         } while (!balls.isEmpty() && numAttempts <= params.maxPathRegenerationAttempts);
 
         if (optimalPathInfo == null) {
-            ballsUsed = null;
             return null;
         }
 
@@ -96,7 +92,6 @@ public class PathGeneration {
 //        System.out.println("complex balls: " + complexNumBalls);
 //        System.out.println("lane balls: " + laneNumBalls);
         PathInfo finalPath = complexNumBalls > laneNumBalls ? optimalPathInfo : generateLanePath(robotPose, bestLane);
-        ballsUsed = finalPath.ballPath;
         return finalPath;
     }
 
@@ -194,7 +189,6 @@ public class PathGeneration {
         double angle = Math.signum(lane.balls.get(0).y) * Math.toRadians(90);
         Vector2d ball1 = new Vector2d(lane.avgX, lane.minAbsY());
         Vector2d ball2 = new Vector2d(lane.avgX, lane.maxAbsY());
-        ballsUsed = lane.balls;
 
         if (lane.avgX >= 72 - params.angleLaneCollectDistFromBackWall)
             angle -= Math.signum(angle) * Math.toRadians(params.cornerCollectAngle);
@@ -210,14 +204,14 @@ public class PathGeneration {
         PathPose pathPose2 = new PathPose(wallSafeCollect2, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
         PathPose pathPose3 = new PathPose(wallSafeCollect3, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
         ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose2, pathPose3));
-        return new PathInfo(PathInfo.PathType.LANE, startPose, lane.balls, pathPoses, new ArrayList<>());
+        return new PathInfo(PathInfo.PathType.LANE, startPose, lane.balls, lane.balls, pathPoses, new ArrayList<>());
     }
     private static PathInfo generatePath(Pose2d robotPose, ArrayList<Vector2d> allBalls, ArrayList<Vector2d> originalBallPath) {
         Vector2d robotPos = robotPose.position;
         ArrayList<PathPose> pathPoses = new ArrayList<>();
         ArrayList<ProblemBall> problemBalls = new ArrayList<>();
         if (originalBallPath.isEmpty())
-            return new PathInfo(PathInfo.PathType.EMPTY, robotPose, originalBallPath, pathPoses, problemBalls);
+            return new PathInfo(PathInfo.PathType.EMPTY, robotPose, originalBallPath, originalBallPath, pathPoses, problemBalls);
         ArrayList<Vector2d> ballPath = new ArrayList<>(originalBallPath);
 
         ArrayList<Vector2d> allBallsInCluster = new ArrayList<>();
@@ -234,10 +228,10 @@ public class PathGeneration {
                 BallType type = getBallType(curBall);
 
                 if (type != BallType.NORMAL && prevType != BallType.NORMAL) {
-                    double dist = MathUtils.vecMag(curBall.minus(prevBall));
-                    System.out.println(prevType + " => " + type + " | " + dist);
+                    double horizontalDist = Math.abs(curBall.x - prevBall.x);
+//                    System.out.println(prevType + " => " + type + " | " + dist);
 
-                    if (dist > params.rejectTwoClassifierBallsDist) {
+                    if (horizontalDist > params.rejectEdgeCaseBallsHorizontalDist) {
                         if (ballPath.size() == 2) {
                             // choose closer one
                             double curDist = MathUtils.vecDist(curBall, robotPos);
@@ -256,14 +250,13 @@ public class PathGeneration {
                         ballPath.remove(2);
                         break;
                     }
-                    else if (prevType == BallType.CORNER && type == BallType.CLASSIFIER_WALL && dist < params.rejectCornerTooCloseToClassifierBallDist) {
+                    else if (prevType == BallType.CORNER && type == BallType.CLASSIFIER_WALL && horizontalDist < params.rejectCornerTooCloseToClassifierBallDist) {
                         System.out.println("corner classifier too close, removing index " + (i - 1));
                         ballPath.remove(i - 1);
                     }
                 }
             }
         }
-
 
         for (int i=0; i<ballPath.size(); i++) {
             Vector2d prevPathPoint = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).pose.position : robotPos;
@@ -283,39 +276,70 @@ public class PathGeneration {
                 Vector2d curToNextBall = nextBall.minus(curBall);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
                 if (curToNextBallDist < params.clusterStrafingDist) {
-                    if (ballType == BallType.NORMAL) {
+                    if (ballType == BallType.NORMAL && (originalBallPath.size() == 2 || nextBallType == BallType.NORMAL)) {
                         if (!allBallsInCluster.contains(curBall))
                             allBallsInCluster.add(curBall);
                         allBallsInCluster.add(nextBall);
                         clusterApproaches.add(new ClusterApproach(prevPathPoint, curBall, nextBall));
                         continue;
                     }
+//                    if (curToNextBallDist < params.clusterMergeDist) {
+//                        if (!allBallsInCluster.contains(curBall))
+//                            allBallsInCluster.add(curBall);
+//                        allBallsInCluster.add(nextBall);
+//                        continue;
+//                    }
                 }
             }
             // this only runs if current cluster has been finished merging
             // once current cluster has finished, find approach information
             if (!allBallsInCluster.isEmpty()) {
-                ClusterApproach clusterApproach = getBestClusterApproach(clusterApproaches, allBallsInCluster);
-                if (clusterApproach.isWallSafe) {
-                    wallSafePreStrafeCollectPose = clusterApproach.preCollectPose;
-                    wallSafeStrafeCollectPose = clusterApproach.collectPose;
+                System.out.println("index: " + i);
+                System.out.println("all balls in cluster: " + allBallsInCluster);
+                System.out.println("all cluster approaches: " + clusterApproaches);
+                ClusterApproach clusterApproach = null;
+                if (!clusterApproaches.isEmpty()) {
+                    clusterApproach = getBestClusterApproach(clusterApproaches, allBallsInCluster);
+                    problemBalls.addAll(clusterApproach.problemBalls);
+                    if (clusterApproach.isWallSafe) {
+                        wallSafePreStrafeCollectPose = clusterApproach.preCollectPose;
+                        wallSafeStrafeCollectPose = clusterApproach.collectPose;
+                    }
+                    else
+                        clusterApproach = null;
                 }
-                else {
+                if (clusterApproach == null) {
                     boolean closeEnoughToMerge = true;
-                    Vector2d average = MathUtils.getAverage(clusterApproach.allBallsInCluster);
-                    for (Vector2d ballInCluster : clusterApproach.allBallsInCluster) {
-                        System.out.println("vec dist in cluster: " + MathUtils.vecDist(average, ballInCluster));
-                        if (MathUtils.vecDist(average, ballInCluster) > params.failedClusterGroupAsOneDist) {
+                    Vector2d average = MathUtils.getAverage(allBallsInCluster);
+                    for (Vector2d ballInCluster : allBallsInCluster) {
+                        if (MathUtils.vecDist(average, ballInCluster) > params.clusterMergeDist) {
                             closeEnoughToMerge = false;
                             break;
                         }
                     }
-                    if (closeEnoughToMerge)
-                        curBall = MathUtils.getAverage(clusterApproach.allBallsInCluster);
+
+                    // merge
+                    if (closeEnoughToMerge) {
+                        curBall = MathUtils.getAverage(allBallsInCluster);
+                        // remove old balls in cluster
+                        for (int j=0; j<allBallsInCluster.size(); j++) {
+                            Vector2d clusterBall = allBallsInCluster.get(j);
+                            for (int k=0; k<ballPath.size(); k++) {
+                                if (ballPath.get(k).equals(clusterBall)) {
+                                    ballPath.remove(k);
+                                    if (k <= i)
+                                        i--;
+                                    break;
+                                }
+                            }
+                        }
+                        ballPath.add(curBall);
+                    }
+                    // choose easiest
                     else {
                         double closestToPrevDist = -1;
                         Vector2d closestToPrevBall = null;
-                        for (Vector2d ballInCluster : clusterApproach.allBallsInCluster) {
+                        for (Vector2d ballInCluster : allBallsInCluster) {
                             double dist = MathUtils.vecMag(ballInCluster.minus(prevPathPoint));
                             if (closestToPrevDist == -1 || dist < closestToPrevDist) {
                                 closestToPrevDist = dist;
@@ -323,13 +347,13 @@ public class PathGeneration {
                             }
                         }
                         curBall = closestToPrevBall;
-                        for (Vector2d ballInCluster : clusterApproach.allBallsInCluster) {
-                            if (!ballInCluster.equals(closestToPrevBall))
+                        // add balls that were failed to merge to list of problem balls
+                        for (Vector2d ballInCluster : allBallsInCluster) {
+                            if (!ballInCluster.equals(curBall))
                                 problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_MERGE, ballInCluster));
                         }
                     }
                 }
-                problemBalls.addAll(clusterApproach.problemBalls);
                 allBallsInCluster.clear();
                 clusterApproaches.clear();
             }
@@ -394,20 +418,23 @@ public class PathGeneration {
             }
         }
 
-        for (int i=1; i<pathPoses.size() - 1; i++) {
-            PathPose prev = pathPoses.get(i - 1);
-            PathPose cur = pathPoses.get(i);
-            PathPose next = pathPoses.get(i + 1);
-            if (cur.poseType != Types.PoseType.PRECOLLECT && cur.poseType != Types.PoseType.EDGE_CASE_PRECOLLECT)
-                continue;
+//        for (int i=1; i<pathPoses.size() - 1; i++) {
+//            PathPose prev = pathPoses.get(i - 1);
+//            PathPose cur = pathPoses.get(i);
+//            PathPose next = pathPoses.get(i + 1);
+////            if (cur.poseType != Types.PoseType.PRECOLLECT && cur.poseType != Types.PoseType.EDGE_CASE_PRECOLLECT)
+////                continue;
+//
+//            Vector2d prevToCurDir = cur.pose.position.minus(prev.pose.position);
+//            prevToCurDir = prevToCurDir.div(MathUtils.vecMag(prevToCurDir));
+//            Vector2d curToNextDir = next.pose.position.minus(cur.pose.position);
+//            curToNextDir = curToNextDir.div(MathUtils.vecMag(curToNextDir));
+//            System.out.println(i + " dot prod: " + prevToCurDir.dot(curToNextDir) + " prev type " + prev.ballType + " next type " + next.ballType);
+//            if (prevToCurDir.dot(curToNextDir) < params.minDotProductBetweenPoints && prev.ballType != BallType.CLASSIFIER_WALL && next.ballType != BallType.CLASSIFIER_WALL)
+//                problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball));
+//        }
 
-            Vector2d prevToCur = cur.pose.position.minus(prev.pose.position);
-            Vector2d curToNext = next.pose.position.minus(cur.pose.position);
-            if (prevToCur.dot(curToNext) < 0 && prev.ballType != BallType.CLASSIFIER_WALL && next.ballType != BallType.CLASSIFIER_WALL)
-                problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball));
-        }
-
-        return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, ballPath, pathPoses, problemBalls);
+        return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, originalBallPath, ballPath, pathPoses, problemBalls);
     }
     private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches, ArrayList<Vector2d> allBallsInCluster) {
         ClusterApproach bestApproach = null;
@@ -566,6 +593,7 @@ public class PathGeneration {
                 collectAngle = Math.signum(wallAngle) * (Math.abs(wallAngle) - Math.toRadians(params.cornerCollectAngle));
                 preCollectToCollectAngle = collectAngle;
                 collectYOffset = Math.signum(curBall.y) * Math.max(0, params.cornerCollectY - Math.abs(curBall.y));
+                preCollectOffset += Math.abs(collectYOffset);
                 break;
             case CLASSIFIER_WALL:
                 double angleD = Math.abs(MathUtils.angleNormDeltaRad(defaultApproachAngle - wallAngle));

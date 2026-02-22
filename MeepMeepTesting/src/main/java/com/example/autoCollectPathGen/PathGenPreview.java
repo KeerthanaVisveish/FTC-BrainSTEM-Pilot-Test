@@ -261,10 +261,13 @@ public class PathGenPreview extends JPanel
             drawRobot(g2, poses.get(drawRobotNodeIndex));
     }
     private void drawBallsUsed(Graphics2D g2) {
-        if (PathGeneration.ballsUsed != null) {
+        if (path != null) {
             g2.setColor(Color.GREEN);
-            for (Vector2d ball : PathGeneration.ballsUsed)
+            for (Vector2d ball : path.originalBallPath)
                 drawPosition(g2, ball, 1, true);
+            g2.setColor(Color.WHITE);
+            for (Vector2d ball : path.ballPath)
+                drawPosition(g2, ball, 1.5, true);
         }
     }
     private Point fieldToDrawPosition(Vector2d field) {
