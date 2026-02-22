@@ -38,6 +38,9 @@ public class PathInfo {
             poses.add(pathPose.pose);
         return poses;
     }
+    public int numGoodBalls() {
+        return ballPath.size() - problemBalls.size();
+    }
     @Override
     public String toString() {
         return pathPoses.toString();

@@ -18,8 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import kotlin.collections.builders.MapBuilderKeys;
-
 /*
 controls
 mouse: create points/drag points around
@@ -202,6 +200,7 @@ public class PathGenPreview extends JPanel
         int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
         drawRobot(g2, robot);
+        drawRobot(g2, PathGeneration.pathfinderStartPose);
         Pose2d wallSafePose = PathGeneration.getWallSafePose(robot);
         drawRobot(g2, wallSafePose);
 

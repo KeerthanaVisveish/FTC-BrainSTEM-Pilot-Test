@@ -5,6 +5,7 @@ import java.util.function.DoubleUnaryOperator;
 public class PathGenerationParams {
         public double robotWidth = 13.5;
         public double robotLength = 16;
+        public double shiftedLeftStartX = 40, useShiftedLeftStartXBallXThreshold = 50;
 
         public double normalLaneWidth = 5;
         public double againstBackWallLaneWidth = 9;
