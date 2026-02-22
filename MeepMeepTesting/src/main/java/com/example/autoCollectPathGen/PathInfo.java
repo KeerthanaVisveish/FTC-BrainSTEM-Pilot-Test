@@ -6,13 +6,20 @@ import com.acmerobotics.roadrunner.Vector2d;
 import java.util.ArrayList;
 
 public class PathInfo {
+    public enum PathType {
+        EMPTY,
+        LANE,
+        COMPLEX
+    }
+    public final PathType pathType;
     public final Pose2d startPose;
     public final ArrayList<Vector2d> ballPath;
     public final ArrayList<PathPose> pathPoses;
     public final ArrayList<PathPose> simplifiedPathPoses;
     public final ArrayList<ProblemBall> problemBalls;
     public final ArrayList<Vector2d> ignoredBalls;
-    public PathInfo(Pose2d startPose, ArrayList<Vector2d> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
+    public PathInfo(PathType pathType, Pose2d startPose, ArrayList<Vector2d> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
+        this.pathType = pathType;
         this.startPose = startPose;
         this.ballPath = ballPath;
         this.pathPoses = pathPoses;

@@ -180,17 +180,19 @@ public class PathGenPreview extends JPanel
             g2.setColor(Color.BLACK);
             int numPiecesOfInfoPerPathPose = 3;
             ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.simplifiedPathPoses : path.pathPoses;
-            int height = pathPoses.size() * 20 * numPiecesOfInfoPerPathPose + 85;
+            int generalInfoHeight = 100;
+            int height = pathPoses.size() * 20 * numPiecesOfInfoPerPathPose + generalInfoHeight;
             g2.fillRect(0, 0, 150, height);
             g2.setColor(Color.WHITE);
-            g2.drawString("Max Regens: " + PathGeneration.params.maxPathRegenerationAttempts, 10, 15);
-            g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 35);
-            g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 55);
+            g2.drawString("Path Type: " + path.pathType, 10, 15);
+            g2.drawString("Max Regens: " + PathGeneration.params.maxPathRegenerationAttempts, 10, 35);
+            g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
+            g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 75);
             for (int i=0; i<pathPoses.size(); i++) {
                 PathPose pathPose = pathPoses.get(i);
-                g2.drawString(i + ": " + pathPose.ballType, 10, i*20*numPiecesOfInfoPerPathPose+85);
-                g2.drawString("    " + pathPose.approachType, 10, i*20*numPiecesOfInfoPerPathPose+85+20);
-                g2.drawString("    " + MathUtils.formatVec2(pathPose.ball), 10, i*20*numPiecesOfInfoPerPathPose+85+40);
+                g2.drawString(i + ": " + pathPose.ballType, 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight);
+                g2.drawString("    " + pathPose.approachType, 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight+20);
+                g2.drawString("    " + MathUtils.formatVec2(pathPose.ball), 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight+40);
             }
         }
     }

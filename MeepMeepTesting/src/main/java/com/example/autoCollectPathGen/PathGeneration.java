@@ -93,8 +93,8 @@ public class PathGeneration {
 
         int complexNumBalls = optimalPathInfo.numGoodBalls();
         int laneNumBalls = bestLane.numBalls();
-        System.out.println("complex balls: " + complexNumBalls);
-        System.out.println("lane balls: " + laneNumBalls);
+//        System.out.println("complex balls: " + complexNumBalls);
+//        System.out.println("lane balls: " + laneNumBalls);
         PathInfo finalPath = complexNumBalls > laneNumBalls ? optimalPathInfo : generateLanePath(robotPose, bestLane);
         ballsUsed = finalPath.ballPath;
         return finalPath;
@@ -196,8 +196,11 @@ public class PathGeneration {
         Vector2d ball2 = new Vector2d(lane.avgX, lane.maxAbsY());
         ballsUsed = lane.balls;
 
+        if (lane.avgX >= 72 - params.angleLaneCollectDistFromBackWall)
+            angle -= Math.signum(angle) * Math.toRadians(params.cornerCollectAngle);
+
         Pose2d collect1 = getCollectPose(ball1, angle, 0);
-        Pose2d collect2 = getCollectPose(ball2, angle, 0);
+        Pose2d collect2 = getCollectPose(ball2, angle, -params.lastCollectPoseExtraDriveThrough);
         Pose2d preCollect1 = getPreCollectPose(collect1, angle, params.preCollectOffset);
         Pose2d wallSafeCollect2 = getWallSafePose(collect1);
         Pose2d wallSafeCollect3 = getWallSafePose(collect2);
@@ -207,14 +210,14 @@ public class PathGeneration {
         PathPose pathPose2 = new PathPose(wallSafeCollect2, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
         PathPose pathPose3 = new PathPose(wallSafeCollect3, Types.PoseType.COLLECT, ball1, BallType.NORMAL, Types.Approach.NORMAL);
         ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose2, pathPose3));
-        return new PathInfo(startPose, lane.balls, pathPoses, new ArrayList<>());
+        return new PathInfo(PathInfo.PathType.LANE, startPose, lane.balls, pathPoses, new ArrayList<>());
     }
     private static PathInfo generatePath(Pose2d robotPose, ArrayList<Vector2d> allBalls, ArrayList<Vector2d> originalBallPath) {
         Vector2d robotPos = robotPose.position;
         ArrayList<PathPose> pathPoses = new ArrayList<>();
         ArrayList<ProblemBall> problemBalls = new ArrayList<>();
         if (originalBallPath.isEmpty())
-            return new PathInfo(robotPose, originalBallPath, pathPoses, problemBalls);
+            return new PathInfo(PathInfo.PathType.EMPTY, robotPose, originalBallPath, pathPoses, problemBalls);
         ArrayList<Vector2d> ballPath = new ArrayList<>(originalBallPath);
 
         ArrayList<Vector2d> allBallsInCluster = new ArrayList<>();
@@ -404,7 +407,7 @@ public class PathGeneration {
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball));
         }
 
-        return new PathInfo(robotPose, ballPath, pathPoses, problemBalls);
+        return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, ballPath, pathPoses, problemBalls);
     }
     private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches, ArrayList<Vector2d> allBallsInCluster) {
         ClusterApproach bestApproach = null;
@@ -587,7 +590,6 @@ public class PathGeneration {
                     if (preCollectPose.position.x != getWallSafePose(preCollectPose).position.x)
                         useStrafeApproach = false;
                 }
-                System.out.println("using strafe approach for " + MathUtils.formatVec2(curBall) + ": " + useStrafeApproach);
 
                 if (!useStrafeApproach) {
                     approachType = Types.Approach.NORMAL;

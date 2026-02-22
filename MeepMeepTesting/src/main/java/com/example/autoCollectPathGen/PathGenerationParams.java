@@ -11,6 +11,7 @@ public class PathGenerationParams {
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;
         public double laneIncrement = 1;
+        public double angleLaneCollectDistFromBackWall = 3.5;
 
         public double maxPathRegenerationAttempts = 5;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
