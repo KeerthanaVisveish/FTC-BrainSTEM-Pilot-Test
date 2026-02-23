@@ -27,12 +27,8 @@ public class ShootingMath {
         public double minAngleDeg = 15, maxAngleDeg = 55;
         public double highArcHoodAngleDegEstimation = 20, lowArcHoodAngleDegEstimation = 45;
     }
-    public static class TurretSystemParams {
-        public double maxAngleDeg = 90;
-    }
     public static ShooterSystemParams shooterSystemParams = new ShooterSystemParams();
     public static HoodSystemParams hoodSystemParams = new HoodSystemParams();
-    public static TurretSystemParams turretSystemParams = new TurretSystemParams();
 
     public static Vector2d getExitPositionInches(Pose2d turretPose, double ballExitAngleRad) {
         double hoodAngleRad = Math.PI * 0.5 - ballExitAngleRad;

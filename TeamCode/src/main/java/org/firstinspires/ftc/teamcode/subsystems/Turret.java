@@ -19,8 +19,6 @@ public class Turret extends Component {
         public boolean enableTestingControl = false;
         public double testingTargetPos = 300;
         public double testingTargetVel = 0;
-//        public double alpha = .5;
-//        public boolean enableMotionProfiling = false;
     }
     public static class Params {
         public double shotOutOfRangeBuffer = Math.toRadians(2);
@@ -28,8 +26,7 @@ public class Turret extends Component {
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public int minBound = -300;
-        public int maxBound = 300;
+        public double maxAngle = Math.toRadians(95);
         public double maxClutchEngageError = 2000; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
     }
     public static class PowerTuning {
@@ -176,7 +173,8 @@ public class Turret extends Component {
         if(testingParams.enableTestingKF)
             return testingParams.kfTestingVoltage;
         double dir = Math.signum(positionError);
-        double input = Range.clip(currentEncoder, turretParams.minBound, turretParams.maxBound); // reversing input if traveling in the opposite direction
+        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
         kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
 
         kP = getLogisticErrorKP(Math.abs(positionError));
@@ -218,7 +216,7 @@ public class Turret extends Component {
         // updating target angle
         targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.actualTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
         // mirrors the angle if the turret cannot reach it (visual cue)
-        double maxAngleRad = Math.toRadians(ShootingMath.turretSystemParams.maxAngleDeg);
+        double maxAngleRad = turretParams.maxAngle;
         if (targetRelAngleRad > maxAngleRad) {
             targetRelAngleRad = Math.PI - targetRelAngleRad;
             inRange = false;
@@ -233,7 +231,8 @@ public class Turret extends Component {
 
         targetEncoder = (int) (targetRelAngleRad * turretParams.ticksPerRad);
         targetEncoder += robot.shootingSystem.distState != ShootingSystem.Dist.FAR ? nearEncoderAdjustment : farEncoderAdjustment;
-        targetEncoder = Range.clip(targetEncoder, turretParams.minBound, turretParams.maxBound);
+        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        targetEncoder = Range.clip(targetEncoder, -maxBound, maxBound);
         positionError = targetEncoder - currentEncoder;
 
         // updating target angular velocity
@@ -251,19 +250,6 @@ public class Turret extends Component {
         double prevTargetVel = targetVelocity;
         targetVelocity = targetAngularVelocity * turretParams.ticksPerRad;
         targetAccel = (targetVelocity - prevTargetVel) / robot.shootingSystem.dt;
-
-//        double prevVel = targetVelocityFromTranslation + targetVelocityFromRotation;
-//        targetVelocityFromTranslation = goalAngularVel * turretParams.ticksPerRad;
-//        targetVelocityFromRotation = -robot.shootingSystem.odoVel.headingRad * turretParams.ticksPerRad;
-//        targetAccel = (targetVelocityFromRotation + targetVelocityFromTranslation - prevVel) / robot.shootingSystem.dt;
-
-
-//        if(testingParams.enableMotionProfiling && Math.abs(robot.shootingSystem.odoVel.headingRad) < powerTuning.ignoreProfilingHeadingVelThreshold) {
-//            targetVelocity += getProfileTargetVelocity(positionError);
-//            usingMotionProfiling = true;
-//        }
-//        else
-//            usingMotionProfiling = false;
     }
 
     @Override
@@ -273,8 +259,6 @@ public class Turret extends Component {
         telemetry.addLine("-----");
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
         telemetry.addData("p Voltage", pVoltage);
-//        telemetry.addData("v rot Voltage", vRVoltage);
-//        telemetry.addData("v trans Voltage", vTVoltage);
         telemetry.addData("vel Voltage", vVoltage);
         telemetry.addData("accel Voltage", aVoltage);
         telemetry.addData("kP", kP);

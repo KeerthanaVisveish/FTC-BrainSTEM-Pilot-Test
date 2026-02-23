@@ -148,7 +148,6 @@ public class AutoCommands {
     public Action flickerUp() {
         return packet -> {
             robot.collection.setFlickerState(Collection.FlickerState.FULL_UP_DOWN);
-            robot.collection.setCollectionState(Collection.CollectionState.OFF);
             return false;
         };
     }

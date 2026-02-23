@@ -80,6 +80,7 @@ public abstract class AutoPid extends LinearOpMode {
     private boolean isRed;
     private AutoState autoState;
     private boolean autoActionFinished;
+    private Vector2d perpNearParkLine;
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -88,6 +89,9 @@ public abstract class AutoPid extends LinearOpMode {
 
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
+
+        perpNearParkLine = isRed ? new Vector2d(1, 1) : new Vector2d(-1, 1);
+        perpNearParkLine = perpNearParkLine.div(Math.hypot(perpNearParkLine.x, perpNearParkLine.y));
 
         if(customizable.collectionOrder.charAt(0) == 'n')
             start = isRed ? createPose(misc.startNear) : createInvertedPose(misc.startNear);
@@ -282,26 +286,34 @@ public abstract class AutoPid extends LinearOpMode {
                                 new InstantAction(() -> autoState = AutoState.OPEN_GATE),
                                 gateDrive,
                                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_SHOOT),
-                                shootDrive,
-                                packet -> {robot.drive.stop(); return false; }
+                                shootDrive
                         ),
                         new SequentialAction(
                                 new SleepAction(postIntakeTime),
-                                autoCommands.stopIntake()
-                        )
-                ),
+                                autoCommands.stopIntake(),
+
+                                shootingNear ? new SequentialAction(
+                                        new CustomEndAction(new SleepAction(100), () -> {
+                                            double dot = robot.drive.localizer.getPose().position.dot(perpNearParkLine);
+                                            return dot < shoot.earlyEngageClutchDist;
+                                        }),
+                                        getShootAction()
+                                ) : new SleepAction(0)
+                        ),
+                        !shootingNear ? getShootAction() : new SleepAction(0)
+                )
+        );
+    }
+    private Action getShootAction() {
+        return new SequentialAction(
                 new InstantAction(() -> autoState = AutoState.SHOOT),
-//                autoCommands.speedUpShooter(),
                 new InstantAction(() -> robot.shooter.setBallsShot(0)),
                 autoCommands.flickerHalfUp(),
-                autoCommands.reverseIntake(),
-                new SleepAction(Collection.shootOuttakeTimeAuto),
-                autoCommands.stopIntake(),
                 autoCommands.engageClutch(),
-                new SleepAction(Collection.postShootOuttakeWaitAuto),
                 autoCommands.runIntake(),
-                autoCommands.waitTillDoneShooting(Collection.params.maxTimeBetweenShots, shootingNear ? timeConstraints.shootNearMinTime : timeConstraints.shootFarMinTime),
-                decideFlicker(),
+                new SleepAction(.9),
+                autoCommands.flickerUp(),
+                new SleepAction(.3),
                 autoCommands.disengageClutch()
         );
     }

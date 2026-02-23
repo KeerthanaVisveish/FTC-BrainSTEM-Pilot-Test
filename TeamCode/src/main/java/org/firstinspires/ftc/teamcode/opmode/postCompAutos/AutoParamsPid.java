@@ -47,6 +47,7 @@ public class AutoParamsPid {
         public double firstCollectTStartError = 35, firstCollectTFinishError = 20;
     }
     public static class Shoot {
+        public double earlyEngageClutchDist = 10;
         public double minShootDrivePower = .4;
         public double[] gateShootControlPoint = { 11, 36, 50 };
         public double gateShootTStartError = 35, gateShootTFinishError = 18;
@@ -102,7 +103,7 @@ public class AutoParamsPid {
         public double cornerCollectMaxTime = 1.9;
         public double autoEndTime = 29.5;
         public double stopEverythingTime = 35;
-        public double postIntakeTime = 0.7, loadingSlowIntakeTime = 1;
+        public double postIntakeTime = 0.5, loadingSlowIntakeTime = 1;
         public double shootNearMinTime = 0.7, shootFarMinTime = 1.5;
 
     }

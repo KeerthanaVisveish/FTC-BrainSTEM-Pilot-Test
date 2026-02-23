@@ -259,7 +259,7 @@ public class Collection extends Component {
                     flickerRight.setPosition(params.flickerFullUpPos);
                     flickerTimer.reset();
                     flickerStarted = true;
-                } else if (flickerTimer.seconds() > 0.4) {
+                } else if (flickerTimer.seconds() > 0.3) {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
                     flickerStarted = false;
