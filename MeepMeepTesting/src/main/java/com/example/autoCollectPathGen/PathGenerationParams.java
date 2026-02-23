@@ -7,7 +7,7 @@ public class PathGenerationParams {
         public double robotLength = 16;
         public double shiftedLeftStartX = 40;
 
-        public boolean allowLaneCollect = false;
+        public boolean allowLaneCollect = true;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;

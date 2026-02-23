@@ -424,6 +424,8 @@ public class PathGeneration {
             PathPose strictPathPose = new PathPose(getStrictWallSafePose(cur.pose), cur.poseType, cur.ball, cur.ballType, cur.approachType);
             pathPoses.set(i, strictPathPose);
         }
+        // if ball n and ball n + 1 are normal collects
+        // if ball n has poses that collide with ball n + 1, remove ball n + 1
 
 //        for (int i=1; i<pathPoses.size() - 1; i++) {
 //            PathPose prev = pathPoses.get(i - 1);
@@ -600,7 +602,7 @@ public class PathGeneration {
                 preCollectToCollectAngle = collectAngle;
                 collectYOffset = Math.signum(curBall.y) * Math.max(0, params.cornerCollectY - Math.abs(curBall.y));
                 preCollectOffset += Math.abs(collectYOffset);
-                if (prevBallType == BallType.CLASSIFIER_WALL) {
+                if (prevBallType == BallType.CLASSIFIER_WALL || prevBallType == BallType.BACK_WALL) {
                     double dist = MathUtils.vecDist(prevBall, curBall);
                     if (dist < params.lenientCornerCollectThreshold) {
                         approachType = Types.Approach.CORNER_LENIENT;
@@ -690,8 +692,8 @@ public class PathGeneration {
         }
 
         for (int i=0; i<pathPoses.size()-1; i++) {
-            Pose2d prevPose = i > 0 ? pathPoses.get(i - 1).pose : startPose;
-            PathPose prev = i > 0 ? pathPoses.get(i - 1) : null;
+            PathPose prev = !simplified.isEmpty() ? simplified.get(simplified.size() - 1) : null;
+            Pose2d prevPose = prev != null ? prev.pose : startPose;
             PathPose cur = pathPoses.get(i);
             PathPose next = pathPoses.get(i + 1);
 
@@ -711,16 +713,23 @@ public class PathGeneration {
             Vector2d prevToCur = cur.pose.position.minus(prevPose.position);
             Vector2d curToNext = next.pose.position.minus(cur.pose.position);
 
-            double headingDiff = MathUtils.angleNormDeltaRad(cur.pose.heading.toDouble() - prevPose.heading.toDouble());
+            double prevToCurHeadingDiff = MathUtils.angleNormDeltaRad(cur.pose.heading.toDouble() - prevPose.heading.toDouble());
+            double curToNextHeadingDiff = MathUtils.angleNormDeltaRad(next.pose.heading.toDouble() - cur.pose.heading.toDouble());
             double approachAngleDiff = MathUtils.angleRadDiff(curToNext, prevToCur);
 
-            double headingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(MathUtils.vecMag(prevToCur)));
+            double prevToCurDist = MathUtils.vecMag(prevToCur);
+            double curToNextDist = MathUtils.vecMag(curToNext);
+            double prevToCurHeadingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(prevToCurDist));
+            double curToNextHeadingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(curToNextDist));
+//            System.out.println(i + ": prev to cur heading diff: " + Math.toDegrees(prevToCurHeadingDiff) + " | cur to next heading diff: " + Math.toDegrees(curToNextHeadingDiff));
+//            System.out.println("prev to cur heading simpli: " + Math.toDegrees(prevToCurHeadingSimplification) + " | cur to next heading simpli: " + Math.toDegrees(curToNextHeadingSimplification));
+//            System.out.println(i + ": " + Math.toDegrees(approachAngleDiff));
             double approachAngleSimplification = Math.toRadians(params.maxCollectApproachDifference);
             boolean approachAnglesCloseEnough = Math.abs(approachAngleDiff) < approachAngleSimplification;
-            boolean headingCloseEnough = Math.abs(headingDiff) < headingSimplification;
-            if (headingCloseEnough && approachAnglesCloseEnough) {
+            boolean headingCloseEnough = Math.abs(prevToCurHeadingDiff) < prevToCurHeadingSimplification && Math.abs(curToNextHeadingDiff) < curToNextHeadingSimplification;
+            if (headingCloseEnough && approachAnglesCloseEnough)
                 continue;
-            }
+
 
             simplified.add(pathPoses.get(i));
         }
