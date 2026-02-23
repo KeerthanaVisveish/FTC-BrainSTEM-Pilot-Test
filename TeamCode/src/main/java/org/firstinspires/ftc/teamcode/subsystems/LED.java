@@ -52,7 +52,7 @@ public class LED extends Component {
             return;
         }
 
-        if (robot.shooter.shooterState == Shooter.ShooterState.UPDATE && !robot.shootingSystem.shooterGood()) {
+        if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE && !robot.shootingSystem.shooterGood()) {
             if (shooterFlashTimer.seconds() > shooterFlashOnTime + shooterFlashOffTime)
                 shooterFlashTimer.reset();
             else if (shooterFlashTimer.seconds() > shooterFlashOnTime) {

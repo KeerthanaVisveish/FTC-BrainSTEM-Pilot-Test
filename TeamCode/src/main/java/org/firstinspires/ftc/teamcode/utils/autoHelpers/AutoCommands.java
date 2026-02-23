@@ -110,14 +110,14 @@ public class AutoCommands {
     // SHOOTER
     public Action speedUpShooter() {
         return packet -> {
-            robot.shooter.shooterState = Shooter.ShooterState.UPDATE;
+            robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
             return !robot.shootingSystem.shooterGood();
         };
     }
 
     public Action stopShooter() {
         return packet -> {
-            robot.shooter.shooterState = Shooter.ShooterState.OFF;
+            robot.shooter.setShooterState(Shooter.ShooterState.OFF);
             return false;
         };
     }

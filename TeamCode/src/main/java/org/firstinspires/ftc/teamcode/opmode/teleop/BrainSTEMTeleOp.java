@@ -162,10 +162,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstRightBumper())
-            if (robot.shooter.shooterState == Shooter.ShooterState.UPDATE)
-                robot.shooter.shooterState = Shooter.ShooterState.OFF;
+            if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
+                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
             else
-                robot.shooter.shooterState = Shooter.ShooterState.UPDATE;
+                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
 
         if (gp1.isFirstLeftBumper()) {
             if (robot.turret.turretState == Turret.TurretState.CENTER)

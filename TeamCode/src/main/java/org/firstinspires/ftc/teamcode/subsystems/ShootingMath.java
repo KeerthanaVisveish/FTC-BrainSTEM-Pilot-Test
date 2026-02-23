@@ -69,15 +69,16 @@ public class ShootingMath {
 
 
 
-    ///  THE BIG FOURRRR
-    public static double[] calculateLaunchVector(double d, double h, double phi) {
+    ///  THE BIG FIVEEEEE
+    public static double[] calculateLaunchVectorWithImpactAngle(double d, double h, double phi) {
         double theta = Math.atan(2 * h / d - Math.tan(phi)); // desired exit angle
-
+        double v = calculateLaunchVelocityWithExitAngle(d, h, theta);
+        return new double[] {v, theta};
+    }
+    public static double calculateLaunchVelocityWithExitAngle(double d, double h, double theta) {
         double num = g * d * d;
         double denom = 2 * (d * Math.tan(theta) - h) * Math.pow(Math.cos(theta), 2);
-        double v = Math.sqrt(num / denom);
-
-        return new double[] {v, theta};
+        return Math.sqrt(num / denom);
     }
     public static double calculateImpactAngle(double d, double h, double v, double theta) {
         double tanPhi = Math.tan(theta) - g * d / Math.pow(v * Math.cos(theta), 2);
