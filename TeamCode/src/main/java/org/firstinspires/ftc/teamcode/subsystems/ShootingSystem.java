@@ -54,7 +54,7 @@ public class ShootingSystem {
         public double firstShootTolerance = 0.1, physicsShootTolerance = 0.1;
         public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
         public int lookAheadAvgNum = 5;
-        public double rawLookAheadTime = 0.25; // time to look ahead for pose prediction
+        public double rawLookAheadTime = 0.1; // time to look ahead for pose prediction
         public double shooterTau = 0.2;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492
@@ -106,6 +106,7 @@ public class ShootingSystem {
     public Vector2d ballExitPos, futureBallExitPos;
     public double exitPosGoalDistIn, futureTurretPosGoalDistIn;
     public Pose2d turretPose, futureTurretPose;
+    public double desiredBallDir;
 
     private double curTimeMs;
     public double dt;
@@ -206,7 +207,7 @@ public class ShootingSystem {
             filteredShooterSpeedTps = filteredShooterSpeedTps * a_s + rawShooterSpeedTps * (1 - a_s);
         }
 
-        double desiredBallDir = Math.atan2(goalPosIn.z - futureBallExitPos.y, goalPosIn.x - futureBallExitPos.x);
+        desiredBallDir = Math.atan2(goalPosIn.z - futureBallExitPos.y, goalPosIn.x - futureBallExitPos.x);
 
         Vector2d robotVelAtTurretMps = robotVelAtTurretIps.times(.0254);
         if(testingParams.usingLookup)
@@ -370,7 +371,9 @@ public class ShootingSystem {
     public void printInfo(Telemetry telemetry) {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("robot vel cm", MathUtils.formatVec3(robotVelCm));
+        telemetry.addData("robot vel center of mass", MathUtils.formatVec3(robotVelCm));
+        telemetry.addData("future turret pos relative to goal", MathUtils.formatVec3(futureTurretPosRelativeToGoal));
+        telemetry.addData("robot vel at turret ips", MathUtils.formatVec3(robotVelAtTurretIps));
 
         telemetry.addData("checking shooting while moving", checkShootingWhileMoving);
         telemetry.addData("currently shooting while moving", currentlyShootingWhileMoving);

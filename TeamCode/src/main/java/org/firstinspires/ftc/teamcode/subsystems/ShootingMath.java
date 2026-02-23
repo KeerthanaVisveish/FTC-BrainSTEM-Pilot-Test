@@ -28,7 +28,7 @@ public class ShootingMath {
         public double highArcHoodAngleDegEstimation = 20, lowArcHoodAngleDegEstimation = 45;
     }
     public static class TurretSystemParams {
-        public double maxAngleDeg = 90, minAngleDeg = -90;
+        public double maxAngleDeg = 90;
     }
     public static ShooterSystemParams shooterSystemParams = new ShooterSystemParams();
     public static HoodSystemParams hoodSystemParams = new HoodSystemParams();

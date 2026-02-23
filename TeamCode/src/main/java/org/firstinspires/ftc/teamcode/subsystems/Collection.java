@@ -9,14 +9,13 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 
 @Config
 public class Collection extends Component {
-    public static double shootOuttakeTimeAuto = 0.12;
-    public static double postShootOuttakeWaitAuto = 0.1;
-    public static double shootOuttakeTime = 0.12;
-    public static boolean autoEngageClutch = false;
+    public static double shootOuttakeTimeAuto = 0;
+    public static double postShootOuttakeWaitAuto = 0.;
+    public static double shootOuttakeTime = 0;
+    public static boolean autoEngageClutch = false, autoUnengageClutch = false;
     public static double autoEngageClutchMaxX = 0;
 
     public enum CollectionState {
@@ -58,7 +57,7 @@ public class Collection extends Component {
         public double ENGAGED_POS = 0.1;
         public double DISENGAGED_POS = 0.65;
         public double DELAY_PERIOD = 0.5;
-        public double INTAKE_SLOW_SPEED = 0.3, normIntakePow = 0.95, impossibleShotIntakePow = 0.6;
+        public double slowIntakePow = 0.3, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOutOfRangeIntakePow = 0, shooterNotGoodIntakePow = .7;
         public double OUTTAKE_SPEED = -0.5;
         public double LASER_BALL_THRESHOLD = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -73,7 +72,7 @@ public class Collection extends Component {
 
     public static Params params = new Params();
     private int framesRunning;
-
+    private boolean inAuto;
     public Collection(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
 
@@ -104,6 +103,9 @@ public class Collection extends Component {
         clutch_timer.reset();
     }
 
+    public void setInAuto(boolean inAuto) {
+        this.inAuto = inAuto;
+    }
     public CollectionState getCollectionState() { return collectionState; }
     public void setCollectionState(CollectionState collectionState) {
         this.collectionState = collectionState;
@@ -112,7 +114,7 @@ public class Collection extends Component {
                 collectorMotor.setPower(0);
                 break;
             case INTAKE_SLOW:
-                collectorMotor.setPower(params.INTAKE_SLOW_SPEED);
+                collectorMotor.setPower(params.slowIntakePow);
                 break;
             case OUTTAKE:
                 collectorMotor.setPower(params.OUTTAKE_SPEED);
@@ -168,7 +170,7 @@ public class Collection extends Component {
 
     @Override
     public void update() {
-        if(!robot.turret.inRange)
+        if(!robot.turret.inRange && autoUnengageClutch)
             setClutchState(ClutchState.UNENGAGED);
         else if (autoEngageClutch && clutchState == ClutchState.UNENGAGED &&
                 robot.drive.localizer.getPose().position.x < autoEngageClutchMaxX) {
@@ -203,9 +205,16 @@ public class Collection extends Component {
             case TRANSFER:
                 break;
             case INTAKE:
-                if (getClutchState() == ClutchState.ENGAGED
-                        && (!robot.shootingSystem.shooterGood() || !robot.turret.inRange()))
-                    collectorMotor.setPower(params.impossibleShotIntakePow);
+                if (getClutchState() == ClutchState.ENGAGED) {
+                    if (!robot.turret.inRangeForShot())
+                        collectorMotor.setPower(params.turretOutOfRangeIntakePow);
+                    else if (!robot.shootingSystem.shooterGood())
+                        collectorMotor.setPower(params.shooterNotGoodIntakePow);
+                    else
+                        collectorMotor.setPower(params.shootIntakePow);
+                }
+                else if(inAuto)
+                    collectorMotor.setPower(params.autoIntakePow);
                 else
                     collectorMotor.setPower(params.normIntakePow);
                 break;
