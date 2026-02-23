@@ -69,7 +69,7 @@ public abstract class AutoPid extends LinearOpMode {
             cornerCollectPose, cornerCollectRetryPose,
             gateCollectOpenControlPoint, gateCollectOpenNearPose, gateCollectOpenFarPose, gateCollectPose,
             gate1Pose, gate2Pose,
-            gateFarWaypointPose,
+            gateNearShootControlPoint, gateFarWaypointPose,
             parkFarPose,
             shootFar1WaypointPose, shootFar2WaypointPose,
             shootNearSetup1Pose, shootFarSetup1Pose,
@@ -90,7 +90,7 @@ public abstract class AutoPid extends LinearOpMode {
         isRed = alliance == Alliance.RED;
 
         if(customizable.collectionOrder.charAt(0) == 'n')
-            start = isRed ? new Pose2d(misc.startNearXRed, misc.startNearYRed, misc.startNearARed) : new Pose2d(misc.startNearXBlue, misc.startNearYBlue, misc.startNearABlue);
+            start = isRed ? createPose(misc.startNear) : createInvertedPose(misc.startNear);
         else if(customizable.collectionOrder.charAt(0) == 'f')
             start = isRed ? new Pose2d(misc.startFarXRed, misc.startFarYRed, misc.startFarARed) : new Pose2d(misc.startFarXBlue, misc.startFarYBlue, misc.startFarABlue);
 
@@ -312,13 +312,13 @@ public abstract class AutoPid extends LinearOpMode {
                     .setMinLinearPower(collect.collectDrivePower)
                     .setMaxLinearPower(collect.collectDrivePower)
                     .setMaxTime(1.4)
+                    .setControlPoint(preCollect1Pose, collect.firstCollectTStartError, collect.firstCollectTFinishError)
                     .setCustomEndCondition(() -> robot.collection.intakeHas3Balls())
                     .setPassPosition(true));
         }
         else {
-            Pose2d preCollectPose = new Pose2d(preCollect1Pose.position.x, preCollect1Pose.position.y, preCollect1Pose.heading.toDouble());
             firstCollectDrive = new DrivePath(robot.drive, telemetry,
-                    new Waypoint(preCollectPose, collect.waypointTol)
+                    new Waypoint(preCollect1Pose, collect.waypointTol)
                             .setPassPosition(true)
                             .setSlowDownPercent(collect.waypointSlowDown)
                             .setMaxTime(2)
@@ -513,6 +513,7 @@ public abstract class AutoPid extends LinearOpMode {
                 new Waypoint(shootPose)
                         .setMaxTime(2)
                         .setPassPosition(true)
+                        .setControlPoint(gateNearShootControlPoint, shoot.gateShootTStartError, shoot.gateShootTFinishError)
                         .setMinLinearPower(shoot.minShootDrivePower));
         else
             gateShootDrive = new DrivePath(robot.drive,
@@ -562,16 +563,18 @@ public abstract class AutoPid extends LinearOpMode {
         shootNearSetupLoadingPose = isRed ? shootNearRed(shoot.shootNearSetupLoadingARed) : shootNearBlue(shoot.shootNearSetupLoadingABlue);
         shootFarSetupLoadingPose = isRed ? shootFarRed(shoot.shootFarSetupLoadingARed) : shootFarBlue(shoot.shootFarSetupLoadingABlue);
 
+        gateNearShootControlPoint = isRed ? createPose(shoot.gateShootControlPoint) : createInvertedPose(shoot.gateShootControlPoint);
         shootFar1WaypointPose = isRed ? new Pose2d(shoot.shootFar1WaypointXRed, shoot.shootFar1WaypointYRed, shoot.shootFar1WaypointARed) : new Pose2d(shoot.shootFar1WaypointXBlue, shoot.shootFar1WaypointYBlue, shoot.shootFar1WaypointABlue);
         shootFar2WaypointPose = isRed ? new Pose2d(shoot.shootFar2WaypointXRed, shoot.shootFar2WaypointYRed, shoot.shootFar2WaypointARed) : new Pose2d(shoot.shootFar2WaypointXBlue, shoot.shootFar2WaypointYBlue, shoot.shootFar2WaypointABlue);
     }
     private void declareCollectPoses() {
+
         collect1Pose = isRed ? // only 1 collect pose for near (no pre collect pose, only post collect pose)
                 new Pose2d(collect.firstX, collect.postFirstY, collect.lineARed) :
                 new Pose2d(collect.firstX, -collect.postFirstY, collect.lineABlue);
         preCollect1Pose = isRed ?
-                new Pose2d(collect.firstX, collect.preFirstY, collect.lineARed) :
-                new Pose2d(collect.firstX, -collect.preFirstY, collect.lineABlue);
+                createPose(collect.firstCollectControlPoint) :
+                createInvertedPose(collect.firstCollectControlPoint);
 
         preCollect2PoseNear = isRed ?
                 new Pose2d(collect.preSecondXNear, collect.preSecondY, collect.curvedCollect2NearA) :

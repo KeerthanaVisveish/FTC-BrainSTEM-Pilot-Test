@@ -16,7 +16,7 @@ public class AutoParamsPid {
         public double collectWaypointTolX = 0.75, collectWaypointTolY = 2, collectWaypointTolHeading = 7;
         public Tolerance waypointTol = new Tolerance(collectWaypointTolX, collectWaypointTolY, collectWaypointTolHeading);
         public double lineARed = Math.toRadians(90), lineABlue = Math.toRadians(-90);
-        public double firstX = -11.5, preFirstY = 31, postFirstY = 46;
+        public double firstX = -12.5, preFirstY = 31, postFirstY = 46;
         public double secondX = 12, postSecondY = 46;
         public double preSecondY = 26.5, preSecondXNear = 6, preSecondXFar = 19;
         public double thirdX = 36, preThirdY = 28, postThirdY = 46;
@@ -42,9 +42,14 @@ public class AutoParamsPid {
         public double[] gateCollect = { 14, 61, 135 };
         public double[] gateCollectOpenControlPoint = { 13, 36, 50 };
         public double gateCollectOpenTStartError = 40, gateCollectOpenTFinishError = 18;
+
+        public double[] firstCollectControlPoint = { -12, 31, 90 };
+        public double firstCollectTStartError = 35, firstCollectTFinishError = 20;
     }
     public static class Shoot {
         public double minShootDrivePower = .4;
+        public double[] gateShootControlPoint = { 11, 36, 50 };
+        public double gateShootTStartError = 35, gateShootTFinishError = 18;
         public PathParams.HeadingLerpType preloadHeadingLerp = PathParams.HeadingLerpType.TANGENT;
         public double waypointTolX = 3, waypointTolY = 3, waypointTolA = Math.toRadians(5);
         public Tolerance waypointTol = new Tolerance(waypointTolX, waypointTolY, waypointTolA);
@@ -58,7 +63,7 @@ public class AutoParamsPid {
         public double shootFarXRed = 54, shootFarYRed = 16, shootFarXBlue = 54, shootFarYBlue = -16;
 
         // custom shooting angles
-        public double shootNearSetup1ARed = Math.toRadians(65), shootNearLastSetup1ARed = Math.toRadians(75), shootNearSetup2ARed = Math.toRadians(55), shootNearSetupGateARed = Math.toRadians(55), shootNearSetup3ARed = Math.toRadians(60), shootNearSetupLoadingARed = Math.toRadians(60);
+        public double shootNearSetup1ARed = Math.toRadians(60), shootNearLastSetup1ARed = Math.toRadians(75), shootNearSetup2ARed = Math.toRadians(55), shootNearSetupGateARed = Math.toRadians(55), shootNearSetup3ARed = Math.toRadians(60), shootNearSetupLoadingARed = Math.toRadians(60);
         public double shootFarSetup1ARed = Math.toRadians(180), shootFarSetup2ARed = Math.toRadians(170), shootFarSetup3ARed = Math.toRadians(150), shootFarSetupLoadingARed = Math.toRadians(95);
         public double shootNearSetup1ABlue = Math.toRadians(-65), shootNearLastSetup1ABlue = Math.toRadians(-75), shootNearSetup2ABlue = Math.toRadians(-70), shootNearSetupGateABlue = Math.toRadians(-80), shootNearSetup3ABlue = Math.toRadians(-60), shootNearSetupLoadingABlue = Math.toRadians(-60);
         public double shootFarSetup1ABlue = Math.toRadians(-180), shootFarSetup2ABlue = Math.toRadians(-170), shootFarSetup3ABlue = Math.toRadians(-150), shootFarSetupLoadingABlue = Math.toRadians(-95);
@@ -72,8 +77,8 @@ public class AutoParamsPid {
     }
 
     public static class Misc {
-        public double startNearXRed = -61.5, startNearYRed = 41.1, startNearARed = Math.toRadians(0),
-                startNearXBlue = -61.5, startNearYBlue = -41.1, startNearABlue = Math.toRadians(0);
+        public double[] startNear = { -61.5, 41.1, 0 };
+        public double[] startFar = { 63, 17.625, 180 };
         public double startFarXRed = 63, startFarYRed = 17.625, startFarARed = Math.toRadians(180),
                 startFarXBlue = 63, startFarYBlue = -17.625, startFarABlue = Math.toRadians(180);
 
