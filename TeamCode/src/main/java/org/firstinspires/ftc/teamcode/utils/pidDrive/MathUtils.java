@@ -138,6 +138,9 @@ public class MathUtils {
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], pose[1], Math.toRadians(pose[2]));
     }
+    public static Pose2d createInvertedPose(double[] pose) {
+        return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
+    }
     public static Vector2d createVec(double[] vec) {
         if(vec.length != 2)
             throw new IllegalArgumentException("cannot call createVec on " + Arrays.toString(vec) + " - must contain EXACTLY 2 elements");

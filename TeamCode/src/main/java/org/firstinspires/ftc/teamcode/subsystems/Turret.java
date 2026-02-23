@@ -19,52 +19,53 @@ public class Turret extends Component {
         public boolean enableTestingControl = false;
         public double testingTargetPos = 300;
         public double testingTargetVel = 0;
-//        public double alpha = .5;
-//        public boolean enableMotionProfiling = false;
     }
     public static class Params {
+        public double shotOutOfRangeBuffer = Math.toRadians(2);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public int minBound = -300;
-        public int maxBound = 300;
-        public double maxClutchEngageError = 20; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxAngle = Math.toRadians(95);
+        public double maxClutchEngageError = 2000; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
     }
     public static class PowerTuning {
         public double kA = .0004;
 //        public double transKV = .01;
 //        public double profileAccel = 2000, profileMaxVel = 200, profileBufferDist = 20;
         public double ignoreAngularVelocityNoiseThreshold = Math.toRadians(1);
-        public double APos = .012, BPos = 0.025, x0Pos = 175, kPos = .02;
-        public double x0kPScaler = 30, kKPScaler = .25, BKPScaler = .1;
+        public double ignoreKPScalingErrorThreshold = 40;
+        public double APos = .002, BPos = 0.02, x0Pos = 150, kPos = .03;
+        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .3;
         public double AVel = 0.1, BVel = .006, x0Vel = 30, kVel = .04;
-        public double smallVelKV = .2, smallVelThreshold = 50;
-        public double noPowerThreshold = 3, robotNotMovingThreshold = .5;
+        public double smallVelKV = .017, smallVelThreshold = 50;
+        public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
 
         public double[] kfPosLookupData = new double[] {
-                -350, .5,
-                -300, .7,
-                0, .4,
-                30, .55,
-                100, .7,
-                160, .75,
-                170, .8,
-                190, .98,
-                230, 1.1,
-                300, 1.3,
-                350, 1.3
+                -350, .75,
+                -300, .75,
+                -130, .75,
+                0, .6,
+                30, .75,
+                100, .9,
+                160, .95,
+                170, 1,
+                190, 1.18,
+                230, 1.25,
+                300, 1.45,
+                350, 1.45
         };
         public double[] kfNegLookupData = new double[] {
-                -350, -.55,
-                -300, -.55,
-                -75, -.5,
-                -25, -.5,
-                0, -.5,
-                5, -.6,
-                110, -.6,
-                170, -.6,
-                350, -.6
+                -350, -.8,
+                -300, -.8,
+                -130, -.8,
+                -75, -.7,
+                -25, -.7,
+                0, -.7,
+                5, -.75,
+                110, -.75,
+                170, -.75,
+                350, -.75
         };
     }
     public static TestingParams testingParams = new TestingParams();
@@ -84,6 +85,7 @@ public class Turret extends Component {
     private boolean usingMotionProfiling;
     public double currentEncoder, currentVelocity, currentAcceleration;
     public double positionError, velocityError;
+    public Vector2d perpVelVec;
     private double kP, kF;
     private double kV;
 //    private double rotKV;
@@ -97,7 +99,7 @@ public class Turret extends Component {
 
     public double currentAbsoluteAngleRad;
     public double curRelAngleRad;
-    public boolean inRange;
+    public boolean inRange, inRangeForShot;
 
     private double currentTestingTarget;
 
@@ -171,11 +173,13 @@ public class Turret extends Component {
         if(testingParams.enableTestingKF)
             return testingParams.kfTestingVoltage;
         double dir = Math.signum(positionError);
-        double input = Range.clip(currentEncoder, turretParams.minBound, turretParams.maxBound); // reversing input if traveling in the opposite direction
+        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
         kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
 
         kP = getLogisticErrorKP(Math.abs(positionError));
-        kP *= getLogisticKPScaler(Math.abs(targetVelocity));
+        if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
+            kP *= getLogisticKPScaler(Math.abs(targetVelocity));
         pVoltage = kP * positionError;
         kV = Math.abs(targetVelocity) < powerTuning.smallVelThreshold ? powerTuning.smallVelKV : getLogisticKV(Math.abs(targetVelocity));
         vVoltage = kV * targetVelocity;
@@ -185,7 +189,7 @@ public class Turret extends Component {
         return kF + pVoltage + vVoltage + aVoltage;
     }
     private double getLogisticErrorKP(double errorMag) {
-        return powerTuning.APos / (1 + Math.exp(-powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
+        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
     }
     private double getLogisticKPScaler(double targetVelMag) {
         return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
@@ -212,29 +216,32 @@ public class Turret extends Component {
         // updating target angle
         targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.actualTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
         // mirrors the angle if the turret cannot reach it (visual cue)
-        if (targetRelAngleRad > Math.toRadians(ShootingMath.turretSystemParams.maxAngleDeg)) {
+        double maxAngleRad = turretParams.maxAngle;
+        if (targetRelAngleRad > maxAngleRad) {
             targetRelAngleRad = Math.PI - targetRelAngleRad;
             inRange = false;
         }
-        else if (targetRelAngleRad < Math.toRadians(ShootingMath.turretSystemParams.minAngleDeg)) {
+        else if (targetRelAngleRad < -maxAngleRad) {
             targetRelAngleRad = -Math.PI - targetRelAngleRad;
             inRange = false;
         }
         else
             inRange = true;
+        inRangeForShot = Math.abs(targetRelAngleRad) < maxAngleRad + turretParams.shotOutOfRangeBuffer;
 
         targetEncoder = (int) (targetRelAngleRad * turretParams.ticksPerRad);
         targetEncoder += robot.shootingSystem.distState != ShootingSystem.Dist.FAR ? nearEncoderAdjustment : farEncoderAdjustment;
-        targetEncoder = Range.clip(targetEncoder, turretParams.minBound, turretParams.maxBound);
+        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        targetEncoder = Range.clip(targetEncoder, -maxBound, maxBound);
         positionError = targetEncoder - currentEncoder;
 
         // updating target angular velocity
-        Vector2d perpVelVec = new Vector2d(-robot.shootingSystem.futureTurretPosRelativeToGoal.y, robot.shootingSystem.futureTurretPosRelativeToGoal.x *1);
+        perpVelVec = new Vector2d(-robot.shootingSystem.futureTurretPosRelativeToGoal.y, robot.shootingSystem.futureTurretPosRelativeToGoal.x *1);
         perpVelVec = perpVelVec.div(robot.shootingSystem.futureTurretPosGoalDistIn);
         double dot = robot.shootingSystem.robotVelAtTurretIps.dot(perpVelVec);
         telemetry.addData("DOT", dot);
         telemetry.addData("PER VEL VEC", MathUtils.formatVec3(perpVelVec));
-        goalAngularVel = -dot / robot.shootingSystem.futureTurretPosGoalDistIn;
+        goalAngularVel = dot / robot.shootingSystem.futureTurretPosGoalDistIn;
         if(Math.abs(goalAngularVel) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
             goalAngularVel = 0;
 
@@ -243,19 +250,6 @@ public class Turret extends Component {
         double prevTargetVel = targetVelocity;
         targetVelocity = targetAngularVelocity * turretParams.ticksPerRad;
         targetAccel = (targetVelocity - prevTargetVel) / robot.shootingSystem.dt;
-
-//        double prevVel = targetVelocityFromTranslation + targetVelocityFromRotation;
-//        targetVelocityFromTranslation = goalAngularVel * turretParams.ticksPerRad;
-//        targetVelocityFromRotation = -robot.shootingSystem.odoVel.headingRad * turretParams.ticksPerRad;
-//        targetAccel = (targetVelocityFromRotation + targetVelocityFromTranslation - prevVel) / robot.shootingSystem.dt;
-
-
-//        if(testingParams.enableMotionProfiling && Math.abs(robot.shootingSystem.odoVel.headingRad) < powerTuning.ignoreProfilingHeadingVelThreshold) {
-//            targetVelocity += getProfileTargetVelocity(positionError);
-//            usingMotionProfiling = true;
-//        }
-//        else
-//            usingMotionProfiling = false;
     }
 
     @Override
@@ -265,8 +259,6 @@ public class Turret extends Component {
         telemetry.addLine("-----");
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
         telemetry.addData("p Voltage", pVoltage);
-//        telemetry.addData("v rot Voltage", vRVoltage);
-//        telemetry.addData("v trans Voltage", vTVoltage);
         telemetry.addData("vel Voltage", vVoltage);
         telemetry.addData("accel Voltage", aVoltage);
         telemetry.addData("kP", kP);
@@ -276,6 +268,9 @@ public class Turret extends Component {
         telemetry.addData("target velocity", targetVelocity);
         telemetry.addData("target accel", targetAccel);
         telemetry.addData("target goal angular vel", goalAngularVel);
+        telemetry.addData("target robot angular vel", -robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
+        telemetry.addData("desired ball dir", Math.toDegrees(robot.shootingSystem.desiredBallDir));
+        telemetry.addData("actual turret target angle", Math.toDegrees(robot.shootingSystem.actualTurretTargetAngleRad));
 //        telemetry.addLine("-----");
         telemetry.addData("current encoder", currentEncoder);
         telemetry.addData("current velocity", currentVelocity);
@@ -303,4 +298,5 @@ public class Turret extends Component {
     public boolean inRange() {
         return inRange;
     }
+    public boolean inRangeForShot() {return inRangeForShot; }
 }

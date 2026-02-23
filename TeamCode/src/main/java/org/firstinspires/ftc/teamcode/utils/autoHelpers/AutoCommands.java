@@ -6,6 +6,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -27,54 +28,55 @@ public class AutoCommands {
     }
 
     public Action waitTillDoneShooting(double maxTimeBetweenShots, double minTime) {
-        return new Action() {
-            private final ElapsedTime distanceSensorTimer = new ElapsedTime();
-            private final ElapsedTime timeSinceLastVelDrop = new ElapsedTime();
-            private final ElapsedTime totalTimer = new ElapsedTime();
-            private final ElapsedTime timeSinceIntakeSwitch = new ElapsedTime();
-            private int oldBallsShot;
-            private boolean first = true;
-            boolean alreadyOuttaked = false;
-
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                if (first) {
-                    first = false;
-                    distanceSensorTimer.reset();
-                    timeSinceLastVelDrop.reset();
-                    oldBallsShot = robot.shooter.getBallsShot();
-                    totalTimer.reset();
-                }
-
-                if (oldBallsShot != robot.shooter.getBallsShot())
-                    timeSinceLastVelDrop.reset();
-                oldBallsShot = robot.shooter.getBallsShot();
-//                telemetry.addData("time since last vel drop", timeSinceLastVelDrop.seconds());
-
-                if(robot.collection.isBackBallDetected())
-                    distanceSensorTimer.reset();
-
-                if(robot.collection.getIntakePower() == Collection.params.impossibleShotIntakePow) {
-                    distanceSensorTimer.reset();
-                    timeSinceLastVelDrop.reset();
-                }
-
-                if(!alreadyOuttaked && totalTimer.seconds() > 1 && robot.shooter.getBallsShot() == 0 && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
-                    robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
-                    timeSinceIntakeSwitch.reset();
-                    timeSinceLastVelDrop.reset();
-                    alreadyOuttaked = true;
-                }
-                if(alreadyOuttaked && timeSinceIntakeSwitch.seconds() > Collection.shootOuttakeTimeAuto)
-                    robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
-
-                boolean done = totalTimer.seconds() > 3.5 || ((robot.shooter.getBallsShot() == 3 || timeSinceLastVelDrop.seconds() > 1.1) && distanceSensorTimer.seconds() >= 0.15);
-//                return totalTimer.seconds() < 2 && timeSinceFirstVelDrop.seconds() < 0.9;
-                return !done;
-//                return (timeSinceLastVelDrop.seconds() < maxTimeBetweenShots && robot.shooter.getBallsShot() < 3) || distanceSensorTimer.seconds() < 0.5;
-//                return timeSinceLastVelDrop.seconds() < maxTimeBetweenShots && timer.seconds() < intakeCurrentValidationTime && robot.shooter.getBallsShot() < 3;
-            }
-        };
+        return new SleepAction(1.2);
+//        return new Action() {
+//            private final ElapsedTime distanceSensorTimer = new ElapsedTime();
+//            private final ElapsedTime timeSinceLastVelDrop = new ElapsedTime();
+//            private final ElapsedTime totalTimer = new ElapsedTime();
+//            private final ElapsedTime timeSinceIntakeSwitch = new ElapsedTime();
+//            private int oldBallsShot;
+//            private boolean first = true;
+//            boolean alreadyOuttaked = false;
+//
+//            @Override
+//            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+//                if (first) {
+//                    first = false;
+//                    distanceSensorTimer.reset();
+//                    timeSinceLastVelDrop.reset();
+//                    oldBallsShot = robot.shooter.getBallsShot();
+//                    totalTimer.reset();
+//                }
+//
+//                if (oldBallsShot != robot.shooter.getBallsShot())
+//                    timeSinceLastVelDrop.reset();
+//                oldBallsShot = robot.shooter.getBallsShot();
+////                telemetry.addData("time since last vel drop", timeSinceLastVelDrop.seconds());
+//
+//                if(robot.collection.isBackBallDetected())
+//                    distanceSensorTimer.reset();
+//
+//                if(robot.collection.getIntakePower() == Collection.params.impossibleShotIntakePow) {
+//                    distanceSensorTimer.reset();
+//                    timeSinceLastVelDrop.reset();
+//                }
+//
+//                if(!alreadyOuttaked && totalTimer.seconds() > 1 && robot.shooter.getBallsShot() == 0 && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
+//                    robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
+//                    timeSinceIntakeSwitch.reset();
+//                    timeSinceLastVelDrop.reset();
+//                    alreadyOuttaked = true;
+//                }
+//                if(alreadyOuttaked && timeSinceIntakeSwitch.seconds() > Collection.shootOuttakeTimeAuto)
+//                    robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
+//
+//                boolean done = totalTimer.seconds() > 3.5 || ((robot.shooter.getBallsShot() == 3 || timeSinceLastVelDrop.seconds() > 1.1) && distanceSensorTimer.seconds() >= 0.15);
+////                return totalTimer.seconds() < 2 && timeSinceFirstVelDrop.seconds() < 0.9;
+//                return !done;
+////                return (timeSinceLastVelDrop.seconds() < maxTimeBetweenShots && robot.shooter.getBallsShot() < 3) || distanceSensorTimer.seconds() < 0.5;
+////                return timeSinceLastVelDrop.seconds() < maxTimeBetweenShots && timer.seconds() < intakeCurrentValidationTime && robot.shooter.getBallsShot() < 3;
+//            }
+//        };
     }
     // CONSTANT UPDATES
     public Action updateRobot = packet -> {
@@ -146,7 +148,6 @@ public class AutoCommands {
     public Action flickerUp() {
         return packet -> {
             robot.collection.setFlickerState(Collection.FlickerState.FULL_UP_DOWN);
-            robot.collection.setCollectionState(Collection.CollectionState.OFF);
             return false;
         };
     }

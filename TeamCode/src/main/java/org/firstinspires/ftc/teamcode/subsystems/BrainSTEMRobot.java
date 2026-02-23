@@ -111,7 +111,8 @@ public class BrainSTEMRobot {
 
         // draw where turret is pointed
         fieldOverlay.setAlpha(1);
-        double dist = Math.hypot(shootingSystem.ballExitPos.x - shootingSystem.goalPosIn.x, shootingSystem.ballExitPos.y - shootingSystem.goalPosIn.y);
+//        double dist = Math.hypot(shootingSystem.ballExitPos.x - shootingSystem.goalPosIn.x, shootingSystem.ballExitPos.y - shootingSystem.goalPosIn.y);
+        double dist = 300;
 
         fieldOverlay.setStroke("purple");
         fieldOverlay.strokeLine(
@@ -132,10 +133,31 @@ public class BrainSTEMRobot {
         fieldOverlay.strokeLine(
                 shootingSystem.turretPose.position.x,
                 shootingSystem.turretPose.position.y,
-                shootingSystem.turretPose.position.x + shootingSystem.robotVelCm.x,
-                shootingSystem.turretPose.position.y + shootingSystem.robotVelCm.y
+                shootingSystem.ballExitPos.x + dist * Math.cos(shootingSystem.desiredBallDir),
+                shootingSystem.ballExitPos.y + dist * Math.sin(shootingSystem.desiredBallDir)
         );
 
+        if(turret.perpVelVec != null) {
+            fieldOverlay.setStroke("blue");
+            fieldOverlay.strokeLine(
+                    shootingSystem.turretPose.position.x,
+                    shootingSystem.turretPose.position.y,
+                    shootingSystem.turretPose.position.x + shootingSystem.robotVelAtTurretIps.x,
+                    shootingSystem.turretPose.position.y + shootingSystem.robotVelAtTurretIps.y
+            );
+            fieldOverlay.strokeLine(
+                    shootingSystem.turretPose.position.x,
+                    shootingSystem.turretPose.position.y,
+                    shootingSystem.turretPose.position.x + turret.perpVelVec.x * 10,
+                    shootingSystem.turretPose.position.y + turret.perpVelVec.y * 10
+            );
+            fieldOverlay.strokeLine(
+                    shootingSystem.goalPosIn.x,
+                    shootingSystem.goalPosIn.z,
+                    shootingSystem.goalPosIn.x + shootingSystem.futureTurretPosRelativeToGoal.x,
+                    shootingSystem.goalPosIn.z + shootingSystem.futureTurretPosRelativeToGoal.y
+            );
+        }
     }
     public double getFilteredVoltage() {
         return filteredVoltage;

@@ -214,6 +214,9 @@ public class DrivePath implements Action {
         }
 
         // calculating drive vector
+//        splineT = Math.min(1, Math.max(waypointTimer.seconds() - getCurParams().tValueStartDist, 0) / getCurParams().tValueFinishDis);
+        double rawT = (getCurParams().tValueStartDist - errorInfo.distanceError) / (getCurParams().tValueStartDist - getCurParams().tValueFinishDist);
+        splineT = Range.clip(rawT, 0, 1);
         Vector2d targetDriveDir = updateTargetDriveDir(robotPose);
         driveVector = new Vector2d(
                 targetDriveDir.x * linearPower * getCurParams().axialWeight,
@@ -257,10 +260,11 @@ public class DrivePath implements Action {
             telemetry.addData("targetY", targetY);
             telemetry.addData("targetHeading", MathUtils.format3(Math.toDegrees(targetHeadingRad)));
             telemetry.addData("total dist away", totalDistanceAway);
-            telemetry.addData("slow down", getCurParams().slowDownPercent);
-            telemetry.addData("position current", MathUtils.format3(rx) + " ," + MathUtils.format3(ry) + ", " + MathUtils.format3(rHeadingDeg));
-            telemetry.addData("position target", MathUtils.format3(getCurWaypoint().x()) + " ," + MathUtils.format3(getCurWaypoint().y()) + ", " + MathUtils.format3(getCurWaypoint().headingDeg()));
-            telemetry.addData("position prev", MathUtils.formatPose3(prevWaypointPose));
+            telemetry.addData("AAA waypoint dist away", errorInfo.distanceError);
+//            telemetry.addData("slow down", getCurParams().slowDownPercent);
+//            telemetry.addData("position current", MathUtils.format3(rx) + " ," + MathUtils.format3(ry) + ", " + MathUtils.format3(rHeadingDeg));
+//            telemetry.addData("position target", MathUtils.format3(getCurWaypoint().x()) + " ," + MathUtils.format3(getCurWaypoint().y()) + ", " + MathUtils.format3(getCurWaypoint().headingDeg()));
+//            telemetry.addData("position prev", MathUtils.formatPose3(prevWaypointPose));
 //            telemetry.addData("target dir", MathUtils.format3(targetDir.x) + ", " + MathUtils.format3(targetDir.y));
 //            telemetry.addData("x waypoint error", MathUtils.format3(xWaypointError));
 //            telemetry.addData("y waypoint error", MathUtils.format3(yWaypointError));
@@ -293,7 +297,7 @@ public class DrivePath implements Action {
             fieldOverlay.setStroke("black");
             Drawing.drawRobot(fieldOverlay, prevWaypointPose);
             Drawing.drawRobot(fieldOverlay, curWaypointPose);
-            if(getCurParams().pathType == PathParams.PathType.CURVED) {
+            if (getCurParams().pathType == PathParams.PathType.CURVED) {
                 fieldOverlay.setStroke("gray");
                 Drawing.drawRobot(fieldOverlay, new Pose2d(targetX, targetY, targetHeadingRad));
                 Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
@@ -306,8 +310,6 @@ public class DrivePath implements Action {
 
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
         }
-
-        splineT = Math.min(1, Math.max(waypointTimer.seconds() - getCurParams().tValueStartTime, 0) / getCurParams().tValueMaxOutTime);
         return true;
     }
 

@@ -23,8 +23,8 @@ public class Shooter extends Component {
         public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
     }
     public static class TestingParams {
-        public boolean testing = false;
-        public double testingVel = 1500;
+        public boolean testing = true;
+        public double testingVel = 5.15;
         public double testingExitAngleRad = 1.0472;
     }
 
@@ -89,13 +89,13 @@ public class Shooter extends Component {
 
             case UPDATE:
                 if(testingParams.testing)
-                    setShooterVelocityPID(testingParams.testingVel, robot.shootingSystem.filteredShooterSpeedTps);
+                    setShooterVelocityPID(testingParams.testingVel, robot.shootingSystem.curExitSpeedMps);
                 else
                     setShooterVelocityPID(robot.shootingSystem.actualTargetExitSpeedMps, robot.shootingSystem.curExitSpeedMps);
                 break;
         }
         if(testingParams.testing) {
-            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
+//            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
         else if(robot.shootingSystem.checkShootingWhileMoving || robot.shootingSystem.physicsExitAngleRads[0] != -1 || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad));
