@@ -2,8 +2,6 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import static org.firstinspires.ftc.teamcode.subsystems.ShooterLookup.lookupDistsI;
 
-import android.sax.StartElementListener;
-
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -20,7 +18,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
-import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.math.Vector3d;
 import org.firstinspires.ftc.teamcode.utils.misc.MotorCacher;
 import org.firstinspires.ftc.teamcode.utils.misc.ServoImplCacher;
@@ -225,11 +222,13 @@ public class ShootingSystem {
         relGoalHeightM = (goalPosIn.y * 0.0254 - exitHeightM);
         double futureDist = futureTurretPosGoalDistIn * 0.0254;
 
-        double[] launchVector = ShootingMath.calculateLaunchVector(futureDist, relGoalHeightM, impactAngleRad);
+        double[] launchVector;
 
-        ballTargetExitSpeedMps = launchVector[0];
-        ballExitAngleRad = launchVector[1];
         if(checkShootingWhileMoving) {
+            launchVector = ShootingMath.calculateLaunchVectorWithImpactAngle(futureDist, relGoalHeightM, impactAngleRad);
+            ballTargetExitSpeedMps = launchVector[0];
+            ballExitAngleRad = launchVector[1];
+
             currentlyShootingWhileMoving = robot.collection.getClutchState() == Collection.ClutchState.ENGAGED;
             if(!currentlyShootingWhileMoving)
                 robotExitPosVel = new Vector2d(0, 0);
@@ -243,6 +242,10 @@ public class ShootingSystem {
             actualTargetExitSpeedMps = Math.hypot( baseLength, actualTargetExitVelMps.y );
         }
         else {
+            launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, hoodParams.minExitAngRad), hoodParams.minExitAngRad};
+            ballTargetExitSpeedMps = launchVector[0];
+            ballExitAngleRad = launchVector[1];
+
             currentlyShootingWhileMoving = false;
             efficiencyCoef = calcEfficiencyCoef(launchVector[1]); // initial guess for efficiency coefficient
             curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef); // initial guess for current shooter speed

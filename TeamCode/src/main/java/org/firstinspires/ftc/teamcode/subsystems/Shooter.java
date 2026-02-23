@@ -34,13 +34,12 @@ public class Shooter extends Component {
     public enum ShooterState {
         OFF, UPDATE
     }
-    public ShooterState shooterState;
+    private ShooterState shooterState;
 
-    public final PIDController shooterPID;
+    private final PIDController shooterPID;
     private double nearVelocityAdjustment, farVelocityAdjustment;
-    private boolean disableHoodInterlock;
     private int ballsShot;
-    public double lastMax, lastMin, lastDecel, velDropTime;
+    private double lastMax, lastMin, lastDecel, velDropTime;
     private final ArrayList<Double> allVelDrops, allPostShotVels, allLastDecels, allVelDropTimes;
     private double mSOfLastMax;
     private boolean increasing, wasPrevIncreasing;
@@ -97,7 +96,9 @@ public class Shooter extends Component {
         if(testingParams.testing) {
 //            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
-        else if(robot.shootingSystem.checkShootingWhileMoving || robot.shootingSystem.physicsExitAngleRads[0] != -1 || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
+        else if(robot.shootingSystem.checkShootingWhileMoving
+                || robot.shootingSystem.physicsExitAngleRads[0] != -1
+                || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad));
         updateBallShotTracking();
     }
@@ -162,8 +163,10 @@ public class Shooter extends Component {
             nearVelocityAdjustment += amount;
         farVelocityAdjustment += amount;
     }
-
-    public void setDisableHoodInterlock(boolean disableHoodInterlock) {
-        this.disableHoodInterlock = disableHoodInterlock;
+    public ShooterState getShooterState() {
+        return shooterState;
+    }
+    public void setShooterState(ShooterState shooterState) {
+        this.shooterState = shooterState;
     }
 }
