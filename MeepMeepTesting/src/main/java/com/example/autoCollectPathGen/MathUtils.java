@@ -32,6 +32,11 @@ public class MathUtils {
 //            }
 //        }
 //    }
+    public static double averageAngle(double a1, double a2) {
+        Vector2d v1 = new Vector2d(Math.cos(a1), Math.sin(a1));
+        Vector2d v2 = new Vector2d(Math.cos(a2), Math.sin(a2));
+        return vecAngle(v1.plus(v2));
+    }
     public static double angleRadDiff(Vector2d v2, Vector2d v1) {
         double a2 = Math.atan2(v2.y, v2.x);
         double a1 = Math.atan2(v1.y, v1.x);

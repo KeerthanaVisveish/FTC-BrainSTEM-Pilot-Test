@@ -500,7 +500,7 @@ public class PathGenPreview extends JPanel
                         double xPercent = 1 - Math.pow(Math.random(), 2);
                         double yPercent = 1 - Math.pow(Math.random(), 10);
 
-                        x = xPercent * (48 - 2.5) + 24;
+                        x = xPercent * (36 - 2.5) + 36;
                         y = yPercent * (24 - 2.5) + 48;
                         if (!generateRedRandomBalls)
                             y *= -1;
