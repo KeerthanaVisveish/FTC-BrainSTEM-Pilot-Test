@@ -25,14 +25,17 @@ public class PathInfo {
         this.ballPath = ballPath;
         this.pathPoses = pathPoses;
         this.problemBalls = problemBalls;
-        simplifiedPathPoses = PathGeneration.simplifyPathPoses(startPose, pathPoses);
+        simplifiedPathPoses = new ArrayList<>();
         ignoredBalls = new ArrayList<>();
     }
-
 
     public void setIgnoredBalls(ArrayList<Vector2d> ignoredBalls) {
         this.ignoredBalls.clear();
         this.ignoredBalls.addAll(ignoredBalls);
+    }
+    public void setSimplifiedPathPoses(ArrayList<PathPose> simplifiedPathPoses) {
+        this.simplifiedPathPoses.clear();
+        this.simplifiedPathPoses.addAll(simplifiedPathPoses);
     }
     public ArrayList<Pose2d> getPoses() {
         ArrayList<Pose2d> poses = new ArrayList<>();

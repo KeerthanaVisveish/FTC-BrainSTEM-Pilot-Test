@@ -55,6 +55,7 @@ public class PathGenPreview extends JPanel
 
     private boolean drawSimplifiedPath = true;
     private int drawRobotNodeIndex = 0;
+    private double drawRobotNodeLerp = 0;
     private boolean drawInfo = false;
     private int numRandomBallsToGenerate = 0;
     private boolean generateRedRandomBalls = false;
@@ -169,7 +170,7 @@ public class PathGenPreview extends JPanel
             Vector2d[] ballPositions = new Vector2d[balls.size()];
             for (int i=0; i<balls.size(); i++)
                 ballPositions[i] = balls.get(i).position;
-            path = PathGeneration.getAutoCollectPath(robot, ballPositions);
+            path = PathGeneration.generateSimplifiedAutoCollectPath(robot, ballPositions);
         }
         drawRobotAndBalls(g2);
         if (path != null)
@@ -180,19 +181,27 @@ public class PathGenPreview extends JPanel
             g2.setColor(Color.BLACK);
             int numPiecesOfInfoPerPathPose = 3;
             ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.simplifiedPathPoses : path.pathPoses;
+            int width = 150;
             int generalInfoHeight = 100;
             int height = pathPoses.size() * 20 * numPiecesOfInfoPerPathPose + generalInfoHeight;
-            g2.fillRect(0, 0, 150, height);
+            g2.fillRect(0, 0, width, height);
             g2.setColor(Color.WHITE);
             g2.drawString("Path Type: " + path.pathType, 10, 15);
             g2.drawString("Max Regens: " + PathGeneration.params.maxPathRegenerationAttempts, 10, 35);
             g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
             g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 75);
             for (int i=0; i<pathPoses.size(); i++) {
+                int startY = i*20*numPiecesOfInfoPerPathPose + generalInfoHeight;
+                int cellHeight = numPiecesOfInfoPerPathPose*20+10;
+                if ((i+1) == drawRobotNodeIndex) {
+                    g2.setColor(Color.DARK_GRAY);
+                    g2.fillRect(0, startY-20, width, cellHeight);
+                    g2.setColor(Color.WHITE);
+                }
                 PathPose pathPose = pathPoses.get(i);
-                g2.drawString(i + ": " + pathPose.ballType, 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight);
-                g2.drawString("    " + pathPose.approachType, 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight+20);
-                g2.drawString("    " + MathUtils.formatVec2(pathPose.ball), 10, i*20*numPiecesOfInfoPerPathPose+generalInfoHeight+40);
+                g2.drawString(i + ": " + pathPose.ballType, 10, startY);
+                g2.drawString("    " + pathPose.approachType, 10, startY+20);
+                g2.drawString("    " + MathUtils.formatPose(pathPose.pose), 10, startY+40);
             }
         }
     }
@@ -253,12 +262,50 @@ public class PathGenPreview extends JPanel
             drawPose(g2, pose, pathNodeRadius);
         }
 
-        if (drawRobotNodeIndex < 0)
+        if (drawRobotNodeIndex < 0) {
             drawRobotNodeIndex = 0;
-        if (drawRobotNodeIndex >= poses.size())
+            drawRobotNodeLerp = 0;
+        }
+        if (drawRobotNodeIndex >= poses.size()) {
             drawRobotNodeIndex = poses.size() - 1;
-        if (drawRobotNodeIndex > 0)
-            drawRobot(g2, poses.get(drawRobotNodeIndex));
+            drawRobotNodeLerp = 0;
+        }
+        if (drawRobotNodeIndex == poses.size() - 1)
+            drawRobotNodeLerp = Math.min(0, drawRobotNodeLerp);
+        if (drawRobotNodeLerp > 1) {
+            if (drawRobotNodeIndex == poses.size() - 1)
+                drawRobotNodeLerp = 0;
+            else {
+                drawRobotNodeLerp %= 1;
+                drawRobotNodeIndex++;
+            }
+        }
+        else if (drawRobotNodeLerp < -1) {
+            if (drawRobotNodeIndex == 0)
+                drawRobotNodeLerp = 0;
+            else {
+                drawRobotNodeLerp %= 1;
+                drawRobotNodeIndex--;
+            }
+        }
+        if (drawRobotNodeIndex > 0 || drawRobotNodeLerp != 0) {
+            Pose2d curPose = poses.get(drawRobotNodeIndex);
+            int nextIndex = drawRobotNodeLerp >= 0 ? drawRobotNodeIndex + 1 : drawRobotNodeIndex - 1;
+            if (nextIndex >= 0 && nextIndex < poses.size()) {
+                Pose2d nextPose = poses.get(nextIndex);
+                double headingLerpT = Math.max(-1, Math.min(1, drawRobotNodeLerp * 3));
+                Pose2d lerpedPose = new Pose2d(
+                        MathUtils.lerp(curPose.position.x, nextPose.position.x, Math.abs(drawRobotNodeLerp)),
+                        MathUtils.lerp(curPose.position.y, nextPose.position.y, Math.abs(drawRobotNodeLerp)),
+                        curPose.heading.plus(nextPose.heading.minus(curPose.heading) * Math.abs(headingLerpT)).toDouble()
+                );
+                drawRobot(g2, lerpedPose);
+            }
+            else {
+                drawRobotNodeLerp = 0;
+                drawRobot(g2, curPose);
+            }
+        }
     }
     private void drawBallsUsed(Graphics2D g2) {
         if (path != null) {
@@ -436,6 +483,14 @@ public class PathGenPreview extends JPanel
                 drawRobotNodeIndex++;
                 shouldRepaint = true;
                 break;
+            case KeyEvent.VK_MINUS:
+                drawRobotNodeLerp -= 0.1;
+                shouldRepaint = true;
+                break;
+            case KeyEvent.VK_EQUALS:
+                drawRobotNodeLerp += 0.1;
+                shouldRepaint = true;
+                break;
             case KeyEvent.VK_I:
                 drawInfo = !drawInfo;
                 shouldRepaint = true;
@@ -490,6 +545,7 @@ public class PathGenPreview extends JPanel
             case KeyEvent.VK_B: generateRedRandomBalls = false; break;
             case KeyEvent.VK_G:
                 drawRobotNodeIndex = 0;
+                drawRobotNodeLerp = 0;
                 selectedPoseIndex = -2;
                 balls.clear();
                 for (int i=0; i<numRandomBallsToGenerate; i++) {

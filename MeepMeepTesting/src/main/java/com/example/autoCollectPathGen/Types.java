@@ -5,7 +5,8 @@ public class Types {
         NORMAL,
         CLUSTER_STRAFE,
         BACK_WALL_STRAFE,
-        CLASSIFIER_WALL_STRAFE,
+        CLASSIFIER_STRAFE,
+        LENIENT_CLASSIFIER_STRAFE,
         CORNER_CONSTRAINED,
         CORNER_LENIENT
     }
