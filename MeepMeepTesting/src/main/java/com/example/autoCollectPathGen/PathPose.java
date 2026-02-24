@@ -7,14 +7,12 @@ import com.acmerobotics.roadrunner.Vector2d;
 public class PathPose {
     public final Pose2d pose;
     public Types.PoseType poseType;
-    public final Vector2d ball;
-    public final BallType ballType;
+    public final Ball ball;
     public final Types.Approach approachType;
-    public PathPose(Pose2d pose, Types.PoseType poseType, Vector2d ball, BallType ballType, Types.Approach approachType) {
+    public PathPose(Pose2d pose, Types.PoseType poseType, Ball ball, Types.Approach approachType) {
         this.pose = pose;
         this.poseType = poseType;
-        this.ball = ball;
-        this.ballType = ballType;
+        this.ball = ball == null ? Ball.NULL : ball;
         this.approachType = approachType;
     }
     @Override

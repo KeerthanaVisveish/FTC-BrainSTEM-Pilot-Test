@@ -13,15 +13,14 @@ public class PathInfo {
     }
     public final PathType pathType;
     public final Pose2d startPose;
-    public final ArrayList<Vector2d> originalBallPath, ballPath;
+    public final ArrayList<Ball> ballPath;
     public final ArrayList<PathPose> pathPoses;
     public final ArrayList<PathPose> simplifiedPathPoses;
     public final ArrayList<ProblemBall> problemBalls;
-    public final ArrayList<Vector2d> ignoredBalls;
-    public PathInfo(PathType pathType, Pose2d startPose, ArrayList<Vector2d> originalBallPath, ArrayList<Vector2d> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
+    public final ArrayList<Ball> ignoredBalls;
+    public PathInfo(PathType pathType, Pose2d startPose, ArrayList<Ball> ballPath, ArrayList<PathPose> pathPoses, ArrayList<ProblemBall> problemBalls) {
         this.pathType = pathType;
         this.startPose = startPose;
-        this.originalBallPath = originalBallPath;
         this.ballPath = ballPath;
         this.pathPoses = pathPoses;
         this.problemBalls = problemBalls;
@@ -29,7 +28,7 @@ public class PathInfo {
         ignoredBalls = new ArrayList<>();
     }
 
-    public void setIgnoredBalls(ArrayList<Vector2d> ignoredBalls) {
+    public void setIgnoredBalls(ArrayList<Ball> ignoredBalls) {
         this.ignoredBalls.clear();
         this.ignoredBalls.addAll(ignoredBalls);
     }

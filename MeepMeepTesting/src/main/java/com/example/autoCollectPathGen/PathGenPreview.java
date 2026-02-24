@@ -199,7 +199,7 @@ public class PathGenPreview extends JPanel
                     g2.setColor(Color.WHITE);
                 }
                 PathPose pathPose = pathPoses.get(i);
-                g2.drawString(i + ": " + pathPose.ballType, 10, startY);
+                g2.drawString(i + ": " + pathPose.ball.type, 10, startY);
                 g2.drawString("    " + pathPose.approachType, 10, startY+20);
                 g2.drawString("    " + MathUtils.formatPose(pathPose.pose), 10, startY+40);
             }
@@ -221,13 +221,13 @@ public class PathGenPreview extends JPanel
             boolean isIgnoredBall = false;
             if (path != null) {
                 for (ProblemBall problemBall : path.problemBalls) {
-                    if (ball.equals(problemBall.ballPosition)) {
+                    if (ball.equals(problemBall.pos)) {
                         isProblemBall = true;
                         break;
                     }
                 }
-                for (Vector2d ignoredBall : path.ignoredBalls) {
-                    if (ignoredBall.equals(ball)) {
+                for (Ball ignoredBall : path.ignoredBalls) {
+                    if (ignoredBall.pos.equals(ball)) {
                         isIgnoredBall = true;
                         break;
                     }
@@ -309,12 +309,9 @@ public class PathGenPreview extends JPanel
     }
     private void drawBallsUsed(Graphics2D g2) {
         if (path != null) {
-            g2.setColor(Color.GREEN);
-            for (Vector2d ball : path.originalBallPath)
-                drawPosition(g2, ball, 1, true);
             g2.setColor(Color.WHITE);
-            for (Vector2d ball : path.ballPath)
-                drawPosition(g2, ball, 1.5, true);
+            for (Ball ball : path.ballPath)
+                drawPosition(g2, ball.pos, 1, true);
         }
     }
     private Point fieldToDrawPosition(Vector2d field) {

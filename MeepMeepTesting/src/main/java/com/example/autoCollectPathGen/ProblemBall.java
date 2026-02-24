@@ -2,7 +2,7 @@ package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
-public class ProblemBall {
+public class ProblemBall extends Ball {
 
     public enum Severity {
         // most severe
@@ -15,13 +15,12 @@ public class ProblemBall {
         // least severe (most preferable)
     }
     public final Severity severity;
-    public final Vector2d ballPosition;
-    public ProblemBall(Severity severity, Vector2d ballPosition) {
+    public ProblemBall(Severity severity, Vector2d pos) {
+        super(pos);
         this.severity = severity;
-        this.ballPosition = ballPosition;
     }
     @Override
     public String toString() {
-        return severity + " " + MathUtils.formatVec2(ballPosition);
+        return severity + " " + MathUtils.formatVec2(pos);
     }
 }
