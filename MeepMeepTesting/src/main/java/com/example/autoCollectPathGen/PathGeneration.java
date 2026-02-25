@@ -261,12 +261,11 @@ public class PathGeneration {
             }
         }
 
-        // set the path indexes of the ball - nodes CANNOT be deleted from ballPath after this
+        // set the path indexes of the ball
         for (int i=0; i<ballPath.size(); i++)
             ballPath.get(i).pathIndex = i;
 
         ArrayList<Ball> allBallsInCluster = new ArrayList<>();
-        ArrayList<ClusterApproach> clusterApproaches = new ArrayList<>();
 
         ArrayList<ClusterApproachPath> validClusterApproachPaths = new ArrayList<>();
         for (int i=0; i<ballPath.size(); i++) {
@@ -283,7 +282,6 @@ public class PathGeneration {
                             allBallsInCluster.add(cur);
                         }
                         allBallsInCluster.add(next);
-                        clusterApproaches.add(new ClusterApproach(prev, cur, next));
                         continue;
                     }
                 }
@@ -291,47 +289,35 @@ public class PathGeneration {
             // this only runs if current cluster has been finished merging
             // once current cluster has finished, find approach information
             if (!allBallsInCluster.isEmpty()) {
-                ClusterApproach clusterApproach = null;
-                if (!clusterApproaches.isEmpty()) {
-                    clusterApproach = getBestClusterApproach(clusterApproaches, allBallsInCluster);
-                    problemBalls.addAll(clusterApproach.problemBalls);
-                    if (clusterApproach.isWallSafe) {
-                        ArrayList<PathPose> clusterPathPoses = new ArrayList<>(Arrays.asList(
-                                new PathPose(clusterApproach.preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE),
-                                new PathPose(clusterApproach.collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE)
-                        ));
-                        ClusterApproachPath approachPath = new ClusterApproachPath(clusterApproach.start, clusterApproach.end, clusterPathPoses);
-                        validClusterApproachPaths.add(approachPath);
-                    }
-                    else
-                        clusterApproach = null;
+                ArrayList<ClusterApproach> clusterApproaches = new ArrayList<>();
+                for (int j=0; j<allBallsInCluster.size(); j++) {
+                    Ball curClusterBall = allBallsInCluster.get(j);
+                    Ball prevClusterBall = curClusterBall.pathIndex == 0 ? new Ball(robotPos) : ballPath.get(curClusterBall.pathIndex - 1);
+                    Ball nextClusterBall = curClusterBall.pathIndex == ballPath.size() - 1 ? Ball.NULL : ballPath.get(curClusterBall.pathIndex + 1);
+                    clusterApproaches.add(new ClusterApproach(prevClusterBall, curClusterBall, nextClusterBall));
                 }
-                if (clusterApproach == null) {
+                ClusterApproach clusterApproach = getBestClusterApproach(clusterApproaches, allBallsInCluster);
+                problemBalls.addAll(clusterApproach.problemBalls);
+                if (clusterApproach.isWallSafe) {
+                    ArrayList<PathPose> clusterPathPoses = new ArrayList<>(Arrays.asList(
+                            new PathPose(clusterApproach.preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE),
+                            new PathPose(clusterApproach.collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE)
+                    ));
+                    ClusterApproachPath approachPath = new ClusterApproachPath(clusterApproach.start, clusterApproach.end, clusterPathPoses);
+                    validClusterApproachPaths.add(approachPath);
+                }
+                else {
                     boolean closeEnoughToMerge = true;
                     Vector2d average = MathUtils.getAverage(Ball.toVecList(allBallsInCluster));
-                    for (Ball ballInCluster : allBallsInCluster) {
+                    for (Ball ballInCluster : allBallsInCluster)
                         if (MathUtils.vecDist(average, ballInCluster.pos) > params.clusterMergeDist) {
                             closeEnoughToMerge = false;
                             break;
                         }
-                    }
 
                     // merge
                     if (closeEnoughToMerge) {
                         cur = new Ball(MathUtils.getAverage(Ball.toVecList(allBallsInCluster)));
-                        // remove old balls in cluster
-                        for (int j=0; j<allBallsInCluster.size(); j++) {
-                            Ball clusterBall = allBallsInCluster.get(j);
-                            for (int k=0; k<ballPath.size(); k++) {
-                                if (ballPath.get(k).equals(clusterBall)) {
-                                    ballPath.remove(k);
-                                    if (k <= i)
-                                        i--;
-                                    break;
-                                }
-                            }
-                        }
-                        ballPath.add(cur);
                     }
                     // choose easiest
                     else {
