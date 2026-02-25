@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen;
+package com.example.autoCollectPathGen.pathGeneration;
 
 import java.util.function.DoubleUnaryOperator;
 

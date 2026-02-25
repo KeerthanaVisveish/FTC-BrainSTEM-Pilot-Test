@@ -1,8 +1,9 @@
-package com.example.autoCollectPathGen;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 public class PathPose {
     public final Pose2d pose;

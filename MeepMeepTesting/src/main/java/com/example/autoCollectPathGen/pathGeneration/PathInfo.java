@@ -1,7 +1,6 @@
-package com.example.autoCollectPathGen;
+package com.example.autoCollectPathGen.pathGeneration;
 
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.Vector2d;
 
 import java.util.ArrayList;
 
