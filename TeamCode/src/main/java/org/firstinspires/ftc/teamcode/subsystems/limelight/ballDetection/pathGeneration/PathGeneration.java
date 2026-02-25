@@ -1,7 +1,10 @@
-package com.example.autoCollectPathGen;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +19,6 @@ public class PathGeneration {
             return null;
 
         path.setSimplifiedPathPoses(PathGeneration.simplifyPathPoses(robotPose, path.pathPoses));
-//        System.out.println("SIMPLIFIED PATH POSES: " + path.simplifiedPathPoses);
         return path;
     }
     private static PathInfo generateAutoCollectPath(Pose2d robotPose, Vector2d[] ballPositionsArray) {
@@ -251,7 +253,7 @@ public class PathGeneration {
                 Ball prevBall = ballPath.get(i - 1);
                 Ball curBall = ballPath.get(i);
 
-                if (curBall.type != BallType.NORMAL && prevBall.type != BallType.NORMAL) {
+                if (curBall.type != Ball.BallType.NORMAL && prevBall.type != Ball.BallType.NORMAL) {
                     double horizontalDist = Math.abs(curBall.pos.x - prevBall.pos.x);
 
                     if (horizontalDist > params.rejectEdgeCaseBallsHorizontalDist) {
@@ -295,7 +297,7 @@ public class PathGeneration {
                 Vector2d curToNextBall = next.pos.minus(cur.pos);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
                 if (curToNextBallDist < params.clusterStrafingDist) {
-                    if (cur.type == BallType.NORMAL && (ballPath.size() == 2 || next.type == BallType.NORMAL)) {
+                    if (cur.type == Ball.BallType.NORMAL && (ballPath.size() == 2 || next.type == Ball.BallType.NORMAL)) {
                         if (!allBallsInCluster.contains(cur)) {
                             allBallsInCluster.add(cur);
                         }
@@ -416,18 +418,18 @@ public class PathGeneration {
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.OUT_OF_BOUNDS, cur.pos));
                 }
                 // add extra collect dist for last ball
-                if (next == null && cur.type == BallType.NORMAL) {
+                if (next == null && cur.type == Ball.BallType.NORMAL) {
                     collectExtraOffset += params.lastCollectPoseExtraDriveThrough;
                     collectPose = getCollectPose(cur.pos, collectInfo.collectAngle, -collectExtraOffset);
                     wallSafeCollectPose = getWallSafePose(collectPose);
                 }
 
-                if (cur.type == BallType.CLASSIFIER_WALL && prev.type != BallType.CLASSIFIER_WALL) {
+                if (cur.type == Ball.BallType.CLASSIFIER_WALL && prev.type != Ball.BallType.CLASSIFIER_WALL) {
                     Vector2d[] robotCorners = getRobotCorners(wallSafePreCollectPose); // fr, fl, bl, fr
                     ArrayList<Vector2d> polygon = new ArrayList<>(Arrays.asList(robotCorners));
                     polygon.add(1, robotPos);
                     for (Ball ballToCheck : allBalls) {
-                        if (ballPath.contains(ballToCheck) || ballToCheck.type != BallType.CLASSIFIER_WALL)
+                        if (ballPath.contains(ballToCheck) || ballToCheck.type != Ball.BallType.CLASSIFIER_WALL)
                             continue;
                         boolean hitting = GeometryUtils.isCircleInsidePolygon(polygon, ballToCheck.pos, 1);
                         if (hitting)
@@ -438,7 +440,7 @@ public class PathGeneration {
                 Types.PoseType preCollectType = Types.PoseType.PRECOLLECT;
                 if (collectInfo.approachType == Types.Approach.CORNER_LENIENT)
                     preCollectType = Types.PoseType.LENIENT_CORNER_PRECOLLECT;
-                else if (cur.type != BallType.NORMAL)
+                else if (cur.type != Ball.BallType.NORMAL)
                     preCollectType = Types.PoseType.EDGE_CASE_PRECOLLECT;
                 pathPoses.add(new PathPose(wallSafePreCollectPose, preCollectType, cur, collectInfo.approachType));
                 pathPoses.add(new PathPose(wallSafeCollectPose, Types.PoseType.COLLECT, cur, collectInfo.approachType));
@@ -467,7 +469,7 @@ public class PathGeneration {
             curToNextDir = curToNextDir.div(curToNextDist);
             if (prevToCurDir.dot(curToNextDir) < params.backTrackingMinDotProductBetweenPoints
                     && curToNextDist > params.backTrackingMaxDistBetweenPoints
-                    && prev.ball.type != BallType.CLASSIFIER_WALL && next.ball.type != BallType.CLASSIFIER_WALL)
+                    && prev.ball.type != Ball.BallType.CLASSIFIER_WALL && next.ball.type != Ball.BallType.CLASSIFIER_WALL)
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball.pos));
         }
 
@@ -653,7 +655,7 @@ public class PathGeneration {
                 preCollectToCollectAngle = collectAngle;
                 collectYOffset = Math.signum(cur.pos.y) * Math.max(0, params.cornerCollectY - Math.abs(cur.pos.y));
                 preCollectOffset += Math.abs(collectYOffset);
-                if (prev.type == BallType.CLASSIFIER_WALL || prev.type == BallType.BACK_WALL) {
+                if (prev.type == Ball.BallType.CLASSIFIER_WALL || prev.type == Ball.BallType.BACK_WALL) {
                     double dist = MathUtils.vecDist(prev.pos, cur.pos);
                     if (dist < params.lenientCornerCollectThreshold) {
                         approachType = Types.Approach.CORNER_LENIENT;
@@ -669,8 +671,8 @@ public class PathGeneration {
                 double angleD = Math.abs(MathUtils.angleNormDeltaRad(defaultApproachAngle - wallAngle));
                 boolean useStrafeApproach =
                         angleD > Math.toRadians(params.wallStrafeCollectMinApproachAngle)
-                                || prev.type == BallType.CORNER || prev.type == BallType.CLASSIFIER_WALL
-                                || (next != null && (next.type == BallType.BACK_WALL || next.type == BallType.CORNER || next.type == BallType.CLASSIFIER_WALL));
+                                || prev.type == Ball.BallType.CORNER || prev.type == Ball.BallType.CLASSIFIER_WALL
+                                || (next != null && (next.type == Ball.BallType.BACK_WALL || next.type == Ball.BallType.CORNER || next.type == Ball.BallType.CLASSIFIER_WALL));
 
                 if (useStrafeApproach) {
                     approachType = Types.Approach.CLASSIFIER_STRAFE;

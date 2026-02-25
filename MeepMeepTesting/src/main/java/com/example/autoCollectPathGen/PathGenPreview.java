@@ -2,6 +2,11 @@ package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.example.autoCollectPathGen.pathGeneration.Ball;
+import com.example.autoCollectPathGen.pathGeneration.PathGeneration;
+import com.example.autoCollectPathGen.pathGeneration.PathInfo;
+import com.example.autoCollectPathGen.pathGeneration.PathPose;
+import com.example.autoCollectPathGen.pathGeneration.ProblemBall;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;

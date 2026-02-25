@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.utils.pidDrive;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
+import java.util.ArrayList;
+
 public class GeometryUtils {
 
     public static Vector2d rotateVector(Vector2d vector, double angle) {
@@ -11,6 +13,47 @@ public class GeometryUtils {
         // sin,  cos
         return new Vector2d(vector.x * cos - vector.y * sin, vector.x * sin + vector.y * cos);
     }
+
+    // returns if a circle is fully inside a polygon
+    public static boolean isCircleInsidePolygon(ArrayList<Vector2d> polygon, Vector2d circleCenter, double circleRadius) {
+        int n = polygon.size();
+        if (n < 3) return false;
+
+        boolean inside = false;
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            Vector2d pi = polygon.get(i);
+            Vector2d pj = polygon.get(j);
+
+            boolean intersect = ((pi.y > circleCenter.y) != (pj.y > circleCenter.y)) &&
+                    (circleCenter.x < (pj.x - pi.x) * (circleCenter.y - pi.y) / (pj.y - pi.y) + pi.x);
+
+            if (intersect) inside = !inside;
+        }
+        if (!inside) return false;
+
+        for (int i = 0; i < n; i++) {
+            Vector2d a = polygon.get(i);
+            Vector2d b = polygon.get((i + 1) % n);
+
+            if (distancePointToSegment(circleCenter, a, b) < circleRadius) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    public static double distancePointToSegment(Vector2d p, Vector2d a, Vector2d b) {
+        Vector2d ab = b.minus(a);
+        Vector2d ap = p.minus(a);
+
+        double t = ap.dot(ab) / ab.dot(ab);
+        t = Math.max(0, Math.min(1, t));
+
+        Vector2d closest = a.plus(ab.times(t));
+        return Math.hypot(p.x - closest.x, p.y - closest.y);
+    }
+
+
 
     // ensures the point is inside the field
     // if it isn't, it projects it onto the field by finding the line between the origin and the vector

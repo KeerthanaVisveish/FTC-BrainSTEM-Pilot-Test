@@ -1,6 +1,8 @@
-package com.example.autoCollectPathGen;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import com.acmerobotics.roadrunner.Vector2d;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 public class ProblemBall extends Ball {
 

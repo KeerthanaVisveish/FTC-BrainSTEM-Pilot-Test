@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen;
+package com.example.autoCollectPathGen.pathGeneration;
 
 public class Types {
     public enum Approach {

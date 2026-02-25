@@ -1,10 +1,19 @@
-package com.example.autoCollectPathGen;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import com.acmerobotics.roadrunner.Vector2d;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
 
 public class Ball {
+
+    public enum BallType {
+        NORMAL,
+        CORNER,
+        CLASSIFIER_WALL,
+        BACK_WALL
+    }
     public final static Ball NULL = new Ball(new Vector2d(10000, 10000), BallType.NORMAL);
     public static ArrayList<Vector2d> toVecList(ArrayList<Ball> balls) {
         ArrayList<Vector2d> vecList = new ArrayList<>();

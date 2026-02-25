@@ -9,11 +9,13 @@ import java.util.Arrays;
 
 // helps for concise, easy printing to telemetry
 public class MathUtils {
+    // normalizes between [0, 2pi]
     public static double angleNormRad(double rad) {
         if(rad >= 0 && rad < Math.PI * 2)
             return rad;
         return (rad % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
     }
+    // normalizes between (-pi, pi]
     public static double angleNormDeltaRad(double rad) {
         rad = angleNormRad(rad);
         if (rad > Math.PI)
@@ -30,6 +32,11 @@ public class MathUtils {
 //            }
 //        }
 //    }
+    public static double averageAngle(double a1, double a2) {
+        Vector2d v1 = new Vector2d(Math.cos(a1), Math.sin(a1));
+        Vector2d v2 = new Vector2d(Math.cos(a2), Math.sin(a2));
+        return vecAngle(v1.plus(v2));
+    }
     public static double angleRadDiff(Vector2d v2, Vector2d v1) {
         double a2 = Math.atan2(v2.y, v2.x);
         double a1 = Math.atan2(v1.y, v1.x);
@@ -45,6 +52,7 @@ public class MathUtils {
     public static double vecMag(Vector2d v) {
         return Math.hypot(v.x, v.y);
     }
+    public static double vecDist(Vector2d v1, Vector2d v2) { return vecMag(v2.minus(v1)); }
     public static Vector2d getAverage(ArrayList<Vector2d> vecs) {
         double totalX = 0;
         double totalY = 0;
@@ -61,9 +69,6 @@ public class MathUtils {
         return format(num, 2);
     }
     public static String format3(Number num) { return format(num, 3); }
-    public static String formatVec2(Vector2d v) {
-        return "[" + format2(v.x) + ", " + format2(v.y) + "]";
-    }
     public static String format(Number num, int decimalPlaces) {
         StringBuilder decimals = new StringBuilder();
         for (int i=0; i<decimalPlaces; i++)
@@ -116,30 +121,42 @@ public class MathUtils {
     public static String formatPose(Pose2d pose) {
         if (pose == null)
             return "null";
-        return "(" + format1(pose.position.x) + ", " + format1(pose.position.y) + ") | " + format1(Math.toDegrees(pose.heading.toDouble()));
+        return "(" + format1(pose.position.x) + ", " + format1(pose.position.y) + ", " + format1(Math.toDegrees(pose.heading.toDouble())) + ")";
     }
     public static String formatPose2(Pose2d pose) {
         if (pose == null)
             return "null";
-        return format2(pose.position.x) + ", " + format2(pose.position.y) + " " + format2(Math.toDegrees(pose.heading.toDouble()));
+        return "(" + format2(pose.position.x) + ", " + format2(pose.position.y) + ", " + format2(Math.toDegrees(pose.heading.toDouble())) + ")";
     }
     public static String formatPose3(Pose2d pose) {
         if (pose == null)
             return "null";
-        return format3(pose.position.x) + ", " + format3(pose.position.y) + " " + format3(Math.toDegrees(pose.heading.toDouble()));
+        return "(" + format3(pose.position.x) + ", " + format3(pose.position.y) + ", " + format3(Math.toDegrees(pose.heading.toDouble())) + ")";
+    }
+    public static String formatVec0(Vector2d v) {
+        if (v == null)
+            return "null";
+        return "(" + format(v.x, 0) + ", " + format(v.y, 0) + ")";
+    }
+    public static String formatVec1(Vector2d v) {
+        if (v == null)
+            return "null";
+        return "(" + format(v.x, 1) + ", " + format(v.y, 1) + ")";
+    }
+    public static String formatVec2(Vector2d v) {
+        if (v == null)
+            return "null";
+        return "(" + format2(v.x) + ", " + format2(v.y) + ")";
     }
     public static String formatVec3(Vector2d vec) {
         if(vec == null)
             return "null";
-        return format3(vec.x) + ", " + format3(vec.y);
+        return "(" + format3(vec.x) + ", " + format3(vec.y) + ")";
     }
     public static Pose2d createPose(double[] pose) {
         if (pose.length != 3)
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], pose[1], Math.toRadians(pose[2]));
-    }
-    public static Pose2d createInvertedPose(double[] pose) {
-        return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
     }
     public static Vector2d createVec(double[] vec) {
         if(vec.length != 2)
