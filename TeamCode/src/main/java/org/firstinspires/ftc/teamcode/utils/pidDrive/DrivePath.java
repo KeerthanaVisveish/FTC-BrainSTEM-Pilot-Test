@@ -39,6 +39,7 @@ public class DrivePath implements Action {
     private Vector2d driveVector, correctiveVector, combinedDirectionVector;
     private boolean followingCurvedPath;
     private boolean shouldUpdatePose = true;
+    private double waypointDistanceError;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -87,10 +88,10 @@ public class DrivePath implements Action {
     public ArrayList<Waypoint> getWaypoints() {
         return waypoints;
     }
-    private Waypoint getCurWaypoint() {
+    public Waypoint getCurWaypoint() {
         return waypoints.get(Math.min(waypoints.size() - 1, curWaypointIndex));
     }
-    private PathParams getCurParams() {
+    public PathParams getCurParams() {
         return getCurWaypoint().params;
     }
     private double getWaypointDistanceToTarget(int waypointIndex) {
@@ -197,6 +198,7 @@ public class DrivePath implements Action {
         }
 
         // calculate inputs to speed PIDs
+        waypointDistanceError = errorInfo.distanceError;
         double totalDistanceAway = errorInfo.distanceError + getWaypointDistanceToTarget(curWaypointIndex);
 
         // calculate translational speed
@@ -408,6 +410,9 @@ public class DrivePath implements Action {
         Vector2d relativeWaypoint = targetWaypointPosition.minus(oldPosition);
         Vector2d relativePositionToWaypoint = pose.position.minus(targetWaypointPosition);
         return relativeWaypoint.x * relativePositionToWaypoint.x + relativeWaypoint.y * relativePositionToWaypoint.y;
+    }
+    public double getWaypointDistanceError() {
+        return waypointDistanceError;
     }
 }
 

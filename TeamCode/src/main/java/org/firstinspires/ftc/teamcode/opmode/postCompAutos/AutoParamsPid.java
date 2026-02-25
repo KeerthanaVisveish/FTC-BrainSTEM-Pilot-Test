@@ -9,6 +9,7 @@ public class AutoParamsPid {
         public double curvedCollect2NearA = Math.toRadians(50);
         public double curvedCollect2FarA = Math.toRadians(135);
         public double collectDrivePower = 0.8, gateOpenDrivePower = .7;
+        public double gateHitDrivePower = .5, gateHitActivateDist = 5;
         public double secondTValueStartError = 30.5, secondTValueFinishError = 20;
         public double thirdTValueStartError = 31, thirdTValueFinishError = 20;
         public double loadingZoneCollectDrivePower = 0.3;
@@ -31,10 +32,7 @@ public class AutoParamsPid {
         public double cornerCollectRetryX = 55, cornerCollectRetryYRed = 46, cornerCollectRetryYBlue = -46;
         public double gateCollectDistTol = 1, gateCollectHeadingTol = 5;
         public Tolerance gateCollectOpenTol = new Tolerance(gateCollectDistTol, gateCollectHeadingTol);
-        public double gateCollectLateralWeight = 2.8, gateShootAxialWeight = 1.2;
         public double gateCollectMinPower = 0.4;
-//        public double gateCollectOpenFarXRed = 8, gateCollectOpenFarYRed = 61, gateCollectOpenFarARed = Math.toRadians(116);
-//        public double gateCollectOpenFarXBlue = 8, gateCollectOpenFarYBlue = -61, gateCollectOpenFarABlue = Math.toRadians(-116);
         public double[] gateCollectOpenFarRed = { 8, 61, 116 };
         public double[] gateCollectOpenFarBlue = { 8, -61, -116 };
         public double[] gateCollectOpenNear = { 7.5, 53, 100 };

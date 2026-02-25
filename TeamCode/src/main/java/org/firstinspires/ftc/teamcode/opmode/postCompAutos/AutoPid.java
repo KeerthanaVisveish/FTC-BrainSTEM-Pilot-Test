@@ -120,7 +120,7 @@ public abstract class AutoPid extends LinearOpMode {
             if(notLast)
                 shootPose = getShootPose(customizable.collectionOrder.substring(i*2, i*2 + 2));
             else
-                  shootPose = getFinalShootPose(customizable.collectionOrder.charAt(i*2+2) + "" + customizable.collectionOrder.charAt(i * 2 + 1));
+                shootPose = getFinalShootPose(customizable.collectionOrder.charAt(i*2+2) + "" + customizable.collectionOrder.charAt(i * 2 + 1));
 
             String curLetter = customizable.collectionOrder.charAt(i*2+1) + "";
             boolean fromNear = customizable.collectionOrder.charAt(i*2) == 'n';
@@ -519,24 +519,47 @@ public abstract class AutoPid extends LinearOpMode {
     }
 
     private Action getGateCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
-        Action gateOpenDrive;
+        DrivePath gateOpenDrive;
+        Action gateOpenAction;
+        double maxTime;
         if (fromNear) {
-            gateOpenDrive = new DrivePath(robot.drive, telemetry,
-                    new Waypoint(gateCollectOpenNearPose, collect.gateCollectOpenTol).setMaxTime(1.9).setPassPosition(true).setMinLinearPower(collect.gateOpenDrivePower)
-                            .setControlPoint(gateCollectOpenControlPoint, collect.gateCollectOpenTStartError, collect.gateCollectOpenTFinishError)
+            maxTime = 1.9;
+            gateOpenDrive = new DrivePath(robot.drive, telemetry, new Waypoint(gateCollectOpenNearPose, collect.gateCollectOpenTol)
+                    .setMaxTime(maxTime)
+                    .setPassPosition(true)
+                    .setMinLinearPower(collect.gateOpenDrivePower)
+                    .setControlPoint(gateCollectOpenControlPoint, collect.gateCollectOpenTStartError, collect.gateCollectOpenTFinishError)
             );
         }
-        else
+        else {
+            maxTime = 2.4;
             gateOpenDrive = new DrivePath(robot.drive,
-                    new Waypoint(gateFarWaypointPose, collect.waypointTol).setMaxTime(1.5).setPassPosition(true).setMinLinearPower(collect.gateCollectMinPower).setHeadingLerp(PathParams.HeadingLerpType.TANGENT).setSlowDownPercent(0),
-                    new Waypoint(gateCollectOpenFarPose, collect.gateCollectOpenTol).setMaxTime(0.9).setPassPosition(true).setMinLinearPower(collect.gateCollectMinPower)
+                    new Waypoint(gateFarWaypointPose, collect.waypointTol)
+                            .setMaxTime(1.5)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateCollectMinPower)
+                            .setHeadingLerp(PathParams.HeadingLerpType.TANGENT)
+                            .setSlowDownPercent(0),
+                    new Waypoint(gateCollectOpenFarPose, collect.gateCollectOpenTol)
+                            .setMaxTime(0.9)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateCollectMinPower)
             );
-        gateOpenDrive = new CustomEndAction(gateOpenDrive,
+        }
+        gateOpenAction = new ParallelAction(
+                gateOpenDrive,
+                new SequentialAction(
+                        new CustomEndAction(new SleepAction(maxTime),
+                                () -> gateOpenDrive.getWaypointDistanceError() < collect.gateHitActivateDist),
+                        new InstantAction(() -> gateOpenDrive.getCurParams().setMinLinearPower(collect.gateHitDrivePower))
+                )
+        );
+        gateOpenAction = new CustomEndAction(gateOpenAction,
                 () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 45);
 
         Action completeGateCollectDrive = new SequentialAction(
                 autoCommands.stopIntake(),
-                gateOpenDrive,
+                gateOpenAction,
                 autoCommands.runIntake(),
                 new SleepAction(timeConstraints.gateCollectOpenWait),
                 new DrivePath(robot.drive,

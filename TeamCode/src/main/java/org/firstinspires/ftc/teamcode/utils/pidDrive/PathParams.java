@@ -107,4 +107,10 @@ public class PathParams {
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;
     }
+    public void setMaxLinearPower(double p) {
+        this.maxLinearPower = p;
+    }
+    public void setMinLinearPower(double p) {
+        this.minLinearPower = p;
+    }
 }
