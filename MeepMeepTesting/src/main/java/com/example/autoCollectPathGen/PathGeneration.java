@@ -41,7 +41,7 @@ public class PathGeneration {
         ArrayList<Ball> balls = new ArrayList<>(allBalls);
         ArrayList<Ball> ignoredBalls = new ArrayList<>();
         do {
-//            System.out.println("regeneration " + numAttempts);
+            System.out.println("regeneration " + numAttempts);
             ArrayList<Vector2d> ballPositions = Ball.toVecList(balls);
             ArrayList<Vector2d> rawPath = PathFinder.findShortestPath(robotPose, ballPositions, 3, params.changeInAngleDegCost, 0,0);
             if (rawPath == null)
@@ -49,6 +49,7 @@ public class PathGeneration {
             ArrayList<Ball> rawBallPath = Ball.toBallList(rawPath);
 
             // generate path
+            System.out.println("normal path generation========");
             PathInfo pathInfo = generatePath(robotPose, allBalls, rawBallPath);
             pathInfo.setIgnoredBalls(ignoredBalls);
             int numProblemBalls = pathInfo.problemBalls.size();
@@ -58,6 +59,7 @@ public class PathGeneration {
             ArrayList<Vector2d> shiftedLeftRawPath = PathFinder.findShortestPath(shiftedLeftRobotPose, ballPositions, 3, params.changeInAngleDegCost, 0,0);
             if (shiftedLeftRawPath != null) {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
+                System.out.println("shifted left path generation========");
                 PathInfo shiftedLeftPathInfo = generatePath(robotPose, allBalls, shiftedLeftRawBallPath);
                 if (shiftedLeftPathInfo.numGoodBalls() > pathInfo.numGoodBalls()) {
                     pathfinderStartPose = shiftedLeftRobotPose;
@@ -227,7 +229,6 @@ public class PathGeneration {
         if (ballPath.isEmpty())
             return new PathInfo(PathInfo.PathType.EMPTY, robotPose, ballPath, pathPoses, problemBalls);
 
-
         // reject balls along the wall that are too far away from each other
         // also reject balls along the wall and in the corner that are too close to each other
         if (ballPath.size() >= 2) {
@@ -264,6 +265,8 @@ public class PathGeneration {
         // set the path indexes of the ball
         for (int i=0; i<ballPath.size(); i++)
             ballPath.get(i).pathIndex = i;
+        System.out.println("BALL PATH AT BEGINNING OF PATH GENERATION: ");
+        System.out.println(ballPath);
 
         ArrayList<Ball> allBallsInCluster = new ArrayList<>();
 
@@ -290,20 +293,17 @@ public class PathGeneration {
             // once current cluster has finished, find approach information
             if (!allBallsInCluster.isEmpty()) {
                 ArrayList<ClusterApproach> clusterApproaches = new ArrayList<>();
-                for (int j=0; j<allBallsInCluster.size(); j++) {
+                for (int j=0; j<allBallsInCluster.size() - 1; j++) {
                     Ball curClusterBall = allBallsInCluster.get(j);
                     Ball prevClusterBall = curClusterBall.pathIndex == 0 ? new Ball(robotPos) : ballPath.get(curClusterBall.pathIndex - 1);
-                    Ball nextClusterBall = curClusterBall.pathIndex == ballPath.size() - 1 ? Ball.NULL : ballPath.get(curClusterBall.pathIndex + 1);
-                    clusterApproaches.add(new ClusterApproach(prevClusterBall, curClusterBall, nextClusterBall));
+                    Ball nextClusterBall = ballPath.get(curClusterBall.pathIndex + 1);
+                    clusterApproaches.add(new ClusterApproach(prevClusterBall, curClusterBall, nextClusterBall, allBallsInCluster));
                 }
-                ClusterApproach clusterApproach = getBestClusterApproach(clusterApproaches, allBallsInCluster);
+                System.out.println("all cluster approaches: " + clusterApproaches);
+                ClusterApproach clusterApproach = getBestClusterApproach(clusterApproaches);
                 problemBalls.addAll(clusterApproach.problemBalls);
                 if (clusterApproach.isWallSafe) {
-                    ArrayList<PathPose> clusterPathPoses = new ArrayList<>(Arrays.asList(
-                            new PathPose(clusterApproach.preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE),
-                            new PathPose(clusterApproach.collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE)
-                    ));
-                    ClusterApproachPath approachPath = new ClusterApproachPath(clusterApproach.start, clusterApproach.end, clusterPathPoses);
+                    ClusterApproachPath approachPath = new ClusterApproachPath(clusterApproach.start, clusterApproach.end, clusterApproach.pathPoses);
                     validClusterApproachPaths.add(approachPath);
                 }
                 else {
@@ -458,14 +458,13 @@ public class PathGeneration {
 
         return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, ballPath, pathPoses, problemBalls);
     }
-    private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches, ArrayList<Ball> allBallsInCluster) {
+    private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches) {
         ClusterApproach bestApproach = null;
         // first sort based on if it is wall safe or not
         // then sort by difference in angle
         ArrayList<ClusterApproach> sortedApproaches = new ArrayList<>();
         for (int i=0; i<possibleApproaches.size(); i++) {
             ClusterApproach approach = possibleApproaches.get(i);
-            approach.setAllBallsInCluster(allBallsInCluster);
 
             if (approach.isWallSafe)
                 sortedApproaches.add(0, approach);
@@ -502,27 +501,25 @@ public class PathGeneration {
         }
     }
     private static class ClusterApproach {
-        public final double approachAngle, collectAngle;
+        public double approachAngle, collectAngle;
         public final Ball initialStart, initialEnd;
         public final Vector2d approxCenter;
         public Ball start, end;
         public ArrayList<Ball> allBallsInCluster;
-        public ArrayList<ClusterBallInfo> includedBallsInfo;
         public final double angleDiff;
-        public Vector2d exactCenter;
         public boolean isWallSafe;
-        public Pose2d preCollectPose;
-        public Pose2d collectPose;
+        public final ArrayList<PathPose> pathPoses;
         public final ArrayList<ProblemBall> problemBalls;
-        public ClusterApproach(Ball prev, Ball start, Ball end) {
-            this.initialStart = start;
-            this.initialEnd = end;
+        public ClusterApproach(Ball prevBall, Ball startBall, Ball endBall, ArrayList<Ball> allBallsInCluster) {
+            this.initialStart = startBall;
+            this.initialEnd = endBall;
+            pathPoses = new ArrayList<>();
             problemBalls = new ArrayList<>();
-            approxCenter = start.pos.plus(end.pos).times(0.5);
-            approachAngle = MathUtils.v1ToV2Angle(start.pos, end.pos);
+            approxCenter = startBall.pos.plus(endBall.pos).times(0.5);
+            approachAngle = MathUtils.v1ToV2Angle(startBall.pos, endBall.pos);
 
-            Vector2d prevToStart = start.pos.minus(prev.pos);
-            Vector2d startToEnd = end.pos.minus(start.pos);
+            Vector2d prevToStart = startBall.pos.minus(prevBall.pos);
+            Vector2d startToEnd = endBall.pos.minus(startBall.pos);
             angleDiff = MathUtils.angleRadDiff(startToEnd, prevToStart);
 
             double maxStrafeAngleOffset = Math.min(Math.abs(angleDiff), Math.toRadians(params.strafeCollectMaxAngleOffset));
@@ -530,8 +527,8 @@ public class PathGeneration {
                 collectAngle = approachAngle - maxStrafeAngleOffset;
             else
                 collectAngle = approachAngle + maxStrafeAngleOffset;
-        }
-        public void setAllBallsInCluster(ArrayList<Ball> allBallsInCluster) {
+
+            System.out.println("all balls in cluster: " + allBallsInCluster);
             this.allBallsInCluster = new ArrayList<>(allBallsInCluster);
             Vector2d approachDir = new Vector2d(Math.cos(approachAngle), Math.sin(approachAngle));
             Vector2d orthogonalApproachDir = new Vector2d(-approachDir.y, 1*approachDir.x);
@@ -543,15 +540,15 @@ public class PathGeneration {
             double minParallelOffset = 0;
             double maxParallelOffset = 0;
 
-            includedBallsInfo = new ArrayList<>();
+            ArrayList<ClusterBallInfo> includedBallsInStrafe = new ArrayList<>();
+            // find balls included in strafe, and strafe start and end
             for (Ball potentialBall : allBallsInCluster) {
                 Vector2d ballToApproxCenter = potentialBall.pos.minus(approxCenter);
-
                 double parallelOffset = ballToApproxCenter.dot(approachDir);
                 double perpendicularOffset = ballToApproxCenter.dot(orthogonalApproachDir);
                 Vector2d projected = approxCenter.plus(approachDir.times(parallelOffset));
                 if (Math.abs(perpendicularOffset) < params.strafeCollectMaxPerpendicularDistance)
-                    includedBallsInfo.add(new ClusterBallInfo(potentialBall.pos, parallelOffset, perpendicularOffset, projected));
+                    includedBallsInStrafe.add(new ClusterBallInfo(potentialBall.pos, parallelOffset, perpendicularOffset, projected));
                 else
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_APPROACH, potentialBall.pos));
 
@@ -567,22 +564,47 @@ public class PathGeneration {
                 }
             }
 
-            double totalX = 0;
-            double totalY = 0;
-            for (ClusterBallInfo ballInfo : includedBallsInfo) {
-                totalX += ballInfo.position.x;
-                totalY += ballInfo.position.y;
-            }
-            exactCenter = new Vector2d(totalX, totalY).div(includedBallsInfo.size()); // not used right now but might use later if we get wider intake
-
-            collectPose = getWallSafePose(getCollectPose(actualEndPos, collectAngle, 0)); // not great but its fine
+            Pose2d collectPose = getWallSafePose(getCollectPose(actualEndPos, collectAngle, 0)); // not great but its fine
             Pose2d startCollectPose = getCollectPose(actualStartPos, collectAngle, 0);
-            preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
+            Pose2d preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
-            if (!isWallSafe) {
-                problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_APPROACH, start.pos));
+            if (isWallSafe) {
+                pathPoses.add(new PathPose(preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                pathPoses.add(new PathPose(collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                System.out.println("wall safe: " + start + " to " + end);
             }
+            else {
+                System.out.println("strafe is not wall safe: " + start + " to " + end);
+                // keep trying more and more lenient angles until it either becomes wall safe or realizes its impossible
+                double resolution = Math.toRadians(0.5); // check every 2.5 degrees
+                double wallAngle = collectAngle > 0 ? Math.toRadians(90) : Math.toRadians(-90);
+                double range = Math.abs(wallAngle - collectAngle);
+                int numTries = (int) (range / resolution) + 1;
+                double turnDirection = Math.signum(MathUtils.angleNormDeltaRad(wallAngle - collectAngle));
+                for (int i = 0; i < numTries; i++) {
+                    double changeAmount = turnDirection * resolution;
+                    collectAngle += changeAmount;
+                    approachAngle += changeAmount;
+                    startCollectPose = getCollectPose(start.pos, collectAngle, 0);
+                    preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
+                    isWallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
+                    if (isWallSafe)
+                        break;
+                }
+                if (isWallSafe) {
+                    startCollectPose = new Pose2d(startCollectPose.position.x, startCollectPose.position.y, MathUtils.averageAngle(startCollectPose.heading.toDouble(), collectPose.heading.toDouble()));
+                    pathPoses.add(new PathPose(preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                    pathPoses.add(new PathPose(startCollectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                    pathPoses.add(new PathPose(collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                }
+                else
+                    problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_APPROACH, start.pos));
+            }
+        }
+        @Override
+        public String toString() {
+            return "from " + start + " to " + end;
         }
     }
     private static class ClusterBallInfo {
@@ -661,13 +683,12 @@ public class PathGeneration {
                     if (!wallSafe) {
                         // if distance to next classifier ball is greater than threshold, attempt to create more lenient strafe that is inside the field
                         if (next != null && curToNextBallDist > params.distToNextPointForceStrictClassifierStrafe) {
-                            double resolution = 2.5; // check every 2.5 degrees
+                            double resolution = Math.toRadians(0.5); // check every 2.5 degrees
                             double range = Math.abs(wallAngle - collectAngle);
-                            double increment = range / resolution;
-                            int numTries = (int) (range / increment) + 1;
+                            int numTries = (int) (range / resolution) + 1;
                             double turnDirection = Math.signum(wallAngle - collectAngle);
                             for (int i = 0; i < numTries; i++) {
-                                collectAngle += turnDirection * increment;
+                                collectAngle += turnDirection * resolution;
                                 collectPose = getCollectPose(cur.pos, collectAngle, 0);
                                 preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, params.preCollectOffset);
                                 wallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
