@@ -26,10 +26,10 @@ public class PathGeneration {
 
         ArrayList<Ball> allBalls = Ball.toBallList(new ArrayList<>(Arrays.asList(ballPositionsArray)));
 
-        Lane[] densestLanes = getDensestLanes(allBalls);
+        ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
         if (params.allowLaneCollect) {
-            if (densestLanes[0].numBalls() >= 3)
+            if (densestLanes.get(0).numBalls() >= 3)
                 return generateLanePath(robotPose, bestLane);
             if (allBalls.size() == 2 && bestLane.numBalls() == 2)
                 return generateLanePath(robotPose, bestLane);
@@ -112,7 +112,7 @@ public class PathGeneration {
 
     // use a sliding window of width laneWidth moving at a speed of increment
     // returns the list of balls in the most densely packed moment of the window
-    private static Lane[] getDensestLanes(ArrayList<Ball> balls) {
+    private static ArrayList<Lane> getDensestLanes(ArrayList<Ball> balls) {
         Ball[] sorted = Arrays.copyOf(balls.toArray(new Ball[0]), balls.size());
         Arrays.sort(sorted, Comparator.comparingDouble(a -> a.pos.x));
         int start = (int) sorted[0].pos.x - 1;
@@ -147,23 +147,29 @@ public class PathGeneration {
                 validLanes.add(lane);
             }
         }
-        return validLanes.toArray(new Lane[0]);
+        return validLanes;
     }
     // returns the lane closest to the robot
-    private static Lane getBestLane(Vector2d robotPos, Lane[] densestLanes) {
-        if (densestLanes.length == 1)
-            return densestLanes[0];
+    private static Lane getBestLane(Vector2d robotPos, ArrayList<Lane> densestLanes) {
+        if (densestLanes.size() == 1)
+            return densestLanes.get(0);
         Lane bestLane = null;
         double minDist = -1;
-        for (int i=0; i<densestLanes.length; i++) {
-            Lane lane = densestLanes[i];
+        ArrayList<Lane> sortedLanes = new ArrayList<>(densestLanes);
+        sortedLanes.sort(Comparator.comparingDouble(l -> l.optimizedWidth));
+        if (sortedLanes.get(0).optimizedWidth <= params.ignoreOptimizedLaneWidthSortingWidth) {
+            while (sortedLanes.get(sortedLanes.size() - 1).optimizedWidth > params.ignoreOptimizedLaneWidthSortingWidth)
+                sortedLanes.remove(sortedLanes.size() - 1);
+        }
+        for (int i=0; i<sortedLanes.size(); i++) {
+            Lane lane = sortedLanes.get(i);
             Vector2d firstPoint = new Vector2d(lane.avgX, lane.minAbsY());
             double dist = Math.hypot(firstPoint.x - robotPos.x, firstPoint.y - robotPos.y);
 
             if (bestLane == null || lane.closeToBackWall && !bestLane.closeToBackWall
                     || (bestLane.closeToBackWall == lane.closeToBackWall && dist < minDist)) {
-                bestLane = lane;
                 minDist = dist;
+                bestLane = lane;
             }
         }
         return bestLane;
@@ -172,18 +178,27 @@ public class PathGeneration {
         private final ArrayList<Ball> balls;
         public boolean closeToBackWall;
         private final double avgX;
+        private final double optimizedWidth;
         public Lane(ArrayList<Ball> balls, boolean closeToBackWall) {
             this.balls = new ArrayList<>(balls);
             this.closeToBackWall = closeToBackWall;
             // sort by |y| value ascending (so it works for both red and blue)
             this.balls.sort(Comparator.comparingDouble(v -> Math.abs(v.pos.y)));
-            if (balls.isEmpty())
+            if (balls.isEmpty()) {
                 this.avgX = 0;
+                this.optimizedWidth = 0;
+            }
             else {
+                double minX = balls.get(0).pos.x;
+                double maxX = balls.get(0).pos.x;
                 double totalX = 0;
-                for (Ball ball : balls)
+                for (Ball ball : balls) {
                     totalX += ball.pos.x;
+                    minX = Math.min(ball.pos.x, minX);
+                    maxX = Math.max(ball.pos.x, maxX);
+                }
                 this.avgX = totalX / balls.size();
+                this.optimizedWidth = maxX - minX;
             }
         }
         public int numBalls() {
