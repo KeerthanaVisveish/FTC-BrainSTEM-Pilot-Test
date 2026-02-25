@@ -57,16 +57,13 @@ public class AutoParamsPid {
         public double waypointSlowDown = 0.3;
 
         // shooting positions
-        public double[] preload = new double[] {-14, 21};
-        public double[] setupFirst = new double[] {-6.5, 24};
+        public double[] preload = new double[] {-14, 21, 25.5};
+        public double[] near1 = new double[] {-6.5, 24, 80};
         public double[] firstLast = new double[] {-35, 25, 45};
-        public double[] setupSecond = new double[] {-7, 25.5};
-        public double[] setupThird = new double[] {-11, 25.5};
+        public double[] near2 = new double[] {-7, 25.5, 55};
+        public double[] near3 = new double[] {-7, 25.5, 50};
         public double[] thirdLast = new double[] {-25, 22, 30};
         public double shootFarXRed = 54, shootFarYRed = 16, shootFarXBlue = 54, shootFarYBlue = -16;
-
-        // custom shooting angles
-        public double setup1A = 55, setup2A = 55, setup3A = 80;
         public double shootFarSetup1ARed = Math.toRadians(180), shootFarSetup2ARed = Math.toRadians(170), shootFarSetup3ARed = Math.toRadians(150), shootFarSetupLoadingARed = Math.toRadians(95);
         public double shootFarSetup1ABlue = Math.toRadians(-180), shootFarSetup2ABlue = Math.toRadians(-170), shootFarSetup3ABlue = Math.toRadians(-150), shootFarSetupLoadingABlue = Math.toRadians(-95);
 

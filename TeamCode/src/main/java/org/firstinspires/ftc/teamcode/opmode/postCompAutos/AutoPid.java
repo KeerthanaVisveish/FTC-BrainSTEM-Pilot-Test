@@ -73,11 +73,11 @@ public abstract class AutoPid extends LinearOpMode {
             parkFarPose,
             shootFar1WaypointPose, shootFar2WaypointPose,
             shootNearPreloadPose, shootFarPreloadPose,
-            shootNearSetup1Pose, shootFarSetup1Pose,
-            shootNearSetup2Pose, shootFarSetup2Pose,
-            shootNearSetupGatePose,
-            shootNearSetup3Pose, shootFarSetup3Pose,
-            shootNearSetupLoadingPose, shootFarSetupLoadingPose;
+            shootNear1Pose, shootFar1Pose,
+            shootNear2Pose, shootFar2Pose,
+            shootNearGatePose,
+            shootNear3Pose, shootFar3Pose,
+            shootNearLoadingPose, shootFarSetupLoadingPose;
     private boolean isRed;
     private AutoState autoState;
     private boolean autoActionFinished;
@@ -113,14 +113,12 @@ public abstract class AutoPid extends LinearOpMode {
         ArrayList<Action> actionOrder = new ArrayList<>();
         customizable.collectionOrder = customizable.collectionOrder.toLowerCase();
 
-        Pose2d shootPose = new Pose2d(0, 0, 0);
-        Pose2d prevShootPose;
         Pose2d preloadShootPose = getPreloadSetupPose(customizable.collectionOrder.charAt(0));
         for(int i=0; i<numPaths; i++) {
-            prevShootPose = new Pose2d(shootPose.position.x, shootPose.position.y, shootPose.heading.toDouble());
             boolean notLast = i < numPaths - 1;
+            Pose2d shootPose;
             if(notLast)
-                shootPose = getSetupPose(customizable.collectionOrder.substring(i*2 + 2, i*2 + 4));
+                shootPose = getShootPose(customizable.collectionOrder.substring(i*2, i*2 + 2));
             else
                   shootPose = getFinalShootPose(customizable.collectionOrder.charAt(i*2+2) + "" + customizable.collectionOrder.charAt(i * 2 + 1));
 
@@ -210,15 +208,15 @@ public abstract class AutoPid extends LinearOpMode {
         else
             return shootFarPreloadPose;
     }
-    private Pose2d getSetupPose(String info) {
+    private Pose2d getShootPose(String info) {
         boolean shootClose = info.charAt(0) == 'n';
         String letter = info.charAt(1) + "";
         switch (letter) {
-            case "1": return shootClose ? shootNearSetup1Pose : shootFarSetup1Pose;
-            case "2": return shootClose ? shootNearSetup2Pose : shootFarSetup2Pose;
-            case "g": return shootClose ? shootNearSetupGatePose : shootFarSetup2Pose;
-            case "3": return shootClose ? shootNearSetup3Pose : shootFarSetup3Pose;
-            case "l": return shootClose ? shootNearSetupLoadingPose : shootFarSetupLoadingPose;
+            case "1": return shootClose ? shootNear1Pose : shootFar1Pose;
+            case "2": return shootClose ? shootNear2Pose : shootFar2Pose;
+            case "g": return shootClose ? shootNearGatePose : shootFar2Pose;
+            case "3": return shootClose ? shootNear3Pose : shootFar3Pose;
+            case "l": return shootClose ? shootNearLoadingPose : shootFarSetupLoadingPose;
             default: throw new IllegalArgumentException("invalid collectionOrder of " + customizable.collectionOrder + "; can only contain 1, 2, 3, L/l, or G/g");
         }
     }
@@ -228,13 +226,13 @@ public abstract class AutoPid extends LinearOpMode {
         switch (letter) {
             case "1": return shootClose ?
                     isRed ? createPose(shoot.firstLast) : createInvertedPose(shoot.firstLast) :
-                    shootFarSetup1Pose;
+                    shootFar1Pose;
             case "2":
-            case "g": return shootClose ? shootNearSetup2Pose : shootFarSetup2Pose;
+            case "g": return shootClose ? shootNear2Pose : shootFar2Pose;
             case "3": return shootClose ?
                     isRed ? createPose(shoot.thirdLast) : createInvertedPose(shoot.thirdLast) :
                     isRed ? new Pose2d(shoot.shootFarXRed, shoot.shootFarYRed, Math.toRadians(120)) : new Pose2d(shoot.shootFarXBlue, shoot.shootFarYBlue, Math.toRadians(-120));
-            case "l": case "c": return shootClose ? shootNearSetupLoadingPose : shootFarSetupLoadingPose;
+            case "l": case "c": return shootClose ? shootNearLoadingPose : shootFarSetupLoadingPose;
             default: throw new IllegalArgumentException("invalid collectionOrder of " + customizable.collectionOrder + "; can only contain 1, 2, 3, L/l, or G/g");
         }
     }
@@ -424,8 +422,7 @@ public abstract class AutoPid extends LinearOpMode {
                             .setMinLinearPower(shoot.minShootDrivePower)
                             .setMaxTime(1.2)
                             .setSlowDownPercent(0)
-                            .setPassPosition(true)
-                            .setLateralAxialWeights(2.4, 1),
+                            .setPassPosition(true),
                     new Waypoint(shootPose).setMaxTime(1.5).setPassPosition(true));
 
         return buildCollectAndShoot(secondCollectDrive, secondGateDrive, secondShootDrive, toNear, timeConstraints.postIntakeTime, true, true);
@@ -571,13 +568,13 @@ public abstract class AutoPid extends LinearOpMode {
 
     }
     private void declareShootPoses() {
-        shootNearPreloadPose = isRed ? createPose(shoot.preload, shoot.setup2A) : createInvertedPose(shoot.preload, shoot.setup2A);
-        shootNearSetup1Pose = isRed ? createPose(shoot.setupFirst, shoot.setup1A) : createInvertedPose(shoot.setupFirst, shoot.setup1A);
+        shootNearPreloadPose = isRed ? createPose(shoot.preload) : createInvertedPose(shoot.preload);
+        shootNear1Pose = isRed ? createPose(shoot.near1) : createInvertedPose(shoot.near1);
 //        shootFarSetup1Pose = isRed ? shootFarRed(shoot.shootFarSetup1ARed) : shootFarBlue(shoot.shootFarSetup1ABlue);
-        shootNearSetup2Pose = isRed ? createPose(shoot.setupSecond, shoot.setup2A) : createInvertedPose(shoot.setupSecond, shoot.setup2A);
+        shootNear2Pose = isRed ? createPose(shoot.near2) : createInvertedPose(shoot.near2);
 //        shootFarSetup2Pose = isRed ? shootFarRed(shoot.shootFarSetup2ARed) : shootFarBlue (shoot.shootFarSetup2ABlue);
-        shootNearSetupGatePose = shootNearSetup2Pose;
-        shootNearSetup3Pose = isRed ? createPose(shoot.setupThird, shoot.setup3A) : createInvertedPose(shoot.setupThird, shoot.setup3A);
+        shootNearGatePose = shootNear2Pose;
+        shootNear3Pose = isRed ? createPose(shoot.near3) : createInvertedPose(shoot.near3);
 //        shootFarSetup3Pose = isRed ? shootFarRed(shoot.shootFarSetup3ARed) : shootFarBlue(shoot.shootFarSetup3ABlue);
 //        shootFarSetupLoadingPose = isRed ? shootFarRed(shoot.shootFarSetupLoadingARed) : shootFarBlue(shoot.shootFarSetupLoadingABlue);
 
