@@ -138,8 +138,14 @@ public class MathUtils {
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], pose[1], Math.toRadians(pose[2]));
     }
+    public static Pose2d createPose(double[] pos, double headingDeg) {
+        return new Pose2d(pos[0], pos[1], Math.toRadians(headingDeg));
+    }
     public static Pose2d createInvertedPose(double[] pose) {
         return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
+    }
+    public static Pose2d createInvertedPose(double[] pos, double headingDeg) {
+        return new Pose2d(pos[0], -pos[1], -Math.toRadians(headingDeg));
     }
     public static Vector2d createVec(double[] vec) {
         if(vec.length != 2)

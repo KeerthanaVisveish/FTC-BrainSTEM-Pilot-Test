@@ -85,7 +85,7 @@ public class EfficiencyCoefficientTester extends OpMode {
                 targetExitVelTicksPerSec = controls.velToShootBallTps;
             }
 
-            robot.shooter.setShooterVelocityPID(targetExitVelTicksPerSec, robot.shootingSystem.filteredShooterSpeedTps);
+            robot.shooter.setShooterVelocityPID(targetExitVelTicksPerSec, robot.shootingSystem.getFilteredShooterSpeedTps());
             telemetry.addData("a| exit pos X inches", exitPosition.x);
             telemetry.addData("b| distance meters", totalDistanceTraveledMeters);
             telemetry.addData("c| change in Y from ball exit position (m)", changeInYMeters);
@@ -93,10 +93,10 @@ public class EfficiencyCoefficientTester extends OpMode {
             telemetry.addData("e| efficiency coefficient", efficiencyCoefficient);
             telemetry.addData("f| target exit velocity mps", targetVelMetersPerSec);
             telemetry.addData("g| target exit velocity tps", targetExitVelTicksPerSec);
-            telemetry.addData("i| current shooter vel tps", robot.shootingSystem.filteredShooterSpeedTps);
+            telemetry.addData("i| current shooter vel tps", robot.shootingSystem.getFilteredShooterSpeedTps());
             telemetry.addData("j| shooter power", robot.shootingSystem.getShooterPower());
-            telemetry.addData("k| shooter high vel", robot.shootingSystem.getShooterHighVelTps());
-            telemetry.addData("l| shooter low vel", robot.shootingSystem.getShooterLowVelTps());
+            telemetry.addData("k| shooter high vel", robot.shootingSystem.getShooterHighRawVelTps());
+            telemetry.addData("l| shooter low vel", robot.shootingSystem.getShooterLowRawVelTps());
             telemetry.addData("m| dt", robot.shootingSystem.dt);
             telemetry.update();
         }

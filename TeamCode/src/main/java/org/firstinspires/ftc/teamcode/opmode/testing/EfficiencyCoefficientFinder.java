@@ -67,7 +67,7 @@ public class EfficiencyCoefficientFinder extends OpMode {
         if (controls.targetShooterVelocityTicksPerSec == 0 || !controls.powerShooter)
             robot.shootingSystem.setShooterPower(0);
         else {
-            shooterVelTicksPerSec = robot.shootingSystem.filteredShooterSpeedTps;
+            shooterVelTicksPerSec = robot.shootingSystem.getFilteredShooterSpeedTps();
             robot.shooter.setShooterVelocityPID(controls.targetShooterVelocityTicksPerSec, shooterVelTicksPerSec);
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(controls.ballExitAngleRad));
 

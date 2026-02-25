@@ -2,12 +2,11 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.utils.math.PIDController;
-
-import java.util.ArrayList;
 
 @Config
 public class Shooter extends Component {
@@ -16,8 +15,8 @@ public class Shooter extends Component {
         public double kI = 0.0;
         public double kD = 0.0;
         public double kV = 0.122;
-        public double shotVelDropThreshold = 0.05;
-        public double noiseVariance = 0.03;
+        public double shotVelDropThreshold = 30;
+        public double avg3BallShootTime = .7;
         public int startingShooterSpeedAdjustment = 0;
         public double minPower = -0.15, maxPower = 0.99;
         public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
@@ -38,11 +37,10 @@ public class Shooter extends Component {
 
     private final PIDController shooterPID;
     private double nearVelocityAdjustment, farVelocityAdjustment;
-    private int ballsShot;
-    private double lastMax, lastMin, lastDecel, velDropTime;
-    private final ArrayList<Double> allVelDrops, allPostShotVels, allLastDecels, allVelDropTimes;
-    private double mSOfLastMax;
-    private boolean increasing, wasPrevIncreasing;
+    private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
+    private final ElapsedTime ballsExitingTimer;
+    private double lastMax, lastMin;
+    private boolean wasPrevIncreasing;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
@@ -52,14 +50,9 @@ public class Shooter extends Component {
         shooterState = ShooterState.OFF;
         lastMax = 0;
         lastMin = Double.MAX_VALUE;
-        ballsShot = 0;
         nearVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
         farVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
-
-        allVelDrops = new ArrayList<>();
-        allPostShotVels = new ArrayList<>();
-        allLastDecels = new ArrayList<>();
-        allVelDropTimes = new ArrayList<>();
+        ballsExitingTimer = new ElapsedTime();
     }
     public void setShooterVelocityPID(double targetVelocityMps, double currentShooterVelocityMps) {
         if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
@@ -103,7 +96,12 @@ public class Shooter extends Component {
         updateBallShotTracking();
     }
     public void updateBallShotTracking() {
-        double dif = robot.shootingSystem.filteredShooterSpeedTps - robot.shootingSystem.getPrevShooterVelTps();
+        ballsPreviouslyExiting = ballsCurrentlyExiting;
+        if(ballsCurrentlyExiting && ballsExitingTimer.seconds() > shooterParams.avg3BallShootTime)
+            ballsCurrentlyExiting = false;
+
+        double dif = robot.shootingSystem.getFilteredShooterSpeedTps() - robot.shootingSystem.getPrevFilteredShooterSpeedTps();
+        boolean increasing;
         if(dif > 0)
             increasing = true;
         else if(dif == 0)
@@ -112,50 +110,32 @@ public class Shooter extends Component {
             increasing = false;
 
         if(increasing && !wasPrevIncreasing) {  // means relative min detected
-            lastMin = robot.shootingSystem.getPrevShooterVelTps();
+            lastMin = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
             double velDrop = lastMax - lastMin;
-            velDropTime = (System.currentTimeMillis() - mSOfLastMax) / 1000;
-            lastDecel = velDrop / velDropTime;
-            if(velDrop >= shooterParams.shotVelDropThreshold
-                    || shooterPID.getTarget() - lastMin >= shooterParams.noiseVariance) {
-                ballsShot++;
-                allVelDrops.add(velDrop);
-                allPostShotVels.add(lastMin);
-                allLastDecels.add(lastDecel);
-                allVelDropTimes.add(velDropTime);
+            if(velDrop >= shooterParams.shotVelDropThreshold) {
+                if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE && !ballsCurrentlyExiting) {
+                    ballsCurrentlyExiting = true;
+                    ballsExitingTimer.reset();
+                }
             }
         }
         if(wasPrevIncreasing && !increasing) { // means relative max detected
-            lastMax = robot.shootingSystem.getPrevShooterVelTps();
-            mSOfLastMax = System.currentTimeMillis();
+            lastMax = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
         }
         wasPrevIncreasing = increasing;
-
-        if(robot.collection.getClutchState() != Collection.ClutchState.ENGAGED) {
-            ballsShot = 0;
-            allVelDrops.clear();
-            allPostShotVels.clear();
-            allLastDecels.clear();
-        }
     }
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");
         telemetry.addData("  pid target vel", shooterPID.getTarget());
         telemetry.addData("  shooter power", robot.shootingSystem.getShooterPower());
-        telemetry.addData("  shooter filtered vel tps", robot.shootingSystem.filteredShooterSpeedTps);
-        telemetry.addData("  shooter raw vel tps", robot.shootingSystem.rawShooterSpeedTps);
+        telemetry.addData("  shooter filtered vel tps", robot.shootingSystem.getFilteredShooterSpeedTps());
+        telemetry.addData("  shooter raw vel tps", robot.shootingSystem.getRawShooterSpeedTps());
         telemetry.addData("  shooter filtered vel mps", robot.shootingSystem.curExitSpeedMps);
 
         telemetry.addLine();
         telemetry.addLine("HOOD------");
         telemetry.addData("  hood pos", robot.shootingSystem.getHoodPosition());
-    }
-    public void setBallsShot(int n) {
-        ballsShot = n;
-    }
-    public int getBallsShot() {
-        return ballsShot;
     }
 
     public void changeVelocityAdjustment(double amount) {
@@ -168,5 +148,11 @@ public class Shooter extends Component {
     }
     public void setShooterState(ShooterState shooterState) {
         this.shooterState = shooterState;
+    }
+    public boolean ballsCurrentlyExiting() {
+        return ballsCurrentlyExiting;
+    }
+    public boolean ballsDoneExiting() {
+        return !ballsCurrentlyExiting && ballsPreviouslyExiting;
     }
 }

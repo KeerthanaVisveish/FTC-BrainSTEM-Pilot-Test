@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization
 
 @Config
 public class LED extends Component {
-    public static double white = 0.99, green = 0.45, yellow = 0.35, blue = 0.6, purple = 0.666, red = 0.279;
+    public static double white = 0.99, green = 0.45, yellow = 0.35, lightBlue = .55, blue = 0.6, purple = 0.666, red = 0.279;
     public static double shooterFlashOnTime = 0.3, shooterFlashOffTime = 0.1;
     public static double turretFlashOnTime = 0.1, turretFlashOffTime = 0.1;
     public static double confirmSuccessfulPoseUpdateTime = 0.2;
@@ -69,8 +69,12 @@ public class LED extends Component {
             }
         }
         if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED) {
-            if (robot.collection.getCollectionState() == Collection.CollectionState.INTAKE)
-                setLed(green);
+            if (robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
+                if(robot.shooter.ballsCurrentlyExiting())
+                    setLed(lightBlue);
+                else
+                    setLed(green);
+            }
             else
                 setLed(yellow);
         }

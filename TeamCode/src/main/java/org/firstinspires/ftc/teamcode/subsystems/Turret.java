@@ -102,6 +102,7 @@ public class Turret extends Component {
     public boolean inRange, inRangeForShot;
 
     private double currentTestingTarget;
+    private boolean smoothWhenOutOfRange;
 
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
@@ -117,6 +118,7 @@ public class Turret extends Component {
         turretState = TurretState.CENTER;
 
         currentTestingTarget = testingParams.testingTargetPos;
+        smoothWhenOutOfRange = true;
     }
 
     @Override
@@ -197,6 +199,9 @@ public class Turret extends Component {
     private double getLogisticKV(double targetRotVelMag) {
         return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
     }
+    public void setSmoothWhenOutOfRange(boolean smoothWhenOutOfRange) {
+        this.smoothWhenOutOfRange = smoothWhenOutOfRange;
+    }
 //    private double getProfileTargetVelocity(double positionError) {
 //        // 2ad = vf^2 - vi^2
 //        // vi^2 = vf^2 - 2ad
@@ -218,11 +223,17 @@ public class Turret extends Component {
         // mirrors the angle if the turret cannot reach it (visual cue)
         double maxAngleRad = turretParams.maxAngle;
         if (targetRelAngleRad > maxAngleRad) {
-            targetRelAngleRad = Math.PI - targetRelAngleRad;
+            if(smoothWhenOutOfRange)
+                targetRelAngleRad = Math.PI - targetRelAngleRad;
+            else
+                targetRelAngleRad = maxAngleRad;
             inRange = false;
         }
         else if (targetRelAngleRad < -maxAngleRad) {
-            targetRelAngleRad = -Math.PI - targetRelAngleRad;
+            if(smoothWhenOutOfRange)
+                targetRelAngleRad = -Math.PI - targetRelAngleRad;
+            else
+                targetRelAngleRad = -maxAngleRad;
             inRange = false;
         }
         else

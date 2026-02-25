@@ -52,7 +52,7 @@ public class ShootingSystem {
         public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
         public int lookAheadAvgNum = 5;
         public double rawLookAheadTime = 0.1; // time to look ahead for pose prediction
-        public double shooterTau = 0.2;
+        public double shooterTau = 0.1;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
@@ -95,7 +95,7 @@ public class ShootingSystem {
     public double ballTargetExitSpeedMps;
     public double efficiencyCoef;
 
-    public double filteredShooterSpeedTps, rawShooterSpeedTps;
+    private double filteredShooterSpeedTps, prevFilteredShooterSpeedTps, rawShooterSpeedTps;
     public double curExitSpeedMps;
     public double ballExitAngleRad, hoodExitAngleRad;
     public double[] physicsExitAngleRads;
@@ -197,6 +197,7 @@ public class ShootingSystem {
         shooterLowMotor.updateInfo();
 
         rawShooterSpeedTps = (shooterHighMotor.getVelTps() + shooterLowMotor.getVelTps()) * 0.5;
+        prevFilteredShooterSpeedTps = filteredShooterSpeedTps;
         if(filteredShooterSpeedTps == 0)
             filteredShooterSpeedTps = rawShooterSpeedTps;
         else {
@@ -443,14 +444,23 @@ public class ShootingSystem {
     public double getShooterPower() {
         return shooterHighMotor.getPower();
     }
-    public double getShooterHighVelTps() {
+    public double getShooterHighRawVelTps() {
         return shooterHighMotor.getVelTps();
     }
-    public double getShooterLowVelTps() {
+    public double getShooterLowRawVelTps() {
         return shooterLowMotor.getVelTps();
     }
-    public double getPrevShooterVelTps() {
+    public double getPrevRawShooterVelTps() {
         return (shooterHighMotor.getPrevVelTps() + shooterLowMotor.getPrevVelTps()) * 0.5;
+    }
+    public double getPrevFilteredShooterSpeedTps() {
+        return prevFilteredShooterSpeedTps;
+    }
+    public double getFilteredShooterSpeedTps() {
+        return filteredShooterSpeedTps;
+    }
+    public double getRawShooterSpeedTps() {
+        return rawShooterSpeedTps;
     }
 
     public void setHoodPosition(double p) {

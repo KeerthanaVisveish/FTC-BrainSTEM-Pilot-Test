@@ -12,9 +12,9 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
 public class Collection extends Component {
-    public static double shootOuttakeTimeAuto = 0;
+    public static double shootOuttakeTimeAuto = 0.05;
     public static double postShootOuttakeWaitAuto = 0.;
-    public static double shootOuttakeTime = 0;
+    public static double shootOuttakeTime = 0.05;
     public static boolean autoEngageClutch = false, autoUnengageClutch = false;
     public static double autoEngageClutchMaxX = 0;
 
@@ -151,6 +151,8 @@ public class Collection extends Component {
                 flickerLeft.setPosition(params.flickerDownPos);
                 flickerRight.setPosition(params.flickerDownPos);
                 break;
+            case FULL_UP_DOWN:
+                setCollectionState(CollectionState.OFF);
         }
     }
 
@@ -245,7 +247,7 @@ public class Collection extends Component {
                     flickerTimer.reset();
                     flickerStarted = true;
                 }
-                else if(flickerTimer.seconds() > 0.3) {
+                else if(flickerTimer.seconds() > 0.4) {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
                     flickerStarted = false;
@@ -253,7 +255,6 @@ public class Collection extends Component {
                 }
                 break;
             case FULL_UP_DOWN:
-                setCollectionState(CollectionState.OFF);
                 if (!flickerStarted) {
                     flickerLeft.setPosition(params.flickerFullUpPos);
                     flickerRight.setPosition(params.flickerFullUpPos);
@@ -263,7 +264,6 @@ public class Collection extends Component {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
                     flickerStarted = false;
-                    setCollectionState(CollectionState.INTAKE);
                     setFlickerState(FlickerState.DOWN);
                 }
                 break;
