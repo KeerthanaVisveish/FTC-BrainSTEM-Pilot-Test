@@ -133,7 +133,12 @@ public class MathUtils {
             return "null";
         return "(" + format3(pose.position.x) + ", " + format3(pose.position.y) + ", " + format3(Math.toDegrees(pose.heading.toDouble())) + ")";
     }
-    public static String formatVec(Vector2d v) {
+    public static String formatVec0(Vector2d v) {
+        if (v == null)
+            return "null";
+        return "(" + format(v.x, 0) + ", " + format(v.y, 0) + ")";
+    }
+    public static String formatVec1(Vector2d v) {
         if (v == null)
             return "null";
         return "(" + format(v.x, 1) + ", " + format(v.y, 1) + ")";
