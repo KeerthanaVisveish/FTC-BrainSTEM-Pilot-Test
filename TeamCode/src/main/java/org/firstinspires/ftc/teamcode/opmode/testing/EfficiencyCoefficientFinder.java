@@ -51,8 +51,8 @@ public class EfficiencyCoefficientFinder extends OpMode {
         telemetry.setMsTransmissionInterval(20);
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(experiment.startPose));
 
-        robot.collection.clutchRight.setPosition(Collection.params.ENGAGED_POS);
-        robot.collection.clutchLeft.setPosition(Collection.params.ENGAGED_POS);
+        robot.collection.clutchRight.setPosition(Collection.params.engagedPos);
+        robot.collection.clutchLeft.setPosition(Collection.params.engagedPos);
     }
     @Override
     public void loop() {

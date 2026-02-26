@@ -6,7 +6,6 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
 
 @Config
@@ -78,7 +77,7 @@ public class LED extends Component {
             else
                 setLed(yellow);
         }
-        else if (robot.collection.intakeHas3Balls())
+        else if (robot.collection.has3Balls())
             setLed(purple);
         else
             setLed(red);

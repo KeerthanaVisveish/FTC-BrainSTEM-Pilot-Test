@@ -25,11 +25,15 @@ public class LimelightTestTele extends LinearOpMode {
 
         while (opModeIsActive()) {
             if (gamepad1.a)
-                limelight3A.reloadPipeline();
+                limelight3A.pipelineSwitch(0);
+            if (gamepad1.b)
+                limelight3A.pipelineSwitch(pipeline);
 
             limelight3A.updatePythonInputs(pythonInputs);
             LLResult result = limelight3A.getLatestResult();
             double[] pythonOutput = result.getPythonOutput();
+            telemetry.addData("current pipeline index", result.getPipelineIndex());
+            telemetry.addData("current pipeline type", result.getPipelineType());
             telemetry.addData("python outputs", Arrays.toString(pythonOutput));
             telemetry.update();
         }

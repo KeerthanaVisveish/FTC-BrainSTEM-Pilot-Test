@@ -19,22 +19,18 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Blob;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
-
-import java.util.ArrayList;
 
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
 public class LoadingZoneBallCollection extends OpMode {
     public static int streamFPS = 5;
     public static double[] startPose = { 48 + 6.5, 8, 90 };
-    public static double tolerance = 3;
     private BrainSTEMRobot robot;
     private AutoCommands autoCommands;
 
@@ -47,7 +43,7 @@ public class LoadingZoneBallCollection extends OpMode {
         telemetry.setMsTransmissionInterval(20);
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(startPose));
         autoCommands = new AutoCommands(robot, telemetry);
-        FtcDashboard.getInstance().startCameraStream(Limelight.limelight, streamFPS);
+        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
         mostRecentNodes = new Vector2d[0];
     }
 
@@ -61,27 +57,31 @@ public class LoadingZoneBallCollection extends OpMode {
     }
     @Override
     public void stop() {
-        Limelight.limelight.stop();
+        robot.limelight.limelight.stop();
     }
 
     @Override
     public void loop() {
+        if (gamepad1.dpad_down)
+            robot.limelight.limelight.pipelineSwitch(0);
+        else if (gamepad1.dpad_up)
+            robot.limelight.limelight.pipelineSwitch(2);
 
         Pose2d robotPose = robot.drive.localizer.getPose();
 
         if (autoCollectAction == null) {
             Blob[] blobs = robot.limelight.ballDetection.getBlobs();
-            Vector2d[] nodes = new Vector2d[blobs.length];
+            mostRecentNodes = new Vector2d[blobs.length];
             for (int i = 0; i < blobs.length; i++)
-                nodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
+                mostRecentNodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
 
-            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, nodes);
+            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
         }
         DrivePath autoCollectDrive = null;
         if (pathInfo != null) {
             autoCollectDrive = new DrivePath(robot.drive);
-            for (Pose2d pose : pathInfo.getPoses())
-                autoCollectDrive.addWaypoint(new Waypoint(pose).setMinLinearPower(0.1).setMaxTime(2));
+            for (PathPose pathPose : pathInfo.simplifiedPathPoses)
+                autoCollectDrive.addWaypoint(pathPose.waypoint);
         }
         if (autoCollectAction == null) {
             if (gamepad1.left_trigger > 0.2)
@@ -104,7 +104,7 @@ public class LoadingZoneBallCollection extends OpMode {
                     autoCommands.runIntake(),
                     new CustomEndAction(
                             autoCollectDrive,
-                            () -> robot.collection.intakeHas3Balls()
+                            () -> robot.collection.autoCollectHas3Balls()
                     ),
                     autoCommands.stopIntake()
             );

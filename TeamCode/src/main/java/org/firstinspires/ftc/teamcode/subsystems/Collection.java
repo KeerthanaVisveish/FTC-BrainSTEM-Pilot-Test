@@ -49,24 +49,22 @@ public class Collection extends Component {
     public boolean outtakeAfterClutchEngage;
     private double timerStart = 0;
     private boolean timerRunning = false;
-    private boolean has3Balls = false;
+    private boolean has3Balls = false, autoCollectHas3Balls = false;
     private final ElapsedTime timer = new ElapsedTime();
     public final ElapsedTime clutch_timer = new ElapsedTime();
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
     public static class Params{
-        public double ENGAGED_POS = 0.1;
-        public double DISENGAGED_POS = 0.65;
-        public double DELAY_PERIOD = 0.5;
+        public double engagedPos = 0.1;
+        public double disengagedPos = 0.65;
+        public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
         public double slowIntakePow = 0.3, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOutOfRangeIntakePow = 0, shooterNotGoodIntakePow = .7;
-        public double OUTTAKE_SPEED = -0.5;
-        public double LASER_BALL_THRESHOLD = 2.5;
+        public double outtakeSpeed = -0.5;
+        public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
         public double flickerRightMinPwm = 1491, flickerRightMaxPwm = 1641;
         public double flickerFullUpPos = 0.8;
         public double flickerHalfUpPos = 0.4;
         public double flickerDownPos = 0.05;
-        public double hasBallValidationTime = 1;
-        public double maxTimeBetweenShots = 0.8;
         public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
     }
 
@@ -117,7 +115,7 @@ public class Collection extends Component {
                 collectorMotor.setPower(params.slowIntakePow);
                 break;
             case OUTTAKE:
-                collectorMotor.setPower(params.OUTTAKE_SPEED);
+                collectorMotor.setPower(params.outtakeSpeed);
                 break;
             case TRANSFER:
                 collectorMotor.setPower(0.1);
@@ -129,13 +127,13 @@ public class Collection extends Component {
         this.clutchState = clutchState;
         switch (clutchState) {
             case ENGAGED:
-                clutchRight.setPosition(params.ENGAGED_POS);
-                clutchLeft.setPosition(params.ENGAGED_POS);
+                clutchRight.setPosition(params.engagedPos);
+                clutchLeft.setPosition(params.engagedPos);
                 break;
             case UNENGAGED:
             case WAITING_TO_ENGAGE:
-                clutchRight.setPosition(params.DISENGAGED_POS);
-                clutchLeft.setPosition(params.DISENGAGED_POS);
+                clutchRight.setPosition(params.disengagedPos);
+                clutchLeft.setPosition(params.disengagedPos);
                 break;
         }
     }
@@ -280,32 +278,39 @@ public class Collection extends Component {
     }
 
     public boolean isBackBallDetected() {
-        return backLeftLaserDist < params.LASER_BALL_THRESHOLD || backRightLaserDist < params.LASER_BALL_THRESHOLD;
+        return backLeftLaserDist < params.laserBallThreshold || backRightLaserDist < params.laserBallThreshold;
     }
 
     private boolean isFrontBallDetected() {
-        return frontRightLaserDist < params.LASER_BALL_THRESHOLD ||
-                frontLeftLaserDist < params.LASER_BALL_THRESHOLD;
+        return frontRightLaserDist < params.laserBallThreshold ||
+                frontLeftLaserDist < params.laserBallThreshold;
 
 //        return frontRightLaserDist < params.LASER_BALL_THRESHOLD;
     }
 
-    public boolean intakeHas3Balls() {
+    public boolean has3Balls() {
         return has3Balls;
     }
-
-
+    public boolean autoCollectHas3Balls() {
+        return autoCollectHas3Balls;
+    }
     public void checkForIntakeBalls(double currentTime) {
         if (isBackBallDetected() && isFrontBallDetected()) {
             if (!timerRunning) {
                 timerStart = currentTime;
                 timerRunning = true;
-            } else if (currentTime - timerStart > params.DELAY_PERIOD)
-                has3Balls = true;
+            } else {
+                double dt = currentTime - timerStart;
+                if (dt > params.delayPeriod)
+                    has3Balls = true;
+                if (dt > params.autoCollectDelayPeriod)
+                    autoCollectHas3Balls = true;
+            }
         } else {
             timerRunning = false;
             timerStart = 0;
             has3Balls = false;
+            autoCollectHas3Balls = false;
         }
     }
 }

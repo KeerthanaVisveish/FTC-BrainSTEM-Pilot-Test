@@ -1,23 +1,21 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
-
-import com.acmerobotics.roadrunner.Pose2d;
-
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 public class PathPose {
-    public final Pose2d pose;
+    public final Waypoint waypoint;
     public Types.PoseType poseType;
     public final Ball ball;
     public final Types.Approach approachType;
-    public PathPose(Pose2d pose, Types.PoseType poseType, Ball ball, Types.Approach approachType) {
-        this.pose = pose;
+    public PathPose(Waypoint waypoint, Types.PoseType poseType, Ball ball, Types.Approach approachType) {
+        this.waypoint = waypoint;
         this.poseType = poseType;
         this.ball = ball == null ? Ball.NULL : ball;
         this.approachType = approachType;
     }
     @Override
     public String toString() {
-        return MathUtils.formatPose2(pose);
+        return MathUtils.formatPose2(waypoint.pose);
     }
 }

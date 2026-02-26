@@ -34,7 +34,7 @@ public class Limelight extends Component {
     public static DrawingParams drawingParams = new DrawingParams();
 
     // i should tune the camera so that it gives me the turret center position
-    public static Limelight3A limelight = null;
+    public final Limelight3A limelight;
     public static int startingPipeline = 2;
     private int pipeline;
     public final LimelightLocalization localization; // april tag localization
@@ -44,8 +44,7 @@ public class Limelight extends Component {
     // classifier detection data
     public Limelight(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
-        if (limelight == null)
-            limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
         localization = new LimelightLocalization(robot, limelight);
         classifier = new LimelightClassifier(robot, limelight);

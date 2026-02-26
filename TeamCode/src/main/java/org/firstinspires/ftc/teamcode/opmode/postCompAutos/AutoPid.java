@@ -264,7 +264,7 @@ public abstract class AutoPid extends LinearOpMode {
                 preloadShootDrive,
                 new SequentialAction(
                         new CustomEndAction(new SleepAction(3), () -> preloadShootDrive.getWaypointDistanceError() < shoot.minPower2Dist),
-                        new InstantAction(() -> preloadShootDrive.getCurParams().setMinLinearPower(shoot.minDrivePower2))
+                        new InstantAction(() -> preloadShootDrive.getCurWaypoint().setMinLinearPower(shoot.minDrivePower2))
                 )
         );
         return new SequentialAction(
@@ -290,7 +290,7 @@ public abstract class AutoPid extends LinearOpMode {
                 shootDrive,
                 new SequentialAction(
                         new CustomEndAction(new SleepAction(100), () -> shootDrive.getWaypointDistanceError() < shoot.minPower2Dist),
-                        new InstantAction(() -> shootDrive.getCurParams().setMinLinearPower(shoot.minDrivePower2))
+                        new InstantAction(() -> shootDrive.getCurWaypoint().setMinLinearPower(shoot.minDrivePower2))
                 )
         );
         return new SequentialAction(
@@ -357,7 +357,7 @@ public abstract class AutoPid extends LinearOpMode {
                     .setMaxLinearPower(collect.collectDrivePower)
                     .setMaxTime(1.4)
                     .setControlPoint(collect1ControlPointNear, collect.firstCollectTStartError, collect.firstCollectTFinishError)
-                    .setCustomEndCondition(() -> robot.collection.intakeHas3Balls())
+                    .setCustomEndCondition(() -> robot.collection.has3Balls())
                     .setPassPosition(true));
         }
         else {
@@ -372,7 +372,7 @@ public abstract class AutoPid extends LinearOpMode {
                             .setMinLinearPower(collect.collectDrivePower)
                             .setMaxLinearPower(collect.collectDrivePower)
                             .setMaxTime(2)
-                            .setCustomEndCondition(() -> robot.collection.intakeHas3Balls()));
+                            .setCustomEndCondition(() -> robot.collection.has3Balls()));
         }
 
         double sign = isRed ? -1 : 1;
@@ -465,7 +465,7 @@ public abstract class AutoPid extends LinearOpMode {
                         .setMinLinearPower(collect.loadingZoneCollectDrivePower).setMaxLinearPower(collect.loadingZoneCollectDrivePower)
                         .setMaxTime(1.5)
                         .setLateralAxialWeights(2.2, 1)
-                        .setCustomEndCondition(() -> robot.collection.intakeHas3Balls()));
+                        .setCustomEndCondition(() -> robot.collection.has3Balls()));
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3).setPassPosition(true));
 
@@ -495,7 +495,7 @@ public abstract class AutoPid extends LinearOpMode {
                     if (!gateCollectDrive.run(telemetryPacket)) {
                         ranCollectDrive = true;
                         numTimesCollected++;
-                        if (robot.collection.intakeHas3Balls() || numTimesCollected > customizable.maxCornerRetries)
+                        if (robot.collection.has3Balls() || numTimesCollected > customizable.maxCornerRetries)
                             return false;
                         resetRetryDrive();
                         resetCollectDrive();
@@ -514,20 +514,20 @@ public abstract class AutoPid extends LinearOpMode {
                             .setTangent(collectTangent)
                             .splineToSplineHeading(cornerCollectPose, collectTangent)
                             .build(),
-                            () -> robot.collection.intakeHas3Balls(), timeConstraints.cornerCollectMaxTime);
+                            () -> robot.collection.has3Balls(), timeConstraints.cornerCollectMaxTime);
                 }
                 else {
                     gateCollectDrive = new CustomEndAction(robot.drive.actionBuilder(robot.drive.localizer.getPose())
                             .strafeToLinearHeading(new Vector2d(collect.cornerCollectRetryX, cornerCollectPose.position.y), cornerCollectPose.heading.toDouble())
                             .build(),
-                            () -> robot.collection.intakeHas3Balls(), timeConstraints.cornerCollectMaxTime);
+                            () -> robot.collection.has3Balls(), timeConstraints.cornerCollectMaxTime);
                 }
             }
             private void resetRetryDrive() {
                 gateResetDrive = new CustomEndAction(robot.drive.actionBuilder(robot.drive.localizer.getPose())
                         .strafeToLinearHeading(cornerCollectRetryPose.position, cornerCollectRetryPose.heading.toDouble())
                         .build(),
-                        () -> robot.collection.intakeHas3Balls() || Math.abs(robot.drive.localizer.getPose().position.y) < (cornerCollectRetryPose.position.y) + 1);
+                        () -> robot.collection.has3Balls() || Math.abs(robot.drive.localizer.getPose().position.y) < (cornerCollectRetryPose.position.y) + 1);
             }
         };
     }
@@ -578,7 +578,7 @@ public abstract class AutoPid extends LinearOpMode {
                 new SleepAction(timeConstraints.gateCollectOpenWait),
                 new DrivePath(robot.drive,
                         new Waypoint(gateCollectPose).setMaxTime(0.5).setMinLinearPower(misc.gateMinPower).setPassPosition(true)),
-                new CustomEndAction(new SleepAction(timeConstraints.gateCollectMaxTime), () -> robot.collection.intakeHas3Balls())
+                new CustomEndAction(new SleepAction(timeConstraints.gateCollectMaxTime), () -> robot.collection.has3Balls())
         );
 
         DrivePath gateShootDrive;

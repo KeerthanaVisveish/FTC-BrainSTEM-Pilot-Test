@@ -171,35 +171,36 @@ public class Turret extends Component {
     }
 
     public double calculateTurretVoltage(double positionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
-        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold)
-            return 0;
-        if(testingParams.enableTestingKF)
-            return testingParams.kfTestingVoltage;
-        double dir = Math.signum(positionError);
-        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
-        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
-        kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
-
-        kP = getLogisticErrorKP(Math.abs(positionError));
-        if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
-            kP *= getLogisticKPScaler(Math.abs(targetVelocity));
-        pVoltage = kP * positionError;
-        kV = Math.abs(targetVelocity) < powerTuning.smallVelThreshold ? powerTuning.smallVelKV : getLogisticKV(Math.abs(targetVelocity));
-        vVoltage = kV * targetVelocity;
-
-        aVoltage = powerTuning.kA * targetAccel;
-
-        return kF + pVoltage + vVoltage + aVoltage;
+        return 0;
+//        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold)
+//            return 0;
+//        if(testingParams.enableTestingKF)
+//            return testingParams.kfTestingVoltage;
+//        double dir = Math.signum(positionError);
+//        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+//        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
+//        kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
+//
+//        kP = getLogisticErrorKP(Math.abs(positionError));
+//        if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
+//            kP *= getLogisticKPScaler(Math.abs(targetVelocity));
+//        pVoltage = kP * positionError;
+//        kV = Math.abs(targetVelocity) < powerTuning.smallVelThreshold ? powerTuning.smallVelKV : getLogisticKV(Math.abs(targetVelocity));
+//        vVoltage = kV * targetVelocity;
+//
+//        aVoltage = powerTuning.kA * targetAccel;
+//
+//        return kF + pVoltage + vVoltage + aVoltage;
     }
-    private double getLogisticErrorKP(double errorMag) {
-        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
-    }
-    private double getLogisticKPScaler(double targetVelMag) {
-        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
-    }
-    private double getLogisticKV(double targetRotVelMag) {
-        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
-    }
+//    private double getLogisticErrorKP(double errorMag) {
+//        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
+//    }
+//    private double getLogisticKPScaler(double targetVelMag) {
+//        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
+//    }
+//    private double getLogisticKV(double targetRotVelMag) {
+//        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
+//    }
     public void setSmoothWhenOutOfRange(boolean smoothWhenOutOfRange) {
         this.smoothWhenOutOfRange = smoothWhenOutOfRange;
     }

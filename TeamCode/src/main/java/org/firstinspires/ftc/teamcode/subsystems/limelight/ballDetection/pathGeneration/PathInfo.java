@@ -38,13 +38,13 @@ public class PathInfo {
     public ArrayList<Pose2d> getPoses() {
         ArrayList<Pose2d> poses = new ArrayList<>();
         for (PathPose pathPose : pathPoses)
-            poses.add(pathPose.pose);
+            poses.add(pathPose.waypoint.pose);
         return poses;
     }
     public ArrayList<Pose2d> getSimplifiedPoses() {
         ArrayList<Pose2d> poses = new ArrayList<>();
         for (PathPose pathPose : simplifiedPathPoses)
-            poses.add(pathPose.pose);
+            poses.add(pathPose.waypoint.pose);
         return poses;
     }
     public int numGoodBalls() {
