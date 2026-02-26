@@ -28,9 +28,9 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.PathParams;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.Tolerance;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.Waypoint;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 import java.util.ArrayList;
 
@@ -352,7 +352,7 @@ public abstract class AutoPid extends LinearOpMode {
     private Action getFirstCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, boolean last) {
         DrivePath firstCollectDrive;
         if(fromNear) {
-            firstCollectDrive = new DrivePath(robot.drive, telemetry, new Waypoint(collect1Pose, new Tolerance(0.75, 2, 3))
+            firstCollectDrive = new DrivePath(robot.drive, telemetry, new Waypoint(collect1Pose, new BoxTolerance(0.75, 2, 3))
                     .setMinLinearPower(collect.collectDrivePower)
                     .setMaxLinearPower(collect.collectDrivePower)
                     .setMaxTime(1.4)
@@ -459,7 +459,7 @@ public abstract class AutoPid extends LinearOpMode {
     }
     private Action getLoadingCollectAndShoot(Pose2d shootPose, boolean toNear) {
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
-                new Waypoint(preLoadingPose, new Tolerance(3.5, 2, 4))
+                new Waypoint(preLoadingPose, new BoxTolerance(3.5, 2, 4))
                         .setMaxTime(2).setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
                 new Waypoint(postLoadingPose)
                         .setMinLinearPower(collect.loadingZoneCollectDrivePower).setMaxLinearPower(collect.loadingZoneCollectDrivePower)
@@ -565,7 +565,7 @@ public abstract class AutoPid extends LinearOpMode {
                 new SequentialAction(
                         new CustomEndAction(new SleepAction(maxTime),
                                 () -> gateOpenDrive.getWaypointDistanceError() < collect.gateHitActivateDist),
-                        new InstantAction(() -> gateOpenDrive.getCurParams().setMinLinearPower(collect.gateHitDrivePower))
+                        new InstantAction(() -> gateOpenDrive.getCurWaypoint().setMinLinearPower(collect.gateHitDrivePower))
                 )
         );
         gateOpenAction = new CustomEndAction(gateOpenAction,

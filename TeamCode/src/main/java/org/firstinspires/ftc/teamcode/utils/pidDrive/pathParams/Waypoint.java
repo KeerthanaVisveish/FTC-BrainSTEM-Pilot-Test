@@ -1,25 +1,25 @@
-package org.firstinspires.ftc.teamcode.utils.pidDrive;
+package org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams;
 
-
-import androidx.annotation.NonNull;
 
 import com.acmerobotics.roadrunner.Pose2d;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.function.BooleanSupplier;
 
 public class Waypoint {
     public Tolerance tolerance;
-    public final Pose2d pose;
+    public Pose2d pose;
     public final PathParams params;
     private double distToNextWaypoint;
     public Waypoint(Pose2d pose) {
-        this(pose, new Tolerance(Tolerance.defaultParams.xTol, Tolerance.defaultParams.yTol, Tolerance.defaultParams.headingDegTol), new PathParams());
+        this(pose, new CircleTolerance(), new PathParams());
     }
     public Waypoint(Pose2d pose, Tolerance tolerance) {
         this(pose, tolerance, new PathParams());
     }
     public Waypoint(Pose2d pose, PathParams pathParams) {
-        this(pose, new Tolerance(Tolerance.defaultParams.xTol, Tolerance.defaultParams.yTol, Tolerance.defaultParams.headingDegTol), pathParams);
+        this(pose, new CircleTolerance(), pathParams);
     }
    public Waypoint(Pose2d pose, Tolerance tolerance, PathParams pathParams) {
         this.pose = pose;
@@ -32,17 +32,14 @@ public class Waypoint {
     public double y() {
         return pose.position.y;
     }
-    public double headingDeg() {
-        return Math.toDegrees(pose.heading.toDouble());
-    }
     public double headingRad() {
        return pose.heading.toDouble();
     }
 
-    protected void setNextWaypoint(Waypoint waypoint) {
+    public void setNextWaypoint(Waypoint waypoint) {
         distToNextWaypoint = Math.hypot(waypoint.x() - x(), waypoint.y() - y());
     }
-    protected double getDistToNextWaypoint() {
+    public double getDistToNextWaypoint() {
         return distToNextWaypoint;
     }
 
@@ -110,8 +107,7 @@ public class Waypoint {
     }
 
     @Override
-    @NonNull
     public String toString() {
-       return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingDeg());
+       return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingRad());
     }
 }

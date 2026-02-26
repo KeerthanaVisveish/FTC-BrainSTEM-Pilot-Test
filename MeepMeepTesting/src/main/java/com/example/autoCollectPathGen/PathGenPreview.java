@@ -3,6 +3,7 @@ package com.example.autoCollectPathGen;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.example.autoCollectPathGen.pathGeneration.Ball;
+import com.example.autoCollectPathGen.pathGeneration.PathDriveParams;
 import com.example.autoCollectPathGen.pathGeneration.PathGeneration;
 import com.example.autoCollectPathGen.pathGeneration.PathInfo;
 import com.example.autoCollectPathGen.pathGeneration.PathPose;
@@ -37,6 +38,7 @@ P: toggle complex/simplified path
 numbers 1-8: specify how many random balls to generate
 R: generate random balls
 up/down arrows: change num path regenerations allowed
+T: toggle whether to draw tolerances or poses
  */
 public class PathGenPreview extends JPanel
         implements MouseListener, MouseMotionListener, KeyListener {
@@ -62,6 +64,7 @@ public class PathGenPreview extends JPanel
     private int drawRobotNodeIndex = 0;
     private double drawRobotNodeLerp = 0;
     private boolean drawInfo = false;
+    private boolean drawPathTolerances = false;
     private int numRandomBallsToGenerate = 0;
     private boolean generateRedRandomBalls = false;
     private PathInfo path;
@@ -163,11 +166,11 @@ public class PathGenPreview extends JPanel
         }
 
         g2.setColor(Color.LIGHT_GRAY);
-        drawPosition(g2, new Vector2d(72, 72), PathGeneration.params.cornerBallDistance, false);
-        drawPosition(g2, new Vector2d(72, -72), PathGeneration.params.cornerBallDistance, false);
-        drawLine(g2, new Vector2d(72 - PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance));
-        drawLine(g2, new Vector2d(-72 + PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, 72 - PathGeneration.params.classifierWallDistance));
-        drawLine(g2, new Vector2d(-72 + PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance), new Vector2d(72 - PathGeneration.params.backWallDistance, -72 + PathGeneration.params.classifierWallDistance));
+        drawPosition(g2, new Vector2d(72, 72), PathGeneration.pathGenParams.cornerBallDistance, false);
+        drawPosition(g2, new Vector2d(72, -72), PathGeneration.pathGenParams.cornerBallDistance, false);
+        drawLine(g2, new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
+        drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
+        drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance));
 
         if (regeneratePathPoses) {
             regeneratePathPoses = false;
@@ -179,7 +182,7 @@ public class PathGenPreview extends JPanel
         }
         drawRobotAndBalls(g2);
         if (path != null)
-            drawGeneratedPath(g2, drawSimplifiedPath ? path.getSimplifiedPoses() : path.getPoses());
+            drawGeneratedPath(g2, path);
         drawBallsUsed(g2);
 
         if (drawInfo) {
@@ -192,7 +195,7 @@ public class PathGenPreview extends JPanel
             g2.fillRect(0, 0, width, height);
             g2.setColor(Color.WHITE);
             g2.drawString("Path Type: " + path.pathType, 10, 15);
-            g2.drawString("Max Regens: " + PathGeneration.params.maxPathRegenerationAttempts, 10, 35);
+            g2.drawString("Max Regens: " + PathGeneration.pathGenParams.maxPathRegenerationAttempts, 10, 35);
             g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
             g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 75);
             for (int i=0; i<pathPoses.size(); i++) {
@@ -206,7 +209,7 @@ public class PathGenPreview extends JPanel
                 PathPose pathPose = pathPoses.get(i);
                 g2.drawString(i + ": " + pathPose.ball.type, 10, startY);
                 g2.drawString("    " + pathPose.approachType, 10, startY+20);
-                g2.drawString("    " + MathUtils.formatPose(pathPose.pose), 10, startY+40);
+                g2.drawString("    " + MathUtils.formatPose(pathPose.waypoint.pose), 10, startY+40);
             }
         }
     }
@@ -247,26 +250,47 @@ public class PathGenPreview extends JPanel
             drawPosition(g2, ball, ballRadius, true);
         }
     }
-    private void drawGeneratedPath(Graphics2D g2, ArrayList<Pose2d> poses) {
+    private void drawGeneratedPath(Graphics2D g2, PathInfo path) {
         if (path == null)
             return;
 
-        poses.add(0, robot);
-        for (int i = 0; i< poses.size(); i++) {
-            Pose2d pose = poses.get(i);
-            Pose2d next = i == poses.size() - 1 ? null : poses.get(i + 1);
+        ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.simplifiedPathPoses : path.pathPoses;
+        g2.setColor(Color.BLACK);
+        Vector2d firstPosition = pathPoses.get(0).waypoint.pose.position;
+
+        Point p1 = fieldToDrawPosition(robot.position);
+        Point p2 = fieldToDrawPosition(firstPosition);
+        g2.setColor(Color.BLACK);
+        g2.drawLine(p1.x, p1.y, p2.x, p2.y);
+        for (int i=0; i<pathPoses.size(); i++) {
+            PathPose pathPose = pathPoses.get(i);
+            PathPose next = i == pathPoses.size() - 1 ? null : pathPoses.get(i + 1);
 
             if (next != null) {
-                Point p1 = fieldToDrawPosition(pose.position);
-                Point p2 = fieldToDrawPosition(next.position);
+                p1 = fieldToDrawPosition(pathPose.waypoint.pose.position);
+                p2 = fieldToDrawPosition(next.waypoint.pose.position);
                 g2.setColor(Color.BLACK);
                 g2.drawLine(p1.x, p1.y, p2.x, p2.y);
             }
 
             g2.setColor(Color.GRAY);
-            drawPose(g2, pose, pathNodeRadius);
+            if (drawPathTolerances) {
+                ArrayList<Vector2d> corners = pathPose.waypoint.tolerance.getToleranceCorners(pathPose.waypoint.pose.position);
+                ArrayList<Point> cornerPoints = new ArrayList<>();
+                for (Vector2d corner : corners)
+                    cornerPoints.add(fieldToDrawPosition(corner));
+                for (int j = 0; j < cornerPoints.size(); j++) {
+                    Point curPoint = cornerPoints.get(j);
+                    Point nextPoint = cornerPoints.get((j + 1) % cornerPoints.size());
+                    g2.drawLine(curPoint.x, curPoint.y, nextPoint.x, nextPoint.y);
+                }
+            }
+            else
+                drawPose(g2, pathPose.waypoint.pose, pathNodeRadius);
         }
 
+        ArrayList<Pose2d> poses = drawSimplifiedPath ? path.getSimplifiedPoses() : path.getPoses();
+        poses.add(0, robot);
         if (drawRobotNodeIndex < 0) {
             drawRobotNodeIndex = 0;
             drawRobotNodeLerp = 0;
@@ -497,6 +521,10 @@ public class PathGenPreview extends JPanel
                 drawInfo = !drawInfo;
                 shouldRepaint = true;
                 break;
+            case KeyEvent.VK_T:
+                drawPathTolerances = !drawPathTolerances;
+                shouldRepaint = true;
+                break;
             case KeyEvent.VK_W:
                 bottomLeft = bottomLeftDraw.plus(new Vector2d(0, -2));
                 shouldRepaint = true;
@@ -528,11 +556,11 @@ public class PathGenPreview extends JPanel
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_UP:
-                PathGeneration.params.maxPathRegenerationAttempts++;
+                PathGeneration.pathGenParams.maxPathRegenerationAttempts++;
                 regeneratePathPoses = true;
                 break;
             case KeyEvent.VK_DOWN:
-                PathGeneration.params.maxPathRegenerationAttempts = Math.max(0, PathGeneration.params.maxPathRegenerationAttempts - 1);
+                PathGeneration.pathGenParams.maxPathRegenerationAttempts = Math.max(0, PathGeneration.pathGenParams.maxPathRegenerationAttempts - 1);
                 regeneratePathPoses = true;
                 break;
             case KeyEvent.VK_1: numRandomBallsToGenerate = 1; break;

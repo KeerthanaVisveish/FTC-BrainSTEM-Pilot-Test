@@ -4,13 +4,18 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.example.autoCollectPathGen.GeometryUtils;
 import com.example.autoCollectPathGen.MathUtils;
+import com.example.autoCollectPathGen.pathParams.CircleTolerance;
+import com.example.autoCollectPathGen.pathParams.RotatedBoxTolerance;
+import com.example.autoCollectPathGen.pathParams.Tolerance;
+import com.example.autoCollectPathGen.pathParams.Waypoint;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
 public class PathGeneration {
-    public static PathGenerationParams params = new PathGenerationParams();
+    public static PathGenerationParams pathGenParams = new PathGenerationParams();
+    public static PathDriveParams driveParams = new PathDriveParams();
     public static Pose2d pathfinderStartPose = null;
     public static PathInfo generateSimplifiedAutoCollectPath(Pose2d robotPose, Vector2d[] ballsArray) {
         PathInfo path = generateAutoCollectPath(robotPose, ballsArray);
@@ -29,7 +34,7 @@ public class PathGeneration {
 
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
-        if (params.allowLaneCollect) {
+        if (pathGenParams.allowLaneCollect) {
             if (densestLanes.get(0).numBalls() >= 3)
                 return generateLanePath(robotPose, bestLane);
             if (allBalls.size() == 2 && bestLane.numBalls() == 2)
@@ -44,7 +49,7 @@ public class PathGeneration {
         do {
             System.out.println("regeneration " + numAttempts);
             ArrayList<Vector2d> ballPositions = Ball.toVecList(balls);
-            ArrayList<Vector2d> rawPath = PathFinder.findShortestPath(robotPose, ballPositions, 3, params.changeInAngleDegCost, 0,0);
+            ArrayList<Vector2d> rawPath = PathFinder.findShortestPath(robotPose, ballPositions, 3, pathGenParams.changeInAngleDegCost, 0,0);
             if (rawPath == null)
                 break;
             ArrayList<Ball> rawBallPath = Ball.toBallList(rawPath);
@@ -56,8 +61,8 @@ public class PathGeneration {
             int numProblemBalls = pathInfo.problemBalls.size();
 
             // artificially shift robot to the left to see if it generates a more desirable path
-            Pose2d shiftedLeftRobotPose = new Pose2d(params.shiftedLeftStartX, robotPose.position.y, robotPose.heading.toDouble());
-            ArrayList<Vector2d> shiftedLeftRawPath = PathFinder.findShortestPath(shiftedLeftRobotPose, ballPositions, 3, params.changeInAngleDegCost, 0,0);
+            Pose2d shiftedLeftRobotPose = new Pose2d(pathGenParams.shiftedLeftStartX, robotPose.position.y, robotPose.heading.toDouble());
+            ArrayList<Vector2d> shiftedLeftRawPath = PathFinder.findShortestPath(shiftedLeftRobotPose, ballPositions, 3, pathGenParams.changeInAngleDegCost, 0,0);
             if (shiftedLeftRawPath != null) {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
                 System.out.println("shifted left path generation========");
@@ -95,13 +100,13 @@ public class PathGeneration {
                 }
 
             numAttempts++;
-        } while (!balls.isEmpty() && numAttempts <= params.maxPathRegenerationAttempts);
+        } while (!balls.isEmpty() && numAttempts <= pathGenParams.maxPathRegenerationAttempts);
 
         if (optimalPathInfo == null) {
             return null;
         }
 
-        if (params.allowLaneCollect) {
+        if (pathGenParams.allowLaneCollect) {
             int complexNumBalls = optimalPathInfo.numGoodBalls();
             int laneNumBalls = bestLane.numBalls();
             if (complexNumBalls == laneNumBalls)
@@ -119,16 +124,16 @@ public class PathGeneration {
         int start = (int) sorted[0].pos.x - 1;
         int end = (int) sorted[sorted.length-1].pos.x + 1;
 
-        double increment = params.laneIncrement;
-        int numLanes = (int) ((end - params.normalLaneWidth - start + 2) / increment);
+        double increment = pathGenParams.laneIncrement;
+        int numLanes = (int) ((end - pathGenParams.normalLaneWidth - start + 2) / increment);
         if (numLanes <= 0)
             numLanes = 1;
         ArrayList<Lane> lanes = new ArrayList<>();
 
         for (int i=0; i<numLanes; i++) {
             double left = start + i * increment;
-            boolean againstBackWall = left + params.normalLaneWidth >= 72 - params.laneAgainstBackWallMaxDist;
-            double laneWidth = againstBackWall ? params.againstBackWallLaneWidth : params.normalLaneWidth;
+            boolean againstBackWall = left + pathGenParams.normalLaneWidth >= 72 - pathGenParams.laneAgainstBackWallMaxDist;
+            double laneWidth = againstBackWall ? pathGenParams.againstBackWallLaneWidth : pathGenParams.normalLaneWidth;
             double right = left + laneWidth;
             ArrayList<Ball> ballsInLane = new ArrayList<>();
             for (Ball ball : sorted)
@@ -158,8 +163,8 @@ public class PathGeneration {
         double minDist = -1;
         ArrayList<Lane> sortedLanes = new ArrayList<>(densestLanes);
         sortedLanes.sort(Comparator.comparingDouble(l -> l.optimizedWidth));
-        if (sortedLanes.get(0).optimizedWidth <= params.ignoreOptimizedLaneWidthSortingWidth) {
-            while (sortedLanes.get(sortedLanes.size() - 1).optimizedWidth > params.ignoreOptimizedLaneWidthSortingWidth)
+        if (sortedLanes.get(0).optimizedWidth <= pathGenParams.ignoreOptimizedLaneWidthSortingWidth) {
+            while (sortedLanes.get(sortedLanes.size() - 1).optimizedWidth > pathGenParams.ignoreOptimizedLaneWidthSortingWidth)
                 sortedLanes.remove(sortedLanes.size() - 1);
         }
         for (int i=0; i<sortedLanes.size(); i++) {
@@ -221,19 +226,22 @@ public class PathGeneration {
         Ball ball1 = new Ball(new Vector2d(lane.avgX, lane.minAbsY()));
         Ball ball2 = new Ball(new Vector2d(lane.avgX, lane.maxAbsY()));
 
-        if (lane.avgX >= 72 - params.angleLaneCollectDistFromBackWall)
-            angle -= Math.signum(angle) * Math.toRadians(params.cornerCollectAngle);
+        if (lane.avgX >= 72 - pathGenParams.angleLaneCollectDistFromBackWall)
+            angle -= Math.signum(angle) * Math.toRadians(pathGenParams.cornerCollectAngle);
 
         Pose2d collect1 = getCollectPose(ball1.pos, angle, 0);
-        Pose2d collect2 = getCollectPose(ball2.pos, angle, -params.lastCollectPoseExtraDriveThrough);
-        Pose2d preCollect1 = getPreCollectPose(collect1, angle, params.preCollectOffset);
+        Pose2d collect2 = getCollectPose(ball2.pos, angle, -pathGenParams.lastCollectPoseExtraDriveThrough);
+        Pose2d preCollect1 = getPreCollectPose(collect1, angle, pathGenParams.preCollectOffset);
         Pose2d wallSafeCollect2 = getStrictWallSafePose(collect1);
         Pose2d wallSafeCollect3 = getStrictWallSafePose(collect2);
         Pose2d wallSafePreCollect = getStrictWallSafePose(preCollect1);
 
-        PathPose pathPose1 = new PathPose(wallSafePreCollect, Types.PoseType.PRECOLLECT, ball1, Types.Approach.NORMAL);
-        PathPose pathPose2 = new PathPose(wallSafeCollect2, Types.PoseType.COLLECT, ball1, Types.Approach.NORMAL);
-        PathPose pathPose3 = new PathPose(wallSafeCollect3, Types.PoseType.COLLECT, ball2, Types.Approach.NORMAL);
+        Waypoint waypoint1 = new Waypoint(wallSafePreCollect, new CircleTolerance());
+        Waypoint waypoint2 = new Waypoint(wallSafeCollect2, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.laneCollectMinLinearPower);
+        Waypoint waypoint3 = new Waypoint(wallSafeCollect3, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.laneCollectMinLinearPower);
+        PathPose pathPose1 = new PathPose(waypoint1, Types.PoseType.PRECOLLECT, ball1, Types.Approach.NORMAL);
+        PathPose pathPose2 = new PathPose(waypoint2, Types.PoseType.COLLECT, ball1, Types.Approach.NORMAL);
+        PathPose pathPose3 = new PathPose(waypoint3, Types.PoseType.COLLECT, ball2, Types.Approach.NORMAL);
         ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose2, pathPose3));
         return new PathInfo(PathInfo.PathType.LANE, startPose, lane.balls, pathPoses, new ArrayList<>());
     }
@@ -255,7 +263,7 @@ public class PathGeneration {
                 if (curBall.type != Ball.BallType.NORMAL && prevBall.type != Ball.BallType.NORMAL) {
                     double horizontalDist = Math.abs(curBall.pos.x - prevBall.pos.x);
 
-                    if (horizontalDist > params.rejectEdgeCaseBallsHorizontalDist) {
+                    if (horizontalDist > pathGenParams.rejectEdgeCaseBallsHorizontalDist) {
                         if (ballPath.size() == 2) {
                             // choose closer one
                             double curDist = MathUtils.vecDist(curBall.pos, robotPos);
@@ -295,7 +303,7 @@ public class PathGeneration {
             if (next != null) {
                 Vector2d curToNextBall = next.pos.minus(cur.pos);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
-                if (curToNextBallDist < params.clusterStrafingDist) {
+                if (curToNextBallDist < pathGenParams.clusterStrafingDist) {
                     if (cur.type == Ball.BallType.NORMAL && (ballPath.size() == 2 || next.type == Ball.BallType.NORMAL)) {
                         if (!allBallsInCluster.contains(cur)) {
                             allBallsInCluster.add(cur);
@@ -326,7 +334,7 @@ public class PathGeneration {
                     boolean closeEnoughToMerge = true;
                     Vector2d average = MathUtils.getAverage(Ball.toVecList(allBallsInCluster));
                     for (Ball ballInCluster : allBallsInCluster)
-                        if (MathUtils.vecDist(average, ballInCluster.pos) > params.clusterMergeDist) {
+                        if (MathUtils.vecDist(average, ballInCluster.pos) > pathGenParams.clusterMergeDist) {
                             closeEnoughToMerge = false;
                             break;
                         }
@@ -361,8 +369,8 @@ public class PathGeneration {
         }
 
         for (int i=0; i<ballPath.size(); i++) {
-            Pose2d prevPathPose = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).pose : robotPose;
-            Vector2d prevPathPos = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).pose.position : robotPos;
+            Pose2d prevPathPose = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).waypoint.pose : robotPose;
+            Vector2d prevPathPos = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).waypoint.pose.position : robotPos;
             Ball prev = i == 0 ? new Ball(robotPos) : ballPath.get(i - 1);
             Ball cur = ballPath.get(i);
             Ball next = i < ballPath.size() - 1 ? ballPath.get(i + 1) : null;
@@ -418,7 +426,7 @@ public class PathGeneration {
                 }
                 // add extra collect dist for last ball
                 if (next == null && cur.type == Ball.BallType.NORMAL) {
-                    collectExtraOffset += params.lastCollectPoseExtraDriveThrough;
+                    collectExtraOffset += pathGenParams.lastCollectPoseExtraDriveThrough;
                     collectPose = getCollectPose(cur.pos, collectInfo.collectAngle, -collectExtraOffset);
                     wallSafeCollectPose = getWallSafePose(collectPose);
                 }
@@ -441,16 +449,17 @@ public class PathGeneration {
                     preCollectType = Types.PoseType.LENIENT_CORNER_PRECOLLECT;
                 else if (cur.type != Ball.BallType.NORMAL)
                     preCollectType = Types.PoseType.EDGE_CASE_PRECOLLECT;
-                pathPoses.add(new PathPose(wallSafePreCollectPose, preCollectType, cur, collectInfo.approachType));
-                pathPoses.add(new PathPose(wallSafeCollectPose, Types.PoseType.COLLECT, cur, collectInfo.approachType));
+                Waypoint w1 = new Waypoint(wallSafePreCollectPose, new CircleTolerance());
+                Waypoint w2 = new Waypoint(wallSafeCollectPose, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
+                pathPoses.add(new PathPose(w1, preCollectType, cur, collectInfo.approachType));
+                pathPoses.add(new PathPose(w2, Types.PoseType.COLLECT, cur, collectInfo.approachType));
             }
         }
 
         // strictly bind path poses to inside the field
         for (int i=0; i<pathPoses.size(); i++) {
             PathPose cur = pathPoses.get(i);
-            PathPose strictPathPose = new PathPose(getStrictWallSafePose(cur.pose), cur.poseType, cur.ball, cur.approachType);
-            pathPoses.set(i, strictPathPose);
+            cur.waypoint.pose = getStrictWallSafePose(cur.waypoint.pose);
         }
         // if ball n and ball n + 1 are normal collects
         // if ball n has poses that collide with ball n + 1, remove ball n + 1
@@ -460,14 +469,14 @@ public class PathGeneration {
             PathPose cur = pathPoses.get(i);
             PathPose next = pathPoses.get(i + 1);
 
-            Vector2d curToNext = next.pose.position.minus(cur.pose.position);
+            Vector2d curToNext = next.waypoint.pose.position.minus(cur.waypoint.pose.position);
             double curToNextDist = MathUtils.vecMag(curToNext);
-            Vector2d prevToCurDir = cur.pose.position.minus(prev.pose.position);
+            Vector2d prevToCurDir = cur.waypoint.pose.position.minus(prev.waypoint.pose.position);
             prevToCurDir = prevToCurDir.div(MathUtils.vecMag(prevToCurDir));
             Vector2d curToNextDir = curToNext;
             curToNextDir = curToNextDir.div(curToNextDist);
-            if (prevToCurDir.dot(curToNextDir) < params.backTrackingMinDotProductBetweenPoints
-                    && curToNextDist > params.backTrackingMaxDistBetweenPoints
+            if (prevToCurDir.dot(curToNextDir) < pathGenParams.backTrackingMinDotProductBetweenPoints
+                    && curToNextDist > pathGenParams.backTrackingMaxDistBetweenPoints
                     && prev.ball.type != Ball.BallType.CLASSIFIER_WALL && next.ball.type != Ball.BallType.CLASSIFIER_WALL)
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball.pos));
         }
@@ -538,7 +547,7 @@ public class PathGeneration {
             Vector2d startToEnd = endBall.pos.minus(startBall.pos);
             angleDiff = MathUtils.angleRadDiff(startToEnd, prevToStart);
 
-            double maxStrafeAngleOffset = Math.min(Math.abs(angleDiff), Math.toRadians(params.strafeCollectMaxAngleOffset));
+            double maxStrafeAngleOffset = Math.min(Math.abs(angleDiff), Math.toRadians(pathGenParams.strafeCollectMaxAngleOffset));
             if (angleDiff > 0)
                 collectAngle = approachAngle - maxStrafeAngleOffset;
             else
@@ -563,7 +572,7 @@ public class PathGeneration {
                 double parallelOffset = ballToApproxCenter.dot(approachDir);
                 double perpendicularOffset = ballToApproxCenter.dot(orthogonalApproachDir);
                 Vector2d projected = approxCenter.plus(approachDir.times(parallelOffset));
-                if (Math.abs(perpendicularOffset) < params.strafeCollectMaxPerpendicularDistance)
+                if (Math.abs(perpendicularOffset) < pathGenParams.strafeCollectMaxPerpendicularDistance)
                     includedBallsInStrafe.add(new ClusterBallInfo(potentialBall.pos, parallelOffset, perpendicularOffset, projected));
                 else
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_APPROACH, potentialBall.pos));
@@ -582,12 +591,15 @@ public class PathGeneration {
 
             Pose2d collectPose = getWallSafePose(getCollectPose(actualEndPos, collectAngle, 0)); // not great but its fine
             Pose2d startCollectPose = getCollectPose(actualStartPos, collectAngle, 0);
-            Pose2d preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
+            Pose2d preCollectPose = getPreCollectPose(startCollectPose, approachAngle, pathGenParams.preCollectOffset);
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
             if (isWallSafe) {
-                pathPoses.add(new PathPose(preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
-                pathPoses.add(new PathPose(collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
+                Waypoint w2 = new Waypoint(collectPose).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
+                pathPoses.add(new PathPose(w1, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                pathPoses.add(new PathPose(w2, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
                 System.out.println("wall safe: " + start + " to " + end);
             }
             else {
@@ -603,16 +615,20 @@ public class PathGeneration {
                     collectAngle += changeAmount;
                     approachAngle += changeAmount;
                     startCollectPose = getCollectPose(start.pos, collectAngle, 0);
-                    preCollectPose = getPreCollectPose(startCollectPose, approachAngle, params.preCollectOffset);
+                    preCollectPose = getPreCollectPose(startCollectPose, approachAngle, pathGenParams.preCollectOffset);
                     isWallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                     if (isWallSafe)
                         break;
                 }
                 if (isWallSafe) {
                     startCollectPose = new Pose2d(startCollectPose.position.x, startCollectPose.position.y, MathUtils.averageAngle(startCollectPose.heading.toDouble(), collectPose.heading.toDouble()));
-                    pathPoses.add(new PathPose(preCollectPose, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
-                    pathPoses.add(new PathPose(startCollectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
-                    pathPoses.add(new PathPose(collectPose, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                    Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                    Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
+                    Waypoint w2 = new Waypoint(startCollectPose).setPassPosition(true);
+                    Waypoint w3 = new Waypoint(collectPose).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
+                    pathPoses.add(new PathPose(w1, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                    pathPoses.add(new PathPose(w2, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
+                    pathPoses.add(new PathPose(w3, Types.PoseType.COLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
                 }
                 else
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_APPROACH, start.pos));
@@ -643,25 +659,25 @@ public class PathGeneration {
         double curToNextBallDist = curToNextBall == null ? Double.MAX_VALUE : MathUtils.vecMag(curToNextBall);
         double preCollectToCollectAngle = 0;
         double collectAngle = 0;
-        double preCollectOffset = params.preCollectOffset;
+        double preCollectOffset = pathGenParams.preCollectOffset;
         double collectXOffset = 0;
         double collectYOffset = 0;
         Types.Approach approachType = Types.Approach.NORMAL;
         switch (cur.type) {
             case CORNER:
                 approachType = Types.Approach.CORNER_CONSTRAINED;
-                collectAngle = Math.signum(wallAngle) * (Math.abs(wallAngle) - Math.toRadians(params.cornerCollectAngle));
+                collectAngle = Math.signum(wallAngle) * (Math.abs(wallAngle) - Math.toRadians(pathGenParams.cornerCollectAngle));
                 preCollectToCollectAngle = collectAngle;
-                collectYOffset = Math.signum(cur.pos.y) * Math.max(0, params.cornerCollectY - Math.abs(cur.pos.y));
+                collectYOffset = Math.signum(cur.pos.y) * Math.max(0, pathGenParams.cornerCollectY - Math.abs(cur.pos.y));
                 preCollectOffset += Math.abs(collectYOffset);
                 if (prev.type == Ball.BallType.CLASSIFIER_WALL || prev.type == Ball.BallType.BACK_WALL) {
                     double dist = MathUtils.vecDist(prev.pos, cur.pos);
-                    if (dist < params.lenientCornerCollectThreshold) {
+                    if (dist < pathGenParams.lenientCornerCollectThreshold) {
                         approachType = Types.Approach.CORNER_LENIENT;
                         collectAngle = MathUtils.averageAngle(collectAngle, prevPathPose.heading.toDouble());
                         preCollectToCollectAngle = collectAngle * 0.5;
-                        double preCollectOffsetT = Math.max(0, dist - 2.5) / params.lenientCornerCollectThreshold;
-                        preCollectOffset = MathUtils.lerp(0, params.preCollectOffset, preCollectOffsetT);
+                        double preCollectOffsetT = Math.max(0, dist - 2.5) / pathGenParams.lenientCornerCollectThreshold;
+                        preCollectOffset = MathUtils.lerp(0, pathGenParams.preCollectOffset, preCollectOffsetT);
                         collectYOffset = 0;
                     }
                 }
@@ -669,7 +685,7 @@ public class PathGeneration {
             case CLASSIFIER_WALL:
                 double angleD = Math.abs(MathUtils.angleNormDeltaRad(defaultApproachAngle - wallAngle));
                 boolean useStrafeApproach =
-                        angleD > Math.toRadians(params.wallStrafeCollectMinApproachAngle)
+                        angleD > Math.toRadians(pathGenParams.wallStrafeCollectMinApproachAngle)
                                 || prev.type == Ball.BallType.CORNER || prev.type == Ball.BallType.CLASSIFIER_WALL
                                 || (next != null && (next.type == Ball.BallType.BACK_WALL || next.type == Ball.BallType.CORNER || next.type == Ball.BallType.CLASSIFIER_WALL));
 
@@ -677,14 +693,14 @@ public class PathGeneration {
                     approachType = Types.Approach.CLASSIFIER_STRAFE;
                     double dx = curToNextBall == null ? cur.pos.x - prevPathPos.x : curToNextBall.x;
                     double strafeAngle = dx > 0 ? 0 : Math.PI;
-                    collectXOffset = Math.signum(dx) * params.strafeCollectDriveThroughDist;
+                    collectXOffset = Math.signum(dx) * pathGenParams.strafeCollectDriveThroughDist;
                     if (Math.signum(dx) == 1)
-                        collectAngle = Math.toRadians(params.wallCollectAngle);
+                        collectAngle = Math.toRadians(pathGenParams.wallCollectAngle);
                     else
-                        collectAngle = Math.PI - Math.toRadians(params.wallCollectAngle);
+                        collectAngle = Math.PI - Math.toRadians(pathGenParams.wallCollectAngle);
                     collectAngle *= Math.signum(wallAngle);
                     double angDiff = Math.abs(MathUtils.angleNormDeltaRad(strafeAngle - prevToCurAngle));
-                    if (Math.abs(angDiff) < Math.toRadians(params.lenientClassifierStrafeAngleDiff)) {
+                    if (Math.abs(angDiff) < Math.toRadians(pathGenParams.lenientClassifierStrafeAngleDiff)) {
                         approachType = Types.Approach.LENIENT_CLASSIFIER_STRAFE;
                         collectAngle = MathUtils.averageAngle(collectAngle, prevToCurAngle);
                         preCollectOffset += Math.abs(collectXOffset) * 0.25;
@@ -694,11 +710,11 @@ public class PathGeneration {
                     preCollectToCollectAngle = Math.signum(dx) == 1 ? 0 : Math.PI;
 
                     Pose2d collectPose = getCollectPose(cur.pos, collectAngle, 0);
-                    Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, params.preCollectOffset);
+                    Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, pathGenParams.preCollectOffset);
                     boolean wallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                     if (!wallSafe) {
                         // if distance to next classifier ball is greater than threshold, attempt to create more lenient strafe that is inside the field
-                        if (next != null && curToNextBallDist > params.distToNextPointForceStrictClassifierStrafe) {
+                        if (next != null && curToNextBallDist > pathGenParams.distToNextPointForceStrictClassifierStrafe) {
                             double resolution = Math.toRadians(0.5); // check every 2.5 degrees
                             double range = Math.abs(wallAngle - collectAngle);
                             int numTries = (int) (range / resolution) + 1;
@@ -706,7 +722,7 @@ public class PathGeneration {
                             for (int i = 0; i < numTries; i++) {
                                 collectAngle += turnDirection * resolution;
                                 collectPose = getCollectPose(cur.pos, collectAngle, 0);
-                                preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, params.preCollectOffset);
+                                preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, pathGenParams.preCollectOffset);
                                 wallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                                 if (wallSafe)
                                     break;
@@ -725,12 +741,12 @@ public class PathGeneration {
                 }
                 break;
             case BACK_WALL:
-                if (Math.abs(defaultApproachAngle) > Math.toRadians(params.wallStrafeCollectMinApproachAngle)) {
+                if (Math.abs(defaultApproachAngle) > Math.toRadians(pathGenParams.wallStrafeCollectMinApproachAngle)) {
                     approachType = Types.Approach.BACK_WALL_STRAFE;
                     double dy = cur.pos.y - prevPathPos.y;
-                    collectYOffset = Math.signum(dy) * params.strafeCollectDriveThroughDist;
+                    collectYOffset = Math.signum(dy) * pathGenParams.strafeCollectDriveThroughDist;
                     preCollectOffset += Math.abs(collectYOffset);
-                    collectAngle = Math.toRadians(params.wallCollectAngle) * Math.signum(dy);
+                    collectAngle = Math.toRadians(pathGenParams.wallCollectAngle) * Math.signum(dy);
                     preCollectToCollectAngle = Math.toRadians(90) * Math.signum(dy);
                 }
                 else {
@@ -773,7 +789,7 @@ public class PathGeneration {
         for (int i=0; i<pathPoses.size()-1; i++) {
 //            System.out.println("path poses at iteration " + i + ": " + simplified);
             PathPose prev = !simplified.isEmpty() ? simplified.get(simplified.size() - 1) : null;
-            Pose2d prevPose = prev != null ? prev.pose : startPose;
+            Pose2d prevPose = prev != null ? prev.waypoint.pose : startPose;
             PathPose cur = pathPoses.get(i);
             PathPose next = pathPoses.get(i + 1);
 
@@ -793,43 +809,43 @@ public class PathGeneration {
                 continue;
             }
 
-            Vector2d prevToCur = cur.pose.position.minus(prevPose.position);
-            Vector2d curToNext = next.pose.position.minus(cur.pose.position);
+            Vector2d prevToCur = cur.waypoint.pose.position.minus(prevPose.position);
+            Vector2d curToNext = next.waypoint.pose.position.minus(cur.waypoint.pose.position);
 
-            double prevToCurHeadingDiff = MathUtils.angleNormDeltaRad(cur.pose.heading.toDouble() - prevPose.heading.toDouble());
-            double curToNextHeadingDiff = MathUtils.angleNormDeltaRad(next.pose.heading.toDouble() - cur.pose.heading.toDouble());
+            double prevToCurHeadingDiff = MathUtils.angleNormDeltaRad(cur.waypoint.pose.heading.toDouble() - prevPose.heading.toDouble());
+            double curToNextHeadingDiff = MathUtils.angleNormDeltaRad(next.waypoint.pose.heading.toDouble() - cur.waypoint.pose.heading.toDouble());
             double approachAngleDiff = MathUtils.angleRadDiff(curToNext, prevToCur);
 
             double prevToCurDist = MathUtils.vecMag(prevToCur);
             double curToNextDist = MathUtils.vecMag(curToNext);
-            double prevToCurHeadingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(prevToCurDist));
-            double curToNextHeadingSimplification = Math.toRadians(params.maxCollectHeadingDifference.applyAsDouble(curToNextDist));
+            double prevToCurHeadingSimplification = Math.toRadians(pathGenParams.maxCollectHeadingDifference.applyAsDouble(prevToCurDist));
+            double curToNextHeadingSimplification = Math.toRadians(pathGenParams.maxCollectHeadingDifference.applyAsDouble(curToNextDist));
             if (cur.approachType == Types.Approach.NORMAL && next.approachType != Types.Approach.NORMAL)
                 curToNextHeadingSimplification *= 0.5;
 //            System.out.println(i + ": prev to cur heading diff: " + Math.toDegrees(prevToCurHeadingDiff) + " | cur to next heading diff: " + Math.toDegrees(curToNextHeadingDiff));
 //            System.out.println("    prev to cur heading simpli: " + Math.toDegrees(prevToCurHeadingSimplification) + " | cur to next heading simpli: " + Math.toDegrees(curToNextHeadingSimplification));
 //            System.out.println("    approach angle diff: " + Math.toDegrees(approachAngleDiff));
-            double approachAngleSimplification = Math.toRadians(params.maxCollectApproachDifference);
+            double approachAngleSimplification = Math.toRadians(pathGenParams.maxCollectApproachDifference);
             boolean approachAnglesCloseEnough = Math.abs(approachAngleDiff) < approachAngleSimplification;
             boolean approachAnglesOppositeDirCloseEnough = Math.PI - Math.abs(approachAngleDiff) < approachAngleSimplification
-                    && prevToCurDist <= params.backTrackingMaxDistBetweenPoints;
+                    && prevToCurDist <= pathGenParams.backTrackingMaxDistBetweenPoints;
             boolean headingCloseEnough = Math.abs(prevToCurHeadingDiff) < prevToCurHeadingSimplification && Math.abs(curToNextHeadingDiff) < curToNextHeadingSimplification;
 //            System.out.println("heading close: " + headingCloseEnough + " | approach close: " + approachAnglesCloseEnough + " | opposite approach close: " + approachAnglesOppositeDirCloseEnough);
             if (headingCloseEnough && (approachAnglesCloseEnough || approachAnglesOppositeDirCloseEnough)) {
-                double ignoreCollectHeadingDiff = params.completelyIgnoreCollectPoseHeadingDiff;
-                double ignoreCollectApproachAngleDiff = params.completelyIgnoreCollectPoseApproachAngleDiff;
+                double ignoreCollectHeadingDiff = pathGenParams.completelyIgnoreCollectPoseHeadingDiff;
+                double ignoreCollectApproachAngleDiff = pathGenParams.completelyIgnoreCollectPoseApproachAngleDiff;
                 if (Math.abs(prevToCurHeadingDiff) < ignoreCollectHeadingDiff && Math.abs(curToNextHeadingDiff) < ignoreCollectHeadingDiff
                         && Math.abs(approachAngleDiff) < ignoreCollectApproachAngleDiff)
                     continue;
 
                 if (cur.poseType == Types.PoseType.COLLECT && cur.approachType == Types.Approach.NORMAL) {
                     // project pose onto line created by prev to cur
-                    Vector2d prevToNext = next.pose.position.minus(prevPose.position);
+                    Vector2d prevToNext = next.waypoint.pose.position.minus(prevPose.position);
                     Vector2d prevToNextDir = prevToNext.div(MathUtils.vecMag(prevToNext));
                     double distAlongLine = prevToNextDir.dot(prevToCur);
                     Vector2d projectedPosition = prevPose.position.plus(prevToNextDir.times(distAlongLine));
-                    Pose2d projectedPose = new Pose2d(projectedPosition, cur.pose.heading);
-                    simplified.add(new PathPose(projectedPose, cur.poseType, cur.ball, cur.approachType));
+                    cur.waypoint.pose = new Pose2d(projectedPosition, cur.waypoint.pose.heading);
+                    simplified.add(new PathPose(cur.waypoint, cur.poseType, cur.ball, cur.approachType));
                 }
 //                System.out.println("meets conditions, skipping");
                 continue;
@@ -847,8 +863,8 @@ public class PathGeneration {
     // returns [fr, fl, bl, br] (counter clockwise)
     private static Vector2d[] getRobotCorners(Pose2d robotPose) {
         Vector2d position = robotPose.position;
-        double halfW = params.robotWidth * 0.5;
-        double halfL = params.robotLength * 0.5;
+        double halfW = pathGenParams.robotWidth * 0.5;
+        double halfL = pathGenParams.robotLength * 0.5;
 
         Vector2d[] positions = new Vector2d[] {
                 new Vector2d(halfL, -halfW), // fr
@@ -864,8 +880,8 @@ public class PathGeneration {
     }
     private static Pose2d getWallSafePose(Pose2d robotPose, double wallBuffer) {
         Vector2d position = robotPose.position;
-        double halfW = params.robotWidth * 0.5;
-        double halfL = params.robotLength * 0.5;
+        double halfW = pathGenParams.robotWidth * 0.5;
+        double halfL = pathGenParams.robotLength * 0.5;
 
         double d = Math.hypot(halfW, halfL) - wallBuffer;
         if (position.x > -72 + d && position.x < 72 - d && position.y > -72 + d && position.y < 72 - d)
@@ -900,11 +916,11 @@ public class PathGeneration {
         return getWallSafePose(robotPose, 0);
     }
     public static Pose2d getWallSafePose(Pose2d robotPose) {
-        return getWallSafePose(robotPose, params.wallPoseBuffer);
+        return getWallSafePose(robotPose, pathGenParams.wallPoseBuffer);
     }
 
     private static Pose2d getCollectPose(Vector2d ballPosition, double angle, double extraOffset) {
-        double r = params.collectPoseOffsetDistance + extraOffset;
+        double r = pathGenParams.collectPoseOffsetDistance + extraOffset;
         double dx = Math.cos(angle) * r;
         double dy = Math.sin(angle) * r;
         return new Pose2d(ballPosition.x - dx, ballPosition.y - dy, angle);
