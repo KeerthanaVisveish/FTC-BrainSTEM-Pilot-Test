@@ -30,15 +30,16 @@ public class Turret extends Component {
         public double maxClutchEngageError = 2000; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
     }
     public static class PowerTuning {
-        public double kA = .0004;
+//        public double kA = .0004;
 //        public double transKV = .01;
 //        public double profileAccel = 2000, profileMaxVel = 200, profileBufferDist = 20;
         public double ignoreAngularVelocityNoiseThreshold = Math.toRadians(1);
-        public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .002, BPos = 0.02, x0Pos = 150, kPos = .03;
-        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .3;
-        public double AVel = 0.1, BVel = .006, x0Vel = 30, kVel = .04;
-        public double smallVelKV = .017, smallVelThreshold = 50;
+//        public double ignoreKPScalingErrorThreshold = 40;
+//        public double APos = .002, BPos = 0.02, x0Pos = 150, kPos = .03;
+//        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .9;
+//        public double AVel = 0., BVel = .003, x0Vel = 30, kVel = .04;
+//        public double smallVelKV = .017, smallVelThreshold = 50;
+        public double AKp = 1, KKp = -.03, x0Kp = 150, bKp = .02;
         public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
 
         public double[] kfPosLookupData = new double[] {
