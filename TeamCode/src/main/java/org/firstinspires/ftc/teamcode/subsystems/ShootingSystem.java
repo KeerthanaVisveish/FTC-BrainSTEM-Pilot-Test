@@ -37,8 +37,8 @@ public class ShootingSystem {
         public double nearBlueX = -66, nearBlueY = -65;
         public double midBlueX = -66, midBlueY = -65;
         public double farBlueX = -67, farBlueY = -63;
-        public double nearHeight = 38, midHeight = 39, farHeight = 42;
-        public double nearImpactAng = Math.toRadians(-30), midImpactAng = Math.toRadians(-25), farImpactAng = Math.toRadians(-24);
+        public double nearHeight = 38, midHeight = 38, farHeight = 42;
+        public double nearImpactAng = Math.toRadians(-30), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
         public double nearStateThreshold = 58;
     }
     public static class HoodParams {

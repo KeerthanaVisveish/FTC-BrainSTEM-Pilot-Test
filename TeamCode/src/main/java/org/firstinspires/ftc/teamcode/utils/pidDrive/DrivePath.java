@@ -40,6 +40,7 @@ public class DrivePath implements Action {
     private boolean followingCurvedPath;
     private boolean shouldUpdatePose = true;
     private double waypointDistanceError;
+    private boolean done;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -59,6 +60,7 @@ public class DrivePath implements Action {
         first = true;
         startPose = new Pose2d(0, 0, 0);
         angleToTargetWaypoint = 0;
+        done = false;
     }
     public void setShouldUpdatePose(boolean shouldUpdatePose) {
         this.shouldUpdatePose = shouldUpdatePose;
@@ -181,6 +183,7 @@ public class DrivePath implements Action {
             if (curWaypointIndex >= waypoints.size()) {
                 if (getCurParams().slowDownPercent == 1)
                     drivetrain.stop();
+                done = true;
                 return false;
             }
             // finished current waypoint path, moving on to next waypoint
@@ -256,13 +259,13 @@ public class DrivePath implements Action {
         drivetrain.setDrivePowers(new PoseVelocity2d(combinedDirectionVector, headingPower));
         
         if (telemetry != null) {
-            telemetry.addData("curved", getCurParams().pathType == PathParams.PathType.CURVED);
+//            telemetry.addData("curved", getCurParams().pathType == PathParams.PathType.CURVED);
             telemetry.addData("splineT", splineT);
-            telemetry.addData("targetX", targetX);
-            telemetry.addData("targetY", targetY);
-            telemetry.addData("targetHeading", MathUtils.format3(Math.toDegrees(targetHeadingRad)));
-            telemetry.addData("total dist away", totalDistanceAway);
-            telemetry.addData("AAA waypoint dist away", errorInfo.distanceError);
+//            telemetry.addData("targetX", targetX);
+//            telemetry.addData("targetY", targetY);
+//            telemetry.addData("targetHeading", MathUtils.format3(Math.toDegrees(targetHeadingRad)));
+//            telemetry.addData("total dist away", totalDistanceAway);
+//            telemetry.addData("AAA waypoint dist away", errorInfo.distanceError);
 //            telemetry.addData("slow down", getCurParams().slowDownPercent);
 //            telemetry.addData("position current", MathUtils.format3(rx) + " ," + MathUtils.format3(ry) + ", " + MathUtils.format3(rHeadingDeg));
 //            telemetry.addData("position target", MathUtils.format3(getCurWaypoint().x()) + " ," + MathUtils.format3(getCurWaypoint().y()) + ", " + MathUtils.format3(getCurWaypoint().headingDeg()));
@@ -270,7 +273,7 @@ public class DrivePath implements Action {
 //            telemetry.addData("target dir", MathUtils.format3(targetDir.x) + ", " + MathUtils.format3(targetDir.y));
 //            telemetry.addData("x waypoint error", MathUtils.format3(xWaypointError));
 //            telemetry.addData("y waypoint error", MathUtils.format3(yWaypointError));
-            telemetry.addData("heading waypoint error", MathUtils.format3(errorInfo.headingDegError));
+//            telemetry.addData("heading waypoint error", MathUtils.format3(errorInfo.headingDegError));
 //            telemetry.addData("x waypoint tolerance", getCurWaypoint().tolerance.xTol);
 //            telemetry.addData("y waypoint tolerance", getCurWaypoint().tolerance.yTol);
 //            telemetry.addData("heading waypoint tolerance", getCurWaypoint().tolerance.headingDegTol);
@@ -413,6 +416,9 @@ public class DrivePath implements Action {
     }
     public double getWaypointDistanceError() {
         return waypointDistanceError;
+    }
+    public boolean done() {
+        return done;
     }
 }
 

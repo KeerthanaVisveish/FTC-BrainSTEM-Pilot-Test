@@ -35,7 +35,7 @@ public class AutoParamsPid {
         public double gateCollectMinPower = 0.4;
         public double[] gateCollectOpenFarRed = { 8, 61, 116 };
         public double[] gateCollectOpenFarBlue = { 8, -61, -116 };
-        public double[] gateCollectOpenNear = { 7.5, 53, 100 };
+        public double[] gateCollectOpenNear = { 7.5, 53.5, 100 };
 
         public double[] gateCollect = { 14, 61, 135 };
         public double[] gateCollectOpenControlPoint = { 13, 36, 50 };
@@ -46,7 +46,8 @@ public class AutoParamsPid {
     }
     public static class Shoot {
         public double earlyEngageClutchDist = 15;
-        public double minShootDrivePower = .7;
+        public double minPower2Dist = 20;
+        public double minDrivePower1 = .99, minDrivePower2 = .7;
         public double[] gateShootControlPoint = { 11, 36, 50 };
         public double gateShootTStartError = 35, gateShootTFinishError = 18;
         public PathParams.HeadingLerpType preloadHeadingLerp = PathParams.HeadingLerpType.TANGENT;
@@ -55,12 +56,12 @@ public class AutoParamsPid {
         public double waypointSlowDown = 0.3;
 
         // shooting positions
-        public double[] preload = new double[] {-14, 21, 25.5};
-        public double[] near1 = new double[] {-6.5, 24, 80};
+        public double[] preload = new double[] {-16, 19, 35};
+        public double[] near1 = new double[] {-9, 23, 80};
         public double[] firstLast = new double[] {-35, 25, 45};
         public double[] near2 = new double[] {-7, 25.5, 55};
         public double[] near3 = new double[] {-7, 25.5, 50};
-        public double[] thirdLast = new double[] {-25, 22, 30};
+        public double[] thirdLast = new double[] {-20, 22, 40};
         public double shootFarXRed = 54, shootFarYRed = 16, shootFarXBlue = 54, shootFarYBlue = -16;
         public double shootFarSetup1ARed = Math.toRadians(180), shootFarSetup2ARed = Math.toRadians(170), shootFarSetup3ARed = Math.toRadians(150), shootFarSetupLoadingARed = Math.toRadians(95);
         public double shootFarSetup1ABlue = Math.toRadians(-180), shootFarSetup2ABlue = Math.toRadians(-170), shootFarSetup3ABlue = Math.toRadians(-150), shootFarSetupLoadingABlue = Math.toRadians(-95);
@@ -92,8 +93,8 @@ public class AutoParamsPid {
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.5;
-        public double gateOpeningWait = 0.2, gateCollectOpenWait = .2;
-        public double gateCollectMaxTime = .85;
+        public double gateOpeningWait = 0.2, gateCollectOpenWait = .4;
+        public double gateCollectMaxTime = .6;
         public double cornerCollectMaxTime = 1.9;
         public double autoEndTime = 29.5;
         public double stopEverythingTime = 35;

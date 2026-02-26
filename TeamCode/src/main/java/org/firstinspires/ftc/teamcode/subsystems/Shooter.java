@@ -22,7 +22,7 @@ public class Shooter extends Component {
         public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
     }
     public static class TestingParams {
-        public boolean testing = true;
+        public boolean testing = false;
         public double testingVel = 5.15;
         public double testingExitAngleRad = 1.0472;
     }
