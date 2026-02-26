@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGen
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.Waypoint;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 import java.util.ArrayList;
 

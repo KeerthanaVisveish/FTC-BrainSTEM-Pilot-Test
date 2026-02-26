@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.Waypoint;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 @TeleOp(name="DrivePathTest")
 @Config
@@ -29,7 +29,6 @@ public class DrivePathTest extends LinearOpMode {
 
         while (opModeIsActive()) {
             if (gamepad1.aWasPressed()) {
-
                 Waypoint w1 = new Waypoint(createPose(p1));
                 Waypoint w2 = new Waypoint(createPose(p2));
                 DrivePath path = new DrivePath(drive, w1, w2);

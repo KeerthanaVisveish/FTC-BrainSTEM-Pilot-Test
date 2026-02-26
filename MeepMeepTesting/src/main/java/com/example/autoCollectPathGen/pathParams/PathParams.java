@@ -1,11 +1,9 @@
-package org.firstinspires.ftc.teamcode.utils.pidDrive;
+package com.example.autoCollectPathGen.pathParams;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 
 import java.util.function.BooleanSupplier;
 
-@Config
 public class PathParams {
     public enum HeadingLerpType {
         LINEAR,
@@ -106,11 +104,5 @@ public class PathParams {
     }
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;
-    }
-    public void setMaxLinearPower(double p) {
-        this.maxLinearPower = p;
-    }
-    public void setMinLinearPower(double p) {
-        this.minLinearPower = p;
     }
 }
