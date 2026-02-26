@@ -30,16 +30,13 @@ public class Turret extends Component {
         public double maxClutchEngageError = 2000; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
     }
     public static class PowerTuning {
-//        public double kA = .0004;
-//        public double transKV = .01;
-//        public double profileAccel = 2000, profileMaxVel = 200, profileBufferDist = 20;
+        public double kA = .0004;
+        public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = Math.toRadians(1);
-//        public double ignoreKPScalingErrorThreshold = 40;
-//        public double APos = .002, BPos = 0.02, x0Pos = 150, kPos = .03;
-//        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .9;
-//        public double AVel = 0., BVel = .003, x0Vel = 30, kVel = .04;
-//        public double smallVelKV = .017, smallVelThreshold = 50;
-        public double AKp = 1, KKp = -.03, x0Kp = 150, bKp = .02;
+        public double ignoreKPScalingErrorThreshold = 40;
+        public double APos = .02, BPos = 0.015, x0Pos = 150, kPos = .03;
+        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .1;
+        public double AVel = .15, BVel = .003, x0Vel = 30, kVel = .04;
         public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
 
         public double[] kfPosLookupData = new double[] {
@@ -57,8 +54,9 @@ public class Turret extends Component {
                 350, 1.45
         };
         public double[] kfNegLookupData = new double[] {
-                -350, -.8,
-                -300, -.8,
+                -350, -.85,
+                -300, -.85,
+                -156, -.85,
                 -130, -.8,
                 -75, -.7,
                 -25, -.7,
@@ -171,36 +169,36 @@ public class Turret extends Component {
     }
 
     public double calculateTurretVoltage(double positionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
-        return 0;
-//        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold)
-//            return 0;
-//        if(testingParams.enableTestingKF)
-//            return testingParams.kfTestingVoltage;
-//        double dir = Math.signum(positionError);
-//        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
-//        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
-//        kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
-//
-//        kP = getLogisticErrorKP(Math.abs(positionError));
-//        if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
-//            kP *= getLogisticKPScaler(Math.abs(targetVelocity));
-//        pVoltage = kP * positionError;
-//        kV = Math.abs(targetVelocity) < powerTuning.smallVelThreshold ? powerTuning.smallVelKV : getLogisticKV(Math.abs(targetVelocity));
-//        vVoltage = kV * targetVelocity;
-//
-//        aVoltage = powerTuning.kA * targetAccel;
-//
-//        return kF + pVoltage + vVoltage + aVoltage;
+        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold)
+            return 0;
+        if(testingParams.enableTestingKF)
+            return testingParams.kfTestingVoltage;
+        double dir = Math.signum(positionError);
+        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
+        kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
+
+        kP = getLogisticErrorKP(Math.abs(positionError));
+        kP = getLogisticErrorKP(Math.abs(positionError));
+        if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
+            kP *= getLogisticKPScaler(Math.abs(targetVelocity));
+        pVoltage = kP * positionError;
+        kV = getLogisticKV(Math.abs(targetVelocity));
+        vVoltage = kV * targetVelocity;
+
+        aVoltage = powerTuning.kA * targetAccel;
+
+        return kF + pVoltage + vVoltage + aVoltage;
     }
-//    private double getLogisticErrorKP(double errorMag) {
-//        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
-//    }
-//    private double getLogisticKPScaler(double targetVelMag) {
-//        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
-//    }
-//    private double getLogisticKV(double targetRotVelMag) {
-//        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
-//    }
+    private double getLogisticErrorKP(double errorMag) {
+        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
+    }
+    private double getLogisticKPScaler(double targetVelMag) {
+        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
+    }
+    private double getLogisticKV(double targetRotVelMag) {
+        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
+    }
     public void setSmoothWhenOutOfRange(boolean smoothWhenOutOfRange) {
         this.smoothWhenOutOfRange = smoothWhenOutOfRange;
     }
@@ -258,7 +256,7 @@ public class Turret extends Component {
         if(Math.abs(goalAngularVel) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
             goalAngularVel = 0;
 
-        double targetAngularVelocity = goalAngularVel - robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+        double targetAngularVelocity = goalAngularVel * powerTuning.goalAngularVelSign - robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
 
         double prevTargetVel = targetVelocity;
         targetVelocity = targetAngularVelocity * turretParams.ticksPerRad;

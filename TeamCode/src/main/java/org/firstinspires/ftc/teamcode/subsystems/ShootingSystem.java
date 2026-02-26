@@ -110,6 +110,7 @@ public class ShootingSystem {
     public ShooterLookup lookupTable;
     public double relGoalHeightM;
     public boolean checkShootingWhileMoving, currentlyShootingWhileMoving;
+    private double vx, vy, vh;
     public ShootingSystem(HardwareMap hardwareMap, BrainSTEMRobot robot) {
         this.hardwareMap = hardwareMap;
         this.robot = robot;
@@ -324,9 +325,9 @@ public class ShootingSystem {
         ballExitPos = ShootingMath.getExitPositionInches(turretPose, approxBallExitAng);
         futureBallExitPos = ShootingMath.getExitPositionInches(futureTurretPose, approxBallExitAng);
 
-        double vx = robot.drive.pinpoint().driver.getVelX(DistanceUnit.INCH);
-        double vy = robot.drive.pinpoint().driver.getVelY(DistanceUnit.INCH);
-        double vh = robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+        vx = robot.drive.pinpoint().driver.getVelX(DistanceUnit.INCH);
+        vy = robot.drive.pinpoint().driver.getVelY(DistanceUnit.INCH);
+        vh = robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
         robotVelCm = new Vector2d(vx, vy);
         Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position);
         Vector2d robotTanVel = new Vector2d(-relativeTurretPos.y, relativeTurretPos.x*1).times(vh); // v = r * w
@@ -395,6 +396,9 @@ public class ShootingSystem {
         telemetry.addData("absolute target exit speed mps", ballTargetExitSpeedMps);
         telemetry.addData("dt", dt);
         telemetry.addData("--------pinpoint dt", robot.drive.pinpoint().dt);
+        telemetry.addData("vx", vx);
+        telemetry.addData("vy", vy);
+        telemetry.addData("vh", vh);
         telemetry.addLine();
         telemetry.addData("rel height to target meters", relGoalHeightM);
         telemetry.addData("dist state", distState);
