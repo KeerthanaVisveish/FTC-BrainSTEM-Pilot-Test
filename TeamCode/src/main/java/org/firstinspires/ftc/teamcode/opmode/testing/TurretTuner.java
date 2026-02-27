@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
-@Config
-@TeleOp(name="Turret tuner", group="Testing")
+//@Config
+//@TeleOp(name="Turret tuner", group="Testing")
 public class TurretTuner extends LinearOpMode {
     public static double noPowerK = 6, noPowerX0 = 1.75;
     public static double u = .14, b = .06, k = .01, x0 = 100; // parameters for logistic kF power

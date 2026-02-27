@@ -12,8 +12,8 @@ import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
 import java.util.ArrayList;
 
-@Config
-@TeleOp(name="Automatic Shooter Speed Recorder", group="Data Recording")
+//@Config
+//@TeleOp(name="Automatic Shooter Speed Recorder", group="Data Recording")
 public class AutomaticShooterSpeedRecorder extends OpMode {
     public static class ShowDataOptions {
         public boolean showTime = false;

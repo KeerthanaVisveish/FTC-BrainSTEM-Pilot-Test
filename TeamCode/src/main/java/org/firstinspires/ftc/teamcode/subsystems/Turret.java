@@ -35,6 +35,7 @@ public class Turret extends Component {
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(95);
         public double maxClutchEngageError = 20; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxTurretVelocityError = 50; // ticks/sec
     }
     public static class PowerTuning {
         public double kA = .0004;
@@ -88,7 +89,6 @@ public class Turret extends Component {
     private double targetVelocity;
     private double goalAngularVel;
     private double targetAccel;
-    private boolean usingMotionProfiling;
     public double currentEncoder, currentVelocity, currentAcceleration;
     public double positionError, velocityError;
     public Vector2d perpVelVec;
@@ -105,7 +105,7 @@ public class Turret extends Component {
 
     public double currentAbsoluteAngleRad;
     public double curRelAngleRad;
-    public boolean inRange, inRangeForShot;
+    public boolean inRange, inRangeForShot, onTarget;
 
     private double currentTestingTarget;
     private boolean smoothWhenOutOfRange;
@@ -181,10 +181,18 @@ public class Turret extends Component {
     }
 
     public double calculateTurretVoltage(double positionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
-        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold)
+        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
+            onTarget = true;
             return 0;
-        if(testingParams.enableTestingKF)
+        }
+        if(testingParams.enableTestingKF) {
+            onTarget = true;
             return testingParams.kfTestingVoltage;
+        }
+        boolean onTargetPositionTol = Math.abs(positionError) <= turretParams.maxClutchEngageError;
+        boolean onTargetVelocityTol = Math.abs(targetVelocity - currentVelocity) <= turretParams.maxTurretVelocityError;
+        onTarget = onTargetPositionTol && onTargetVelocityTol;
+
         double dir = Math.signum(positionError);
         double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
         double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
@@ -306,7 +314,6 @@ public class Turret extends Component {
         telemetry.addData("voltage", robot.getFilteredVoltage());
         telemetry.addData("voltage raw", robot.getRawVoltage());
         telemetry.addLine("------");
-        telemetry.addData("using motion profiling", usingMotionProfiling ? 100 : 0);
 //        telemetry.addLine("-----");
         telemetry.addData("inRange", inRange());
     }

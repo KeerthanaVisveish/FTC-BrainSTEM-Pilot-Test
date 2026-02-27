@@ -16,8 +16,8 @@ import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
-@TeleOp(name="Power Efficiency Finder", group="TestingParams")
-@Config
+//@TeleOp(name="Power Efficiency Finder", group="TestingParams")
+//@Config
 public class EfficiencyCoefficientFinder extends OpMode {
     public static class Controls {
         public double targetShooterVelocityTicksPerSec = 1500;

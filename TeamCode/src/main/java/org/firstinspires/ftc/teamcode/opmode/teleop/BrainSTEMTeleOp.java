@@ -30,6 +30,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printShooter = false, printTurret = true, printShootingSystem = false,
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
+    public static boolean inCompetition = false;
     public static double[] blueCornerResetPose = { 64.25, 62.75, -90 };
     public static double[] redCornerResetPose = { 64.25, -62.75, 90 };
     public static double noMoveJoystickThreshold = 0.1;
@@ -68,16 +69,25 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
 
         while (opModeInInit()) {
-            if (gamepad1.start && gamepad1.backWasPressed())
-                robot.shootingSystem.resetTurretEncoder();
-            robot.shootingSystem.updateInfo(false);
-            telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+            if (!inCompetition) {
+                if (gamepad1.start && gamepad1.backWasPressed())
+                    robot.shootingSystem.resetTurretEncoder();
+                robot.shootingSystem.updateInfo(false);
+                telemetry.addData("reset turret encoder", "hold START + BACK");
+                telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+            }
+            else
+                telemetry.addLine("turret encoder reset disabled");
             telemetry.update();
         }
 
         waitForStart();
         robot.startOpmode();
         robot.turret.update();
+        if (inCompetition) {
+            robot.turret.turretState = Turret.TurretState.TRACKING;
+            robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+        }
         while (opModeIsActive()) {
             gp1.update();
             gp2.update();
@@ -126,6 +136,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             PoseStorage.autoHeading = p.heading.toDouble();
         }
         robot.limelight.limelight.stop();
+        robot.drive.stop();
     }
 
     private void updateDrive() {

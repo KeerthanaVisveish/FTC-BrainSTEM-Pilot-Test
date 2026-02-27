@@ -168,9 +168,7 @@ public class Collection extends Component {
 
     @Override
     public void update() {
-
-        boolean turretAccurate = Math.abs(robot.turret.positionError) <= Turret.turretParams.maxClutchEngageError;
-        if (turretAccurate) {
+        if (robot.turret.onTarget) {
             if (clutchState == ClutchState.WAITING_TO_ENGAGE) {
                 setClutchState(ClutchState.ENGAGED);
                 setCollectionState(CollectionState.INTAKE);

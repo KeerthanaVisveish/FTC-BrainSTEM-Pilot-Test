@@ -13,8 +13,8 @@ import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
 
-@TeleOp(name="Power Efficiency Tester", group="TestingParams")
-@Config
+//@TeleOp(name="Power Efficiency Tester", group="TestingParams")
+//@Config
 public class EfficiencyCoefficientTester extends OpMode {
     public static class Controls {
         public double ballExitAngleRad = Math.toRadians(40);
