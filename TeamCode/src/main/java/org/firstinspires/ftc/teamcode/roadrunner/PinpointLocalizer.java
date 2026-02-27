@@ -101,7 +101,7 @@ public final class PinpointLocalizer implements Localizer {
             Pose2d prevPose = lastPose;
             lastPose = getPose();
             OdoInfo positionDerivedVelocity = new OdoInfo((lastPose.position.x - prevPose.position.x) / dt, (lastPose.position.y - prevPose.position.y) / dt, (lastPose.heading.toDouble() - prevPose.heading.toDouble()) / dt);
-            
+
             txPinpointRobot = new Pose2d(driver.getPosX(DistanceUnit.INCH), driver.getPosY(DistanceUnit.INCH), driver.getHeading(UnnormalizedAngleUnit.RADIANS));
             double velX, velY, velHeadingRad;
             if(usePositionDerivedVelocity) {
