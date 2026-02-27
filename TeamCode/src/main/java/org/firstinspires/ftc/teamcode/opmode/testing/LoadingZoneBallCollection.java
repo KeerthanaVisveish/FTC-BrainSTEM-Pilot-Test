@@ -26,17 +26,21 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 
+import java.util.ArrayList;
+
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
 public class LoadingZoneBallCollection extends OpMode {
     public static int streamFPS = 5;
     public static double[] startPose = { 48 + 6.5, 8, 90 };
+    public static double scanAngle1 = 80, scanAngle2 = 110;
     private BrainSTEMRobot robot;
     private AutoCommands autoCommands;
 
     private Action autoCollectAction = null;
-    private Vector2d[] mostRecentNodes;
+    private ArrayList<Vector2d> mostRecentNodes;
     private PathInfo pathInfo;
+    private Action scanForBallsAction = null;
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -44,7 +48,7 @@ public class LoadingZoneBallCollection extends OpMode {
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(startPose));
         autoCommands = new AutoCommands(robot, telemetry);
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
-        mostRecentNodes = new Vector2d[0];
+        mostRecentNodes = new ArrayList<>();
     }
 
     @Override
@@ -69,11 +73,11 @@ public class LoadingZoneBallCollection extends OpMode {
 
         Pose2d robotPose = robot.drive.localizer.getPose();
 
-        if (autoCollectAction == null) {
-            Blob[] blobs = robot.limelight.ballDetection.getBlobs();
-            mostRecentNodes = new Vector2d[blobs.length];
-            for (int i = 0; i < blobs.length; i++)
-                mostRecentNodes[i] = new Vector2d(blobs[i].x, blobs[i].y);
+        if (autoCollectAction == null && scanForBallsAction == null) {
+            ArrayList<Blob> blobs = robot.limelight.ballDetection.getCurrentBlobs();
+            mostRecentNodes = new ArrayList<>();
+            for (int i = 0; i < blobs.size(); i++)
+                mostRecentNodes.add(blobs.get(i).pos());
 
             pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
         }
@@ -83,7 +87,7 @@ public class LoadingZoneBallCollection extends OpMode {
             for (PathPose pathPose : pathInfo.simplifiedPathPoses)
                 autoCollectDrive.addWaypoint(pathPose.waypoint);
         }
-        if (autoCollectAction == null) {
+        if (autoCollectAction == null && scanForBallsAction == null) {
             if (gamepad1.left_trigger > 0.2)
                 robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
             else
@@ -98,7 +102,7 @@ public class LoadingZoneBallCollection extends OpMode {
             ));
         }
 
-        if (gamepad1.a && autoCollectAction == null && autoCollectDrive != null) {
+        if (gamepad1.a && autoCollectAction == null && scanForBallsAction == null && autoCollectDrive != null) {
             robot.drive.stop();
             autoCollectAction = new SequentialAction(
                     autoCommands.runIntake(),
@@ -108,6 +112,9 @@ public class LoadingZoneBallCollection extends OpMode {
                     ),
                     autoCommands.stopIntake()
             );
+        }
+        if (gamepad1.y && autoCollectAction == null && scanForBallsAction == null) {
+            scanForBallsAction = robot.scanForBalls(Math.toRadians(scanAngle1), Math.toRadians(scanAngle2));
         }
         if (autoCollectAction != null) {
             if (Math.abs(gamepad1.left_stick_x) > 0.1 ||
@@ -122,6 +129,13 @@ public class LoadingZoneBallCollection extends OpMode {
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
             if (!keepGoing)
                 autoCollectAction = null;
+        }
+        if (scanForBallsAction != null) {
+            TelemetryPacket packet = new TelemetryPacket();
+            boolean keepGoing = scanForBallsAction.run(packet);
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
+            if (!keepGoing)
+                scanForBallsAction = null;
         }
 
         robot.update(false);

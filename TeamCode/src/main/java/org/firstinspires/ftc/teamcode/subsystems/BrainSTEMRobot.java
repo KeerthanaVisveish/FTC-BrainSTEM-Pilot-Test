@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -166,5 +168,15 @@ public class BrainSTEMRobot {
     }
     public double getRawVoltage() {
         return rawVoltage;
+    }
+
+    public Action scanForBalls(double angle1, double angle2) {
+        return new SequentialAction(
+                turret.rotateToCustomTarget(angle1),
+                new SleepAction(0.03),
+                limelight.ballDetection.takeBallSnapshotAction(),
+                turret.rotateToCustomTarget(angle2),
+                limelight.ballDetection.takeBallSnapshotAction()
+        );
     }
 }

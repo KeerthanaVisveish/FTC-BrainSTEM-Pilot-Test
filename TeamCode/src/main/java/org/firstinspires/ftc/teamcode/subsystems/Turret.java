@@ -1,14 +1,21 @@
 package org.firstinspires.ftc.teamcode.subsystems;
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
+import com.acmerobotics.roadrunner.RaceAction;
+import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.util.InterpLUT;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 @Config
@@ -72,7 +79,7 @@ public class Turret extends Component {
     public static Params turretParams = new Params();
     public static PowerTuning powerTuning = new PowerTuning();
     public enum TurretState {
-        TRACKING, CENTER
+        TRACKING, CENTER, TRACK_CUSTOM_TARGET
     }
     public TurretState turretState;
     private int nearEncoderAdjustment, farEncoderAdjustment;
@@ -145,25 +152,30 @@ public class Turret extends Component {
             return;
         }
 
+        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
+            robot.shootingSystem.setTurretVoltage(0);
+            return;
+        }
+
+        double motorVoltage;
         switch (turretState) {
             case TRACKING:
-                if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
-                    robot.shootingSystem.setTurretVoltage(0);
-                    break;
-                }
-                updateTarget();
-                robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(positionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps));
+                updateTargetToGoal();
+                motorVoltage = calculateTurretVoltage(positionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps);
+                robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
-
             case CENTER:
                 inRange = true;
-                if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
-                    robot.shootingSystem.setTurretVoltage(0);
-                    break;
-                }
                 targetEncoder = 0;
                 positionError = -currentEncoder;
-                robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(positionError, 0, 0, 0));
+                motorVoltage = calculateTurretVoltage(positionError, 0, 0, 0);
+                robot.shootingSystem.setTurretVoltage(motorVoltage);
+                break;
+            case TRACK_CUSTOM_TARGET:
+                inRange = true; // i clip targetEncoder so its always in range
+                positionError = targetEncoder - currentEncoder;
+                motorVoltage = calculateTurretVoltage(positionError, 0, 0, 0);
+                robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
         }
     }
@@ -217,7 +229,7 @@ public class Turret extends Component {
         double turretTicksPerRadian = (turretParams.TICKS_PER_REV) / (2 * Math.PI);
         return turretPosition / turretTicksPerRadian;
     }
-    private void updateTarget() {
+    private void updateTargetToGoal() {
         // updating target angle
         targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.actualTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
         // mirrors the angle if the turret cannot reach it (visual cue)
@@ -310,4 +322,18 @@ public class Turret extends Component {
         return inRange;
     }
     public boolean inRangeForShot() {return inRangeForShot; }
+    public void setCustomTargetEncoder(double encoder) {
+        if (turretState == TurretState.TRACK_CUSTOM_TARGET)
+            targetEncoder = encoder;
+    }
+    public Action rotateToCustomTarget(double targetAngle) {
+        return new SequentialAction(
+                new InstantAction(() -> {
+                    turretState = TurretState.TRACK_CUSTOM_TARGET;
+                    double clippedAngle = Range.clip(targetAngle, -turretParams.maxAngle, turretParams.maxAngle);
+                    targetEncoder = clippedAngle * turretParams.ticksPerRad;
+                }),
+                telemetryPacket -> positionError > powerTuning.noPowerThreshold
+        );
+    }
 }

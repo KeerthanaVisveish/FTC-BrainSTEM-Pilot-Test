@@ -18,7 +18,7 @@ public class PathGeneration {
     public static PathGenerationParams pathGenParams = new PathGenerationParams();
     public static PathDriveParams driveParams = new PathDriveParams();
     public static Pose2d pathfinderStartPose = null;
-    public static PathInfo generateSimplifiedAutoCollectPath(Pose2d robotPose, Vector2d[] ballsArray) {
+    public static PathInfo generateSimplifiedAutoCollectPath(Pose2d robotPose, ArrayList<Vector2d> ballsArray) {
         PathInfo path = generateAutoCollectPath(robotPose, ballsArray);
         if (path == null)
             return null;
@@ -26,12 +26,12 @@ public class PathGeneration {
         path.setSimplifiedPathPoses(PathGeneration.simplifyPathPoses(robotPose, path.pathPoses));
         return path;
     }
-    private static PathInfo generateAutoCollectPath(Pose2d robotPose, Vector2d[] ballPositionsArray) {
+    private static PathInfo generateAutoCollectPath(Pose2d robotPose, ArrayList<Vector2d> ballPositionsArray) {
         pathfinderStartPose = robotPose;
-        if (ballPositionsArray.length == 0)
+        if (ballPositionsArray.isEmpty())
             return null;
 
-        ArrayList<Ball> allBalls = Ball.toBallList(new ArrayList<>(Arrays.asList(ballPositionsArray)));
+        ArrayList<Ball> allBalls = Ball.toBallList(new ArrayList<>(ballPositionsArray));
 
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);

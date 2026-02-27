@@ -57,7 +57,7 @@ public class Limelight extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("LIMELIGHT");
-        telemetry.addData("pipeline type", pipeline);
+        telemetry.addData("pipeline type (from java)", pipeline);
         telemetry.addData("limelight is running", limelight.isRunning());
         telemetry.addData("limelight is connected", limelight.isConnected());
         telemetry.addData("connection info", limelight.getConnectionInfo());

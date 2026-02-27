@@ -34,6 +34,7 @@ public class LimelightTestTele extends LinearOpMode {
             double[] pythonOutput = result.getPythonOutput();
             telemetry.addData("current pipeline index", result.getPipelineIndex());
             telemetry.addData("current pipeline type", result.getPipelineType());
+            telemetry.addData("num april tags", result.getFiducialResults().size());
             telemetry.addData("python outputs", Arrays.toString(pythonOutput));
             telemetry.update();
         }
