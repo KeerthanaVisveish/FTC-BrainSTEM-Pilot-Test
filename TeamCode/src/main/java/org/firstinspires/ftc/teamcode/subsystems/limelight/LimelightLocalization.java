@@ -117,6 +117,8 @@ public class LimelightLocalization extends LLParent {
         drivetrainGoodForUpdate = canUpdateDrivetrainReliably();
         turretGoodForUpdate = canUpdateTurretReliably();
         inLocalizationZone = isInLocalizationZone();
+        if (!inLocalizationZone && state == LocalizationState.UPDATING_POSE)
+            setState(params.offLocalizationState);
 
         if (!drivetrainGoodForUpdate || !turretGoodForUpdate || !inLocalizationZone) {
             // want to update again immediately if current update is interrupted

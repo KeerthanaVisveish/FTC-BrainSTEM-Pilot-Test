@@ -17,7 +17,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double slowIntakePow = 0.3, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOffTargetIntakePow = 0, shooterNotGoodIntakePow = .7;
+        public double clutchEngagePow = 0.7, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOffTargetIntakePow = 0, shooterNotGoodIntakePow = .7;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -29,7 +29,7 @@ public class Collection extends Component {
         public double shootOuttakeTimeAuto = 0.05;
         public double postShootOuttakeWaitAuto = 0.;
         public double shootOuttakeTime = 0.05;
-        public double clutchEngageRunIntakeTime = 0.05;
+        public double clutchEngageRunIntakeTime = 0.3;
     }
 
     public static Params params = new Params();
@@ -117,7 +117,7 @@ public class Collection extends Component {
                 collectorMotor.setPower(0);
                 break;
             case CLUTCH_ENGAGE_INTAKE:
-                collectorMotor.setPower(params.slowIntakePow);
+                collectorMotor.setPower(params.clutchEngagePow);
                 break;
             case OUTTAKE:
                 collectorMotor.setPower(params.outtakeSpeed);
@@ -131,6 +131,7 @@ public class Collection extends Component {
             case ENGAGED:
                 clutchRight.setPosition(params.engagedPos);
                 clutchLeft.setPosition(params.engagedPos);
+                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
                 break;
             case UNENGAGED:
                 clutchRight.setPosition(params.disengagedPos);
@@ -183,10 +184,10 @@ public class Collection extends Component {
             case OFF:
             case OUTTAKE:
                 break;
-//            case CLUTCH_ENGAGE_INTAKE:
-//                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
-//                    setCollectionState(CollectionState.OFF);
-//                break;
+            case CLUTCH_ENGAGE_INTAKE:
+                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
+                    setCollectionState(CollectionState.OFF);
+                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     if (!inAuto && !robot.turret.inRangeForShot() || !robot.turret.onTarget)

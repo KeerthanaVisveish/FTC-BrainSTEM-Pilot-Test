@@ -141,7 +141,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
     private void updateDrive() {
         if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE && robot.limelight.localization.manualPoseUpdate) {
-            stop();
+            robot.drive.stop();
             return;
         }
         currentlyMoving = Math.abs(gamepad1.left_stick_x) > noMoveJoystickThreshold || Math.abs(gamepad1.left_stick_y) > noMoveJoystickThreshold || Math.abs(gamepad1.right_stick_x) > noMoveJoystickThreshold;
@@ -198,7 +198,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     private void updateDriver2() {
         if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED) {
             if (gp2.isFirstA())
-                if (robot.collection.getCollectionState() == Collection.CollectionState.OFF)
+                if (robot.collection.getCollectionState() != Collection.CollectionState.INTAKE)
                     robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
                 else
                     robot.collection.setCollectionState(Collection.CollectionState.OFF);
@@ -206,10 +206,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gp2.isFirstB())
             if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
                 robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-            else {
+            else
                 robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
-            }
 
         if (gp2.isFirstLeftBumper())
             robot.collection.setFlickerState(Collection.FlickerState.HALF_UP_DOWN);
