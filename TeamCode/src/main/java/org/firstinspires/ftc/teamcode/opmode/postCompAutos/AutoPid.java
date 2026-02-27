@@ -37,13 +37,16 @@ import java.util.ArrayList;
 @Config
 public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
-        // if partner has 3 ball close: f2fgn1n3n
-        // if partner has 6 ball close: f2fgf3flf
+        public AutoType autoType = AutoType.CUSTOM;
         public String collectionOrder = "n2ngngn1n3n";
         public boolean openGateOnFirst = false;
         public boolean openGateOnSecond = false;
         public boolean abortAtEnd = false;
         public int maxCornerRetries = 0;
+    }
+    public enum AutoType {
+        CUSTOM,
+        MOTIF
     }
     public enum AutoState {
         DRIVE_TO_COLLECT,
