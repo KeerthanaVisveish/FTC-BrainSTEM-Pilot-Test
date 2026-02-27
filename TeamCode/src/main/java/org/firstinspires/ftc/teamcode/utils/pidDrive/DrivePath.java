@@ -252,6 +252,8 @@ public class DrivePath implements Action {
             headingPower *= errorInfo.headingPowerDirFlip;
         }
 
+
+
         drivetrain.setDrivePowers(new PoseVelocity2d(combinedDirectionVector, headingPower));
         
         if (telemetry != null) {

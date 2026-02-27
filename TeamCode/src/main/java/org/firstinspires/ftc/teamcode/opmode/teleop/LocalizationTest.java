@@ -24,6 +24,7 @@ import org.firstinspires.ftc.teamcode.subsystems.LED;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class LocalizationTest extends LinearOpMode {
     public static double mt2HeadingOffset = 0;
     public static int numPrevPosesToAvg = 10;
     public static boolean drawRobotPoses = true, drawTurretPoses = true, drawCameraPose = true, drawFilteredPoses = true;
+    public static boolean drawRobotVelocity = true;
     public static boolean useMegaTag2 = true;
     public static int ftcDashboardFPS = 10;
 
@@ -154,6 +156,12 @@ public class LocalizationTest extends LinearOpMode {
             telemetry.addData("pinpoint robot pose", MathUtils.formatPose3(pinpointRobotPose));
             telemetry.addData("pinpoint turret pose", MathUtils.formatPose3(pinpointTurretPose));
             telemetry.addData("pinpoint camera pose", MathUtils.formatPose3(pinpointCameraPose));
+            double velX = drive.pinpoint().driver.getVelX(DistanceUnit.INCH);
+            double velY = drive.pinpoint().driver.getVelX(DistanceUnit.INCH);
+            Vector2d rawVel = new Vector2d(velX, velY);
+            OdoInfo fieldVelocity = drive.pinpoint().getVelocity();
+            telemetry.addData("pinpoint raw velocity", MathUtils.formatVec3(rawVel));
+            telemetry.addData("pinpoint field velocity", fieldVelocity.toString(3));
             telemetry.addLine();
 
             telemetry.addLine("Limelight======================");
@@ -196,6 +204,12 @@ public class LocalizationTest extends LinearOpMode {
                     Drawing.drawRobotSimple(packet.fieldOverlay(), filteredLlCameraPose, 2);
                     Drawing.drawRobotSimple(packet.fieldOverlay(), filteredLlTurretPose, 3);
                     Drawing.drawRobot(packet.fieldOverlay(), filteredLlRobotPose);
+                }
+                if (drawRobotVelocity) {
+                    packet.fieldOverlay().setStroke("black");
+                    Vector2d pos = pinpointRobotPose.position;
+                    Vector2d vel = fieldVelocity.pos();
+                    packet.fieldOverlay().strokeLine(pos.x, pos.y, pos.x + vel.x, pos.y + vel.y);
                 }
                 FtcDashboard.getInstance().sendTelemetryPacket(packet);
             }

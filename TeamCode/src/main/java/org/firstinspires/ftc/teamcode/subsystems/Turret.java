@@ -34,16 +34,16 @@ public class Turret extends Component {
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(95);
-        public double maxClutchEngageError = 2000; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxClutchEngageError = 20; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
     }
     public static class PowerTuning {
         public double kA = .0004;
         public double goalAngularVelSign = 1;
-        public double ignoreAngularVelocityNoiseThreshold = Math.toRadians(1);
+        public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .015, BPos = 0.013, x0Pos = 150, kPos = .03;
+        public double APos = .014, BPos = 0.013, x0Pos = 150, kPos = .03;
         public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .1;
-        public double AVel = .15, BVel = .003, x0Vel = 30, kVel = .04;
+        public double AVel = .13, BVel = .003, x0Vel = 30, kVel = .04;
         public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
 
         public double[] kfPosLookupData = new double[] {
@@ -265,10 +265,9 @@ public class Turret extends Component {
         telemetry.addData("DOT", dot);
         telemetry.addData("PER VEL VEC", MathUtils.formatVec3(perpVelVec));
         goalAngularVel = dot / robot.shootingSystem.futureTurretPosGoalDistIn;
-        if(Math.abs(goalAngularVel) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
-            goalAngularVel = 0;
-
-        double targetAngularVelocity = goalAngularVel * powerTuning.goalAngularVelSign - robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
+        double targetAngularVelocity = goalAngularVel * powerTuning.goalAngularVelSign - robot.drive.pinpoint().getVelocity().headingRad;
+        if(Math.abs(targetAngularVelocity) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
+            targetAngularVelocity = 0;
 
         double prevTargetVel = targetVelocity;
         targetVelocity = targetAngularVelocity * turretParams.ticksPerRad;

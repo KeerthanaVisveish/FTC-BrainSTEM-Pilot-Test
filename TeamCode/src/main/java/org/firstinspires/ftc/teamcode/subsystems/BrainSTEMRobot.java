@@ -149,18 +149,18 @@ public class BrainSTEMRobot {
                     shootingSystem.turretPose.position.x + shootingSystem.robotVelAtTurretIps.x,
                     shootingSystem.turretPose.position.y + shootingSystem.robotVelAtTurretIps.y
             );
-            fieldOverlay.strokeLine(
-                    shootingSystem.turretPose.position.x,
-                    shootingSystem.turretPose.position.y,
-                    shootingSystem.turretPose.position.x + turret.perpVelVec.x * 10,
-                    shootingSystem.turretPose.position.y + turret.perpVelVec.y * 10
-            );
-            fieldOverlay.strokeLine(
-                    shootingSystem.goalPosIn.x,
-                    shootingSystem.goalPosIn.z,
-                    shootingSystem.goalPosIn.x + shootingSystem.futureTurretPosRelativeToGoal.x,
-                    shootingSystem.goalPosIn.z + shootingSystem.futureTurretPosRelativeToGoal.y
-            );
+//            fieldOverlay.strokeLine(
+//                    shootingSystem.turretPose.position.x,
+//                    shootingSystem.turretPose.position.y,
+//                    shootingSystem.turretPose.position.x + turret.perpVelVec.x * 10,
+//                    shootingSystem.turretPose.position.y + turret.perpVelVec.y * 10
+//            );
+//            fieldOverlay.strokeLine(
+//                    shootingSystem.goalPosIn.x,
+//                    shootingSystem.goalPosIn.z,
+//                    shootingSystem.goalPosIn.x + shootingSystem.futureTurretPosRelativeToGoal.x,
+//                    shootingSystem.goalPosIn.z + shootingSystem.futureTurretPosRelativeToGoal.y
+//            );
         }
     }
     public double getFilteredVoltage() {

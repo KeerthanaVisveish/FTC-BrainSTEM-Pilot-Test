@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.utils.math;
 
 import androidx.annotation.NonNull;
 
+import com.acmerobotics.roadrunner.Vector2d;
+
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 public class OdoInfo {
@@ -23,7 +25,7 @@ public class OdoInfo {
     }
 
     public String toString(int numDecimalPlaces) {
-        return "x:" + MathUtils.format(x, numDecimalPlaces) + "y:" + MathUtils.format(y, numDecimalPlaces) + "h:" + MathUtils.format(headingRad, numDecimalPlaces);
+        return "x:" + MathUtils.format(x, numDecimalPlaces) + "y:" + MathUtils.format(y, numDecimalPlaces) + "h:" + MathUtils.format(Math.toDegrees(headingRad), numDecimalPlaces);
     }
     public String toStringPosition(int numDecimalPlaces) {
         return "x:" + MathUtils.format(x, numDecimalPlaces) + "y:" + MathUtils.format(y, numDecimalPlaces);
@@ -32,8 +34,8 @@ public class OdoInfo {
         return "h:" + MathUtils.format(headingRad, numDecimalPlaces);
     }
     // converts positional data into a vector
-    public Vec vec() {
-        return new Vec(x, y);
+    public Vector2d pos() {
+        return new Vector2d(x, y);
     }
 }
 

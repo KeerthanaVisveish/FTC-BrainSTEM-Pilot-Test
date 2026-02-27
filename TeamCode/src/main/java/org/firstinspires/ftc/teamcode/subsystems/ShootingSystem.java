@@ -17,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.math.Vector3d;
 import org.firstinspires.ftc.teamcode.utils.misc.MotorCacher;
@@ -37,8 +38,8 @@ public class ShootingSystem {
         public double nearBlueX = -66, nearBlueY = -65;
         public double midBlueX = -66, midBlueY = -65;
         public double farBlueX = -67, farBlueY = -63;
-        public double nearHeight = 38, midHeight = 38, farHeight = 42;
-        public double nearImpactAng = Math.toRadians(-30), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
+        public double nearHeight = 36, midHeight = 38, farHeight = 42;
+        public double nearImpactAng = -0.55, midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
         public double nearStateThreshold = 58;
     }
     public static class HoodParams {
@@ -48,10 +49,11 @@ public class ShootingSystem {
         public double robotVelThresholdToSetHood = 2;
     }
     public static class GeneralParams {
+        public double maxShootingDist = 180;
         public double firstShootTolerance = 0.1, physicsShootTolerance = 0.1;
         public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
         public int lookAheadAvgNum = 5;
-        public double rawLookAheadTime = 0.1; // time to look ahead for pose prediction
+        public double rawLookAheadTime = 0.075; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492
@@ -99,7 +101,7 @@ public class ShootingSystem {
     public double curExitSpeedMps;
     public double ballExitAngleRad, hoodExitAngleRad;
     public double[] physicsExitAngleRads;
-    public Vector2d robotVelCm;
+    public OdoInfo robotVelCm;
     public Vector2d ballExitPos, futureBallExitPos;
     public double exitPosGoalDistIn, futureTurretPosGoalDistIn;
     public Pose2d turretPose, futureTurretPose;
@@ -110,7 +112,6 @@ public class ShootingSystem {
     public ShooterLookup lookupTable;
     public double relGoalHeightM;
     public boolean checkShootingWhileMoving, currentlyShootingWhileMoving;
-    private double vx, vy, vh;
     public ShootingSystem(HardwareMap hardwareMap, BrainSTEMRobot robot) {
         this.hardwareMap = hardwareMap;
         this.robot = robot;
@@ -244,6 +245,7 @@ public class ShootingSystem {
             actualTargetExitSpeedMps = Math.hypot( baseLength, actualTargetExitVelMps.y );
         }
         else {
+            futureDist = Math.min(futureDist, generalParams.maxShootingDist);
             launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, hoodParams.minExitAngRad), hoodParams.minExitAngRad};
             ballTargetExitSpeedMps = launchVector[0];
             ballExitAngleRad = launchVector[1];
@@ -325,13 +327,10 @@ public class ShootingSystem {
         ballExitPos = ShootingMath.getExitPositionInches(turretPose, approxBallExitAng);
         futureBallExitPos = ShootingMath.getExitPositionInches(futureTurretPose, approxBallExitAng);
 
-        vx = robot.drive.pinpoint().driver.getVelX(DistanceUnit.INCH);
-        vy = robot.drive.pinpoint().driver.getVelY(DistanceUnit.INCH);
-        vh = robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS);
-        robotVelCm = new Vector2d(vx, vy);
+        robotVelCm = robot.drive.pinpoint().getVelocity();
         Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position);
-        Vector2d robotTanVel = new Vector2d(-relativeTurretPos.y, relativeTurretPos.x*1).times(vh); // v = r * w
-        robotVelAtTurretIps = robotVelCm.plus(robotTanVel);
+        Vector2d robotTanVel = new Vector2d(-relativeTurretPos.y, relativeTurretPos.x*1).times(robotVelCm.headingRad); // v = r * w
+        robotVelAtTurretIps = new Vector2d(robotVelCm.x, robotVelCm.y).plus(robotTanVel);
         robotSpeedAtTurretIps = Math.hypot(robotVelAtTurretIps.x, robotVelAtTurretIps.y);
 
         double deltaX = goalPosIn.x - ballExitPos.x;
@@ -376,7 +375,7 @@ public class ShootingSystem {
     public void printInfo(Telemetry telemetry) {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("robot vel center of mass", MathUtils.formatVec3(robotVelCm));
+        telemetry.addData("robot vel center of mass", robotVelCm.toString(3));
         telemetry.addData("future turret pos relative to goal", MathUtils.formatVec3(futureTurretPosRelativeToGoal));
         telemetry.addData("robot vel at turret ips", MathUtils.formatVec3(robotVelAtTurretIps));
 
@@ -395,10 +394,6 @@ public class ShootingSystem {
         telemetry.addData("future turret inches from goal", futureTurretPosGoalDistIn);
         telemetry.addData("absolute target exit speed mps", ballTargetExitSpeedMps);
         telemetry.addData("dt", dt);
-        telemetry.addData("--------pinpoint dt", robot.drive.pinpoint().dt);
-        telemetry.addData("vx", vx);
-        telemetry.addData("vy", vy);
-        telemetry.addData("vh", vh);
         telemetry.addData("current lookahead", currentLookAhead);
         telemetry.addLine();
         telemetry.addData("rel height to target meters", relGoalHeightM);

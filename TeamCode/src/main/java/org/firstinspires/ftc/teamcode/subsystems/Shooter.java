@@ -87,7 +87,7 @@ public class Shooter extends Component {
                 break;
         }
         if(testingParams.testing) {
-//            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
+            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
         else if(robot.shootingSystem.checkShootingWhileMoving
                 || robot.shootingSystem.physicsExitAngleRads[0] != -1
@@ -136,6 +136,7 @@ public class Shooter extends Component {
         telemetry.addLine();
         telemetry.addLine("HOOD------");
         telemetry.addData("  hood pos", robot.shootingSystem.getHoodPosition());
+        telemetry.addData("  testing exit angle", Math.toDegrees(testingParams.testingExitAngleRad));
     }
 
     public void changeVelocityAdjustment(double amount) {

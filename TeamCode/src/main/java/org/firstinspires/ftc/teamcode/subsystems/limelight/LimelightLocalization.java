@@ -305,7 +305,7 @@ public class LimelightLocalization extends LLParent {
         return ShootingMath.getRobotPose(turretPose, robot.turret.curRelAngleRad);
     }
     private boolean canUpdateDrivetrainReliably() {
-        OdoInfo odoVel = robot.drive.pinpoint().getMostRecentVelocity();
+        OdoInfo odoVel = robot.drive.pinpoint().getVelocity();
         return Math.abs(Math.toDegrees(odoVel.headingRad)) < params.maxUpdateHeadingDegVel && Math.hypot(odoVel.x, odoVel.y) < params.maxUpdateTranslationalVel;
     }
     private boolean canUpdateTurretReliably() {

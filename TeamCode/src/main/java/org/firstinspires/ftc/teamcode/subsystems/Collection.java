@@ -15,8 +15,6 @@ public class Collection extends Component {
     public static double shootOuttakeTimeAuto = 0.05;
     public static double postShootOuttakeWaitAuto = 0.;
     public static double shootOuttakeTime = 0.05;
-    public static boolean autoEngageClutch = false, autoUnengageClutch = false;
-    public static double autoEngageClutchMaxX = 0;
 
     public enum CollectionState {
         OFF, INTAKE_SLOW, INTAKE, OUTTAKE, TRANSFER
@@ -170,13 +168,6 @@ public class Collection extends Component {
 
     @Override
     public void update() {
-        if(!robot.turret.inRange && autoUnengageClutch)
-            setClutchState(ClutchState.UNENGAGED);
-        else if (autoEngageClutch && clutchState == ClutchState.UNENGAGED &&
-                robot.drive.localizer.getPose().position.x < autoEngageClutchMaxX) {
-            setClutchState(ClutchState.ENGAGED);
-            setCollectionState(CollectionState.INTAKE);
-        }
 
         boolean turretAccurate = Math.abs(robot.turret.positionError) <= Turret.turretParams.maxClutchEngageError;
         if (turretAccurate) {
