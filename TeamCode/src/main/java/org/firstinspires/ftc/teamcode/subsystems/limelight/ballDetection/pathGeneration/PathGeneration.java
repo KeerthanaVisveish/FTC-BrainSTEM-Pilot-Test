@@ -596,7 +596,7 @@ public class PathGeneration {
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
             if (isWallSafe) {
-                Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                 Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
                 Waypoint w2 = new Waypoint(collectPose).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
                 pathPoses.add(new PathPose(w1, Types.PoseType.EDGE_CASE_PRECOLLECT, Ball.NULL, Types.Approach.CLUSTER_STRAFE));
@@ -623,7 +623,7 @@ public class PathGeneration {
                 }
                 if (isWallSafe) {
                     startCollectPose = new Pose2d(startCollectPose.position.x, startCollectPose.position.y, MathUtils.averageAngle(startCollectPose.heading.toDouble(), collectPose.heading.toDouble()));
-                    Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                    Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                     Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
                     Waypoint w2 = new Waypoint(startCollectPose).setPassPosition(true);
                     Waypoint w3 = new Waypoint(collectPose).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);

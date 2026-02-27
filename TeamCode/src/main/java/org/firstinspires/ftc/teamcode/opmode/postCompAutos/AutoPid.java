@@ -186,6 +186,9 @@ public abstract class AutoPid extends LinearOpMode {
         robot.shootingSystem.resetTurretEncoder();
         robot.turret.setSmoothWhenOutOfRange(false);
         robot.collection.setInAuto(true);
+        telemetry.addData("2nd collect pose", MathUtils.formatPose3(collect2Pose));
+        telemetry.addData("3rd collect pose", MathUtils.formatPose3(collect3Pose));
+        telemetry.addData("gate open pos", MathUtils.formatPose3(gateCollectOpenNearPose));
 
         telemetry.addData("alliance", alliance);
         telemetry.addData("auto string", customizable.collectionOrder);
@@ -352,7 +355,7 @@ public abstract class AutoPid extends LinearOpMode {
     private Action getFirstCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, boolean last) {
         DrivePath firstCollectDrive;
         if(fromNear) {
-            firstCollectDrive = new DrivePath(robot.drive, telemetry, new Waypoint(collect1Pose, new BoxTolerance(0.75, 2, 3))
+            firstCollectDrive = new DrivePath(robot.drive, telemetry, new Waypoint(collect1Pose, new BoxTolerance(0.75, 2, Math.toRadians(3)))
                     .setMinLinearPower(collect.collectDrivePower)
                     .setMaxLinearPower(collect.collectDrivePower)
                     .setMaxTime(1.4)
@@ -459,7 +462,7 @@ public abstract class AutoPid extends LinearOpMode {
     }
     private Action getLoadingCollectAndShoot(Pose2d shootPose, boolean toNear) {
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
-                new Waypoint(preLoadingPose, new BoxTolerance(3.5, 2, 4))
+                new Waypoint(preLoadingPose, new BoxTolerance(3.5, 2, Math.toRadians(4)))
                         .setMaxTime(2).setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
                 new Waypoint(postLoadingPose)
                         .setMinLinearPower(collect.loadingZoneCollectDrivePower).setMaxLinearPower(collect.loadingZoneCollectDrivePower)

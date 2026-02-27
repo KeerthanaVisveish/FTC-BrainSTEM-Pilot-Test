@@ -56,6 +56,10 @@ public class LoadingZoneBallCollection extends OpMode {
         telemetry.update();
     }
     @Override
+    public void start() {
+        robot.startOpmode();
+    }
+    @Override
     public void stop() {
         robot.limelight.limelight.stop();
     }

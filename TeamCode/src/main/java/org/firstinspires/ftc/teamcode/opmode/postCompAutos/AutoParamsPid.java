@@ -7,7 +7,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Tolerance;
 public class AutoParamsPid {
     public static class Collect {
         public double hitGateVelThreshold = 10;
-        public double curvedCollect2NearA = Math.toRadians(50);
+        public double curvedCollect2NearA = Math.toRadians(54);
         public double curvedCollect2FarA = Math.toRadians(135);
         public double collectDrivePower = 0.8, gateOpenDrivePower = .7;
         public double gateHitDrivePower = .5, gateHitActivateDist = 5;
@@ -16,7 +16,7 @@ public class AutoParamsPid {
         public double loadingZoneCollectDrivePower = 0.3;
         public double waypointSlowDown = 0.4;
         public double collectWaypointTolX = 0.75, collectWaypointTolY = 2, collectWaypointTolHeading = 7;
-        public Tolerance waypointTol = new BoxTolerance(collectWaypointTolX, collectWaypointTolY, collectWaypointTolHeading);
+        public Tolerance waypointTol = new BoxTolerance(collectWaypointTolX, collectWaypointTolY, Math.toRadians(collectWaypointTolHeading));
         public double lineARed = Math.toRadians(90), lineABlue = Math.toRadians(-90);
         public double firstX = -12.5, postFirstY = 46;
         public double secondX = 12, postSecondY = 47, postSecondYOffsetIfOpenGate = 3;
@@ -32,7 +32,7 @@ public class AutoParamsPid {
         public double cornerCollectXBlue = 66, cornerCollectYBlue = -68, cornerCollectABlue = Math.toRadians(-90);
         public double cornerCollectRetryX = 55, cornerCollectRetryYRed = 46, cornerCollectRetryYBlue = -46;
         public double gateCollectDistTol = 1, gateCollectHeadingTol = 5;
-        public Tolerance gateCollectOpenTol = new BoxTolerance(gateCollectDistTol, gateCollectHeadingTol);
+        public Tolerance gateCollectOpenTol = new BoxTolerance(gateCollectDistTol, Math.toRadians(gateCollectHeadingTol));
         public double gateCollectMinPower = 0.4;
         public double[] gateCollectOpenFarRed = { 8, 61, 116 };
         public double[] gateCollectOpenFarBlue = { 8, -61, -116 };
@@ -53,7 +53,7 @@ public class AutoParamsPid {
         public double gateShootTStartError = 35, gateShootTFinishError = 18;
         public PathParams.HeadingLerpType preloadHeadingLerp = PathParams.HeadingLerpType.TANGENT;
         public double waypointTolX = 3, waypointTolY = 3, waypointTolA = Math.toRadians(5);
-        public Tolerance waypointTol = new BoxTolerance(waypointTolX, waypointTolY, waypointTolA);
+        public Tolerance waypointTol = new BoxTolerance(waypointTolX, waypointTolY, Math.toRadians(waypointTolA));
         public double waypointSlowDown = 0.3;
 
         // shooting positions

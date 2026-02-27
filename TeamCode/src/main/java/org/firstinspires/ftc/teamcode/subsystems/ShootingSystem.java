@@ -399,6 +399,7 @@ public class ShootingSystem {
         telemetry.addData("vx", vx);
         telemetry.addData("vy", vy);
         telemetry.addData("vh", vh);
+        telemetry.addData("current lookahead", currentLookAhead);
         telemetry.addLine();
         telemetry.addData("rel height to target meters", relGoalHeightM);
         telemetry.addData("dist state", distState);

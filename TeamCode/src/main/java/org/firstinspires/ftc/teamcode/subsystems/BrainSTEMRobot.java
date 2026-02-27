@@ -71,6 +71,7 @@ public class BrainSTEMRobot {
 
         timer = new ElapsedTime();
         timer.reset();
+        filteredVoltage = 13;
     }
     public void startOpmode() {
         timer.reset();
@@ -85,7 +86,6 @@ public class BrainSTEMRobot {
         if(enablePinpoint)
             drive.updatePoseEstimate();
         shootingSystem.updateInfo(useTurretLookAhead);
-
 
         Pose2d pose = drive.localizer.getPose();
         telemetry.addData("Robot Pose", MathUtils.format3(pose.position.x) + ", " + MathUtils.format3(pose.position.y) + " | " + MathUtils.format3(pose.heading.toDouble()));
