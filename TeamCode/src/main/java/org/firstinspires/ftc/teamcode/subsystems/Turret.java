@@ -41,7 +41,7 @@ public class Turret extends Component {
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = Math.toRadians(1);
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .02, BPos = 0.015, x0Pos = 150, kPos = .03;
+        public double APos = .015, BPos = 0.013, x0Pos = 150, kPos = .03;
         public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .1;
         public double AVel = .15, BVel = .003, x0Vel = 30, kVel = .04;
         public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
