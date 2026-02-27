@@ -165,14 +165,14 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
 
-        if (gp1.isFirstB()) {
-            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
-                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-            else {
-                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
-            }
-        }
+//        if (gp1.isFirstB()) {
+//            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
+//                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
+//            else {
+//                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
+//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
+//            }
+//        }
 
         if (gp1.isFirstRightBumper())
             if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
@@ -198,16 +198,18 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     private void updateDriver2() {
         if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED) {
             if (gp2.isFirstA())
-                if (robot.collection.getCollectionState() == Collection.CollectionState.INTAKE)
-                    robot.collection.setCollectionState(Collection.CollectionState.OFF);
-                else
+                if (robot.collection.getCollectionState() == Collection.CollectionState.OFF)
                     robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
+                else
+                    robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
         if (gp2.isFirstB())
             if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
                 robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-            else
+            else {
                 robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
+//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
+            }
 
         if (gp2.isFirstLeftBumper())
             robot.collection.setFlickerState(Collection.FlickerState.HALF_UP_DOWN);
@@ -233,8 +235,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.drive.pinpoint().setPose(resetPose);
             robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
         }
-//        if (gp2.isFirstBack())
-//            robot.limelight.takePic();
     }
     private void updateDashboardField() {
         TelemetryPacket packet = new TelemetryPacket();

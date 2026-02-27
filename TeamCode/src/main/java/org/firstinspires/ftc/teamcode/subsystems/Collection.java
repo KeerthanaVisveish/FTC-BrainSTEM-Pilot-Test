@@ -35,7 +35,7 @@ public class Collection extends Component {
     public static Params params = new Params();
 
     public enum CollectionState {
-        OFF, CLUTCH_ENGAGE_INTAKE, INTAKE, OUTTAKE, TRANSFER
+        OFF, CLUTCH_ENGAGE_INTAKE, INTAKE, OUTTAKE
     }
 
     public enum ClutchState {
@@ -122,9 +122,6 @@ public class Collection extends Component {
             case OUTTAKE:
                 collectorMotor.setPower(params.outtakeSpeed);
                 break;
-            case TRANSFER:
-                collectorMotor.setPower(0.1);
-                break;
         }
     }
     public ClutchState getClutchState() { return clutchState; }
@@ -185,12 +182,11 @@ public class Collection extends Component {
         switch (getCollectionState()) {
             case OFF:
             case OUTTAKE:
-            case TRANSFER:
                 break;
-            case CLUTCH_ENGAGE_INTAKE:
-                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
-                    setCollectionState(CollectionState.OFF);
-                break;
+//            case CLUTCH_ENGAGE_INTAKE:
+//                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
+//                    setCollectionState(CollectionState.OFF);
+//                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     if (!inAuto && !robot.turret.inRangeForShot() || !robot.turret.onTarget)
