@@ -168,8 +168,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gp1.isFirstB()) {
             if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
                 robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-            else
+            else {
                 robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
+                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
+            }
         }
 
         if (gp1.isFirstRightBumper())

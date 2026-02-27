@@ -1,20 +1,14 @@
 package org.firstinspires.ftc.teamcode.utils.autoHelpers;
 
-import androidx.annotation.NonNull;
-
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SleepAction;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
@@ -133,7 +127,7 @@ public class AutoCommands {
         return packet -> {
             robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
             robot.collection.outtakeAfterClutchEngage = false;
-            robot.collection.clutch_timer.reset();
+            robot.collection.clutchTimer.reset();
             return false;
         };
     }
@@ -169,12 +163,6 @@ public class AutoCommands {
     public Action runIntake() {
         return packet -> {
             robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
-            return false;
-        };
-    }
-    public Action intakeSlow() {
-        return telemetryPacket -> {
-            robot.collection.setCollectionState(Collection.CollectionState.INTAKE_SLOW);
             return false;
         };
     }

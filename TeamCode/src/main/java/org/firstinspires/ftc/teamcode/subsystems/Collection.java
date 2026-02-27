@@ -12,12 +12,30 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
 public class Collection extends Component {
-    public static double shootOuttakeTimeAuto = 0.05;
-    public static double postShootOuttakeWaitAuto = 0.;
-    public static double shootOuttakeTime = 0.05;
+
+    public static class Params{
+        public double engagedPos = 0.1;
+        public double disengagedPos = 0.65;
+        public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
+        public double slowIntakePow = 0.3, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOutOfRangeIntakePow = 0, shooterNotGoodIntakePow = .7;
+        public double outtakeSpeed = -0.5;
+        public double laserBallThreshold = 2.5;
+        public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
+        public double flickerRightMinPwm = 1491, flickerRightMaxPwm = 1641;
+        public double flickerFullUpPos = 0.8;
+        public double flickerHalfUpPos = 0.4;
+        public double flickerDownPos = 0.05;
+        public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
+        public double shootOuttakeTimeAuto = 0.05;
+        public double postShootOuttakeWaitAuto = 0.;
+        public double shootOuttakeTime = 0.05;
+        public double clutchEngageRunIntakeTime = 0.05;
+    }
+
+    public static Params params = new Params();
 
     public enum CollectionState {
-        OFF, INTAKE_SLOW, INTAKE, OUTTAKE, TRANSFER
+        OFF, CLUTCH_ENGAGE_INTAKE, INTAKE, OUTTAKE, TRANSFER
     }
 
     public enum ClutchState {
@@ -48,25 +66,10 @@ public class Collection extends Component {
     private double timerStart = 0;
     private boolean timerRunning = false;
     private boolean has3Balls = false, autoCollectHas3Balls = false;
-    private final ElapsedTime timer = new ElapsedTime();
-    public final ElapsedTime clutch_timer = new ElapsedTime();
+    private final ElapsedTime intake3BallsTimer = new ElapsedTime();
+    public final ElapsedTime clutchTimer = new ElapsedTime();
+    public final ElapsedTime collectionStateTimer = new ElapsedTime();
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
-    public static class Params{
-        public double engagedPos = 0.1;
-        public double disengagedPos = 0.65;
-        public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double slowIntakePow = 0.3, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOutOfRangeIntakePow = 0, shooterNotGoodIntakePow = .7;
-        public double outtakeSpeed = -0.5;
-        public double laserBallThreshold = 2.5;
-        public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
-        public double flickerRightMinPwm = 1491, flickerRightMaxPwm = 1641;
-        public double flickerFullUpPos = 0.8;
-        public double flickerHalfUpPos = 0.4;
-        public double flickerDownPos = 0.05;
-        public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
-    }
-
-    public static Params params = new Params();
     private int framesRunning;
     private boolean inAuto;
     public Collection(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
@@ -95,8 +98,9 @@ public class Collection extends Component {
         setClutchState(ClutchState.UNENGAGED);
         setFlickerState(FlickerState.DOWN);
 
-        timer.reset();
-        clutch_timer.reset();
+        intake3BallsTimer.reset();
+        clutchTimer.reset();
+        collectionStateTimer.reset();
     }
 
     public void setInAuto(boolean inAuto) {
@@ -104,12 +108,15 @@ public class Collection extends Component {
     }
     public CollectionState getCollectionState() { return collectionState; }
     public void setCollectionState(CollectionState collectionState) {
+        if (collectionState != this.collectionState)
+            collectionStateTimer.reset();
+
         this.collectionState = collectionState;
         switch (collectionState) {
             case OFF:
                 collectorMotor.setPower(0);
                 break;
-            case INTAKE_SLOW:
+            case CLUTCH_ENGAGE_INTAKE:
                 collectorMotor.setPower(params.slowIntakePow);
                 break;
             case OUTTAKE:
@@ -156,10 +163,10 @@ public class Collection extends Component {
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
         telemetry.addData("collection state", collectionState);
+        telemetry.addData("cur state time", collectionStateTimer.seconds());
         telemetry.addData("power", collectorMotor.getPower());
         telemetry.addData("flicker state", getFlickerState());
         telemetry.addData("flicker left pos", flickerLeft.getPosition());
-//        telemetry.addData("flicker right pos", flickerRight.getPosition());
         telemetry.addData("bl dist", backLeftLaserDist);
         telemetry.addData("br dist", backRightLaserDist);
         telemetry.addData("fl dist", frontLeftLaserDist);
@@ -189,9 +196,12 @@ public class Collection extends Component {
 
         switch (getCollectionState()) {
             case OFF:
-            case INTAKE_SLOW:
             case OUTTAKE:
             case TRANSFER:
+                break;
+            case CLUTCH_ENGAGE_INTAKE:
+                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
+                    setCollectionState(CollectionState.OFF);
                 break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
@@ -211,7 +221,7 @@ public class Collection extends Component {
 
         switch (getClutchState()) {
             case ENGAGED:
-                if(clutch_timer.seconds() < shootOuttakeTime && outtakeAfterClutchEngage)
+                if(clutchTimer.seconds() < params.shootOuttakeTime && outtakeAfterClutchEngage)
                     setCollectionState(CollectionState.OUTTAKE);
                 else if(getCollectionState() == CollectionState.OUTTAKE)
                     setCollectionState(CollectionState.OFF);
@@ -219,7 +229,7 @@ public class Collection extends Component {
 
             case UNENGAGED:
                 outtakeAfterClutchEngage = true;
-                clutch_timer.reset();
+                clutchTimer.reset();
                 break;
         }
 
@@ -256,10 +266,7 @@ public class Collection extends Component {
                 break;
         }
 
-        checkForIntakeBalls(timer.seconds());
-    }
-    public double getIntakePower() {
-        return collectorMotor.getPower();
+        checkForIntakeBalls(intake3BallsTimer.seconds());
     }
 
     private double voltageToDistance(double voltage) {

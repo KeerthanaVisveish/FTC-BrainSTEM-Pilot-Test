@@ -280,9 +280,9 @@ public abstract class AutoPid extends LinearOpMode {
                         new SequentialAction(
                                 autoCommands.engageClutch(),
                                 autoCommands.reverseIntake(),
-                                new SleepAction(Collection.shootOuttakeTimeAuto),
+                                new SleepAction(Collection.params.shootOuttakeTimeAuto),
                                 autoCommands.stopIntake(),
-                                new SleepAction(Collection.postShootOuttakeWaitAuto)
+                                new SleepAction(Collection.params.postShootOuttakeWaitAuto)
                         )
                 ),
                 getShootAction()
@@ -336,7 +336,7 @@ public abstract class AutoPid extends LinearOpMode {
                 new ParallelAction(
                         new InstantAction(() -> autoState = AutoState.SHOOT),
                         autoCommands.reverseIntake(),
-                        new SleepAction(Collection.shootOuttakeTimeAuto)
+                        new SleepAction(Collection.params.shootOuttakeTimeAuto)
                 ),
                 new ParallelAction(
                         autoCommands.stopIntake(),
