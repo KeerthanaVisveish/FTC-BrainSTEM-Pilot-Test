@@ -281,10 +281,14 @@ public class ShootingSystem {
                 Arrays.fill(physicsExitAngleRads, -1);
 
 
-            // old code with no flexibility for shooting while moving
             lookAheadTargetExitSpeedMps = ballTargetExitSpeedMps;
             hoodExitAngleRad = ballExitAngleRad;
-            lookAheadTurretTargetAngleRad = desiredBallDir;
+
+            // basic estimation of turret angle to try account for shooting while moving
+            lookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, lookAheadRobotVelAtTurretMps);
+            lookAheadTurretTargetAngleRad = Math.atan2(lookAheadTargetExitVelMps.z, lookAheadTargetExitVelMps.x);
+            Vector3d noLookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, noLookAheadRobotVelAtTurretMps);
+            currentTurretTargetAngleRad = Math.atan2(noLookAheadTargetExitVelMps.z, noLookAheadTargetExitVelMps.x);
         }
     }
 
