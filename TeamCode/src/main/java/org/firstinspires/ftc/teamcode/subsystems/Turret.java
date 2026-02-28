@@ -27,7 +27,7 @@ public class Turret extends Component {
         public double testingTargetPos = 300;
         public double testingTargetVel = 0;
     }
-    public static class Params {
+    public static class TurretParams {
         public double shotOutOfRangeBuffer = Math.toRadians(0);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
@@ -36,6 +36,7 @@ public class Turret extends Component {
         public double maxAngle = Math.toRadians(95);
         public double maxClutchEngageError = 50; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double maxTurretVelocityError = 200; // ticks/sec
+        public double outOfRangeAngleLerpStart = Math.toRadians(120);
     }
     public static class PowerTuning {
 //        public double kAYInt = .0007, kASlope = -.0000000001, minKA = .0004;
@@ -44,11 +45,12 @@ public class Turret extends Component {
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
         public double APos = .005, BPos = 0.045, x0Pos = 130, kPos = .03;
-        public double kD = 0.0007;
+        public double kD = 0.0007, kDExponent = 1;
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
-        public double noPowerThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
+        public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
+        public double maxVoltage = 7;
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
         public double[] kfPosLookupData = new double[] {
@@ -81,7 +83,7 @@ public class Turret extends Component {
     }
     public static TestingParams testingParams = new TestingParams();
     //    public static GoalParams goalParams = new GoalParams();
-    public static Params turretParams = new Params();
+    public static TurretParams turretParams = new TurretParams();
     public static PowerTuning powerTuning = new PowerTuning();
     public enum TurretState {
         TRACKING, CENTER, TRACK_CUSTOM_TARGET
@@ -97,7 +99,7 @@ public class Turret extends Component {
     public double currentEncoder, currentVelocity, currentAcceleration;
     public double positionError, velocityError;
     public Vector2d perpVelVec;
-    private double kP, kF;
+    private double kP, fVoltage;
     private double kV, kA;
     private final double[] prevErrors;
     private double pVoltage, dVoltage;
@@ -199,7 +201,7 @@ public class Turret extends Component {
         boolean prevInBound = false;
         boolean inBoundEveryTime = true;
         for (int i = 0; i < powerTuning.prevEncoderOscillatingSize; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noPowerThreshold;
+            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noVoltageThreshold;
             if(!curInBound)
                 inBoundEveryTime = false;
             if(i == 0) {
@@ -218,12 +220,12 @@ public class Turret extends Component {
             return false;
         boolean ranAtLeastOnce = false;
         for(int i = 0; i < prevErrors.length; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noPowerThreshold;
+            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noVoltageThreshold;
             if(i == 0) {
                 prevInBound = curInBound;
                 continue;
             }
-            if (prevErrors[i] == powerTuning.noPowerThreshold)
+            if (prevErrors[i] == powerTuning.noVoltageThreshold)
                 continue;
 
             ranAtLeastOnce = true;
@@ -246,7 +248,7 @@ public class Turret extends Component {
             wasOscillating = true;
         if(wasOscillating && Math.abs(positionError) > powerTuning.noPowerIfOscillatingThreshold)
             wasOscillating = false;
-        if((Math.abs(positionError) <= powerTuning.noPowerThreshold || wasOscillating) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
+        if((Math.abs(positionError) <= powerTuning.noVoltageThreshold || wasOscillating) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
             onTarget = true;
             return 0;
         }
@@ -261,7 +263,7 @@ public class Turret extends Component {
         double dir = Math.signum(positionError);
         double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
         double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
-        kF = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
+        fVoltage = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
 
         kP = getLogisticErrorKP(Math.abs(positionError));
         kP = getLogisticErrorKP(Math.abs(positionError));
@@ -269,7 +271,8 @@ public class Turret extends Component {
             kP *= getLogisticKPScaler(Math.abs(targetVelocity));
         pVoltage = kP * positionError;
 
-        dVoltage = powerTuning.kD * (positionError - prevPositionError) / robot.shootingSystem.dt;
+        double errorSpeed = Math.abs((positionError - prevPositionError) / robot.shootingSystem.dt);
+        dVoltage = powerTuning.kD * Math.pow(errorSpeed, powerTuning.kDExponent);
         dVoltage = Math.abs(dVoltage) * -Math.signum(positionError);
 
         kV = getLogisticKV(Math.abs(targetVelocity));
@@ -278,7 +281,9 @@ public class Turret extends Component {
         kA = Math.max(Math.abs(targetAccel) * powerTuning.kASlope + powerTuning.kAYInt, powerTuning.minKA);
         aVoltage = targetVelocity == 0 ? kA * targetAccel : 0;
 
-        return kF + pVoltage + dVoltage + vVoltage + aVoltage;
+        double totalVoltage = fVoltage + pVoltage + dVoltage + vVoltage + aVoltage;
+        totalVoltage = Range.clip(totalVoltage, -powerTuning.maxVoltage, powerTuning.maxVoltage);
+        return totalVoltage;
     }
     private double getLogisticErrorKP(double errorMag) {
         return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
@@ -311,24 +316,25 @@ public class Turret extends Component {
         // updating target angle
         targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
         // mirrors the angle if the turret cannot reach it (visual cue)
-        double maxAngleRad = turretParams.maxAngle;
-        if (targetRelAngleRad > maxAngleRad) {
-            if(smoothWhenOutOfRange)
-                targetRelAngleRad = Math.PI - targetRelAngleRad;
+        inRange = Math.abs(targetRelAngleRad) <= turretParams.maxAngle;
+        if (!inRange) {
+            double sign = Math.signum(targetRelAngleRad);
+            double max = sign * turretParams.maxAngle;
+            if(smoothWhenOutOfRange) {
+                if (Math.abs(targetRelAngleRad) <= turretParams.outOfRangeAngleLerpStart)
+                    targetRelAngleRad = max;
+                else {
+                    double a = Math.abs(turretParams.outOfRangeAngleLerpStart);
+                    double b = Math.PI;
+                    double x = Math.abs(targetRelAngleRad);
+                    double outOfBoundsT = MathUtils.inverseLerp(a, b, x);
+                    targetRelAngleRad = MathUtils.lerp(max, 0, outOfBoundsT);
+                }
+            }
             else
-                targetRelAngleRad = maxAngleRad;
-            inRange = false;
+                targetRelAngleRad = max;
         }
-        else if (targetRelAngleRad < -maxAngleRad) {
-            if(smoothWhenOutOfRange)
-                targetRelAngleRad = -Math.PI - targetRelAngleRad;
-            else
-                targetRelAngleRad = -maxAngleRad;
-            inRange = false;
-        }
-        else
-            inRange = true;
-        inRangeForShot = Math.abs(targetRelAngleRad) < maxAngleRad + turretParams.shotOutOfRangeBuffer;
+        inRangeForShot = Math.abs(targetRelAngleRad) < turretParams.maxAngle + turretParams.shotOutOfRangeBuffer;
 
         targetEncoder = (int) (targetRelAngleRad * turretParams.ticksPerRad);
         targetEncoder += robot.shootingSystem.distState != ShootingSystem.Dist.FAR ? nearEncoderAdjustment : farEncoderAdjustment;
@@ -367,13 +373,16 @@ public class Turret extends Component {
         telemetry.addData("voltage accel", aVoltage);
         telemetry.addData("voltage kd", dVoltage);
         telemetry.addData("kP", kP);
-        telemetry.addData("kf", kF);
+        telemetry.addData("kf", fVoltage);
         telemetry.addData("kV", kV);
         telemetry.addData("kA", kA);
         telemetry.addLine("-----");
         telemetry.addData("target encoder", targetEncoder);
         telemetry.addData("target velocity", targetVelocity);
         telemetry.addData("target accel", targetAccel);
+        telemetry.addData("encoder error", positionError);
+        telemetry.addData("angle degree error", Math.toDegrees(positionError / turretParams.ticksPerRad));
+        telemetry.addData("velocity error", velocityError);
         telemetry.addData("target goal angular vel", goalAngularVel);
         telemetry.addData("target robot angular vel", -robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
         telemetry.addData("desired ball dir", Math.toDegrees(robot.shootingSystem.desiredBallDir));
@@ -385,9 +394,6 @@ public class Turret extends Component {
 //        telemetry.addData("turret current relative angle deg", Math.toDegrees(curRelAngleRad));
 //        telemetry.addData("turret target relative angle deg", Math.toDegrees(targetRelAngleRad));
 //        telemetry.addLine("-----");
-        telemetry.addData("angle degree error", Math.toDegrees(positionError / turretParams.ticksPerRad));
-        telemetry.addData("encoder error", positionError);
-        telemetry.addData("velocity error", velocityError);
         telemetry.addData("voltage", robot.getFilteredVoltage());
         telemetry.addData("voltage raw", robot.getRawVoltage());
         telemetry.addLine("------");
@@ -419,7 +425,7 @@ public class Turret extends Component {
                     double clippedAngle = Range.clip(targetAngle, -turretParams.maxAngle, turretParams.maxAngle);
                     targetEncoder = clippedAngle * turretParams.ticksPerRad;
                 }),
-                telemetryPacket -> positionError > powerTuning.noPowerThreshold
+                telemetryPacket -> positionError > powerTuning.noVoltageThreshold
         );
     }
 }

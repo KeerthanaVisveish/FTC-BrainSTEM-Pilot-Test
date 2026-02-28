@@ -101,6 +101,10 @@ public class MathUtils {
     public static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
     }
+    // start, end, current
+    public static double inverseLerp(double a, double b, double x) {
+        return (x - a) / (b - a);
+    }
     public static double covariance(double[] a, double[] b) {
         if(a.length != b.length)
             throw new IllegalArgumentException("lists are of length " + a.length + " & " + b.length + "respectively; they must match");

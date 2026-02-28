@@ -190,7 +190,7 @@ public class Collection extends Component {
 //                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
-                    if (!inAuto && (!robot.turret.inRangeForShot() || !robot.turret.onTarget || !robot.shootingSystem.shooterGood()))
+                    if (!inAuto && (!robot.turret.inRangeForShot() || !robot.turret.onTarget() || !robot.shootingSystem.shooterGood()))
                         collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
                     else
                         collectorMotor.setPower(params.shootIntakePow);
