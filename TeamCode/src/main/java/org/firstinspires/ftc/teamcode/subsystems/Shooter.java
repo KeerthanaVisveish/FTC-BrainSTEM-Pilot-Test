@@ -90,7 +90,7 @@ public class Shooter extends Component {
                 if(testingParams.testing)
                     setShooterVelocityPID(testingParams.testingVel, robot.shootingSystem.curExitSpeedMps);
                 else
-                    setShooterVelocityPID(robot.shootingSystem.actualTargetExitSpeedMps, robot.shootingSystem.curExitSpeedMps);
+                    setShooterVelocityPID(robot.shootingSystem.lookAheadTargetExitSpeedMps, robot.shootingSystem.curExitSpeedMps);
                 break;
         }
         if(testingParams.testing) {

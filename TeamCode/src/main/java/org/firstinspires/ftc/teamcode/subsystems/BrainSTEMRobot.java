@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
@@ -108,7 +107,7 @@ public class BrainSTEMRobot {
         fieldOverlay.setStroke("green");
         Drawing.drawRobotSimple(fieldOverlay, shootingSystem.turretPose, 5);
         fieldOverlay.setStroke("purple");
-        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.ballExitPos, 0), 3);
+//        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.ballExitPos, 0), 3);
 //        fieldOverlay.setStroke("purple");
 //        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.futureBallExitPos, 0), 3);
 
@@ -121,25 +120,25 @@ public class BrainSTEMRobot {
 
         fieldOverlay.setStroke("purple");
         fieldOverlay.strokeLine(
-                shootingSystem.ballExitPos.x,
-                shootingSystem.ballExitPos.y,
-                shootingSystem.ballExitPos.x + dist * Math.cos(turret.currentAbsoluteAngleRad),
-                shootingSystem.ballExitPos.y + dist * Math.sin(turret.currentAbsoluteAngleRad)
+                shootingSystem.turretPose.position.x,
+                shootingSystem.turretPose.position.y,
+                shootingSystem.turretPose.position.x + dist * Math.cos(turret.currentAbsoluteAngleRad),
+                shootingSystem.turretPose.position.y + dist * Math.sin(turret.currentAbsoluteAngleRad)
         );
         fieldOverlay.setStroke("black");
         fieldOverlay.strokeLine(
-                shootingSystem.ballExitPos.x,
-                shootingSystem.ballExitPos.y,
-                shootingSystem.ballExitPos.x + dist * Math.cos(shootingSystem.actualTurretTargetAngleRad),
-                shootingSystem.ballExitPos.y + dist * Math.sin(shootingSystem.actualTurretTargetAngleRad)
+                shootingSystem.turretPose.position.x,
+                shootingSystem.turretPose.position.y,
+                shootingSystem.turretPose.position.x + dist * Math.cos(shootingSystem.lookAheadTurretTargetAngleRad),
+                shootingSystem.turretPose.position.y + dist * Math.sin(shootingSystem.lookAheadTurretTargetAngleRad)
         );
-        double speedMag = shootingSystem.actualTargetExitSpeedMps;
+        double speedMag = shootingSystem.lookAheadTargetExitSpeedMps;
         fieldOverlay.setStroke("red");
         fieldOverlay.strokeLine(
                 shootingSystem.turretPose.position.x,
                 shootingSystem.turretPose.position.y,
-                shootingSystem.ballExitPos.x + dist * Math.cos(shootingSystem.desiredBallDir),
-                shootingSystem.ballExitPos.y + dist * Math.sin(shootingSystem.desiredBallDir)
+                shootingSystem.turretPose.position.x + dist * Math.cos(shootingSystem.desiredBallDir),
+                shootingSystem.turretPose.position.y + dist * Math.sin(shootingSystem.desiredBallDir)
         );
 
         if(turret.perpVelVec != null) {
