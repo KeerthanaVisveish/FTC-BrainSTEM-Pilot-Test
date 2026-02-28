@@ -166,33 +166,26 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
 
-//        if (gp1.isFirstB()) {
-//            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
-//                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-//            else {
-//                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
-//            }
-//        }
+        if(!inCompetition) {
+            if (gp1.isFirstRightBumper())
+                if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
+                    robot.shooter.setShooterState(Shooter.ShooterState.OFF);
+                else
+                    robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
 
-        if (gp1.isFirstRightBumper())
-            if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
-                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-            else
-                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            if (gp1.isFirstLeftBumper()) {
+                if (robot.turret.turretState == Turret.TurretState.CENTER)
+                    robot.turret.turretState = Turret.TurretState.TRACKING;
+                else
+                    robot.turret.turretState = Turret.TurretState.CENTER;
+            }
 
-        if (gp1.isFirstLeftBumper()) {
-            if (robot.turret.turretState == Turret.TurretState.CENTER)
-                robot.turret.turretState = Turret.TurretState.TRACKING;
-            else
-                robot.turret.turretState = Turret.TurretState.CENTER;
-        }
-
-        if (gp1.isFirstBack()) {
-            robot.limelight.localization.maxTranslationalVariance = 0;
-            robot.limelight.localization.maxHeadingVarianceDeg = 0;
-            robot.limelight.localization.maxTranslationalError = 0;
-            robot.limelight.localization.maxHeadingErrorDeg = 0;
+            if (gp1.isFirstBack()) {
+                robot.limelight.localization.maxTranslationalVariance = 0;
+                robot.limelight.localization.maxHeadingVarianceDeg = 0;
+                robot.limelight.localization.maxTranslationalError = 0;
+                robot.limelight.localization.maxHeadingErrorDeg = 0;
+            }
         }
     }
 
