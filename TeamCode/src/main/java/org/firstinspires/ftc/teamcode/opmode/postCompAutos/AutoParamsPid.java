@@ -22,7 +22,7 @@ public class AutoParamsPid {
         public double[] firstControlPointFar = {-6, 31, 150};
         public double firstFarT1 = 30, firstFarT2 = 20;
 
-        public double[] secondNearControlPoint = { 7, 26.5, 54};
+        public double[] secondNearControlPoint = { 7.5, 26.5, 56};
         public double secondNearT1 = 30.5, secondNearT2 = 20;
 
         public double[] secondFarControlPoint = {19, 26.5, 135};
@@ -84,7 +84,7 @@ public class AutoParamsPid {
     }
 
     public static class Misc {
-        public double[] startNear = { -61.5, 40.1618, 0 };
+        public double[] startNear = { -61.6, 40.1618, 0 };
         public double[] startFar = { 63, 16.6868, 180 };
         public double[] gate1 = {-3, 55, 90};
         public double[] gate2 = {5, 55, 90};
@@ -93,7 +93,7 @@ public class AutoParamsPid {
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.5;
-        public double gateOpeningWait = 0.2, gateCollectOpenWait = .1;
+        public double gateOpeningWait = 0.2, gateCollectOpenWait = .15;
         public double gateCollectMaxTime = .6;
         public double cornerCollectMaxTime = 1.9;
         public double autoEndTime = 29.5;

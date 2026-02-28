@@ -34,7 +34,7 @@ public class ShootingSystem {
     public static class GoalParams {
         public double nearRedX = -63, nearRedY = 63;
         public double midRedX = -65, midRedY = 65;
-        public double farRedX = -66, farRedY = 65;
+        public double farRedX = -66.5, farRedY = 65;
         public double nearBlueX = -66, nearBlueY = -65;
         public double midBlueX = -66, midBlueY = -65;
         public double farBlueX = -67, farBlueY = -63;
@@ -52,8 +52,8 @@ public class ShootingSystem {
         public double maxShootingDist = 180;
         public double firstShootTolerance = 0.1, physicsShootTolerance = 0.1;
         public double approxNearExitAngRad = Math.toRadians(53), approxFarExitAngRad = Math.toRadians(37);
-        public int lookAheadAvgNum = 5;
-        public double rawLookAheadTime = 0.075; // time to look ahead for pose prediction
+        public int lookAheadAvgNum = 1;
+        public double rawLookAheadTime = 0.15; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492

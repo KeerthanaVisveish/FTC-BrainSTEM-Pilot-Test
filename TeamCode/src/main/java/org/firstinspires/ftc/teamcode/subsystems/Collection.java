@@ -35,7 +35,7 @@ public class Collection extends Component {
     public static Params params = new Params();
 
     public enum CollectionState {
-        OFF, CLUTCH_ENGAGE_INTAKE, INTAKE, OUTTAKE
+        OFF, INTAKE, OUTTAKE,// CLUTCH_ENGAGE_INTAKE
     }
 
     public enum ClutchState {
@@ -116,9 +116,9 @@ public class Collection extends Component {
             case OFF:
                 collectorMotor.setPower(0);
                 break;
-            case CLUTCH_ENGAGE_INTAKE:
-                collectorMotor.setPower(params.clutchEngagePow);
-                break;
+//            case CLUTCH_ENGAGE_INTAKE:
+//                collectorMotor.setPower(params.clutchEngagePow);
+//                break;
             case OUTTAKE:
                 collectorMotor.setPower(params.outtakeSpeed);
                 break;
@@ -131,7 +131,7 @@ public class Collection extends Component {
             case ENGAGED:
                 clutchRight.setPosition(params.engagedPos);
                 clutchLeft.setPosition(params.engagedPos);
-                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
+//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
                 break;
             case UNENGAGED:
                 clutchRight.setPosition(params.disengagedPos);
@@ -184,10 +184,10 @@ public class Collection extends Component {
             case OFF:
             case OUTTAKE:
                 break;
-            case CLUTCH_ENGAGE_INTAKE:
-                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
-                    setCollectionState(CollectionState.OFF);
-                break;
+//            case CLUTCH_ENGAGE_INTAKE:
+//                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
+//                    setCollectionState(CollectionState.OFF);
+//                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     if (!inAuto && !robot.turret.inRangeForShot() || !robot.turret.onTarget)

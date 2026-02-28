@@ -162,10 +162,10 @@ public class MathUtils {
         return new Pose2d(pos[0], pos[1], Math.toRadians(headingDeg));
     }
     public static Pose2d createInvertedPose(double[] pose) {
-        return new Pose2d(pose[0], -pose[1], Math.toRadians(pose[2]));
+        return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
     }
     public static Pose2d createInvertedPose(double[] pos, double headingDeg) {
-        return new Pose2d(pos[0], -pos[1], -Math.toRadians(headingDeg));
+        return new Pose2d(pos[0], -pos[1], Math.toRadians(-headingDeg));
     }
     public static Vector2d createVec(double[] vec) {
         if(vec.length != 2)

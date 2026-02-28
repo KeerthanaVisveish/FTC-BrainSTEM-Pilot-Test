@@ -37,6 +37,7 @@ import java.util.ArrayList;
 @Config
 public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
+        public double secondGaitWait = .75, thirdGateWait = 0;
         public AutoType autoType = AutoType.CUSTOM;
         public String collectionOrder = "n2ngngn1n3n";
         public boolean openGateOnFirst = false;
@@ -90,7 +91,7 @@ public abstract class AutoPid extends LinearOpMode {
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
 
-        perpNearParkLine = isRed ? new Vector2d(1, 1) : new Vector2d(-1, 1);
+        perpNearParkLine = isRed ? new Vector2d(1, 1) : new Vector2d(1, -1);
         perpNearParkLine = perpNearParkLine.div(Math.hypot(perpNearParkLine.x, perpNearParkLine.y));
 
         if(customizable.collectionOrder.charAt(0) == 'n')
@@ -116,7 +117,9 @@ public abstract class AutoPid extends LinearOpMode {
         double preloadX = preloadNear ? shoot.nearPreload[0] : shoot.far[0];
         double preloadY = preloadNear ? shoot.nearPreload[1] : shoot.far[1];
         double preloadA = getShootPose(preloadNear, customizable.collectionOrder.charAt(1) + "").heading.toDouble();
-        Pose2d preloadShootPose = isRed ? new Pose2d(preloadX, preloadY, preloadA) : new Pose2d(preloadX, -preloadY, -preloadA);
+        Pose2d preloadShootPose = isRed ? new Pose2d(preloadX, preloadY, preloadA) : new Pose2d(preloadX, -preloadY, preloadA);
+
+        int numGateCollects = 0;
 
         for(int i=0; i<numPaths; i++) {
             boolean last = i == numPaths - 1;
@@ -146,7 +149,11 @@ public abstract class AutoPid extends LinearOpMode {
                     break;
                 case "l" : actionOrder.add(getLoadingCollectAndShoot(shootPose, toNear)); break;
                 case "c": actionOrder.add(getRepeatedCornerCollectAndShoot(shootPose, fromNear, toNear)); break;
-                case "g": actionOrder.add(getGateCollectAndShoot(shootPose, fromNear, toNear)); break;
+                case "g":
+                    numGateCollects++;
+                    double waitTime = numGateCollects == 2 ? customizable.secondGaitWait : numGateCollects == 3 ? customizable.thirdGateWait : 0;
+                    actionOrder.add(getGateCollectAndShoot(shootPose, fromNear, toNear, waitTime));
+                    break;
             }
         }
 
@@ -522,7 +529,7 @@ public abstract class AutoPid extends LinearOpMode {
         };
     }
 
-    private Action getGateCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
+    private Action getGateCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, double waitTime) {
         DrivePath gateOpenDrive;
         Action gateOpenAction;
         double maxTime;
@@ -557,6 +564,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         Action completeGateCollectDrive = new SequentialAction(
                 autoCommands.stopIntake(),
+                new SleepAction(waitTime),
                 gateOpenAction,
                 autoCommands.runIntake(),
                 new SleepAction(timeConstraints.gateCollectOpenWait),

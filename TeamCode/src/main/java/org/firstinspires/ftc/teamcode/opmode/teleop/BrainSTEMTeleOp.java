@@ -31,8 +31,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
     public static boolean inCompetition = false;
-    public static double[] blueCornerResetPose = { 64.25, 62.75, -90 };
-    public static double[] redCornerResetPose = { 64.25, -62.75, 90 };
+    public static double[] blueCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, 62.75, -90 };
+    public static double[] redCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, -62.75, 90 };
     public static double noMoveJoystickThreshold = 0.1;
 
     BrainSTEMRobot robot;
@@ -156,6 +156,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDriver1() {
+        robot.turret.addOscillationData = gamepad1.dpad_up;
         if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED) {
             if (gp1.gamepad.right_trigger > 0.2)
                 robot.collection.setCollectionState(Collection.CollectionState.INTAKE);

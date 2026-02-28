@@ -1,11 +1,8 @@
 package org.firstinspires.ftc.teamcode.subsystems;
-import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
-import com.acmerobotics.roadrunner.RaceAction;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.util.InterpLUT;
@@ -14,9 +11,11 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
+import org.firstinspires.ftc.teamcode.opmode.testing.TurretLogger;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
-import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+
+import java.util.Arrays;
 
 @Config
 public class Turret extends Component {
@@ -34,45 +33,48 @@ public class Turret extends Component {
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(95);
-        public double maxClutchEngageError = 20; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
-        public double maxTurretVelocityError = 50; // ticks/sec
+        public double maxClutchEngageError = 50; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxTurretVelocityError = 200; // ticks/sec
     }
     public static class PowerTuning {
-        public double kA = .0004;
+//        public double kAYInt = .0007, kASlope = -.0000000001, minKA = .0004;
+        public double kAYInt = 0, kASlope = 0, minKA = 0;
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .014, BPos = 0.013, x0Pos = 150, kPos = .03;
-        public double x0kPScaler = 20, kKPScaler = .25, BKPScaler = .1;
-        public double AVel = .13, BVel = .003, x0Vel = 30, kVel = .04;
-        public double noPowerThreshold = 1, robotNotMovingThreshold = .5;
+        public double APos = .005, BPos = 0.025, x0Pos = 130, kPos = .03;
+        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = .1;
+//        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
+        public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
+        public double noPowerThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
+        public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
         public double[] kfPosLookupData = new double[] {
                 -350, .75,
                 -300, .75,
                 -130, .75,
                 0, .6,
-                30, .75,
-                100, .9,
-                160, .95,
-                170, 1,
-                190, 1.18,
-                230, 1.25,
-                300, 1.45,
-                350, 1.45
+                30, .7,
+                100, .85,
+                160, .9,
+                170, .95,
+                190, 1.1,
+                230, 1.1,
+                300, 1.3,
+                350, 1.3
         };
         public double[] kfNegLookupData = new double[] {
                 -350, -.85,
                 -300, -.85,
                 -156, -.85,
                 -130, -.8,
-                -75, -.7,
-                -25, -.7,
+                -75, -.75,
+                -25, -.75,
                 0, -.7,
-                5, -.75,
-                110, -.75,
-                170, -.75,
-                350, -.75
+                5, -.65,
+                110, -.65,
+                170, -.7,
+                350, -.7
         };
     }
     public static TestingParams testingParams = new TestingParams();
@@ -93,8 +95,8 @@ public class Turret extends Component {
     public double positionError, velocityError;
     public Vector2d perpVelVec;
     private double kP, kF;
-    private double kV;
-//    private double rotKV;
+    private double kV, kA;
+    private double[] prevErrors;
     private double pVoltage;
 //    private double vRVoltage, vTVoltage, vVoltage;
     private double vVoltage;
@@ -109,6 +111,8 @@ public class Turret extends Component {
 
     private double currentTestingTarget;
     private boolean smoothWhenOutOfRange;
+    private boolean wasOscillating;
+    public boolean addOscillationData = false;
 
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
@@ -125,6 +129,7 @@ public class Turret extends Component {
 
         currentTestingTarget = testingParams.testingTargetPos;
         smoothWhenOutOfRange = true;
+        prevErrors = new double[powerTuning.prevEncoderStorageSize];
     }
 
     @Override
@@ -179,9 +184,64 @@ public class Turret extends Component {
                 break;
         }
     }
+    private void updatePrevEncoderErrors(double error) {
+        for(int i = prevErrors.length - 1; i > 0; i--)
+            prevErrors[i] = prevErrors[i-1];
+        prevErrors[0] = error;
+    }
+    private static boolean errorIsOscillating(double[] prevErrors) {
+        boolean oscillating = true;
+        boolean prevInBound = false;
+        boolean inBoundEveryTime = true;
+        for (int i = 0; i < powerTuning.prevEncoderOscillatingSize; i++) {
+            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noPowerThreshold;
+            if(!curInBound)
+                inBoundEveryTime = false;
+            if(i == 0) {
+                prevInBound = curInBound;
+                continue;
+            }
+            if(prevInBound == curInBound) {
+                oscillating = false;
+                break;
+            }
+            prevInBound = curInBound;
+        }
+        if(oscillating)
+            return true;
+        if(inBoundEveryTime)
+            return false;
+        boolean ranAtLeastOnce = false;
+        for(int i = 0; i < prevErrors.length; i++) {
+            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noPowerThreshold;
+            if(i == 0) {
+                prevInBound = curInBound;
+                continue;
+            }
+            if (prevErrors[i] == powerTuning.noPowerThreshold)
+                continue;
+
+            ranAtLeastOnce = true;
+            if(prevInBound == curInBound)
+                return false;
+            prevInBound = curInBound;
+        }
+        if (!ranAtLeastOnce)
+            return false;
+        return true;
+    }
 
     public double calculateTurretVoltage(double positionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
-        if(Math.abs(positionError) <= powerTuning.noPowerThreshold && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
+        updatePrevEncoderErrors(positionError);
+        boolean isOscillating = errorIsOscillating(prevErrors);
+        if (addOscillationData)
+            TurretLogger.addInfo(prevErrors, isOscillating);
+        boolean canStopIfOscillating = Math.abs(positionError) <= powerTuning.noPowerIfOscillatingThreshold && isOscillating;
+        if(canStopIfOscillating)
+            wasOscillating = true;
+        if(wasOscillating && Math.abs(positionError) > powerTuning.noPowerIfOscillatingThreshold)
+            wasOscillating = false;
+        if((Math.abs(positionError) <= powerTuning.noPowerThreshold || wasOscillating) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
             onTarget = true;
             return 0;
         }
@@ -206,7 +266,8 @@ public class Turret extends Component {
         kV = getLogisticKV(Math.abs(targetVelocity));
         vVoltage = kV * targetVelocity;
 
-        aVoltage = powerTuning.kA * targetAccel;
+        kA = Math.max(Math.abs(targetAccel) * powerTuning.kASlope + powerTuning.kAYInt, powerTuning.minKA);
+        aVoltage = targetVelocity == 0 ? kA * targetAccel : 0;
 
         return kF + pVoltage + vVoltage + aVoltage;
     }
@@ -287,12 +348,18 @@ public class Turret extends Component {
         telemetry.addLine("TURRET------");
         telemetry.addData("state", turretState);
         telemetry.addLine("-----");
+        telemetry.addData("add oscillation data", addOscillationData);
+        telemetry.addData("prev errors", Arrays.toString(prevErrors));
+        telemetry.addData("error oscillating", errorIsOscillating(prevErrors));
+        telemetry.addData("was oscillating", wasOscillating);
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
         telemetry.addData("p Voltage", pVoltage);
         telemetry.addData("vel Voltage", vVoltage);
         telemetry.addData("accel Voltage", aVoltage);
         telemetry.addData("kP", kP);
         telemetry.addData("kf", kF);
+        telemetry.addData("kV", kV);
+        telemetry.addData("kA", kA);
         telemetry.addLine("-----");
         telemetry.addData("target encoder", targetEncoder);
         telemetry.addData("target velocity", targetVelocity);
