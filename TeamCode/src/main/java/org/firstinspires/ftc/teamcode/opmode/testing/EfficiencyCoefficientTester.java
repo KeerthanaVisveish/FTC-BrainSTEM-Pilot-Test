@@ -58,8 +58,9 @@ public class EfficiencyCoefficientTester extends OpMode {
         double collectPower = controls.powerIntake ? Collection.params.normIntakePow : 0;
         robot.collection.collectorMotor.setPower(collectPower);
 
-        if (!controls.powerShooter)
-            robot.shootingSystem.setShooterPower(0);
+        if (!controls.powerShooter) {
+//            robot.shootingSystem.setShooterPower(0);
+        }
         else {
             // under the assumption that the turret is facing the robot's direction, only the x offset of the exit position matters
             Pose2d start = new Pose2d(0, 0, 0);

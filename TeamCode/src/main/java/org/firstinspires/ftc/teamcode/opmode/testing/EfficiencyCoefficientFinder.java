@@ -64,8 +64,9 @@ public class EfficiencyCoefficientFinder extends OpMode {
         double collectPower = controls.powerIntake ? Collection.params.normIntakePow : 0;
         robot.collection.collectorMotor.setPower(collectPower);
 
-        if (controls.targetShooterVelocityTicksPerSec == 0 || !controls.powerShooter)
-            robot.shootingSystem.setShooterPower(0);
+        if (controls.targetShooterVelocityTicksPerSec == 0 || !controls.powerShooter) {
+//            robot.shootingSystem.setShooterPower(0);
+        }
         else {
             shooterVelTicksPerSec = robot.shootingSystem.getFilteredShooterSpeedTps();
             robot.shooter.setShooterVelocityPID(controls.targetShooterVelocityTicksPerSec, shooterVelTicksPerSec);

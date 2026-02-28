@@ -11,15 +11,20 @@ import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 @Config
 public class Shooter extends Component {
     public static class ShooterParams {
-        public double kP = 0.5;
+//        public double kP = 0.5;
+        public double kP = 6.75;
         public double kI = 0.0;
         public double kD = 0.0;
-        public double kV = 0.122;
+//        public double kV = 0.122;
+        public double kVYInt = 1.63, kVSlope = -0.02005;
         public double shotVelDropThreshold = 30;
         public double avg3BallShootTime = .7;
         public int startingShooterSpeedAdjustment = 0;
-        public double minPower = -0.15, maxPower = 0.99;
-        public double shotRecoveryPower = 0.99, shotRecoveryError = 0.08;
+//        public double minPower = -0.15, maxPower = 0.99;
+        public double minVoltage = -2.025, maxVoltage = 15;
+//        public double shotRecoveryPower = 0.99;
+        public double shotRecoveryVoltage = 15;
+        public double shotRecoveryError = 0.08; // in meters per second
     }
     public static class TestingParams {
         public boolean testing = false;
@@ -41,6 +46,7 @@ public class Shooter extends Component {
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
     private boolean wasPrevIncreasing;
+    private double pidVoltage, velocityVoltage, totalVoltage;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
@@ -60,23 +66,24 @@ public class Shooter extends Component {
         else
             shooterPID.setTarget(targetVelocityMps + farVelocityAdjustment);
 
-        double pidOutput = -shooterPID.update(currentShooterVelocityMps);
-        double feedForward = shooterParams.kV * targetVelocityMps;
-        double totalPower = pidOutput + feedForward;
+        pidVoltage = -shooterPID.update(currentShooterVelocityMps);
+        double kV = shooterParams.kVYInt + shooterParams.kVSlope * targetVelocityMps;
+        velocityVoltage = kV * targetVelocityMps;
+        totalVoltage = pidVoltage + velocityVoltage;
 
-        totalPower = Range.clip(totalPower, shooterParams.minPower, shooterParams.maxPower);
+        totalVoltage = Range.clip(totalVoltage, shooterParams.minVoltage, shooterParams.maxVoltage);
         double error = targetVelocityMps - currentShooterVelocityMps;
         if(error > shooterParams.shotRecoveryError)
-            totalPower = shooterParams.shotRecoveryPower;
+            totalVoltage = shooterParams.shotRecoveryVoltage;
 
-        robot.shootingSystem.setShooterPower(totalPower);
+        robot.shootingSystem.setShooterVoltage(totalVoltage);
     }
 
     @Override
     public void update(){
         switch (shooterState) {
             case OFF:
-                robot.shootingSystem.setShooterPower(0);
+                robot.shootingSystem.setShooterVoltage(0);
                 break;
 
             case UPDATE:
@@ -129,6 +136,9 @@ public class Shooter extends Component {
         telemetry.addLine("SHOOTER------");
         telemetry.addData("  pid target vel", shooterPID.getTarget());
         telemetry.addData("  shooter power", robot.shootingSystem.getShooterPower());
+        telemetry.addData("  voltage total", totalVoltage);
+        telemetry.addData("  voltage pid", pidVoltage);
+        telemetry.addData("  voltage velocity", velocityVoltage);
         telemetry.addData("  shooter filtered vel tps", robot.shootingSystem.getFilteredShooterSpeedTps());
         telemetry.addData("  shooter raw vel tps", robot.shootingSystem.getRawShooterSpeedTps());
         telemetry.addData("  shooter filtered vel mps", robot.shootingSystem.curExitSpeedMps);

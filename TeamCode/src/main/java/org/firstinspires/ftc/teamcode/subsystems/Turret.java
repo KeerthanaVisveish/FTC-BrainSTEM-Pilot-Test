@@ -13,6 +13,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.opmode.testing.TurretLogger;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.Arrays;
@@ -42,8 +43,9 @@ public class Turret extends Component {
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .005, BPos = 0.025, x0Pos = 130, kPos = .03;
-        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = .1;
+        public double APos = .005, BPos = 0.045, x0Pos = 130, kPos = .03;
+        public double kD = 0.0007;
+        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
         public double noPowerThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
@@ -87,6 +89,7 @@ public class Turret extends Component {
     public TurretState turretState;
     private int nearEncoderAdjustment, farEncoderAdjustment;
     public double targetEncoder;
+    private PIDController pidController;
 //    private double targetVelocityFromRotation, targetVelocityFromTranslation;
     private double targetVelocity;
     private double goalAngularVel;
@@ -97,7 +100,7 @@ public class Turret extends Component {
     private double kP, kF;
     private double kV, kA;
     private double[] prevErrors;
-    private double pVoltage;
+    private double pVoltage, dVoltage;
 //    private double vRVoltage, vTVoltage, vVoltage;
     private double vVoltage;
     private double aVoltage;
@@ -135,6 +138,7 @@ public class Turret extends Component {
     @Override
     public void update() {
         currentEncoder = robot.shootingSystem.getTurretEncoder();
+        double prevPositionError = positionError;
         double prevVelocity = currentVelocity;
         currentVelocity = robot.shootingSystem.getTurretVelTps();
         currentAcceleration = (currentVelocity - prevVelocity) / robot.shootingSystem.dt;
@@ -153,7 +157,7 @@ public class Turret extends Component {
             }
             targetEncoder = currentTestingTarget;
             targetVelocity = testingParams.testingTargetVel * errorSign;
-            robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(positionError, targetVelocity, 0, 0));
+            robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(positionError, prevPositionError, targetVelocity, 0, 0));
             return;
         }
 
@@ -166,20 +170,20 @@ public class Turret extends Component {
         switch (turretState) {
             case TRACKING:
                 updateTargetToGoal();
-                motorVoltage = calculateTurretVoltage(positionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps);
+                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case CENTER:
                 inRange = true;
                 targetEncoder = 0;
                 positionError = -currentEncoder;
-                motorVoltage = calculateTurretVoltage(positionError, 0, 0, 0);
+                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, 0, 0, 0);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case TRACK_CUSTOM_TARGET:
                 inRange = true; // i clip targetEncoder so its always in range
                 positionError = targetEncoder - currentEncoder;
-                motorVoltage = calculateTurretVoltage(positionError, 0, 0, 0);
+                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, 0, 0, 0);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
         }
@@ -231,7 +235,7 @@ public class Turret extends Component {
         return true;
     }
 
-    public double calculateTurretVoltage(double positionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
+    public double calculateTurretVoltage(double positionError, double prevPositionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
         updatePrevEncoderErrors(positionError);
         boolean isOscillating = errorIsOscillating(prevErrors);
         if (addOscillationData)
@@ -263,13 +267,17 @@ public class Turret extends Component {
         if(Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
             kP *= getLogisticKPScaler(Math.abs(targetVelocity));
         pVoltage = kP * positionError;
+
+        dVoltage = powerTuning.kD * (positionError - prevPositionError) / robot.shootingSystem.dt;
+        dVoltage = Math.abs(dVoltage) * -Math.signum(positionError);
+
         kV = getLogisticKV(Math.abs(targetVelocity));
         vVoltage = kV * targetVelocity;
 
         kA = Math.max(Math.abs(targetAccel) * powerTuning.kASlope + powerTuning.kAYInt, powerTuning.minKA);
         aVoltage = targetVelocity == 0 ? kA * targetAccel : 0;
 
-        return kF + pVoltage + vVoltage + aVoltage;
+        return kF + pVoltage + dVoltage + vVoltage + aVoltage;
     }
     private double getLogisticErrorKP(double errorMag) {
         return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
@@ -353,9 +361,10 @@ public class Turret extends Component {
         telemetry.addData("error oscillating", errorIsOscillating(prevErrors));
         telemetry.addData("was oscillating", wasOscillating);
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
-        telemetry.addData("p Voltage", pVoltage);
-        telemetry.addData("vel Voltage", vVoltage);
-        telemetry.addData("accel Voltage", aVoltage);
+        telemetry.addData("voltage kP", pVoltage);
+        telemetry.addData("voltage vel", vVoltage);
+        telemetry.addData("voltage accel", aVoltage);
+        telemetry.addData("voltage kd", dVoltage);
         telemetry.addData("kP", kP);
         telemetry.addData("kf", kF);
         telemetry.addData("kV", kV);
