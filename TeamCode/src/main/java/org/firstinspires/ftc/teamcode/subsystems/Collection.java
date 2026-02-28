@@ -30,6 +30,7 @@ public class Collection extends Component {
         public double postShootOuttakeWaitAuto = 0.;
         public double shootOuttakeTime = 0.05;
         public double clutchEngageRunIntakeTime = 0.3;
+        public boolean useShootingSafetyInterlocks = true;
     }
 
     public static Params params = new Params();
@@ -190,7 +191,9 @@ public class Collection extends Component {
 //                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
-                    if (!inAuto && (!robot.turret.inRangeForShot() || !robot.turret.onTarget() || !robot.shootingSystem.shooterGood()))
+                    boolean shouldUseSafetyInterlocks = !inAuto && params.useShootingSafetyInterlocks;
+                    boolean meetsSafetyInterlocks = robot.turret.inRangeForShot() && robot.turret.onTarget() && robot.shootingSystem.shooterGood();
+                    if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks)
                         collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
                     else
                         collectorMotor.setPower(params.shootIntakePow);
