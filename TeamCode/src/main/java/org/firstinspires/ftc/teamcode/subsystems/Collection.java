@@ -17,7 +17,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double clutchEngagePow = 0.7, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, turretOffTargetIntakePow = 0, shooterNotGoodIntakePow = .7;
+        public double clutchEngagePow = 0.7, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, shooterTurretOffTargetIntakePow = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -190,10 +190,8 @@ public class Collection extends Component {
 //                break;
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
-                    if (!inAuto && !robot.turret.inRangeForShot() || !robot.turret.onTarget)
-                        collectorMotor.setPower(params.turretOffTargetIntakePow);
-                    else if (!robot.shootingSystem.shooterGood())
-                        collectorMotor.setPower(params.shooterNotGoodIntakePow);
+                    if (!inAuto && (!robot.turret.inRangeForShot() || !robot.turret.onTarget || !robot.shootingSystem.shooterGood()))
+                        collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
                     else
                         collectorMotor.setPower(params.shootIntakePow);
                 }
