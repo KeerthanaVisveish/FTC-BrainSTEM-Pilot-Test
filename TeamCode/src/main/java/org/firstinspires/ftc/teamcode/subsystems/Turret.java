@@ -28,7 +28,7 @@ public class Turret extends Component {
         public double testingTargetVel = 0;
     }
     public static class Params {
-        public double shotOutOfRangeBuffer = Math.toRadians(2);
+        public double shotOutOfRangeBuffer = Math.toRadians(0);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
         public int fineAdjust = 5;
@@ -99,7 +99,7 @@ public class Turret extends Component {
     public Vector2d perpVelVec;
     private double kP, kF;
     private double kV, kA;
-    private double[] prevErrors;
+    private final double[] prevErrors;
     private double pVoltage, dVoltage;
 //    private double vRVoltage, vTVoltage, vVoltage;
     private double vVoltage;
@@ -110,7 +110,7 @@ public class Turret extends Component {
 
     public double currentAbsoluteAngleRad;
     public double curRelAngleRad;
-    public boolean inRange, inRangeForShot, onTarget;
+    private boolean inRange, inRangeForShot, onTarget;
 
     private double currentTestingTarget;
     private boolean smoothWhenOutOfRange;
@@ -157,7 +157,7 @@ public class Turret extends Component {
             }
             targetEncoder = currentTestingTarget;
             targetVelocity = testingParams.testingTargetVel * errorSign;
-            robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(positionError, prevPositionError, targetVelocity, 0, 0));
+            robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(currentTestingTarget, positionError, prevPositionError, targetVelocity, 0, 0));
             return;
         }
 
@@ -170,20 +170,21 @@ public class Turret extends Component {
         switch (turretState) {
             case TRACKING:
                 updateTargetToGoal();
-                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps);
+                double actualTarget = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad) * turretParams.ticksPerRad;
+                motorVoltage = calculateTurretVoltage(actualTarget, positionError, prevPositionError, targetVelocity, targetAccel, robot.shootingSystem.robotSpeedAtTurretIps);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case CENTER:
                 inRange = true;
                 targetEncoder = 0;
                 positionError = -currentEncoder;
-                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, 0, 0, 0);
+                motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0, 0, 0);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case TRACK_CUSTOM_TARGET:
                 inRange = true; // i clip targetEncoder so its always in range
                 positionError = targetEncoder - currentEncoder;
-                motorVoltage = calculateTurretVoltage(positionError, prevPositionError, 0, 0, 0);
+                motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0, 0, 0);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
         }
@@ -235,7 +236,7 @@ public class Turret extends Component {
         return true;
     }
 
-    public double calculateTurretVoltage(double positionError, double prevPositionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
+    public double calculateTurretVoltage(double actualTargetEncoder, double positionError, double prevPositionError, double targetVelocity, double targetAccel, double robotSpeedAtTurret) {
         updatePrevEncoderErrors(positionError);
         boolean isOscillating = errorIsOscillating(prevErrors);
         if (addOscillationData)
@@ -253,7 +254,7 @@ public class Turret extends Component {
             onTarget = true;
             return testingParams.kfTestingVoltage;
         }
-        boolean onTargetPositionTol = Math.abs(positionError) <= turretParams.maxClutchEngageError;
+        boolean onTargetPositionTol = Math.abs(actualTargetEncoder - currentEncoder) <= turretParams.maxClutchEngageError;
         boolean onTargetVelocityTol = Math.abs(targetVelocity - currentVelocity) <= turretParams.maxTurretVelocityError;
         onTarget = onTargetPositionTol && onTargetVelocityTol;
 
@@ -308,7 +309,7 @@ public class Turret extends Component {
     }
     private void updateTargetToGoal() {
         // updating target angle
-        targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.actualTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
+        targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
         // mirrors the angle if the turret cannot reach it (visual cue)
         double maxAngleRad = turretParams.maxAngle;
         if (targetRelAngleRad > maxAngleRad) {
@@ -376,7 +377,7 @@ public class Turret extends Component {
         telemetry.addData("target goal angular vel", goalAngularVel);
         telemetry.addData("target robot angular vel", -robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
         telemetry.addData("desired ball dir", Math.toDegrees(robot.shootingSystem.desiredBallDir));
-        telemetry.addData("actual turret target angle", Math.toDegrees(robot.shootingSystem.actualTurretTargetAngleRad));
+        telemetry.addData("actual turret target angle", Math.toDegrees(robot.shootingSystem.lookAheadTurretTargetAngleRad));
 //        telemetry.addLine("-----");
         telemetry.addData("current encoder", currentEncoder);
         telemetry.addData("current velocity", currentVelocity);
@@ -404,6 +405,9 @@ public class Turret extends Component {
         return inRange;
     }
     public boolean inRangeForShot() {return inRangeForShot; }
+    public boolean onTarget() {
+        return onTarget;
+    }
     public void setCustomTargetEncoder(double encoder) {
         if (turretState == TurretState.TRACK_CUSTOM_TARGET)
             targetEncoder = encoder;
