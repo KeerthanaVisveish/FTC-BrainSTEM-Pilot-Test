@@ -6,13 +6,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 
 @Config
 public class Shooter extends Component {
     public static class ShooterParams {
 //        public double kP = 0.5;
-        public double kP = 6.75;
+//        public double kP = 6.75;
+        public double A = 20, B = 6, k = -150, x0 = .06;
         public double kI = 0.0;
         public double kD = 0.0;
 //        public double kV = 0.122;
@@ -39,19 +39,17 @@ public class Shooter extends Component {
         OFF, UPDATE
     }
     private ShooterState shooterState;
-
-    private final PIDController shooterPID;
     private double nearVelocityAdjustment, farVelocityAdjustment;
     private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
     private boolean wasPrevIncreasing;
+    private double kP;
     private double pidVoltage, velocityVoltage, totalVoltage;
+    private double targetVelMps;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
-
-        shooterPID = new PIDController(shooterParams.kP, shooterParams.kI, shooterParams.kD);
 
         shooterState = ShooterState.OFF;
         lastMax = 0;
@@ -60,22 +58,15 @@ public class Shooter extends Component {
         farVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
         ballsExitingTimer = new ElapsedTime();
     }
-    public void setShooterVelocityPID(double targetVelocityMps, double currentShooterVelocityMps) {
-        if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
-            shooterPID.setTarget(targetVelocityMps + nearVelocityAdjustment);
-        else
-            shooterPID.setTarget(targetVelocityMps + farVelocityAdjustment);
-
-        pidVoltage = -shooterPID.update(currentShooterVelocityMps);
-        double kV = shooterParams.kVYInt + shooterParams.kVSlope * targetVelocityMps;
-        velocityVoltage = kV * targetVelocityMps;
+    public void setShooterVelocityPID(double targetVelMps, double curVelMps) {
+        double error = targetVelMps - curVelMps;
+        kP =  shooterParams.A / (1 + Math.exp(shooterParams.k * (Math.abs(error) - shooterParams.x0))) + shooterParams.B;
+        pidVoltage = kP * error;
+        double kV = shooterParams.kVYInt + shooterParams.kVSlope * targetVelMps;
+        velocityVoltage = kV * targetVelMps;
         totalVoltage = pidVoltage + velocityVoltage;
 
         totalVoltage = Range.clip(totalVoltage, shooterParams.minVoltage, shooterParams.maxVoltage);
-        double error = targetVelocityMps - currentShooterVelocityMps;
-        if(error > shooterParams.shotRecoveryError)
-            totalVoltage = shooterParams.shotRecoveryVoltage;
-
         robot.shootingSystem.setShooterVoltage(totalVoltage);
     }
 
@@ -89,8 +80,13 @@ public class Shooter extends Component {
             case UPDATE:
                 if(testingParams.testing)
                     setShooterVelocityPID(testingParams.testingVel, robot.shootingSystem.curExitSpeedMps);
-                else
-                    setShooterVelocityPID(robot.shootingSystem.lookAheadTargetExitSpeedMps, robot.shootingSystem.curExitSpeedMps);
+                else {
+                    if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
+                        targetVelMps = robot.shootingSystem.lookAheadTargetExitSpeedMps + nearVelocityAdjustment;
+                    else
+                        targetVelMps = robot.shootingSystem.lookAheadTargetExitSpeedMps + farVelocityAdjustment;
+                    setShooterVelocityPID(targetVelMps, robot.shootingSystem.curExitSpeedMps);
+                }
                 break;
         }
         if(testingParams.testing) {
@@ -134,14 +130,19 @@ public class Shooter extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");
-        telemetry.addData("  pid target vel", shooterPID.getTarget());
-        telemetry.addData("  shooter power", robot.shootingSystem.getShooterPower());
-        telemetry.addData("  voltage total", totalVoltage);
-        telemetry.addData("  voltage pid", pidVoltage);
-        telemetry.addData("  voltage velocity", velocityVoltage);
+        telemetry.addData("  shooter lookahead target vel", targetVelMps);
+        telemetry.addData("  shooter no lookahead target vel mps", robot.shootingSystem.currentTargetExitSpeedMps);
+        telemetry.addData("  shooter voltage total", totalVoltage);
+        telemetry.addData("  shooter voltage pid", pidVoltage);
+        telemetry.addData("  shooter voltage velocity", velocityVoltage);
         telemetry.addData("  shooter filtered vel tps", robot.shootingSystem.getFilteredShooterSpeedTps());
         telemetry.addData("  shooter raw vel tps", robot.shootingSystem.getRawShooterSpeedTps());
+        telemetry.addData("  shooter low vel", robot.shootingSystem.getShooterLowRawVelTps());
+        telemetry.addData("  shooter high vel", robot.shootingSystem.getShooterHighRawVelTps());
+        telemetry.addData("  shooter high power", robot.shootingSystem.getShooterHighPower());
+        telemetry.addData("  shooter low power", robot.shootingSystem.getShooterLowPower());
         telemetry.addData("  shooter filtered vel mps", robot.shootingSystem.curExitSpeedMps);
+        telemetry.addData("  shooterGood", robot.shootingSystem.shooterNormGood());
 
         telemetry.addLine();
         telemetry.addLine("HOOD------");

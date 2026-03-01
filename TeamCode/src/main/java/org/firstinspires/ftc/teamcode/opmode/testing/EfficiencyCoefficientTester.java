@@ -1,12 +1,10 @@
 package org.firstinspires.ftc.teamcode.opmode.testing;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
@@ -95,7 +93,7 @@ public class EfficiencyCoefficientTester extends OpMode {
             telemetry.addData("f| target exit velocity mps", targetVelMetersPerSec);
             telemetry.addData("g| target exit velocity tps", targetExitVelTicksPerSec);
             telemetry.addData("i| current shooter vel tps", robot.shootingSystem.getFilteredShooterSpeedTps());
-            telemetry.addData("j| shooter power", robot.shootingSystem.getShooterPower());
+            telemetry.addData("j| shooter power", robot.shootingSystem.getShooterHighPower());
             telemetry.addData("k| shooter high vel", robot.shootingSystem.getShooterHighRawVelTps());
             telemetry.addData("l| shooter low vel", robot.shootingSystem.getShooterLowRawVelTps());
             telemetry.addData("m| dt", robot.shootingSystem.dt);

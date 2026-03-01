@@ -31,8 +31,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
     public static boolean inCompetition = false;
-    public static double[] blueCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, 62.75, -90 };
-    public static double[] redCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, -62.75, 90 };
+    public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
+    public static double[] redCornerResetPose = { 62.0618, -63.1, 90 };
     public static double noMoveJoystickThreshold = 0.1;
 
     BrainSTEMRobot robot;
@@ -236,7 +236,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
         // draw goal
         fieldOverlay.setStroke("yellow");
-        fieldOverlay.strokeCircle(robot.shootingSystem.goalPosIn.x, robot.shootingSystem.goalPosIn.y, 3);
         Vector2d defaultGoalPos = new Vector2d(robot.shootingSystem.goalPosIn.x, robot.shootingSystem.goalPosIn.z);
         fieldOverlay.strokeCircle(defaultGoalPos.x, defaultGoalPos.y, 3);
         FtcDashboard.getInstance().sendTelemetryPacket(packet);

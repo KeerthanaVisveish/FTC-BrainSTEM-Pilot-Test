@@ -17,7 +17,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double clutchEngagePow = 0.7, normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, shooterTurretOffTargetIntakePow = 0;
+        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, shooterTurretOffTargetIntakePow = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -69,10 +69,10 @@ public class Collection extends Component {
     private boolean has3Balls = false, autoCollectHas3Balls = false;
     private final ElapsedTime intake3BallsTimer = new ElapsedTime();
     public final ElapsedTime clutchTimer = new ElapsedTime();
-    public final ElapsedTime collectionStateTimer = new ElapsedTime();
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
     private int framesRunning;
     private boolean inAuto;
+    private boolean shooterInitiallyGood;
     public Collection(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
 
@@ -101,7 +101,6 @@ public class Collection extends Component {
 
         intake3BallsTimer.reset();
         clutchTimer.reset();
-        collectionStateTimer.reset();
     }
 
     public void setInAuto(boolean inAuto) {
@@ -109,8 +108,6 @@ public class Collection extends Component {
     }
     public CollectionState getCollectionState() { return collectionState; }
     public void setCollectionState(CollectionState collectionState) {
-        if (collectionState != this.collectionState)
-            collectionStateTimer.reset();
 
         this.collectionState = collectionState;
         switch (collectionState) {
@@ -122,6 +119,10 @@ public class Collection extends Component {
 //                break;
             case OUTTAKE:
                 collectorMotor.setPower(params.outtakeSpeed);
+                break;
+            case INTAKE:
+                shooterInitiallyGood = getClutchState() == ClutchState.ENGAGED && !robot.shootingSystem.shooterFirstGood();
+                outtakeAfterClutchEngage = false;
                 break;
         }
     }
@@ -161,7 +162,6 @@ public class Collection extends Component {
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
         telemetry.addData("collection state", collectionState);
-        telemetry.addData("cur state time", collectionStateTimer.seconds());
         telemetry.addData("power", collectorMotor.getPower());
         telemetry.addData("flicker state", getFlickerState());
         telemetry.addData("flicker left pos", flickerLeft.getPosition());
@@ -192,7 +192,11 @@ public class Collection extends Component {
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     boolean shouldUseSafetyInterlocks = !inAuto && params.useShootingSafetyInterlocks;
-                    boolean meetsSafetyInterlocks = robot.turret.inRangeForShot() && robot.turret.onTarget() && robot.shootingSystem.shooterGood();
+                    boolean meetsSafetyInterlocks = robot.turret.inRangeForShot() && robot.turret.onTarget() && robot.shootingSystem.shooterNormGood();
+                    if (!shooterInitiallyGood && robot.shootingSystem.shooterFirstGood())
+                        shooterInitiallyGood = true;
+                    if (!shooterInitiallyGood)
+                        meetsSafetyInterlocks = false;
                     if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks)
                         collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
                     else

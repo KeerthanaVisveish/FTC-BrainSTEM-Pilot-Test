@@ -26,6 +26,7 @@ import java.util.Arrays;
 @Config
 public class DrivePath implements Action {
     public static boolean showRobotPose = true;
+    public static double baseVoltage = 13.5;
     private final MecanumDrive drivetrain;
     private final PinpointLocalizer odo;
     private final Telemetry telemetry;
@@ -253,8 +254,10 @@ public class DrivePath implements Action {
         }
 
 
-
-        drivetrain.setDrivePowers(new PoseVelocity2d(combinedDirectionVector, headingPower));
+        double filteredVoltage = drivetrain.getFilteredVoltage();
+        Vector2d voltageScaledTranslationalPower = combinedDirectionVector.times(baseVoltage / filteredVoltage);
+        double voltageScaledHeadingPower = headingPower * baseVoltage / filteredVoltage;
+        drivetrain.setDrivePowers(new PoseVelocity2d(voltageScaledTranslationalPower, voltageScaledHeadingPower));
         
         if (telemetry != null) {
             telemetry.addData("curved", getCurParams().pathType == PathParams.PathType.CURVED);

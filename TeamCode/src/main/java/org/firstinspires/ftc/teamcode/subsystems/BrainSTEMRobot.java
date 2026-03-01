@@ -27,7 +27,6 @@ public class BrainSTEMRobot {
     public static double rampWidth = .9382;
     public static boolean enablePinpoint = true, enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
-    public static double voltageAlpha = .99, voltageDataBuildupTime = 1;
     public Turret turret;
     public Shooter shooter;
     public ShootingSystem shootingSystem;
@@ -40,9 +39,6 @@ public class BrainSTEMRobot {
     private final ArrayList<Component> subsystems;
     private final Telemetry telemetry;
     public GamepadTracker g1;
-
-    private double rawVoltage, filteredVoltage;
-    private final ElapsedTime timer;
 
     public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
         this.telemetry = telemetry;
@@ -70,21 +66,15 @@ public class BrainSTEMRobot {
             subsystems.add(limelight);
         if (enableLED)
             subsystems.add(led);
-
-        timer = new ElapsedTime();
-        timer.reset();
-        filteredVoltage = 13;
     }
     public void startOpmode() {
-        timer.reset();
+        drive.resetVoltageTimer();
     }
     public void setG1(GamepadTracker g1) {
         this.g1 = g1;
     }
     public void update(boolean useTurretLookAhead) {
-        rawVoltage = drive.voltageSensor.getVoltage();
-        double a = timer.seconds() < voltageDataBuildupTime ? 0 : voltageAlpha;
-        filteredVoltage = filteredVoltage * a + (1 - a) * rawVoltage;
+        drive.updateVoltageFiltering();
         if(enablePinpoint)
             drive.updatePoseEstimate();
         shootingSystem.updateInfo(useTurretLookAhead);
@@ -164,10 +154,10 @@ public class BrainSTEMRobot {
         }
     }
     public double getFilteredVoltage() {
-        return filteredVoltage;
+        return drive.getFilteredVoltage();
     }
     public double getRawVoltage() {
-        return rawVoltage;
+        return drive.getRawVoltage();
     }
 
     public Action scanForBalls(double angle1, double angle2) {
