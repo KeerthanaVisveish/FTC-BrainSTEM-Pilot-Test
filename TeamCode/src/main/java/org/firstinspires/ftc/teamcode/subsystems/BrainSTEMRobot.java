@@ -3,9 +3,11 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -19,6 +21,7 @@ import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
 
 import java.util.ArrayList;
+import java.util.function.DoubleSupplier;
 
 
 @Config
@@ -170,13 +173,26 @@ public class BrainSTEMRobot {
         return rawVoltage;
     }
 
-    public Action scanForBalls(double angle1, double angle2) {
+    public Action scanForBalls(DoubleSupplier angle1, DoubleSupplier angle2) {
         return new SequentialAction(
                 turret.rotateToCustomTarget(angle1),
                 new SleepAction(0.03),
                 limelight.ballDetection.takeBallSnapshotAction(),
                 turret.rotateToCustomTarget(angle2),
                 limelight.ballDetection.takeBallSnapshotAction()
+        );
+    }
+    public Action lookAtClassifier() {
+        return new SequentialAction(
+                turret.rotateToCustomTarget(() -> {
+                    Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
+                    Vector2d turretToClassifier = shootingSystem.turretPose.position.minus(classifierPosition);
+                    double robotAngle = drive.localizer.getPose().heading.toDouble();
+                    double absoluteAngle = MathUtils.vecAngle(turretToClassifier);
+                    return MathUtils.angleNormDeltaRad(absoluteAngle - robotAngle);
+                }),
+                limelight.classifier.readBallsInClassifier(),
+                new InstantAction(() -> turret.turretState = Turret.TurretState.TRACKING)
         );
     }
 }

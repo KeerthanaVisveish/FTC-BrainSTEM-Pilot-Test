@@ -118,7 +118,7 @@ public class LoadingZoneBallCollection extends OpMode {
             );
         }
         if (gamepad1.y && autoCollectAction == null && scanForBallsAction == null) {
-            scanForBallsAction = robot.scanForBalls(Math.toRadians(scanAngle1), Math.toRadians(scanAngle2));
+            scanForBallsAction = robot.scanForBalls(() -> Math.toRadians(scanAngle1), () -> Math.toRadians(scanAngle2));
         }
         if (autoCollectAction != null) {
             if (Math.abs(gamepad1.left_stick_x) > 0.1 ||
