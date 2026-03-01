@@ -31,7 +31,7 @@ public class Turret extends Component {
         public double shotOutOfRangeBuffer = Math.toRadians(0);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
-        public int fineAdjust = 5;
+        public int fineAdjust = 3;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(95);
         public double maxClutchEngageError = 40; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
@@ -369,6 +369,8 @@ public class Turret extends Component {
         telemetry.addLine("TURRET------");
         telemetry.addData("state", turretState);
         telemetry.addLine("-----");
+        telemetry.addData("dt", robot.shootingSystem.dt);
+
         telemetry.addData("target rel angle deg lookahead", Math.toDegrees(targetRelAngleRad));
         telemetry.addData("target rel angle deg no lookahead", Math.toDegrees(actualTargetRelAngleRad));
         telemetry.addData("add oscillation data", addOscillationData);

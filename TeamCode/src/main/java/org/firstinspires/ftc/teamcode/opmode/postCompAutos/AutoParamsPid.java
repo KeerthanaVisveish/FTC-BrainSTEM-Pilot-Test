@@ -6,13 +6,13 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Tolerance;
 
 public class AutoParamsPid {
     public static class Collect {
-        public double hitGateVelThreshold = 10;
-        public double collectDrivePower = 0.8, gateOpenDrivePower = .7;
-        public double gateHitDrivePower = .5, gateHitActivateDist = 8;
+        public double hitGateVelThreshold = 10, gateCollectHitWallThreshold = 8;
+        public double collectDrivePower = 0.8, secondCollectDrivePower = .7, gateOpenDrivePower = .8;
+        public double gateHitDrivePower = .7;
         public double loadingZoneCollectDrivePower = 0.3;
 
         public double[] first = {-11.5, 46, 90};
-        public double[] second = {12, 47, 90};
+        public double[] second = {12, 48, 90};
         public double[] secondIfOpenGate = {12, 44, 90};
         public double[] third = {36, 46, 90};
 
@@ -39,14 +39,13 @@ public class AutoParamsPid {
         public double cornerCollectXRed = 66, cornerCollectYRed = 68, cornerCollectARed = Math.toRadians(90);
         public double cornerCollectXBlue = 66, cornerCollectYBlue = -68, cornerCollectABlue = Math.toRadians(-90);
         public double cornerCollectRetryX = 55, cornerCollectRetryYRed = 46, cornerCollectRetryYBlue = -46;
-        public double gateCollectDistTol = 1, gateCollectHeadingTol = 5;
-        public Tolerance gateCollectOpenTol = new BoxTolerance(gateCollectDistTol, Math.toRadians(gateCollectHeadingTol));
-        public double[] gateCollectOpen = { 9, 50, 95 };
 
-        public double[] postGateOpenWaypoint = {16, 55, 130 };
+        public double[] gateCollectOpenRed = { 9, 53, 95 };
+        public double[] gateCollectOpenBlue = { 7, -53, -100 };
+        public double[] postGateOpenWaypoint = {16, 58, 130 };
         public double postGateOpenDistTol = 4, postGateOpenHeadingTol = Math.toRadians(7);
 
-        public double[] gateCollect = { 16, 61, 135 };
+        public double[] gateCollect = { 16, 64, 135 };
         public double[] gateNearControlPoint = { 13, 36, 50 };
         public double gateCollectOpenNearT1 = 40, gateCollectOpenNearT2 = 18;
         public double[] gateFarControlPoint = { 13, 35, 135 };
@@ -87,9 +86,14 @@ public class AutoParamsPid {
     }
 
     public static class Misc {
-        public double[] startNear = { -60.3, 39.8, 0 };
+        public double[] startNearRed = { -60.3, 39.8, 0 };
+        public double[] startNearBlue = { -60, -38.52, 0 };
+        // RED:
         // -60.614, 39.928, -.491
         // -60.093, 40.032, -0.341
+        // BLUE:
+        // -61.77, -38.69, .654
+        // -61.98, -38.35, .282
         public double[] startFar = { 63, 16.6868, 180 };
         public double[] gate1 = {-3, 55, 90};
         public double[] gate2 = {5, 55, 90};
