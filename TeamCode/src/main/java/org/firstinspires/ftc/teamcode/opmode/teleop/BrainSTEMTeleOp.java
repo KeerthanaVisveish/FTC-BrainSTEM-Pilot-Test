@@ -31,8 +31,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
     public static boolean inCompetition = false;
-    public static double[] blueCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, 62.75, -90 };
-    public static double[] redCornerResetPose = { 64.25 - BrainSTEMRobot.rampWidth, -62.75, 90 };
+    public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
+    public static double[] redCornerResetPose = { 62.0618, -63.1, 90 };
     public static double noMoveJoystickThreshold = 0.1;
 
     BrainSTEMRobot robot;
@@ -166,33 +166,26 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
 
-//        if (gp1.isFirstB()) {
-//            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
-//                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-//            else {
-//                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-//                robot.collection.setCollectionState(Collection.CollectionState.CLUTCH_ENGAGE_INTAKE);
-//            }
-//        }
+        if(!inCompetition) {
+            if (gp1.isFirstRightBumper())
+                if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
+                    robot.shooter.setShooterState(Shooter.ShooterState.OFF);
+                else
+                    robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
 
-        if (gp1.isFirstRightBumper())
-            if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
-                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-            else
-                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            if (gp1.isFirstLeftBumper()) {
+                if (robot.turret.turretState == Turret.TurretState.CENTER)
+                    robot.turret.turretState = Turret.TurretState.TRACKING;
+                else
+                    robot.turret.turretState = Turret.TurretState.CENTER;
+            }
 
-        if (gp1.isFirstLeftBumper()) {
-            if (robot.turret.turretState == Turret.TurretState.CENTER)
-                robot.turret.turretState = Turret.TurretState.TRACKING;
-            else
-                robot.turret.turretState = Turret.TurretState.CENTER;
-        }
-
-        if (gp1.isFirstBack()) {
-            robot.limelight.localization.maxTranslationalVariance = 0;
-            robot.limelight.localization.maxHeadingVarianceDeg = 0;
-            robot.limelight.localization.maxTranslationalError = 0;
-            robot.limelight.localization.maxHeadingErrorDeg = 0;
+            if (gp1.isFirstBack()) {
+                robot.limelight.localization.maxTranslationalVariance = 0;
+                robot.limelight.localization.maxHeadingVarianceDeg = 0;
+                robot.limelight.localization.maxTranslationalError = 0;
+                robot.limelight.localization.maxHeadingErrorDeg = 0;
+            }
         }
     }
 
@@ -243,7 +236,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
         // draw goal
         fieldOverlay.setStroke("yellow");
-        fieldOverlay.strokeCircle(robot.shootingSystem.goalPosIn.x, robot.shootingSystem.goalPosIn.y, 3);
         Vector2d defaultGoalPos = new Vector2d(robot.shootingSystem.goalPosIn.x, robot.shootingSystem.goalPosIn.z);
         fieldOverlay.strokeCircle(defaultGoalPos.x, defaultGoalPos.y, 3);
         FtcDashboard.getInstance().sendTelemetryPacket(packet);

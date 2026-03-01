@@ -1,11 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.classifier;
 
-import androidx.annotation.NonNull;
-
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -133,22 +129,6 @@ public class LimelightClassifier extends LLParent {
         Pose2d robotPose = robot.drive.localizer.getPose();
         Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         return Limelight.getLimelightPose(turretPose).position.y;
-    }
-    public Action readBallsInClassifier() {
-        return new Action() {
-            boolean first = true;
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                if (first) {
-                    first = false;
-                    resetForNewRead();
-                }
-                if (!inValidClassifierRegion)
-                    return false;
-
-                return numFramesRunning < params.numFramesPerRead;
-            }
-        };
     }
 }
 /*

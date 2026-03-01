@@ -50,6 +50,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -138,6 +139,10 @@ public class MecanumDrive {
     private final DownsampledWriter driveCommandWriter = new DownsampledWriter("DRIVE_COMMAND", 50_000_000);
     private final DownsampledWriter mecanumCommandWriter = new DownsampledWriter("MECANUM_COMMAND", 50_000_000);
 
+    public static double voltageAlpha = .99, voltageDataBuildupTime = 1;
+    private double rawVoltage, filteredVoltage;
+
+    private final ElapsedTime voltageTimer;
     public class DriveLocalizer implements Localizer {
         public final Encoder leftFront, leftBack, rightBack, rightFront;
         public final IMU imu;
@@ -257,12 +262,17 @@ public class MecanumDrive {
                 PARAMS.logoFacingDirection, PARAMS.usbFacingDirection));
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
+        voltageTimer = new ElapsedTime();
+        filteredVoltage = 13.5;
 
 //        localizer = new DriveLocalizer(pose);
         localizer = new PinpointLocalizer(hardwareMap, pose);
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
 
+    public void resetVoltageTimer() {
+        voltageTimer.reset();
+    }
     public PinpointLocalizer pinpoint() {
         return (PinpointLocalizer) localizer;
     }
@@ -280,22 +290,18 @@ public class MecanumDrive {
         rightBack.setPower(wheelVels.rightBack.get(0) / maxPowerMag);
         rightFront.setPower(wheelVels.rightFront.get(0) / maxPowerMag);
     }
-    public void setBatteryIndependentDrivePowers(PoseVelocity2d powers) {
-        MecanumKinematics.WheelVelocities<Time> wheelVels = new MecanumKinematics(1).inverse(
-                PoseVelocity2dDual.constant(powers, 1));
 
-        double maxPowerMag = 1;
-        double voltageScaler = targetMaxVoltage / voltageSensor.getVoltage();
-        for (DualNum<Time> power : wheelVels.all()) {
-            maxPowerMag = Math.max(maxPowerMag, power.value() * voltageScaler);
-        }
-
-        leftFront.setPower(wheelVels.leftFront.get(0));
-        leftBack.setPower(wheelVels.leftBack.get(0));
-        rightBack.setPower(wheelVels.rightBack.get(0));
-        rightFront.setPower(wheelVels.rightFront.get(0));
+    public void updateVoltageFiltering() {
+        rawVoltage = voltageSensor.getVoltage();
+        double a = voltageTimer.seconds() < voltageDataBuildupTime ? 0 : voltageAlpha;
+        filteredVoltage = filteredVoltage * a + (1 - a) * rawVoltage;
     }
-
+    public double getFilteredVoltage() {
+        return filteredVoltage;
+    }
+    public double getRawVoltage() {
+        return rawVoltage;
+    }
     public final class FollowTrajectoryAction implements Action {
         public final TimeTrajectory timeTrajectory;
         private double beginTs = -1;
