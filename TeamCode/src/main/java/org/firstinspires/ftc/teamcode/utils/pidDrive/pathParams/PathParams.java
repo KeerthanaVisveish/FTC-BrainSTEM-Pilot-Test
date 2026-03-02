@@ -35,6 +35,7 @@ public class PathParams {
         public double tangentHeadingActivateThreshold = 23;
         public boolean prioritizeHeadingInBeginning = false;
         public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.1;
+        public boolean stopOnSuddenDecel = false;
     }
     public static DefaultParams defaultParams = new DefaultParams();
     public double lateralWeight, axialWeight;
@@ -61,6 +62,7 @@ public class PathParams {
     public double tValueStartDist, tValueFinishDist;
     public double tangentHeadingDeactivateThreshold, applyCloseHeadingPIDErrorDeg;
     public boolean prioritizeHeadingInBeginning;
+    public boolean stopOnSuddenDecel;
     public PathParams() {
         this(defaultParams.bigSpeedKp, defaultParams.smallSpeedKp, defaultParams.speedKi, defaultParams.bigSpeedKd, defaultParams.smallSpeedKd, defaultParams.speedKf, defaultParams.closeHeadingKp, defaultParams.closeHeadingKi, defaultParams.closeHeadingKd, defaultParams.farHeadingKp, defaultParams.farHeadingKi, defaultParams.farHeadingKd, defaultParams.headingKf);
     }
@@ -101,6 +103,7 @@ public class PathParams {
         slowDownPercent = 1;
         prioritizeHeadingInBeginning = defaultParams.prioritizeHeadingInBeginning;
         controlPoint = new Pose2d(0, 0, 0);
+        stopOnSuddenDecel = defaultParams.stopOnSuddenDecel;
     }
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;

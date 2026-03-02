@@ -25,6 +25,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGen
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
+import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 
 import java.util.ArrayList;
@@ -33,7 +34,8 @@ import java.util.ArrayList;
 @Config
 public class LoadingZoneBallCollection extends OpMode {
     public static int streamFPS = 5;
-    public static double[] startPose = { 48 + 6.5, 8, 90 };
+    public static double[] start = { 48 + 6.5, 8, 90 };
+    public static boolean usePoseStorageStartPose = false;
     public static double scanAngle1 = 80, scanAngle2 = 110;
     private BrainSTEMRobot robot;
     private AutoCommands autoCommands;
@@ -47,7 +49,8 @@ public class LoadingZoneBallCollection extends OpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(20);
         Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
-        robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(startPose));
+        Pose2d startPose = usePoseStorageStartPose ? new Pose2d(PoseStorage.autoX, PoseStorage.autoY, PoseStorage.autoHeading) : createPose(start);
+        robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, startPose);
         autoCommands = new AutoCommands(robot, telemetry);
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
         mostRecentNodes = new ArrayList<>();
@@ -149,11 +152,16 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.updateInfo(true);
         robot.update();
 
+        Pose2d p = robot.drive.localizer.getPose();
+        PoseStorage.autoX = p.position.x;
+        PoseStorage.autoY = p.position.y;
+        PoseStorage.autoHeading = p.heading.toDouble();
+
         telemetry.addData("time running", getRuntime());
         if (pathInfo == null)
             telemetry.addData("drive path", "null");
         else
-            telemetry.addData("drive path", pathInfo.getPoses());
+            telemetry.addData("drive path", pathInfo.getSimplifiedPoses());
         robot.limelight.printInfo();
         telemetry.update();
 
@@ -162,7 +170,7 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.drawRobotInfo(fieldOverlay);
         robot.limelight.ballDetection.drawBalls(fieldOverlay, mostRecentNodes);
         if (pathInfo != null)
-            robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getPoses());
+            robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getSimplifiedPoses());
         FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
 }

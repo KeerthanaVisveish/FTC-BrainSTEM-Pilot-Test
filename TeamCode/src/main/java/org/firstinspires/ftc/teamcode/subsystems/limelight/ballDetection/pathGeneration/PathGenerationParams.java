@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
+import com.acmerobotics.dashboard.config.Config;
+
 import java.util.function.DoubleUnaryOperator;
 
+@Config
 public class PathGenerationParams {
-        public double robotWidth = 13.5;
+        public double robotWidth = 13 + .9382 * 2;
         public double robotLength = 16;
         public double shiftedLeftStartX = 40;
 
@@ -13,7 +16,7 @@ public class PathGenerationParams {
                 SIMPLE_ONLY
         }
         public GenerationMode generationMode = GenerationMode.DYNAMIC;
-        public int minBallsToUseSimpleGeneration = 2;
+        public int minBallsToUseSimpleGeneration = 3;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;
@@ -46,7 +49,7 @@ public class PathGenerationParams {
         public double cornerBallDistance = 7;
         public double cornerCollectY = 73;
         public double cornerCollectAngle = 10;
-        public double lenientCornerCollectThreshold = 12;
+        public double lenientCornerCollectThreshold = 20;
 
         public double wallStrafeCollectMinApproachAngle = 35;
         public double wallCollectAngle = 45;
