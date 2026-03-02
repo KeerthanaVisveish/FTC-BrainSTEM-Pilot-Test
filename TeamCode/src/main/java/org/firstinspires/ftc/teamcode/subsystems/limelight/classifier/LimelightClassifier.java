@@ -35,6 +35,7 @@ public class LimelightClassifier extends LLParent {
         public double closeX = -12, closeY = 24, closeRadius = 24;
         public double farX = 60, farY = 12, farRadius = 6;
         public int numFramesPerRead = 3;
+        public int classifierWidthFromRight = 300;
     }
     public static Params params = new Params();
 
@@ -94,6 +95,7 @@ public class LimelightClassifier extends LLParent {
                 pythonInputs = new double[2];
                 pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
                 pythonInputs[1] = getCameraY();
+                pythonInputs[2] = params.classifierWidthFromRight;
 
                 limelight.updatePythonInputs(pythonInputs);
 
@@ -101,7 +103,8 @@ public class LimelightClassifier extends LLParent {
                 classifierDetectionOutput = result.getPythonOutput();
 
                 curFrameNumBalls = (int) classifierDetectionOutput[0];
-                switch (curFrameNumBalls) {
+                int receiveNumber = (int) classifierDetectionOutput[1];
+                switch (receiveNumber) {
                     case -2: receiveState = ReceiveState.OCCLUDED_BALLS; break;
                     case -1: receiveState = ReceiveState.NO_CLASSIFIER; break;
                     default: receiveState = ReceiveState.VALID; break;
@@ -118,11 +121,13 @@ public class LimelightClassifier extends LLParent {
 
     @Override
     public void updateTelemetry(Telemetry telemetry) {
-        telemetry.addData("cur frame num balls", curFrameNumBalls);
         telemetry.addData("most common num balls", getMostCommonNumBalls());
-        telemetry.addData("num ball results", Arrays.toString(numBalls));
+        telemetry.addData("num frames reading", numFramesReading);
         telemetry.addData("receive state", receiveState);
+        telemetry.addLine();
         telemetry.addData("in valid classifier region", inValidClassifierRegion);
+        telemetry.addData("cur frame num balls", curFrameNumBalls);
+        telemetry.addData("num ball results", Arrays.toString(numBalls));
         telemetry.addData("python inputs", Arrays.toString(pythonInputs));
         telemetry.addData("python outputs", Arrays.toString(classifierDetectionOutput));
     }
@@ -177,6 +182,9 @@ public class LimelightClassifier extends LLParent {
             case READ:
                 resetForNewRead();
         }
+    }
+    public ReadState getReadState() {
+        return readState;
     }
 }
 /*

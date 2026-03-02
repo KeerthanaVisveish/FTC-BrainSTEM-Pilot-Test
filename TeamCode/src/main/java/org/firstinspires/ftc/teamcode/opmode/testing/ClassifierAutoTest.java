@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode.testing;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
@@ -20,6 +22,9 @@ public class ClassifierAutoTest extends LinearOpMode {
     public static Alliance alliance = Alliance.RED;
     @Override
     public void runOpMode() throws InterruptedException {
+        telemetry.setMsTransmissionInterval(20);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
         Limelight.startingPipeline = Limelight.CLASSIFIER_PIPELINE;
         double sign = alliance == Alliance.RED ? 1 : -1;
         double angle = Math.toRadians(90) * sign;
@@ -40,6 +45,8 @@ public class ClassifierAutoTest extends LinearOpMode {
                         ),
                         packet -> {
                             robot.update(true);
+                            robot.limelight.printInfo();
+                            telemetry.update();
                             return true;
                         }
                 )

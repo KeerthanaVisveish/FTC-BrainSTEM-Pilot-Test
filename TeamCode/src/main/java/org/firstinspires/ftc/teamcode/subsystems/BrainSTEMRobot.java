@@ -199,6 +199,7 @@ public class BrainSTEMRobot {
                 }
                 int numBalls = limelight.classifier.getMostCommonNumBalls();
 
+                telemetry.addData("num balls seen", numBalls);
                 // unsuccessful read or 3 or more balls
                 if (numBalls == -1 || numBalls > 2)
                     return false;

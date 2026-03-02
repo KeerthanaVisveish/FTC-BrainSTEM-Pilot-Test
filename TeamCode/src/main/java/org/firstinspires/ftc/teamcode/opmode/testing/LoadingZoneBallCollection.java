@@ -60,7 +60,7 @@ public class LoadingZoneBallCollection extends OpMode {
             robot.shootingSystem.resetTurretEncoder();
         robot.shootingSystem.updateInfo(false);
         telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
-        
+
         robot.limelight.printInfo();
 
         telemetry.update();
