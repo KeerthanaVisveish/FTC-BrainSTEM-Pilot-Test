@@ -1,9 +1,8 @@
-package com.example.autoCollectPathGen.pathParams;
+package com.example.autoCollectPathGen.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class CircleTolerance implements Tolerance {
     public static class DefaultParams {

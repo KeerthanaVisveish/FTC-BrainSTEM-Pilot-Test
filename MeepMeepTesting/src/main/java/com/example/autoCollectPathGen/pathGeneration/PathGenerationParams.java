@@ -14,6 +14,8 @@ public class PathGenerationParams {
         public double laneIncrement = 1;
         public double angleLaneCollectDistFromBackWall = 3.5;
         public double ignoreOptimizedLaneWidthSortingWidth = 3;
+        public double laneCollectControlYOffset = 15;
+        public double laneCollectControlMinYOffsetFromRobot = 12;
 
         public double maxPathRegenerationAttempts = 5;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
@@ -26,7 +28,7 @@ public class PathGenerationParams {
         public double lastCollectPoseExtraDriveThrough = 4;
 
         public double clusterMergeDist = 5.5;
-        public double clusterStrafingDist = 12;
+        public double clusterStrafingDist = 24;
         public double strafeCollectMaxAngleOffset = 30;
         public double strafeCollectDriveThroughDist = 3;
         public double strafeCollectMaxPerpendicularDistance = 2;
@@ -35,7 +37,7 @@ public class PathGenerationParams {
         public DoubleUnaryOperator maxCollectHeadingDifference = x -> collectSimplificationConstants[1] / (1 + Math.pow(Math.E, -collectSimplificationConstants[3] * (x - collectSimplificationConstants[2]))) + collectSimplificationConstants[0];
         public double completelyIgnoreCollectPoseApproachAngleDiff = 3;
         public double completelyIgnoreCollectPoseHeadingDiff = 5;
-        public double wallPoseBuffer = 2; // the pose can be outside the field walls by this much
+        public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
 
         public double cornerBallDistance = 7;
         public double cornerCollectY = 73;
