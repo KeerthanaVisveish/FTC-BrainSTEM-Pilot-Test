@@ -25,11 +25,15 @@ import java.util.Arrays;
 
 @Config
 public class DrivePath implements Action {
-    public static boolean showRobotPose = true;
+    public static boolean showWaypointPoses = true, showRobotPose = false;
+    private static Canvas fieldOverlay;
+    public static void enableFieldDrawing(Canvas fieldOverlay) {
+        DrivePath.fieldOverlay = fieldOverlay;
+    }
     public static double baseVoltage = 13.5;
     private final MecanumDrive drivetrain;
     private final PinpointLocalizer odo;
-    private final Telemetry telemetry;
+    private Telemetry telemetry;
     private final ArrayList<Waypoint> waypoints; // list of all waypoints in drive path
     private int curWaypointIndex; // the waypoint index the drivetrain is currently trying to go to
     private PidDrivePidController totalDistancePID, waypointDistancePID, headingRadCloseErrorPID, headingRadFarErrorPID;
@@ -41,7 +45,7 @@ public class DrivePath implements Action {
     private double targetX, targetY, targetHeadingRad;
     private Vector2d driveVector, correctiveVector, combinedDirectionVector;
     private boolean followingCurvedPath;
-    private boolean shouldUpdatePose = true;
+    private boolean shouldUpdatePose = false;
     private double waypointDistanceError;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
@@ -296,28 +300,28 @@ public class DrivePath implements Action {
 
             telemetry.update();
         }
-        if (showRobotPose) {
-            TelemetryPacket packet = new TelemetryPacket();
-            Canvas fieldOverlay = packet.fieldOverlay();
-            Pose2d curWaypointPose = getCurWaypoint().pose;
+        if (fieldOverlay != null) {
+            if (showWaypointPoses) {
+                Pose2d curWaypointPose = getCurWaypoint().pose;
 
-            fieldOverlay.setStroke("gray");
-            fieldOverlay.strokeLine(prevWaypointPose.position.x, prevWaypointPose.position.y, targetX, targetY);
-            fieldOverlay.setStroke("black");
-            Drawing.drawRobot(fieldOverlay, prevWaypointPose);
-            Drawing.drawRobot(fieldOverlay, curWaypointPose);
-            if (getCurParams().pathType == PathParams.PathType.CURVED) {
                 fieldOverlay.setStroke("gray");
-                Drawing.drawRobot(fieldOverlay, new Pose2d(targetX, targetY, targetHeadingRad));
-                Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
+                fieldOverlay.strokeLine(prevWaypointPose.position.x, prevWaypointPose.position.y, targetX, targetY);
+                fieldOverlay.setStroke("black");
+                Drawing.drawRobot(fieldOverlay, prevWaypointPose);
+                Drawing.drawRobot(fieldOverlay, curWaypointPose);
+                if (getCurParams().pathType == PathParams.PathType.CURVED) {
+                    fieldOverlay.setStroke("gray");
+                    Drawing.drawRobot(fieldOverlay, new Pose2d(targetX, targetY, targetHeadingRad));
+                    Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
+                }
             }
-            fieldOverlay.setStroke("green");
-            Drawing.drawRobot(fieldOverlay, robotPose);
-            Vector2d driveVectorToDraw = GeometryUtils.rotateVector(driveVector, robotPose.heading.toDouble()).times(10);
-            fieldOverlay.strokeLine(robotPose.position.x, robotPose.position.y,
-                    robotPose.position.x + driveVectorToDraw.x, robotPose.position.y + driveVectorToDraw.y);
-
-            FtcDashboard.getInstance().sendTelemetryPacket(packet);
+            if (showRobotPose) {
+                fieldOverlay.setStroke("green");
+                Drawing.drawRobot(fieldOverlay, robotPose);
+                Vector2d driveVectorToDraw = GeometryUtils.rotateVector(driveVector, robotPose.heading.toDouble()).times(10);
+                fieldOverlay.strokeLine(robotPose.position.x, robotPose.position.y,
+                        robotPose.position.x + driveVectorToDraw.x, robotPose.position.y + driveVectorToDraw.y);
+            }
         }
         return true;
     }

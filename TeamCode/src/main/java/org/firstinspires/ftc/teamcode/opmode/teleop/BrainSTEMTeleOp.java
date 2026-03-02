@@ -103,7 +103,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             updateDriver1();
             CommandScheduler.getInstance().run();
 
-            robot.update(currentlyMoving);
+            robot.updateInfo(currentlyMoving);
+            robot.update();
 
             telemetry.addData("Alliance", BrainSTEMRobot.alliance);
 
@@ -235,7 +236,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
 
-        robot.addRobotInfo(fieldOverlay);
+        robot.drawRobotInfo(fieldOverlay);
 
         // draw goal
         fieldOverlay.setStroke("yellow");

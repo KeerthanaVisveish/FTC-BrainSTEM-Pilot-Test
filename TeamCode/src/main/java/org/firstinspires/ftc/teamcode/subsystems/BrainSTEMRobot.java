@@ -31,7 +31,7 @@ import java.util.function.DoubleSupplier;
 public class BrainSTEMRobot {
     public static double width = 13, length = 16; // inches
     public static double rampWidth = .9382;
-    public static boolean enablePinpoint = true, enableSubsystems = true;
+    public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
     public Turret turret;
     public Shooter shooter;
@@ -79,12 +79,12 @@ public class BrainSTEMRobot {
     public void setG1(GamepadTracker g1) {
         this.g1 = g1;
     }
-    public void update(boolean useTurretLookAhead) {
+    public void updateInfo(boolean useTurretLookAhead) {
         drive.updateVoltageFiltering();
-        if(enablePinpoint)
-            drive.updatePoseEstimate();
+        drive.updatePoseEstimate();
         shootingSystem.updateInfo(useTurretLookAhead);
-
+    }
+    public void update() {
         Pose2d pose = drive.localizer.getPose();
         telemetry.addData("Robot Pose", MathUtils.format3(pose.position.x) + ", " + MathUtils.format3(pose.position.y) + " | " + MathUtils.format3(pose.heading.toDouble()));
         if(enableSubsystems)
@@ -94,7 +94,7 @@ public class BrainSTEMRobot {
         shootingSystem.sendHardwareInfo();
     }
 
-    public void addRobotInfo(Canvas fieldOverlay) {
+    public void drawRobotInfo(Canvas fieldOverlay) {
         // draw robot, turret, exit position, and limelight pose
         Pose2d robotPose = drive.pinpoint().getPose();
 

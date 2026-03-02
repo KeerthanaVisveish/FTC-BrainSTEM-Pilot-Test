@@ -44,7 +44,8 @@ public class ClassifierAutoTest extends LinearOpMode {
                                 drivePath
                         ),
                         packet -> {
-                            robot.update(true);
+                            robot.updateInfo(true);
+                            robot.update();
                             robot.limelight.printInfo();
                             telemetry.update();
                             return true;

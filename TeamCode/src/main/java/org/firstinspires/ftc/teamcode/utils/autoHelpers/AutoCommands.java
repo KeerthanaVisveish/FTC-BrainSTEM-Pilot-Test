@@ -21,9 +21,15 @@ public class AutoCommands {
         this.telemetry = telemetry;
     }
 
+    public Action updateRobotInfo() {
+        return packet -> {
+            robot.updateInfo(true);
+            return true;
+        };
+    }
     public Action updateRobot(){
         return packet -> {
-            robot.update(true);
+            robot.update();
             return true;
         };
     }

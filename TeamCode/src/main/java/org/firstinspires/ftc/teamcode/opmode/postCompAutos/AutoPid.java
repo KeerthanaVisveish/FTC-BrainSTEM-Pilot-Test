@@ -6,6 +6,7 @@ import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose
 import androidx.annotation.NonNull;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -87,6 +88,9 @@ public abstract class AutoPid extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
+        TelemetryPacket fieldPacket = new TelemetryPacket();
+        Canvas fieldOverlay = fieldPacket.fieldOverlay();
+        DrivePath.enableFieldDrawing(fieldOverlay);
 
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
@@ -180,12 +184,15 @@ public abstract class AutoPid extends LinearOpMode {
                 new InstantAction(() -> robot.drive.stop())
         );
 
-        Action forcedStopAutoAction = new ParallelAction(
-                packet -> { telemetry.addData("RRAutoFar STATE", autoState); return true; },
+        Action fullAutoAction = new ParallelAction(
+                autoCommands.updateRobotInfo(),
                 new TimedAction(timedAutoAction, timeConstraints.stopEverythingTime).setEndFunction(robot.drive::stop),
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
+                    robot.drawRobotInfo(fieldOverlay);
+                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
+                    telemetry.addData("auto state", autoState);
                     telemetry.update();
                     return true;
                 }
@@ -208,9 +215,7 @@ public abstract class AutoPid extends LinearOpMode {
         robot.startOpmode();
         autoTimer.reset();
 
-        Actions.runBlocking(
-                forcedStopAutoAction
-        );
+        Actions.runBlocking(fullAutoAction);
     }
     private Pose2d getShootPose(boolean shootClose, String letter) {
         switch (letter) {

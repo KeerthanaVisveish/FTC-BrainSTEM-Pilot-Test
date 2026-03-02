@@ -28,7 +28,6 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 
 import java.util.ArrayList;
-import java.util.function.DoubleSupplier;
 
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
@@ -147,7 +146,8 @@ public class LoadingZoneBallCollection extends OpMode {
                 scanForBallsAction = null;
         }
 
-        robot.update(false);
+        robot.updateInfo(true);
+        robot.update();
 
         telemetry.addData("time running", getRuntime());
         if (pathInfo == null)
@@ -159,7 +159,7 @@ public class LoadingZoneBallCollection extends OpMode {
 
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
-        robot.addRobotInfo(fieldOverlay);
+        robot.drawRobotInfo(fieldOverlay);
         robot.limelight.ballDetection.drawBalls(fieldOverlay, mostRecentNodes);
         if (pathInfo != null)
             robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getPoses());
