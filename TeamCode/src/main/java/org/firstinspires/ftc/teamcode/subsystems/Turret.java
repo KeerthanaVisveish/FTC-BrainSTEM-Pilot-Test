@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.util.InterpLUT;
@@ -28,12 +29,13 @@ public class Turret extends Component {
         public double testingTargetVel = 0;
     }
     public static class TurretParams {
+        public double gateCollectYThreshold = 58, gateCollectMaxAngle = Math.toRadians(30);
         public double shotOutOfRangeBuffer = Math.toRadians(0);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
         public int fineAdjust = 3;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public double maxAngle = Math.toRadians(95);
+        public double maxAngle = Math.toRadians(90);
         public double maxClutchEngageError = 40; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
@@ -108,7 +110,7 @@ public class Turret extends Component {
     private double aVoltage;
     private final InterpLUT kFPosLookup, kfNegLookup;
 
-    public double targetRelAngleRad, actualTargetRelAngleRad;
+    public double lookAheadTargetRelAngleRad, noLookAheadTargetRelAngleRad;
 
     public double currentAbsoluteAngleRad;
     public double curRelAngleRad;
@@ -172,7 +174,7 @@ public class Turret extends Component {
         switch (turretState) {
             case TRACKING:
                 updateTargetToGoal();
-                motorVoltage = calculateTurretVoltage(actualTargetRelAngleRad * turretParams.ticksPerRad, positionError, prevPositionError, robot.shootingSystem.robotSpeedAtTurretIps);
+                motorVoltage = calculateTurretVoltage(noLookAheadTargetRelAngleRad * turretParams.ticksPerRad, positionError, prevPositionError, robot.shootingSystem.robotSpeedAtTurretIps);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case CENTER:
@@ -319,30 +321,39 @@ public class Turret extends Component {
     private void updateTargetToGoal() {
         // updating target angle
 
-        actualTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad - robot.drive.localizer.getPose().heading.toDouble());
-        targetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
-        // mirrors the angle if the turret cannot reach it (visual cue)
-        inRange = Math.abs(targetRelAngleRad) <= turretParams.maxAngle;
-        if (!inRange) {
-            double sign = Math.signum(targetRelAngleRad);
-            double max = sign * turretParams.maxAngle;
-            if(smoothWhenOutOfRange) {
-                if (Math.abs(targetRelAngleRad) <= turretParams.outOfRangeAngleLerpStart)
-                    targetRelAngleRad = max;
-                else {
-                    double a = Math.abs(turretParams.outOfRangeAngleLerpStart);
-                    double b = Math.PI;
-                    double x = Math.abs(targetRelAngleRad);
-                    double outOfBoundsT = MathUtils.inverseLerp(a, b, x);
-                    targetRelAngleRad = MathUtils.lerp(max, 0, outOfBoundsT);
-                }
-            }
-            else
-                targetRelAngleRad = max;
-        }
-        inRangeForShot = Math.abs(targetRelAngleRad) < turretParams.maxAngle + turretParams.shotOutOfRangeBuffer;
+        noLookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad - robot.drive.localizer.getPose().heading.toDouble());
+        lookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
 
-        targetEncoder = (int) (targetRelAngleRad * turretParams.ticksPerRad);
+        Pose2d pose = robot.drive.localizer.getPose();
+        boolean useSmallerRange = pose.position.x > 0 && Math.abs(pose.position.y) > turretParams.gateCollectYThreshold;
+        double maxAngle = useSmallerRange ? turretParams.gateCollectMaxAngle : turretParams.maxAngle;
+        inRange = Math.abs(lookAheadTargetRelAngleRad) <= maxAngle;
+        if (!inRange) {
+            double sign = Math.signum(lookAheadTargetRelAngleRad);
+            double max = sign * maxAngle;
+            // clamp turret to smaller range when close to the wall
+            if (useSmallerRange)
+                lookAheadTargetRelAngleRad = max;
+            else {
+                // mirrors the angle if the turret cannot reach it (visual cue)
+                if (smoothWhenOutOfRange) {
+                    if (Math.abs(lookAheadTargetRelAngleRad) <= turretParams.outOfRangeAngleLerpStart)
+                        lookAheadTargetRelAngleRad = max;
+                    else {
+                        double a = Math.abs(turretParams.outOfRangeAngleLerpStart);
+                        double b = Math.PI;
+                        double x = Math.abs(lookAheadTargetRelAngleRad);
+                        double outOfBoundsT = MathUtils.inverseLerp(a, b, x);
+                        lookAheadTargetRelAngleRad = MathUtils.lerp(max, 0, outOfBoundsT);
+                    }
+                }
+                else
+                    lookAheadTargetRelAngleRad = max;
+            }
+        }
+        inRangeForShot = Math.abs(lookAheadTargetRelAngleRad) < turretParams.maxAngle + turretParams.shotOutOfRangeBuffer;
+
+        targetEncoder = (int) (lookAheadTargetRelAngleRad * turretParams.ticksPerRad);
         targetEncoder += robot.shootingSystem.distState != ShootingSystem.Dist.FAR ? nearEncoderAdjustment : farEncoderAdjustment;
         double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
         targetEncoder = Range.clip(targetEncoder, -maxBound, maxBound);
@@ -371,8 +382,8 @@ public class Turret extends Component {
         telemetry.addLine("-----");
         telemetry.addData("dt", robot.shootingSystem.dt);
 
-        telemetry.addData("target rel angle deg lookahead", Math.toDegrees(targetRelAngleRad));
-        telemetry.addData("target rel angle deg no lookahead", Math.toDegrees(actualTargetRelAngleRad));
+        telemetry.addData("target rel angle deg lookahead", Math.toDegrees(lookAheadTargetRelAngleRad));
+        telemetry.addData("target rel angle deg no lookahead", Math.toDegrees(noLookAheadTargetRelAngleRad));
         telemetry.addData("add oscillation data", addOscillationData);
         telemetry.addData("prev errors", Arrays.toString(prevErrors));
         telemetry.addData("error oscillating", errorIsOscillating(prevErrors));
@@ -417,6 +428,10 @@ public class Turret extends Component {
             nearEncoderAdjustment += amount;
         else
             farEncoderAdjustment += amount;
+    }
+    public void resetAllEncoderAdjustments() {
+        nearEncoderAdjustment = 0;
+        farEncoderAdjustment = 0;
     }
     public boolean inRange() {
         return inRange;

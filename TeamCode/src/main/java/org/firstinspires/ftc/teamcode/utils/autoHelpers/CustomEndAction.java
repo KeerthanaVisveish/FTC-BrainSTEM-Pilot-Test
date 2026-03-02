@@ -25,6 +25,9 @@ public class CustomEndAction implements Action {
     public CustomEndAction(Action action, BooleanSupplier endCondition) {
         this(action, endCondition, Double.MAX_VALUE);
     }
+    public CustomEndAction(BooleanSupplier endCondition) {
+        this(packet -> true, endCondition);
+    }
     @Override
     public boolean run(@NonNull TelemetryPacket telemetryPacket) {
         if (first) {
@@ -34,7 +37,12 @@ public class CustomEndAction implements Action {
 
         boolean keepGoing = action.run(telemetryPacket);
         boolean outOfTime = timer.seconds() > maxTime;
-        return keepGoing && !outOfTime && !endCondition.getAsBoolean();
+        keepGoing = keepGoing && !outOfTime && !endCondition.getAsBoolean();
+        if(!keepGoing) {
+            onEnd.run();
+            return false;
+        }
+        return true;
     }
 
     public CustomEndAction setEndFunction(Runnable endFunction) {

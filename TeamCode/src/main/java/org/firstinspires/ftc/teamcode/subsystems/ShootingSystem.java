@@ -34,7 +34,7 @@ public class ShootingSystem {
         public double midRedX = -64, midRedY = 68, midHeight = 38;
         public double midBlueX = -65.25, midBlueY = -64;
         public double farRedX = -65, farRedY = 66, farHeight = 42;
-        public double farBlueX = -65.75, farBlueY = -63;
+        public double farBlueX = -65.75, farBlueY = -64;
         public double nearImpactAng = Math.toRadians(-25), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
         public double nearStateThreshold = 58;
     }
@@ -48,6 +48,7 @@ public class ShootingSystem {
         public double robotVelNoiseThreshold = .1;
         public double farExitAng = Math.toRadians(38);
         public double maxShootingDist = 180;
+        public double maxDynamicHoodError = Math.toRadians(12), enableHoodCheckDist = 146;
         public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3;
         public double lookAheadTime = 0.15; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
@@ -86,7 +87,7 @@ public class ShootingSystem {
     public Vector3d lookAheadTargetExitVelMps;
     public double lookAheadTurretTargetAngleRad, currentTurretTargetAngleRad;
     public double lookAheadTargetExitSpeedMps, currentTargetExitSpeedMps;
-    public double ballTargetExitSpeedMps;
+    public double ballTargetExitSpeedMps, idealBallExitAng;
     public double efficiencyCoef;
 
     private double filteredShooterSpeedTps, prevFilteredShooterSpeedTps, rawShooterSpeedTps;
@@ -248,7 +249,8 @@ public class ShootingSystem {
             futureDist = Math.min(futureDist, generalParams.maxShootingDist);
             launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, generalParams.farExitAng), hoodParams.minExitAngRad};
             ballTargetExitSpeedMps = launchVector[0];
-            ballExitAngleRad = launchVector[1];
+            idealBallExitAng = launchVector[1];
+            ballExitAngleRad = idealBallExitAng;
 
             currentlyShootingWhileMoving = false;
             efficiencyCoef = calcEfficiencyCoef(launchVector[1]); // initial guess for efficiency coefficient
@@ -392,7 +394,8 @@ public class ShootingSystem {
         telemetry.addData("absolute turret target rad", lookAheadTurretTargetAngleRad);
         telemetry.addData("absolute turret target deg", Math.toDegrees(lookAheadTurretTargetAngleRad));
         telemetry.addData("robot-relative target exit speed mps", lookAheadTargetExitSpeedMps);
-        telemetry.addData("ball exit angle rad", ballExitAngleRad);
+        telemetry.addData("ball exit angle deg", Math.toDegrees(ballExitAngleRad));
+        telemetry.addData("ideal ball exit angle deg", Math.toDegrees(idealBallExitAng));
         telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
         telemetry.addData("physics exit angle rad", MathUtils.format3(physicsExitAngleRads));
 //        telemetry.addData("ball meters from goal", exitPosGoalDistIn * 0.0254);
@@ -445,8 +448,10 @@ public class ShootingSystem {
         return Range.clip(generalParams.minEfficiencyCoef, rawE, generalParams.maxEfficiencyCoef);
     }
     public boolean shooterNormGood() {
-        if(distState == Dist.FAR)
-            return robot.shootingSystem.physicsExitAngleRads[0] != -1;
+        if(distState == Dist.FAR) {
+            boolean hoodValid = turretPosGoalDistIn < generalParams.enableHoodCheckDist || Math.abs(hoodExitAngleRad - idealBallExitAng) < generalParams.maxDynamicHoodError;
+            return robot.shootingSystem.physicsExitAngleRads[0] != -1 && hoodValid;
+        }
         double shooterError = Math.abs(currentTargetExitSpeedMps - curExitSpeedMps);
         return shooterError < generalParams.normShootToleranceMps;
     }

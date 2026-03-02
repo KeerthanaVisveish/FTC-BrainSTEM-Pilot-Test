@@ -19,7 +19,7 @@ public class PathParams {
     public static class DefaultParams {
         public double bigSpeedKp = 0.02, smallSpeedKp = 0.013, bigSpeedKd = 0, smallSpeedKd = 0.0001;
         public double speedKi = 0, speedKf = 0.075;
-        public double correctiveKp = 0.05;
+        public double correctiveKp = 0.035;
         public double correctiveStrength = 1;
         public double applyCloseSpeedPIDError = 5;
         public double closeHeadingKp = 0.01, closeHeadingKi = 0, closeHeadingKd = 0.001, headingKf = 0.1;
