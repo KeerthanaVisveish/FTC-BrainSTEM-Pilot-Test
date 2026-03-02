@@ -27,7 +27,7 @@ public class AutoParamsPid {
         public double secondNearT1 = 29.5, secondNearT2 = 20;
 
         public double[] secondFarControlPoint = {19, 26.5, 135};
-        public double secondFarT1 = 30, secondFarT2r = 20;
+        public double secondFarT1 = 30, secondFarT2 = 20;
 
         public double[] thirdNearWaypoint = { 20, 26.5, 35 };
         public double thirdNearWaypointXTol = 6, thirdNearWaypointYTol = 3, thirdNearWaypointHeadingTol = 5;
@@ -46,7 +46,6 @@ public class AutoParamsPid {
 
         public double gateOpenKPMult = 1.2;
         public double[] gateOpen = { 7.8, 53, 90 };
-        public double[] postGateOpenWaypoint = {16, 58, 130 };
 
         public double[] gateCollect = { 17, 64, 135 };
         public double[] gateNearControlPoint = { 9, 36, 90 };
@@ -77,14 +76,14 @@ public class AutoParamsPid {
         public double[] gateNearControlPoint = { 11, 36, 50 };
         public double gateNearShootTStartError = 35, gateNearShootTFinishError = 18;
 
-        public double[] gateShootFarControlPoint = { 9, 30, 135 };
+        public double[] gateFarControlPoint = { 9, 30, 135 };
         public double gateFarTStartError = 20, gateFarTFinishError = 10;
 
         public double[] far1ControlPoint = { 0, 24, 140 };
-        public double firstShootFarTStartError = 20, firstShootFarTFinishError = 10;
+        public double firstShootFarT1 = 20, firstShootFarT2 = 10;
 
         public double[] far2ControlPoint = { 22, 38, 130 };
-        public double secondShootFarTStartError = 20, secondShootFarTFinishError = 10;
+        public double secondShootFarT1 = 20, secondShootFarT2 = 10;
     }
 
     public static class Misc {
