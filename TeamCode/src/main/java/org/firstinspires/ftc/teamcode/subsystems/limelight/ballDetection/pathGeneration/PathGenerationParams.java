@@ -7,7 +7,13 @@ public class PathGenerationParams {
         public double robotLength = 16;
         public double shiftedLeftStartX = 40;
 
-        public boolean allowLaneCollect = true;
+        public enum GenerationMode {
+                DYNAMIC,
+                COMPLEX_ONLY,
+                SIMPLE_ONLY
+        }
+        public GenerationMode generationMode = GenerationMode.DYNAMIC;
+        public int minBallsToUseSimpleGeneration = 2;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;

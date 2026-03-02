@@ -35,10 +35,11 @@ public class PathGeneration {
 
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
-        if (pathGenParams.allowLaneCollect) {
-            if (densestLanes.get(0).numBalls() >= 3)
-                return generateLanePath(robotPose, bestLane);
-            if (allBalls.size() == 2 && bestLane.numBalls() == 2)
+        if (pathGenParams.generationMode != PathGenerationParams.GenerationMode.COMPLEX_ONLY) {
+            boolean shouldUseSimple = pathGenParams.generationMode == PathGenerationParams.GenerationMode.SIMPLE_ONLY ||
+                    densestLanes.get(0).numBalls() >= pathGenParams.minBallsToUseSimpleGeneration ||
+                    allBalls.size() == 2 && bestLane.numBalls() == 2;
+            if (shouldUseSimple)
                 return generateLanePath(robotPose, bestLane);
         }
 
@@ -107,7 +108,7 @@ public class PathGeneration {
             return null;
         }
 
-        if (pathGenParams.allowLaneCollect) {
+        if (pathGenParams.generationMode != PathGenerationParams.GenerationMode.COMPLEX_ONLY) {
             int complexNumBalls = optimalPathInfo.numGoodBalls();
             int laneNumBalls = bestLane.numBalls();
             if (complexNumBalls == laneNumBalls)
