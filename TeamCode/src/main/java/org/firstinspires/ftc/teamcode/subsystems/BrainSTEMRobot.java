@@ -100,64 +100,10 @@ public class BrainSTEMRobot {
 
         fieldOverlay.setStroke("red");
         Drawing.drawRobot(fieldOverlay, robotPose);
-        fieldOverlay.setStroke("green");
-        Drawing.drawRobotSimple(fieldOverlay, shootingSystem.turretPose, 5);
-        fieldOverlay.setStroke("purple");
-//        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.ballExitPos, 0), 3);
-//        fieldOverlay.setStroke("purple");
-//        Drawing.drawRobotSimple(fieldOverlay, new Pose2d(shootingSystem.futureBallExitPos, 0), 3);
+
+        shootingSystem.drawShootingInfo(fieldOverlay);
 
         limelight.addLimelightInfo(fieldOverlay);
-
-        // draw where turret is pointed
-        fieldOverlay.setAlpha(1);
-//        double dist = Math.hypot(shootingSystem.ballExitPos.x - shootingSystem.goalPosIn.x, shootingSystem.ballExitPos.y - shootingSystem.goalPosIn.y);
-        double dist = 300;
-
-        fieldOverlay.setStroke("purple");
-        fieldOverlay.strokeLine(
-                shootingSystem.turretPose.position.x,
-                shootingSystem.turretPose.position.y,
-                shootingSystem.turretPose.position.x + dist * Math.cos(turret.currentAbsoluteAngleRad),
-                shootingSystem.turretPose.position.y + dist * Math.sin(turret.currentAbsoluteAngleRad)
-        );
-        fieldOverlay.setStroke("black");
-        fieldOverlay.strokeLine(
-                shootingSystem.turretPose.position.x,
-                shootingSystem.turretPose.position.y,
-                shootingSystem.turretPose.position.x + dist * Math.cos(shootingSystem.lookAheadTurretTargetAngleRad),
-                shootingSystem.turretPose.position.y + dist * Math.sin(shootingSystem.lookAheadTurretTargetAngleRad)
-        );
-        double speedMag = shootingSystem.lookAheadTargetExitSpeedMps;
-        fieldOverlay.setStroke("red");
-        fieldOverlay.strokeLine(
-                shootingSystem.turretPose.position.x,
-                shootingSystem.turretPose.position.y,
-                shootingSystem.turretPose.position.x + dist * Math.cos(shootingSystem.desiredBallDir),
-                shootingSystem.turretPose.position.y + dist * Math.sin(shootingSystem.desiredBallDir)
-        );
-
-        if(turret.perpVelVec != null) {
-            fieldOverlay.setStroke("blue");
-            fieldOverlay.strokeLine(
-                    shootingSystem.turretPose.position.x,
-                    shootingSystem.turretPose.position.y,
-                    shootingSystem.turretPose.position.x + shootingSystem.robotVelAtTurretIps.x,
-                    shootingSystem.turretPose.position.y + shootingSystem.robotVelAtTurretIps.y
-            );
-//            fieldOverlay.strokeLine(
-//                    shootingSystem.turretPose.position.x,
-//                    shootingSystem.turretPose.position.y,
-//                    shootingSystem.turretPose.position.x + turret.perpVelVec.x * 10,
-//                    shootingSystem.turretPose.position.y + turret.perpVelVec.y * 10
-//            );
-//            fieldOverlay.strokeLine(
-//                    shootingSystem.goalPosIn.x,
-//                    shootingSystem.goalPosIn.z,
-//                    shootingSystem.goalPosIn.x + shootingSystem.futureTurretPosRelativeToGoal.x,
-//                    shootingSystem.goalPosIn.z + shootingSystem.futureTurretPosRelativeToGoal.y
-//            );
-        }
     }
     public double getFilteredVoltage() {
         return drive.getFilteredVoltage();

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -13,6 +14,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.math.Vector3d;
@@ -24,9 +26,9 @@ import java.util.Arrays;
 @Config
 public class ShootingSystem {
     public static class TestingParams {
-//        public boolean usingLookup = false;
-        public boolean actuallyPowerTurret = true;
+        public boolean powerTurret = true;
         public boolean powerLowShooter = true, powerHighShooter = true;
+        public boolean drawShootingRings = true;
     }
     public static class GoalParams {
         public double nearRedX = -64, nearRedY = 66, nearHeight = 39;
@@ -360,7 +362,6 @@ public class ShootingSystem {
         futureTurretPosRelativeToGoal = new Vector2d(futureTurretPos.x - goalPosIn.x, futureTurretPos.y - goalPosIn.z);
         futureTurretPosGoalDistIn = Math.hypot(futureTurretPosRelativeToGoal.x, futureTurretPosRelativeToGoal.y);
         turretPosGoalDistIn = Math.hypot(turretPose.position.x - goalPosIn.x, turretPose.position.y - goalPosIn.z);
-
     }
     private void updateGoalProperties(Vector2d robotPos) {
         double distToCorner = Math.hypot(corner.x - robotPos.x, corner.y - robotPos.y);
@@ -421,7 +422,7 @@ public class ShootingSystem {
         turretMotor.resetEncoders();
     }
     public void setTurretVoltage(double voltage) {
-        if (testingParams.actuallyPowerTurret) {
+        if (testingParams.powerTurret) {
             double power = voltage / robot.getFilteredVoltage();
             turretMotor.setPower(power);
         }
@@ -498,5 +499,53 @@ public class ShootingSystem {
     }
     public double getHoodPosition() {
         return hoodLeftServo.getPosition();
+    }
+    public void drawShootingInfo(Canvas fieldOverlay) {
+        // draw goal and shooting rings
+        fieldOverlay.setStroke("yellow");
+        fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, 3);
+        if (testingParams.drawShootingRings) {
+            fieldOverlay.setAlpha(0.4);
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, goalParams.nearStateThreshold); // end of near range, start of far range
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, generalParams.enableHoodCheckDist); // start of "hella far" range
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, generalParams.maxShootingDist); // max shooting distance
+            fieldOverlay.setAlpha(1);
+        }
+
+        fieldOverlay.setStroke("green");
+        Drawing.drawRobotSimple(fieldOverlay, turretPose, 5);
+
+        fieldOverlay.setStroke("purple");
+        double dist = 300;
+        fieldOverlay.strokeLine(
+                turretPose.position.x,
+                turretPose.position.y,
+                turretPose.position.x + dist * Math.cos(robot.turret.currentAbsoluteAngleRad),
+                turretPose.position.y + dist * Math.sin(robot.turret.currentAbsoluteAngleRad)
+        );
+        fieldOverlay.setStroke("black");
+        fieldOverlay.strokeLine(
+                turretPose.position.x,
+                turretPose.position.y,
+                turretPose.position.x + dist * Math.cos(lookAheadTurretTargetAngleRad),
+                turretPose.position.y + dist * Math.sin(lookAheadTurretTargetAngleRad)
+        );
+        fieldOverlay.setStroke("red");
+        fieldOverlay.strokeLine(
+                turretPose.position.x,
+                turretPose.position.y,
+                turretPose.position.x + dist * Math.cos(desiredBallDir),
+                turretPose.position.y + dist * Math.sin(desiredBallDir)
+        );
+
+        if(robot.turret.perpVelVec != null) {
+            fieldOverlay.setStroke("blue");
+            fieldOverlay.strokeLine(
+                    turretPose.position.x,
+                    turretPose.position.y,
+                    turretPose.position.x + robotVelAtTurretIps.x,
+                    turretPose.position.y + robotVelAtTurretIps.y
+            );
+        }
     }
 }

@@ -87,6 +87,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (inCompetition) {
             robot.turret.turretState = Turret.TurretState.TRACKING;
             robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            ShootingSystem.testingParams.powerTurret = true;
+            ShootingSystem.testingParams.powerHighShooter = true;
+            ShootingSystem.testingParams.powerLowShooter = true;
         }
         while (opModeIsActive()) {
             gp1.update();
@@ -126,7 +129,11 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine();
 
             telemetry.addData("dt", robot.shootingSystem.dt);
-            updateDashboardField();
+
+            TelemetryPacket packet = new TelemetryPacket();
+            Canvas fieldOverlay = packet.fieldOverlay();
+            robot.drawRobotInfo(fieldOverlay);
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
 //            telemetry.addData("FPS", MathUtils.format2(framesRunning / timeRunning));
             telemetry.update();
@@ -231,17 +238,5 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.turret.resetAllEncoderAdjustments();
             robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
         }
-    }
-    private void updateDashboardField() {
-        TelemetryPacket packet = new TelemetryPacket();
-        Canvas fieldOverlay = packet.fieldOverlay();
-
-        robot.drawRobotInfo(fieldOverlay);
-
-        // draw goal
-        fieldOverlay.setStroke("yellow");
-        Vector2d defaultGoalPos = new Vector2d(robot.shootingSystem.goalPosIn.x, robot.shootingSystem.goalPosIn.z);
-        fieldOverlay.strokeCircle(defaultGoalPos.x, defaultGoalPos.y, 3);
-        FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
 }
