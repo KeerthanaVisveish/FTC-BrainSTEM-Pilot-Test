@@ -23,7 +23,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -263,7 +262,7 @@ public abstract class AutoPid extends LinearOpMode {
                 .setMaxTime(3)
                 .setMinLinearPower(shoot.minDrivePower1)
                 .setPassPosition(true)
-                .setHeadingLerp(shoot.preloadHeadingLerp));
+                .setHeadingLerp(shootingNear ? PathParams.HeadingLerpType.TANGENT : PathParams.HeadingLerpType.LINEAR));
         Action preloadShootAction = new ParallelAction(
                 preloadShootDrive,
                 new SequentialAction(
@@ -277,14 +276,7 @@ public abstract class AutoPid extends LinearOpMode {
                         autoCommands.flickerHalfUp(),
                         autoCommands.speedUpShooter(),
                         autoCommands.enableTurretTracking(),
-                        preloadShootAction,
-                        new SequentialAction(
-                                autoCommands.engageClutch(),
-                                autoCommands.reverseIntake(),
-                                new SleepAction(Collection.params.shootOuttakeTimeAuto),
-                                autoCommands.stopIntake(),
-                                new SleepAction(Collection.params.postShootOuttakeWaitAuto)
-                        )
+                        preloadShootAction
                 ),
                 getShootAction(0)
         );
@@ -336,11 +328,7 @@ public abstract class AutoPid extends LinearOpMode {
     private Action getShootAction(double extraShootTime) {
         return new SequentialAction(
                 new ParallelAction(
-                        new InstantAction(() -> autoState = AutoState.SHOOT)
-//                        autoCommands.reverseIntake(),
-//                        new SleepAction(Collection.params.shootOuttakeTimeAuto)
-                ),
-                new ParallelAction(
+                        new InstantAction(() -> autoState = AutoState.SHOOT),
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
                         autoCommands.runIntake(),
@@ -461,12 +449,14 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(secondCollectAction, secondGateDrive, secondShootDrive, toNear, timeConstraints.postIntakeTime, true, true);
     }
     private Action getThirdCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, boolean last) {
-        double t1 = isRed ? collect.thirdNearT1Red : collect.thirdNearT1Blue;
-        DrivePath thirdCollectDrive = new DrivePath(robot.drive, telemetry,
-                new Waypoint(collect3)
-                        .setPassPosition(true)
-                        .setMinLinearPower(collect.collectDrivePower)
-                        .setControlPoint(fromNear ? collect3NearControlPoint : collect3FarControlPoint, t1, collect.thirdNearT2));
+        Waypoint w = new Waypoint(collect3)
+                .setPassPosition(true)
+                .setMinLinearPower(collect.collectDrivePower);
+        if(fromNear)
+            w.setControlPoint(collect3NearControlPoint, collect.thirdNearT1, collect.thirdNearT2);
+        else
+            w.setControlPoint(collect3FarControlPoint, collect.thirdFarT1, collect.thirdFarT2);
+        DrivePath thirdCollectDrive = new DrivePath(robot.drive, telemetry, w);
 
         if (fromNear) {
             BoxTolerance preCollect3NearTol = new BoxTolerance(collect.thirdNearWaypointXTol, collect.thirdNearWaypointYTol, Math.toRadians(collect.thirdNearWaypointHeadingTol));
@@ -488,12 +478,13 @@ public abstract class AutoPid extends LinearOpMode {
                 )
         );
 
-        Waypoint thirdShootDest = toNear ?
-                new Waypoint(shootPose).setMaxTime(3).setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT) :
-                new Waypoint(shootPose).setMaxTime(2).setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT);
-        DrivePath thirdShootDrive = new DrivePath(robot.drive, telemetry, thirdShootDest
+        Waypoint thirdShootDest = new Waypoint(shootPose)
+                .setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT)
                 .setPassPosition(true)
-                .setMinLinearPower(shoot.minDrivePower1));
+                .setMinLinearPower(shoot.minDrivePower1);
+        thirdShootDest.setMaxTime(toNear ? 3 : 2);
+
+        DrivePath thirdShootDrive = new DrivePath(robot.drive, telemetry, thirdShootDest);
 
         return buildCollectAndShoot(thirdCollectAction, new SleepAction(0), thirdShootDrive, toNear, timeConstraints.postIntakeTime, true, !last);
     }
@@ -507,7 +498,9 @@ public abstract class AutoPid extends LinearOpMode {
                         .setLateralAxialWeights(2.2, 1)
                         .setCustomEndCondition(() -> robot.collection.has3Balls()));
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
-                .setMaxTime(3).setPassPosition(true));
+                .setMaxTime(3)
+                .setPassPosition(true)
+                .setMinLinearPower(shoot.minDrivePower1));
 
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
@@ -619,7 +612,7 @@ public abstract class AutoPid extends LinearOpMode {
         double yPower = misc.gateMinPower * (isRed ? -1 : 1);
         Action completeGateCollectDrive = new SequentialAction(
                 autoCommands.stopIntake(),
-                robot.lookAtClassifier(Turret.TurretState.TRACKING),
+                new SleepAction(waitTime),
                 gateOpenAction,
                 new SleepAction(timeConstraints.gateCollectOpenWait),
                 autoCommands.runIntake(),

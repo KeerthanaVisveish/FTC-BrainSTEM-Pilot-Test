@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmode.postCompAutos;
 
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Tolerance;
 
 public class AutoParamsPid {
@@ -33,7 +32,7 @@ public class AutoParamsPid {
         public double[] thirdNearWaypoint = { 20, 26.5, 35 };
         public double thirdNearWaypointXTol = 6, thirdNearWaypointYTol = 3, thirdNearWaypointHeadingTol = 5;
         public double[] thirdNearControlPoint = { 34, 28, 60};
-        public double thirdNearT1Red = 21, thirdNearT1Blue = 21, thirdNearT2 = 18;
+        public double thirdNearT1 = 21, thirdNearT2 = 18;
         public double thirdCloseHeadingKp = .008;
 
         public double[] thirdFarControlPoint = {39, 40, 135};
@@ -59,7 +58,6 @@ public class AutoParamsPid {
         public double earlyEngageClutchDist = 15;
         public double minPower2Dist = 20;
         public double minDrivePower1 = .99, minDrivePower2 = .5;
-        public PathParams.HeadingLerpType preloadHeadingLerp = PathParams.HeadingLerpType.TANGENT;
         public double waypointTolX = 3, waypointTolY = 3, waypointTolA = Math.toRadians(5);
         public Tolerance waypointTol = new BoxTolerance(waypointTolX, waypointTolY, Math.toRadians(waypointTolA));
         public double waypointSlowDown = 0.3;
