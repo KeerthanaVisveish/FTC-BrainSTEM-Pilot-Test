@@ -18,6 +18,7 @@ import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.Arrays;
+import java.util.function.DoubleSupplier;
 
 @Config
 public class Turret extends Component {
@@ -440,16 +441,19 @@ public class Turret extends Component {
     public boolean onTarget() {
         return onTarget;
     }
-    public void setCustomTargetEncoder(double encoder) {
-        if (turretState == TurretState.TRACK_CUSTOM_TARGET)
-            targetEncoder = encoder;
+    public TurretState getTurretState() {
+        return turretState;
     }
-    public Action rotateToCustomTarget(double targetAngle) {
+    public void setTurretState(TurretState turretState) {
+        this.turretState = turretState;
+    }
+    public Action rotateToCustomTarget(DoubleSupplier targetAngle) {
         return new SequentialAction(
                 new InstantAction(() -> {
                     turretState = TurretState.TRACK_CUSTOM_TARGET;
-                    double clippedAngle = Range.clip(targetAngle, -turretParams.maxAngle, turretParams.maxAngle);
+                    double clippedAngle = Range.clip(targetAngle.getAsDouble(), -turretParams.maxAngle, turretParams.maxAngle);
                     targetEncoder = clippedAngle * turretParams.ticksPerRad;
+                    positionError = targetEncoder - currentEncoder;
                 }),
                 telemetryPacket -> positionError > powerTuning.noVoltageThreshold
         );

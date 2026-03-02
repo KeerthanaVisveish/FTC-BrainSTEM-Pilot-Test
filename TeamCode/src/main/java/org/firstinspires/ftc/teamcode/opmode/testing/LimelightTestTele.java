@@ -9,10 +9,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import java.util.Arrays;
 
-@TeleOp(name="LimelightTestTele")
+@TeleOp(name="LimelightTestTele", group="Limelight")
 @Config
 public class LimelightTestTele extends LinearOpMode {
-    public static int pipeline = 1;
+    public static int pipeline = 0;
     public static double[] pythonInputs = { -1, 24 };
     @Override
     public void runOpMode() throws InterruptedException {

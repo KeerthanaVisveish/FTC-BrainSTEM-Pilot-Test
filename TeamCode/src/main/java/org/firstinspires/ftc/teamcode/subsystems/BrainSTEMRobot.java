@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -19,6 +24,7 @@ import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
 
 import java.util.ArrayList;
+import java.util.function.DoubleSupplier;
 
 
 @Config
@@ -160,7 +166,7 @@ public class BrainSTEMRobot {
         return drive.getRawVoltage();
     }
 
-    public Action scanForBalls(double angle1, double angle2) {
+    public Action scanForBalls(DoubleSupplier angle1, DoubleSupplier angle2) {
         return new SequentialAction(
                 turret.rotateToCustomTarget(angle1),
                 new SleepAction(0.03),
@@ -168,5 +174,38 @@ public class BrainSTEMRobot {
                 turret.rotateToCustomTarget(angle2),
                 limelight.ballDetection.takeBallSnapshotAction()
         );
+    }
+    public Action lookAtClassifier(Turret.TurretState endingTurretState) {
+        return new SequentialAction(
+                turret.rotateToCustomTarget(() -> {
+                    Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
+                    Vector2d turretToClassifier = shootingSystem.turretPose.position.minus(classifierPosition);
+                    double robotAngle = drive.localizer.getPose().heading.toDouble();
+                    double absoluteAngle = MathUtils.vecAngle(turretToClassifier);
+                    return MathUtils.angleNormDeltaRad(absoluteAngle - robotAngle);
+                }),
+                limelight.classifier.readBallsInClassifier(),
+                new InstantAction(() -> turret.setTurretState(endingTurretState))
+        );
+    }
+    public Action waitXSecondsIf2BallsInClassifier(double maxWaitTime) {
+        return new Action() {
+            ElapsedTime timer = null;
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                if (timer == null) {
+                    timer = new ElapsedTime();
+                    timer.reset();
+                }
+                int numBalls = limelight.classifier.getMostCommonNumBalls();
+
+                // unsuccessful read or 3 or more balls
+                if (numBalls == -1 || numBalls > 2)
+                    return false;
+
+                // 0, 1, or 2 balls
+                return timer.seconds() <= maxWaitTime;
+            }
+        };
     }
 }

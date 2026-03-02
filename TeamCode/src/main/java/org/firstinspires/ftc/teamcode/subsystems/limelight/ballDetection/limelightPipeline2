@@ -20,7 +20,7 @@ mask_erode2 = (10, 10)
 min_area = 750
 
 # debug info
-show_mask = True
+show_mask = False
 draw_debug = False
 
 def runPipeline(image, llrobot):
@@ -42,7 +42,8 @@ def runPipeline(image, llrobot):
     blob_info = green_blob_info + purple_blob_info
 
     python_outputs = np.array(blob_info).flatten()
-    return contour_at_point(0, 0), final_img, python_outputs
+    coords = (0, 0) if len(python_outputs) == 0 else (python_outputs[0], python_outputs[1])
+    return contour_at_point(coords[0], coords[1]), final_img, python_outputs
 
 def get_color_mask(hsv, lower_bounds, upper_bounds):
     mask = cv2.inRange(hsv, lower_bounds, upper_bounds)

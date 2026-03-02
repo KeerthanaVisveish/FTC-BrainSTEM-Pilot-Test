@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Blob;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
@@ -27,6 +28,7 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 
 import java.util.ArrayList;
+import java.util.function.DoubleSupplier;
 
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
@@ -45,6 +47,7 @@ public class LoadingZoneBallCollection extends OpMode {
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(20);
+        Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(startPose));
         autoCommands = new AutoCommands(robot, telemetry);
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
@@ -57,6 +60,9 @@ public class LoadingZoneBallCollection extends OpMode {
             robot.shootingSystem.resetTurretEncoder();
         robot.shootingSystem.updateInfo(false);
         telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+        
+        robot.limelight.printInfo();
+
         telemetry.update();
     }
     @Override
@@ -117,9 +123,8 @@ public class LoadingZoneBallCollection extends OpMode {
                     autoCommands.stopIntake()
             );
         }
-        if (gamepad1.y && autoCollectAction == null && scanForBallsAction == null) {
-            scanForBallsAction = robot.scanForBalls(Math.toRadians(scanAngle1), Math.toRadians(scanAngle2));
-        }
+        if (gamepad1.y && autoCollectAction == null && scanForBallsAction == null)
+            scanForBallsAction = robot.scanForBalls(() -> Math.toRadians(scanAngle1), () -> Math.toRadians(scanAngle2));
         if (autoCollectAction != null) {
             if (Math.abs(gamepad1.left_stick_x) > 0.1 ||
                     Math.abs(gamepad1.left_stick_y) > 0.1 ||
