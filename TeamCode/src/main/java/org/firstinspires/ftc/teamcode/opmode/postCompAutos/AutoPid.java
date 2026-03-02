@@ -190,6 +190,7 @@ public abstract class AutoPid extends LinearOpMode {
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
+                    DrivePath.drawCurrentPath();
                     robot.drawRobotInfo(fieldOverlay);
                     FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
                     telemetry.addData("auto state", autoState);

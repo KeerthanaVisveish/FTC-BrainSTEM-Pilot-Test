@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.utils.pidDrive;
 
 import androidx.annotation.NonNull;
 
-import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
@@ -25,10 +24,21 @@ import java.util.Arrays;
 
 @Config
 public class DrivePath implements Action {
-    public static boolean showWaypointPoses = true, showRobotPose = false;
+    public static boolean showRobotPose = false;
     private static Canvas fieldOverlay;
     public static void enableFieldDrawing(Canvas fieldOverlay) {
         DrivePath.fieldOverlay = fieldOverlay;
+    }
+    private static DrivePath mostRecentPath = null;
+    public static void drawCurrentPath() {
+        if (fieldOverlay == null)
+            throw new IllegalStateException("fieldOverlay is null - need to call DrivePath.enableFieldDrawing(fieldOverlay)");
+        if (mostRecentPath != null) {
+            mostRecentPath.drawPath();
+
+            if (showRobotPose)
+                mostRecentPath.drawRobotPose(mostRecentPath.odo.getPose());
+        }
     }
     public static double baseVoltage = 13.5;
     private final MecanumDrive drivetrain;
@@ -47,6 +57,7 @@ public class DrivePath implements Action {
     private boolean followingCurvedPath;
     private boolean shouldUpdatePose = false;
     private double waypointDistanceError;
+    private boolean isRunning = false;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -154,6 +165,8 @@ public class DrivePath implements Action {
 
     @Override
     public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+        mostRecentPath = this;
+        isRunning = true;
         if (shouldUpdatePose) {
             drivetrain.updatePoseEstimate();
         }
@@ -172,8 +185,8 @@ public class DrivePath implements Action {
         boolean inPositionTolerance = getCurWaypoint().tolerance.inPositionTolerance(errorInfo.xError, errorInfo.yError);
         boolean inHeadingTolerance = getCurWaypoint().tolerance.inHeadingTolerance(errorInfo.headingRadError);
         // pass position
-        if(getCurParams().passPosition && getDotProductToNextWaypoint(robotPose) > 0)
-                inPositionTolerance = true;
+        if (getCurParams().passPosition && getDotProductToNextWaypoint(robotPose) > 0)
+            inPositionTolerance = true;
 
         boolean inWaypointTolerance = inPositionTolerance && inHeadingTolerance;
         boolean reachedMaxTime = getCurParams().hasMaxTime() && waypointTimer.seconds() >= getCurParams().maxTime;
@@ -181,15 +194,16 @@ public class DrivePath implements Action {
 
         // in tolerance
         if (inWaypointTolerance || reachedMaxTime || getCurParams().customEndCondition.getAsBoolean()) {
-            curWaypointIndex++;
             // completely finished drive path
-            if (curWaypointIndex >= waypoints.size()) {
+            if (curWaypointIndex + 1 >= waypoints.size()) {
                 if (getCurParams().slowDownPercent == 1)
                     drivetrain.stop();
+                isRunning = false;
                 return false;
             }
             // finished current waypoint path, moving on to next waypoint
             else {
+                curWaypointIndex++;
                 // set new PID targets
                 resetToNewWaypoint();
 
@@ -232,14 +246,13 @@ public class DrivePath implements Action {
         if (!followingCurvedPath) {
             Vector2d correction = getCorrectiveVector(robotPose, prevWaypointPose.position, getCurWaypoint().pose.position);
             correctiveVector = new Vector2d(correction.x * getCurParams().axialWeight, correction.y * getCurParams().lateralWeight);
-        }
-        else
+        } else
             correctiveVector = new Vector2d(0, 0);
 
         // final vector
         combinedDirectionVector = driveVector.plus(correctiveVector);
         double powerMag = Math.hypot(combinedDirectionVector.x, combinedDirectionVector.y);
-        if(powerMag > 1)
+        if (powerMag > 1)
             combinedDirectionVector = combinedDirectionVector.div(powerMag);
 
         // calculate angular speed (heading)
@@ -247,7 +260,7 @@ public class DrivePath implements Action {
         headingRadFarErrorPID.setPIDValues(getCurParams().farHeadingKp, getCurParams().farHeadingKi, getCurParams().farHeadingKd);
         double headingPower = 0;
         if (!inHeadingTolerance) {
-            if(Math.abs(errorInfo.headingRadError) < Math.toRadians(getCurParams().applyCloseHeadingPIDErrorDeg))
+            if (Math.abs(errorInfo.headingRadError) < Math.toRadians(getCurParams().applyCloseHeadingPIDErrorDeg))
                 headingPower = headingRadCloseErrorPID.update(Math.toDegrees(-errorInfo.headingRadError));
             else
                 headingPower = headingRadFarErrorPID.update(Math.toDegrees(-errorInfo.headingRadError));
@@ -263,9 +276,8 @@ public class DrivePath implements Action {
         Vector2d voltageScaledTranslationalPower = combinedDirectionVector.times(baseVoltage / filteredVoltage);
         double voltageScaledHeadingPower = headingPower * baseVoltage / filteredVoltage;
 
-
         drivetrain.setDrivePowers(new PoseVelocity2d(voltageScaledTranslationalPower, voltageScaledHeadingPower));
-        
+
         if (telemetry != null) {
             telemetry.addData("curved", getCurParams().pathType == PathParams.PathType.CURVED);
             telemetry.addData("splineT", splineT);
@@ -299,29 +311,6 @@ public class DrivePath implements Action {
 //            telemetry.addData("power hypot", powerMag);
 
             telemetry.update();
-        }
-        if (fieldOverlay != null) {
-            if (showWaypointPoses) {
-                Pose2d curWaypointPose = getCurWaypoint().pose;
-
-                fieldOverlay.setStroke("gray");
-                fieldOverlay.strokeLine(prevWaypointPose.position.x, prevWaypointPose.position.y, targetX, targetY);
-                fieldOverlay.setStroke("black");
-                Drawing.drawRobot(fieldOverlay, prevWaypointPose);
-                Drawing.drawRobot(fieldOverlay, curWaypointPose);
-                if (getCurParams().pathType == PathParams.PathType.CURVED) {
-                    fieldOverlay.setStroke("gray");
-                    Drawing.drawRobot(fieldOverlay, new Pose2d(targetX, targetY, targetHeadingRad));
-                    Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
-                }
-            }
-            if (showRobotPose) {
-                fieldOverlay.setStroke("green");
-                Drawing.drawRobot(fieldOverlay, robotPose);
-                Vector2d driveVectorToDraw = GeometryUtils.rotateVector(driveVector, robotPose.heading.toDouble()).times(10);
-                fieldOverlay.strokeLine(robotPose.position.x, robotPose.position.y,
-                        robotPose.position.x + driveVectorToDraw.x, robotPose.position.y + driveVectorToDraw.y);
-            }
         }
         return true;
     }
@@ -424,6 +413,27 @@ public class DrivePath implements Action {
     }
     public double getWaypointDistanceError() {
         return waypointDistanceError;
+    }
+    private void drawPath() {
+        Pose2d curWaypointPose = getCurWaypoint().pose;
+
+        fieldOverlay.setStroke("gray");
+        fieldOverlay.strokeLine(prevWaypointPose.position.x, prevWaypointPose.position.y, targetX, targetY);
+        fieldOverlay.setStroke("black");
+        Drawing.drawRobot(fieldOverlay, prevWaypointPose);
+        Drawing.drawRobot(fieldOverlay, curWaypointPose);
+        if (getCurParams().pathType == PathParams.PathType.CURVED) {
+            fieldOverlay.setStroke("gray");
+            Drawing.drawRobot(fieldOverlay, new Pose2d(targetX, targetY, targetHeadingRad));
+            Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
+        }
+    }
+    private void drawRobotPose(Pose2d robotPose) {
+        fieldOverlay.setStroke("green");
+        Drawing.drawRobot(fieldOverlay, robotPose);
+        Vector2d driveVectorToDraw = GeometryUtils.rotateVector(driveVector, robotPose.heading.toDouble()).times(10);
+        fieldOverlay.strokeLine(robotPose.position.x, robotPose.position.y,
+                robotPose.position.x + driveVectorToDraw.x, robotPose.position.y + driveVectorToDraw.y);
     }
 }
 
