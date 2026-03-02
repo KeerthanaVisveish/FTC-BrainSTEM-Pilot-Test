@@ -37,8 +37,9 @@ public class PathGeneration {
         if (pathGenParams.allowLaneCollect) {
             if (densestLanes.get(0).numBalls() >= 3)
                 return generateLanePath(robotPose, bestLane);
-            if (allBalls.size() == 2 && bestLane.numBalls() == 2)
+            if (allBalls.size() == 2 && bestLane.numBalls() == 2) {
                 return generateLanePath(robotPose, bestLane);
+            }
         }
 
         int numAttempts = 0;
@@ -56,7 +57,7 @@ public class PathGeneration {
 
             // generate path
 //            System.out.println("normal path generation========");
-            PathInfo pathInfo = generatePath(robotPose, allBalls, rawBallPath);
+            PathInfo pathInfo = generateComplexPath(robotPose, allBalls, rawBallPath);
             pathInfo.setIgnoredBalls(ignoredBalls);
             int numProblemBalls = pathInfo.problemBalls.size();
 
@@ -66,7 +67,7 @@ public class PathGeneration {
             if (shiftedLeftRawPath != null) {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
 //                System.out.println("shifted left path `========");
-                PathInfo shiftedLeftPathInfo = generatePath(robotPose, allBalls, shiftedLeftRawBallPath);
+                PathInfo shiftedLeftPathInfo = generateComplexPath(robotPose, allBalls, shiftedLeftRawBallPath);
                 if (shiftedLeftPathInfo.numGoodBalls() > pathInfo.numGoodBalls()) {
                     pathfinderStartPose = shiftedLeftRobotPose;
                     pathInfo = shiftedLeftPathInfo;
@@ -88,7 +89,7 @@ public class PathGeneration {
             // un-optimal
             int lowestSeverityOrdinal = 100;
             for (ProblemBall problemBall : pathInfo.problemBalls) {
-//                System.out.println(problemBall.severity + ": " + problemBall.ballPosition);
+                System.out.println(problemBall.severity + ": " + problemBall.pos);
                 if (problemBall.severity.ordinal() <= lowestSeverityOrdinal)
                     lowestSeverityOrdinal = problemBall.severity.ordinal();
             }
@@ -254,7 +255,7 @@ public class PathGeneration {
         ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose3));
         return new PathInfo(PathInfo.PathType.LANE, startPose, lane.balls, pathPoses, new ArrayList<>());
     }
-    private static PathInfo generatePath(Pose2d robotPose, ArrayList<Ball> allBalls, ArrayList<Ball> originalBallPath) {
+    private static PathInfo generateComplexPath(Pose2d robotPose, ArrayList<Ball> allBalls, ArrayList<Ball> originalBallPath) {
         ArrayList<Ball> ballPath = new ArrayList<>(originalBallPath);
         Vector2d robotPos = robotPose.position;
         ArrayList<PathPose> pathPoses = new ArrayList<>();
@@ -412,22 +413,28 @@ public class PathGeneration {
 
                 Pose2d wallSafeCollectPose = getWallSafePose(collectPose);
                 Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
-                boolean validWallSafePose;
+                Pose2d finalPreCollectPose = preCollectPose;
+                Pose2d finalCollectPose = collectPose;
+                boolean validWallSafePose = true;
                 switch (cur.type) {
                     case CLASSIFIER_WALL:
-                        validWallSafePose = wallSafePreCollectPose.position.x == preCollectPose.position.x;
+                        if (wallSafePreCollectPose.position.x != preCollectPose.position.x)
+                            validWallSafePose = false;
                         break;
                     case BACK_WALL:
-                        validWallSafePose = wallSafePreCollectPose.position.y == preCollectPose.position.y;
+                        if (wallSafePreCollectPose.position.y != preCollectPose.position.y)
+                            validWallSafePose = false;
                         break;
                     case CORNER:
-                        validWallSafePose = true; break;
+                        break;
                     default:
-                        validWallSafePose = wallSafeCollectPose.equals(collectPose);
+                        validWallSafePose = wallSafePreCollectPose.equals(preCollectPose);
+                        break;
                 }
                 if (!validWallSafePose) {
-                    wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, collectInfo.preCollectToCollectAngle, totalPreCollectOffset);
-                    wallSafePreCollectPose = getWallSafePose(wallSafePreCollectPose);
+                    finalCollectPose = wallSafeCollectPose;
+                    finalPreCollectPose = getPreCollectPose(finalCollectPose, collectInfo.preCollectToCollectAngle, totalPreCollectOffset);
+                    finalPreCollectPose = getWallSafePose(finalPreCollectPose);
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.OUT_OF_BOUNDS, cur.pos));
                 }
                 else if (collectInfo.ballProblemSeverity != null)
@@ -437,9 +444,10 @@ public class PathGeneration {
                 if (next == null && cur.type == Ball.BallType.NORMAL) {
                     collectExtraOffset += pathGenParams.lastCollectPoseExtraDriveThrough;
                     collectPose = getCollectPose(cur.pos, collectInfo.collectAngle, -collectExtraOffset);
-                    wallSafeCollectPose = getWallSafePose(collectPose);
+                    finalCollectPose = getWallSafePose(collectPose);
                 }
 
+                // find ideal strafe starting ball
                 if (cur.type == Ball.BallType.CLASSIFIER_WALL && prev.type != Ball.BallType.CLASSIFIER_WALL) {
                     Vector2d[] robotCorners = getRobotCorners(wallSafePreCollectPose); // fr, fl, bl, fr
                     ArrayList<Vector2d> polygon = new ArrayList<>(Arrays.asList(robotCorners));
@@ -458,18 +466,18 @@ public class PathGeneration {
                     preCollectType = Types.PoseType.LENIENT_CORNER_PRECOLLECT;
                 else if (cur.type != Ball.BallType.NORMAL)
                     preCollectType = Types.PoseType.EDGE_CASE_PRECOLLECT;
-                Waypoint w1 = new Waypoint(wallSafePreCollectPose, new CircleTolerance());
-                Waypoint w2 = new Waypoint(wallSafeCollectPose, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
+                Waypoint w1 = new Waypoint(finalPreCollectPose, new CircleTolerance());
+                Waypoint w2 = new Waypoint(finalCollectPose, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.collectDriveMinLinearPower);
                 pathPoses.add(new PathPose(w1, preCollectType, cur, collectInfo.approachType));
                 pathPoses.add(new PathPose(w2, Types.PoseType.COLLECT, cur, collectInfo.approachType));
             }
         }
 
         // strictly bind path poses to inside the field
-        for (int i=0; i<pathPoses.size(); i++) {
-            PathPose cur = pathPoses.get(i);
-            cur.waypoint.pose = getStrictWallSafePose(cur.waypoint.pose);
-        }
+//        for (int i=0; i<pathPoses.size(); i++) {
+//            PathPose cur = pathPoses.get(i);
+//            cur.waypoint.pose = getStrictWallSafePose(cur.waypoint.pose);
+//        }
         // if ball n and ball n + 1 are normal collects
         // if ball n has poses that collide with ball n + 1, remove ball n + 1
 
@@ -682,11 +690,11 @@ public class PathGeneration {
                     double dist = MathUtils.vecDist(prev.pos, cur.pos);
                     if (dist < pathGenParams.lenientCornerCollectThreshold) {
                         approachType = Types.Approach.CORNER_LENIENT;
-                        collectAngle = MathUtils.averageAngle(collectAngle, prevPathPose.heading.toDouble());
+                        collectAngle = Math.toRadians(pathGenParams.cornerCollectAngle) * Math.signum(wallAngle);
                         preCollectToCollectAngle = collectAngle * 0.5;
-                        double preCollectOffsetT = Math.max(0, dist - 2.5) / pathGenParams.lenientCornerCollectThreshold;
-                        preCollectOffset = MathUtils.lerp(0, pathGenParams.preCollectOffset, preCollectOffsetT);
+                        preCollectOffset = 0;
                         collectYOffset = 0;
+                        collectXOffset = pathGenParams.lenientCornerCollectXOffset;
                     }
                 }
                 break;
@@ -773,7 +781,6 @@ public class PathGeneration {
         }
         return new CollectInfo(problemBallSeverity, approachType, preCollectOffset, preCollectToCollectAngle, collectAngle, collectXOffset, collectYOffset);
     }
-
     private static class CollectInfo {
         public final ProblemBall.Severity ballProblemSeverity;
         public final Types.Approach approachType;
@@ -788,7 +795,7 @@ public class PathGeneration {
             this.collectOffset = new Vector2d(collectXOffset, collectYOffset);
         }
     }
-    protected static ArrayList<PathPose> simplifyPathPoses(Pose2d startPose, ArrayList<PathPose> pathPoses) {
+    private static ArrayList<PathPose> simplifyPathPoses(Pose2d startPose, ArrayList<PathPose> pathPoses) {
         ArrayList<PathPose> simplified = new ArrayList<>();
         if (pathPoses.isEmpty())
             return simplified;
