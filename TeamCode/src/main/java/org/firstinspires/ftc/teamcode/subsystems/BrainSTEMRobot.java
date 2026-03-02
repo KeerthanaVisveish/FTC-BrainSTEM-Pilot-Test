@@ -1,7 +1,10 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -172,7 +175,7 @@ public class BrainSTEMRobot {
                 limelight.ballDetection.takeBallSnapshotAction()
         );
     }
-    public Action lookAtClassifier() {
+    public Action lookAtClassifier(Turret.TurretState endingTurretState) {
         return new SequentialAction(
                 turret.rotateToCustomTarget(() -> {
                     Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
@@ -182,7 +185,27 @@ public class BrainSTEMRobot {
                     return MathUtils.angleNormDeltaRad(absoluteAngle - robotAngle);
                 }),
                 limelight.classifier.readBallsInClassifier(),
-                new InstantAction(() -> turret.turretState = Turret.TurretState.TRACKING)
+                new InstantAction(() -> turret.setTurretState(endingTurretState))
         );
+    }
+    public Action waitXSecondsIf2BallsInClassifier(double maxWaitTime) {
+        return new Action() {
+            ElapsedTime timer = null;
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                if (timer == null) {
+                    timer = new ElapsedTime();
+                    timer.reset();
+                }
+                int numBalls = limelight.classifier.getMostCommonNumBalls();
+
+                // unsuccessful read or 3 or more balls
+                if (numBalls == -1 || numBalls > 2)
+                    return false;
+
+                // 0, 1, or 2 balls
+                return timer.seconds() <= maxWaitTime;
+            }
+        };
     }
 }

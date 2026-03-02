@@ -59,7 +59,7 @@ public class LED extends Component {
                 return;
             }
         }
-        if(!robot.turret.inRange() && robot.turret.turretState == Turret.TurretState.TRACKING) {
+        if(!robot.turret.inRange() && robot.turret.getTurretState() == Turret.TurretState.TRACKING) {
             if(turretFlashTimer.seconds() > turretFlashOnTime + turretFlashOffTime)
                 turretFlashTimer.reset();
             else if(turretFlashTimer.seconds() > turretFlashOnTime) {

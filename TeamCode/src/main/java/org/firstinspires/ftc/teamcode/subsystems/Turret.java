@@ -424,9 +424,11 @@ public class Turret extends Component {
     public boolean onTarget() {
         return onTarget;
     }
-    public void setCustomTargetEncoder(double encoder) {
-        if (turretState == TurretState.TRACK_CUSTOM_TARGET)
-            targetEncoder = encoder;
+    public TurretState getTurretState() {
+        return turretState;
+    }
+    public void setTurretState(TurretState turretState) {
+        this.turretState = turretState;
     }
     public Action rotateToCustomTarget(DoubleSupplier targetAngle) {
         return new SequentialAction(
@@ -434,6 +436,7 @@ public class Turret extends Component {
                     turretState = TurretState.TRACK_CUSTOM_TARGET;
                     double clippedAngle = Range.clip(targetAngle.getAsDouble(), -turretParams.maxAngle, turretParams.maxAngle);
                     targetEncoder = clippedAngle * turretParams.ticksPerRad;
+                    positionError = targetEncoder - currentEncoder;
                 }),
                 telemetryPacket -> positionError > powerTuning.noVoltageThreshold
         );

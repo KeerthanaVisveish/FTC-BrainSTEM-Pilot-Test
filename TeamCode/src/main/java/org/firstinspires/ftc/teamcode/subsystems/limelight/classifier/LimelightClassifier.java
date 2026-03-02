@@ -1,7 +1,11 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.classifier;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -23,6 +27,10 @@ public class LimelightClassifier extends LLParent {
         NO_CLASSIFIER,
         OCCLUDED_BALLS
     }
+    public enum ReadState {
+        OFF,
+        READ
+    }
     public static class Params {
         public double closeX = -12, closeY = 24, closeRadius = 24;
         public double farX = 60, farY = 12, farRadius = 6;
@@ -35,24 +43,26 @@ public class LimelightClassifier extends LLParent {
     private double[] classifierDetectionOutput;
     private int[] numBalls; // numBalls[n] = the number of times n balls has been seen in the classifier from the limelight snapscript
     private int curFrameNumBalls;
-    private int numFramesRunning;
+    private int numFramesReading;
     private ReceiveState receiveState;
+    private ReadState readState;
     public LimelightClassifier(BrainSTEMRobot robot, Limelight3A limelight) {
         super(robot, limelight);
         classifierDetectionOutput = new double[0];
         numBalls = new int[10];
-        numFramesRunning = 0;
+        numFramesReading = 0;
         pythonInputs = new double[2];
         receiveState = ReceiveState.NO_DATA;
+        readState = ReadState.OFF;
     }
 
     public void resetForNewRead() {
         numBalls = new int[10];
-        numFramesRunning = 0;
+        numFramesReading = 0;
     }
 
     public int getMostCommonNumBalls() {
-        if (numFramesRunning < params.numFramesPerRead)
+        if (numFramesReading < params.numFramesPerRead)
             return -1;
 
         int mostCommonNumBalls = -1;
@@ -69,28 +79,40 @@ public class LimelightClassifier extends LLParent {
 
     @Override
     public void update() {
-        Pose2d robotPose = robot.drive.localizer.getPose();
+        switch (readState) {
+            case OFF:
+                break;
+            case READ:
+                Pose2d robotPose = robot.drive.localizer.getPose();
 
-        inValidClassifierRegion = inValidClassifierRegion(robotPose);
-        if (inValidClassifierRegion) {
-            pythonInputs = new double[2];
-            pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
-            pythonInputs[1] = getCameraY();
+                inValidClassifierRegion = inValidClassifierRegion(robotPose);
+                if (!inValidClassifierRegion) {
+                    setReadState(ReadState.OFF);
+                    break;
+                }
 
-            limelight.updatePythonInputs(pythonInputs);
+                pythonInputs = new double[2];
+                pythonInputs[0] = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1; // red or blue alliance
+                pythonInputs[1] = getCameraY();
 
-            LLResult result = limelight.getLatestResult();
-            classifierDetectionOutput = result.getPythonOutput();
+                limelight.updatePythonInputs(pythonInputs);
 
-            curFrameNumBalls = (int) classifierDetectionOutput[0];
-            switch (curFrameNumBalls) {
-                case -2: receiveState = ReceiveState.OCCLUDED_BALLS; break;
-                case -1: receiveState = ReceiveState.NO_CLASSIFIER; break;
-                default: receiveState = ReceiveState.VALID; break;
-            }
-            if (receiveState == ReceiveState.VALID)
-                numBalls[curFrameNumBalls]++;
-            numFramesRunning++;
+                LLResult result = limelight.getLatestResult();
+                classifierDetectionOutput = result.getPythonOutput();
+
+                curFrameNumBalls = (int) classifierDetectionOutput[0];
+                switch (curFrameNumBalls) {
+                    case -2: receiveState = ReceiveState.OCCLUDED_BALLS; break;
+                    case -1: receiveState = ReceiveState.NO_CLASSIFIER; break;
+                    default: receiveState = ReceiveState.VALID; break;
+                }
+                if (receiveState == ReceiveState.VALID)
+                    numBalls[curFrameNumBalls]++;
+
+                numFramesReading++;
+                if (numFramesReading >= params.numFramesPerRead)
+                    setReadState(ReadState.OFF);
+                break;
         }
     }
 
@@ -129,6 +151,32 @@ public class LimelightClassifier extends LLParent {
         Pose2d robotPose = robot.drive.localizer.getPose();
         Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         return Limelight.getLimelightPose(turretPose).position.y;
+    }
+    public Action readBallsInClassifier() {
+        return new Action() {
+            boolean first = true;
+            @Override
+            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                if (first) {
+                    first = false;
+                    resetForNewRead();
+                    setReadState(ReadState.READ);
+                }
+
+                return readState == ReadState.READ;
+            }
+        };
+    }
+    public void setReadState(ReadState readState) {
+        if (this.readState == readState)
+            return;
+        this.readState = readState;
+        switch (readState) {
+            case OFF:
+                break;
+            case READ:
+                resetForNewRead();
+        }
     }
 }
 /*

@@ -23,6 +23,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
@@ -184,8 +185,8 @@ public abstract class AutoPid extends LinearOpMode {
         Action forcedStopAutoAction = new ParallelAction(
                 packet -> { telemetry.addData("RRAutoFar STATE", autoState); return true; },
                 new TimedAction(timedAutoAction, timeConstraints.stopEverythingTime).setEndFunction(robot.drive::stop),
-                autoCommands.updateRobot,
-                autoCommands.savePoseContinuously,
+                autoCommands.updateRobot(),
+                autoCommands.savePoseContinuously(),
                 packet -> {
                     telemetry.update();
                     return true;
@@ -566,7 +567,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         Action completeGateCollectDrive = new SequentialAction(
                 autoCommands.stopIntake(),
-                new SleepAction(waitTime),
+                robot.lookAtClassifier(Turret.TurretState.TRACKING),
                 gateOpenAction,
                 autoCommands.runIntake(),
                 new SleepAction(timeConstraints.gateCollectOpenWait),

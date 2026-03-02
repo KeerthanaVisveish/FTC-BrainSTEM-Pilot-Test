@@ -85,7 +85,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         robot.startOpmode();
         robot.turret.update();
         if (inCompetition) {
-            robot.turret.turretState = Turret.TurretState.TRACKING;
+            robot.turret.setTurretState(Turret.TurretState.TRACKING);
             robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
         }
         while (opModeIsActive()) {
@@ -174,10 +174,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
 
             if (gp1.isFirstLeftBumper()) {
-                if (robot.turret.turretState == Turret.TurretState.CENTER)
-                    robot.turret.turretState = Turret.TurretState.TRACKING;
+                if (robot.turret.getTurretState() == Turret.TurretState.CENTER)
+                    robot.turret.setTurretState(Turret.TurretState.TRACKING);
                 else
-                    robot.turret.turretState = Turret.TurretState.CENTER;
+                    robot.turret.setTurretState(Turret.TurretState.CENTER);
             }
 
             if (gp1.isFirstBack()) {
