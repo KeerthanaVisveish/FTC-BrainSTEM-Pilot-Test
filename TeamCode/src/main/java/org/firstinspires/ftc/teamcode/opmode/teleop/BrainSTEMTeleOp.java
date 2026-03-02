@@ -30,7 +30,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printShooter = false, printTurret = true, printShootingSystem = false,
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
-    public static boolean inCompetition = false;
+    public static boolean inCompetition = true;
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
     public static double[] redCornerResetPose = { 62.0618, -63.1, 90 };
     public static double noMoveJoystickThreshold = 0.1;
@@ -85,7 +85,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         robot.startOpmode();
         robot.turret.update();
         if (inCompetition) {
-            robot.turret.setTurretState(Turret.TurretState.TRACKING);
+            robot.turret.turretState = Turret.TurretState.TRACKING;
             robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
         }
         while (opModeIsActive()) {
@@ -166,19 +166,19 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
 
+        if (gp1.isFirstLeftBumper()) {
+            if (robot.turret.turretState == Turret.TurretState.CENTER)
+                robot.turret.turretState = Turret.TurretState.TRACKING;
+            else
+                robot.turret.turretState = Turret.TurretState.CENTER;
+        }
+
         if(!inCompetition) {
             if (gp1.isFirstRightBumper())
                 if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
                     robot.shooter.setShooterState(Shooter.ShooterState.OFF);
                 else
                     robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
-
-            if (gp1.isFirstLeftBumper()) {
-                if (robot.turret.getTurretState() == Turret.TurretState.CENTER)
-                    robot.turret.setTurretState(Turret.TurretState.TRACKING);
-                else
-                    robot.turret.setTurretState(Turret.TurretState.CENTER);
-            }
 
             if (gp1.isFirstBack()) {
                 robot.limelight.localization.maxTranslationalVariance = 0;
@@ -190,6 +190,14 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDriver2() {
+        if (gp2.isFirstB()) {
+            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
+                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
+            else {
+                robot.collection.setCollectionState(Collection.CollectionState.OFF);
+                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
+            }
+        }
         if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED) {
             if (gp2.isFirstA())
                 if (robot.collection.getCollectionState() != Collection.CollectionState.INTAKE)
@@ -197,12 +205,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 else
                     robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
-        if (gp2.isFirstB())
-            if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED)
-                robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
-            else
-                robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-
         if (gp2.isFirstLeftBumper())
             robot.collection.setFlickerState(Collection.FlickerState.HALF_UP_DOWN);
         if(gp2.isFirstLeftTrigger())
@@ -225,6 +227,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gp2.isFirstRightTrigger()) {
             Pose2d resetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(resetPose);
+            robot.turret.resetAllEncoderAdjustments();
             robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
         }
     }

@@ -52,16 +52,21 @@ public class Waypoint {
         params.maxLinearPower = maxLinearPower;
         return this;
     }
-    public Waypoint setMaxHeadingPower(double maxHeadingPower) {
-        params.maxHeadingPower = maxHeadingPower;
-        return this;
-    }
     public Waypoint setMinLinearPower(double minLinearPower) {
         params.minLinearPower = minLinearPower;
         return this;
     }
+    public Waypoint setFixedLinearPower(double fixedLinearPower) {
+        params.maxLinearPower = fixedLinearPower;
+        params.minLinearPower = fixedLinearPower;
+        return this;
+    }
     public Waypoint setMinHeadingPower(double minHeadingPower) {
         params.minHeadingPower = minHeadingPower;
+        return this;
+    }
+    public Waypoint setMaxHeadingPower(double maxHeadingPower) {
+        params.maxHeadingPower = maxHeadingPower;
         return this;
     }
     public Waypoint setSlowDownPercent(double percent) {
@@ -86,6 +91,19 @@ public class Waypoint {
     }
     public Waypoint setHeadingLerp(PathParams.HeadingLerpType lerpType) {
         params.headingLerpType = lerpType;
+        return this;
+    }
+    public Waypoint setFarHeadingKP(double kP) {
+        params.farHeadingKp = kP;
+        return this;
+    }
+    public Waypoint setCloseHeadingKP(double kP) {
+        params.closeHeadingKp = kP;
+        return this;
+    }
+    public Waypoint setHeadingKPMult(double mult) {
+        params.closeHeadingKp *= mult;
+        params.farHeadingKp *= mult;
         return this;
     }
     public Waypoint prioritizeHeadingInBeginning() {

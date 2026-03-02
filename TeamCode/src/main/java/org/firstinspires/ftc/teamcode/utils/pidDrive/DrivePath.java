@@ -81,7 +81,6 @@ public class DrivePath implements Action {
             prevWaypoint.setNextWaypoint(waypoint);
         if (nextWaypoint != null)
             waypoint.setNextWaypoint(nextWaypoint);
-
     }
     public Waypoint getWaypoint(int index) {
         if (index < 0 || index >= waypoints.size())
@@ -240,6 +239,8 @@ public class DrivePath implements Action {
             combinedDirectionVector = combinedDirectionVector.div(powerMag);
 
         // calculate angular speed (heading)
+        headingRadCloseErrorPID.setPIDValues(getCurParams().closeHeadingKp, getCurParams().closeHeadingKi, getCurParams().closeHeadingKd);
+        headingRadFarErrorPID.setPIDValues(getCurParams().farHeadingKp, getCurParams().farHeadingKi, getCurParams().farHeadingKd);
         double headingPower = 0;
         if (!inHeadingTolerance) {
             if(Math.abs(errorInfo.headingRadError) < Math.toRadians(getCurParams().applyCloseHeadingPIDErrorDeg))
@@ -257,6 +258,8 @@ public class DrivePath implements Action {
         double filteredVoltage = drivetrain.getFilteredVoltage();
         Vector2d voltageScaledTranslationalPower = combinedDirectionVector.times(baseVoltage / filteredVoltage);
         double voltageScaledHeadingPower = headingPower * baseVoltage / filteredVoltage;
+
+
         drivetrain.setDrivePowers(new PoseVelocity2d(voltageScaledTranslationalPower, voltageScaledHeadingPower));
         
         if (telemetry != null) {
