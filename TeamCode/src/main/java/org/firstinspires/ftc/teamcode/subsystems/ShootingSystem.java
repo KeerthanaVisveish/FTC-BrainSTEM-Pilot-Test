@@ -31,8 +31,8 @@ public class ShootingSystem {
     public static class GoalParams {
         public double nearRedX = -64, nearRedY = 66, nearHeight = 39;
         public double nearBlueX = -64, nearBlueY = -64;
-        public double midRedX = -65, midRedY = 67, midHeight = 38;
-        public double midBlueX = -65.25, midBlueY = -65.5;
+        public double midRedX = -64, midRedY = 68, midHeight = 38;
+        public double midBlueX = -65.25, midBlueY = -64;
         public double farRedX = -65, farRedY = 66, farHeight = 42;
         public double farBlueX = -65.75, farBlueY = -63;
         public double nearImpactAng = Math.toRadians(-25), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
@@ -400,6 +400,8 @@ public class ShootingSystem {
         telemetry.addData("future turret meters from goal", futureTurretPosGoalDistIn * 0.0254);
         telemetry.addData("future turret inches from goal", futureTurretPosGoalDistIn);
         telemetry.addData("absolute target exit speed mps", ballTargetExitSpeedMps);
+        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
+        telemetry.addData("lookahead robot speed at turret", lookAheadRobotSpeedAtTurretIps);
         telemetry.addData("dt", dt);
         telemetry.addLine();
         telemetry.addData("rel height to target meters", relGoalHeightM);
