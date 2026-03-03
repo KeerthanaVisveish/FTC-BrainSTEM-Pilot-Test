@@ -96,7 +96,7 @@ public class LoadingZoneBallCollection extends OpMode {
         DrivePath autoCollectDrive = null;
         if (pathInfo != null) {
             autoCollectDrive = new DrivePath(robot.drive);
-            for (PathPose pathPose : pathInfo.simplifiedPathPoses)
+            for (PathPose pathPose : pathInfo.optimizedPathPoses)
                 autoCollectDrive.addWaypoint(pathPose.waypoint);
         }
         if (autoCollectAction == null && scanForBallsAction == null) {
@@ -161,7 +161,7 @@ public class LoadingZoneBallCollection extends OpMode {
         if (pathInfo == null)
             telemetry.addData("drive path", "null");
         else
-            telemetry.addData("drive path", pathInfo.getSimplifiedPoses());
+            telemetry.addData("drive path", pathInfo.getOptimizedPoses());
         robot.limelight.printInfo();
         telemetry.update();
 
@@ -170,7 +170,7 @@ public class LoadingZoneBallCollection extends OpMode {
         robot.drawRobotInfo(fieldOverlay);
         robot.limelight.ballDetection.drawBalls(fieldOverlay, mostRecentNodes);
         if (pathInfo != null)
-            robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getSimplifiedPoses());
+            robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getOptimizedPoses());
         FtcDashboard.getInstance().sendTelemetryPacket(packet);
     }
 }

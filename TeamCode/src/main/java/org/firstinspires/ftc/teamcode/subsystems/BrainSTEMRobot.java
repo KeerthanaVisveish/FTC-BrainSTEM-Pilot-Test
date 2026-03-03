@@ -112,12 +112,12 @@ public class BrainSTEMRobot {
         return drive.getRawVoltage();
     }
 
-    public Action scanForBalls(DoubleSupplier angle1, DoubleSupplier angle2) {
+    public Action scanForBalls(DoubleSupplier angle1Sup, DoubleSupplier angle2Sup) {
         return new SequentialAction(
-                turret.rotateToCustomTarget(angle1),
+                turret.rotateToCustomTarget(angle1Sup),
                 new SleepAction(0.03),
                 limelight.ballDetection.takeBallSnapshotAction(),
-                turret.rotateToCustomTarget(angle2),
+                turret.rotateToCustomTarget(angle2Sup),
                 limelight.ballDetection.takeBallSnapshotAction()
         );
     }
@@ -126,9 +126,7 @@ public class BrainSTEMRobot {
                 turret.rotateToCustomTarget(() -> {
                     Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
                     Vector2d turretToClassifier = shootingSystem.turretPose.position.minus(classifierPosition);
-                    double robotAngle = drive.localizer.getPose().heading.toDouble();
-                    double absoluteAngle = MathUtils.vecAngle(turretToClassifier);
-                    return MathUtils.angleNormDeltaRad(absoluteAngle - robotAngle);
+                    return MathUtils.vecAngle(turretToClassifier);
                 }),
                 limelight.classifier.readBallsInClassifier(),
                 new InstantAction(() -> turret.setTurretState(endingTurretState))

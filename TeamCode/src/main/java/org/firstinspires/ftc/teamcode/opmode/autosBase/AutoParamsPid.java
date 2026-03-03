@@ -32,8 +32,8 @@ public class AutoParamsPid {
         public double thirdNearT1 = 23, thirdNearT2 = 18;
         public double thirdCloseHeadingKp = .008;
 
-        public double[] thirdFarControlPoint = {41, 28, 120};
-        public double thirdFarT1 = 29, thirdFarT2 = 20;
+        public double[] thirdFarControlPoint = {40, 28, 120};
+        public double thirdFarT1 = 28, thirdFarT2 = 20;
 
 //        public double preLoadingXRed = 48.5, preLoadingYRed = 60.5, preLoadingARed = Math.toRadians(60);
 //        public double preLoadingXBlue = 48.5, preLoadingYBlue = -60.5, preLoadingABlue = Math.toRadians(-60);

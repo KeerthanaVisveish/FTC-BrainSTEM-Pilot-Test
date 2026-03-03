@@ -34,8 +34,12 @@ public class LimelightBallDetection extends LLParent {
         public boolean showPythonOutputs = false;
         public boolean drawBalls = false;
     }
-
     public static Params params = new Params();
+    public enum ReadState {
+        OFF,
+        READING
+    }
+    private ReadState readState;
     private double[] pythonOutputs;
     private int currentNumBlobs;
     private ArrayList<Blob> currentBlobs;
@@ -47,30 +51,35 @@ public class LimelightBallDetection extends LLParent {
         currentBlobs = new ArrayList<>();
         previousSnapshots = new ArrayList<>();
         numImagesLeft = 0;
+        readState = ReadState.OFF;
     }
     @Override
     public void update() {
-        LLResult result = limelight.getLatestResult();
-        pythonOutputs = result.getPythonOutput();
+        if (readState == ReadState.READING) {
+            LLResult result = limelight.getLatestResult();
+            pythonOutputs = result.getPythonOutput();
 
-        int numNonZeroEntries = 0;
-        while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
-            numNonZeroEntries++;
-        currentNumBlobs = numNonZeroEntries / params.numPiecesOfInfoPerBlob;
-        if (currentNumBlobs > params.maxBlobs)
-            currentNumBlobs = params.maxBlobs;
+            int numNonZeroEntries = 0;
+            while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
+                numNonZeroEntries++;
+            currentNumBlobs = numNonZeroEntries / params.numPiecesOfInfoPerBlob;
+            if (currentNumBlobs > params.maxBlobs)
+                currentNumBlobs = params.maxBlobs;
 
-        currentBlobs = new ArrayList<>();
-        for (int i = 0; i< currentNumBlobs; i++) {
-            int index = i * params.numPiecesOfInfoPerBlob;
-            double px = pythonOutputs[index];
-            double py = pythonOutputs[index + 1];
-            double area = pythonOutputs[index + 2];
-            currentBlobs.add(createBlob(px, py, area));
-        }
-        if (numImagesLeft > 0) {
-            numImagesLeft--;
-            previousSnapshots.add(new ArrayList<>(currentBlobs));
+            currentBlobs = new ArrayList<>();
+            for (int i = 0; i < currentNumBlobs; i++) {
+                int index = i * params.numPiecesOfInfoPerBlob;
+                double px = pythonOutputs[index];
+                double py = pythonOutputs[index + 1];
+                double area = pythonOutputs[index + 2];
+                currentBlobs.add(createBlob(px, py, area));
+            }
+            if (numImagesLeft > 0) {
+                numImagesLeft--;
+                previousSnapshots.add(new ArrayList<>(currentBlobs));
+            }
+            if (numImagesLeft <= 0)
+                readState = ReadState.OFF;
         }
     }
 
@@ -140,7 +149,9 @@ public class LimelightBallDetection extends LLParent {
         return currentBlobs;
     }
     public void takeBallSnapshot() {
+        previousSnapshots.clear();
         numImagesLeft = params.numImagesPerSnapshot;
+        readState = ReadState.READING;
     }
     public ArrayList<Vector2d> getCombinedBlobPositions() {
         ArrayList<ArrayList<Vector2d>> combinedRaw = new ArrayList<>();

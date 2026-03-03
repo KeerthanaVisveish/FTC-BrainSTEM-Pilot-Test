@@ -447,11 +447,14 @@ public class Turret extends Component {
     public void setTurretState(TurretState turretState) {
         this.turretState = turretState;
     }
-    public Action rotateToCustomTarget(DoubleSupplier targetAngle) {
+    public Action rotateToCustomTarget(DoubleSupplier targetFieldAngleSup) {
         return new SequentialAction(
                 new InstantAction(() -> {
                     turretState = TurretState.TRACK_CUSTOM_TARGET;
-                    double clippedAngle = Range.clip(targetAngle.getAsDouble(), -turretParams.maxAngle, turretParams.maxAngle);
+                    double targetFieldAngle = targetFieldAngleSup.getAsDouble();
+                    double robotAngle = robot.drive.localizer.getPose().heading.toDouble();
+                    double targetRelAngle = MathUtils.angleNormDeltaRad(targetFieldAngle - robotAngle);
+                    double clippedAngle = Range.clip(targetRelAngle, -turretParams.maxAngle, turretParams.maxAngle);
                     targetEncoder = clippedAngle * turretParams.ticksPerRad;
                     positionError = targetEncoder - currentEncoder;
                 }),

@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode.opmode.autosBase;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createInvertedPose;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
@@ -23,6 +25,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
@@ -521,9 +526,36 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
-//    private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
-//
-//    }
+    private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
+        Action limelightCollectAction = new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls);
+        DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
+                .setMaxTime(3)
+                .setPassPosition(true));
+
+        return buildCollectAndShoot(limelightCollectAction, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
+    }
+    private Action getLimelightCollectDrive() {
+        return new SequentialAction(
+                robot.limelight.ballDetection.takeBallSnapshotAction(),
+                new Action() {
+                    DrivePath path = null;
+                    @Override
+                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                        if (path == null) {
+                            Pose2d robotPose = robot.drive.localizer.getPose();
+                            ArrayList<Vector2d> ballPositions = robot.limelight.ballDetection.getCombinedBlobPositions();
+                            PathInfo pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, ballPositions);
+                            if (pathInfo == null)
+                                return true;
+                            path = new DrivePath(robot.drive);
+                            for (PathPose pathPose : pathInfo.optimizedPathPoses)
+                                path.addWaypoint(pathPose.waypoint);
+                        }
+                        return path.run(telemetryPacket);
+                    }
+                }
+        );
+    }
 //    private Action getRepeatedCornerCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
 //        DrivePath gateShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
 //                .setMaxTime(4));
