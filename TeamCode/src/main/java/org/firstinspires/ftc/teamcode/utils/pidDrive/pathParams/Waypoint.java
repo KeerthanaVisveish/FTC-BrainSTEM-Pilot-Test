@@ -111,7 +111,7 @@ public class Waypoint {
         return this;
     }
     public Waypoint setHeadingTangentDeactivateThreshold(double t) {
-        params.tangentHeadingDeactivateThreshold = t;
+        params.tangentHeadingDeactivateDist = t;
         return this;
     }
     public Waypoint setControlPoint(Pose2d controlPoint, double tValueStartDistError, double tValueFinishDistError) {

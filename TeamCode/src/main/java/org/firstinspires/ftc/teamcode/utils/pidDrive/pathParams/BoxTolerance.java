@@ -18,6 +18,9 @@ public class BoxTolerance implements Tolerance {
         this.yTol = yTol;
         this.headingRadTol = headingRadTol;
     }
+    public BoxTolerance(double[] tols) {
+        this(tols[0], tols[1], tols[2]);
+    }
 
     public BoxTolerance(double distTol, double headingRadTol) {
         this(distTol, distTol, headingRadTol);

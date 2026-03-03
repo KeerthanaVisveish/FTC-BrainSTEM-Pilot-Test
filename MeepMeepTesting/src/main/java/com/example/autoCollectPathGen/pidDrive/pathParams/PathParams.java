@@ -60,7 +60,7 @@ public class PathParams {
     public PathType pathType;
     public Pose2d controlPoint;
     public double tValueStartDist, tValueFinishDist;
-    public double tangentHeadingDeactivateThreshold, applyCloseHeadingPIDErrorDeg;
+    public double tangentHeadingDeactivateDist, applyCloseHeadingPIDErrorDeg;
     public boolean prioritizeHeadingInBeginning;
     public boolean stopOnSuddenDecel;
     public PathParams() {
@@ -98,7 +98,7 @@ public class PathParams {
         headingLerpType = defaultParams.headingLerpType;
         pathType = defaultParams.pathType;
         tValueFinishDist = defaultParams.tValueMaxOutTime;
-        tangentHeadingDeactivateThreshold = defaultParams.tangentHeadingActivateThreshold;
+        tangentHeadingDeactivateDist = defaultParams.tangentHeadingActivateThreshold;
         applyCloseHeadingPIDErrorDeg = defaultParams.applyCloseHeadingPIDErrorDeg;
         slowDownPercent = 1;
         prioritizeHeadingInBeginning = defaultParams.prioritizeHeadingInBeginning;

@@ -3,7 +3,7 @@ package com.example.autoCollectPathGen.pathGeneration;
 import java.util.function.DoubleUnaryOperator;
 
 public class PathGenerationParams {
-        public double robotWidth = 13.5;
+        public double robotWidth = 13 + 2 * 0.9382;
         public double robotLength = 16;
         public double shiftedLeftStartX = 40;
 
@@ -16,12 +16,12 @@ public class PathGenerationParams {
         public double ignoreOptimizedLaneWidthSortingWidth = 3;
         public double laneCollectControlYOffset = 15;
         public double laneCollectControlMinYOffsetFromRobot = 12;
+        public double snapLaneToWallDistFromWall = 12;
 
         public double maxPathRegenerationAttempts = 5;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
         public double backTrackingMinDotProductBetweenPoints = -0.5; // for back tracking problem balls
         public double backTrackingMaxDistBetweenPoints = 2;
-
 
         public double collectPoseOffsetDistance = 7;
         public double preCollectOffset = 5;
@@ -42,7 +42,7 @@ public class PathGenerationParams {
         public double cornerBallDistance = 7;
         public double cornerCollectY = 73;
         public double cornerCollectAngle = 10;
-        public double lenientCornerCollectThreshold = 12;
+        public double cornerCollectXOffset = 3;
 
         public double wallStrafeCollectMinApproachAngle = 35;
         public double wallCollectAngle = 45;
