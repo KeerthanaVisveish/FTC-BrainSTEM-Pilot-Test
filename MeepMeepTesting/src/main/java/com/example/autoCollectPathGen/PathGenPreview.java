@@ -175,9 +175,9 @@ public class PathGenPreview extends JPanel
         if (regeneratePathPoses) {
             regeneratePathPoses = false;
 
-            Vector2d[] ballPositions = new Vector2d[balls.size()];
+            ArrayList<Vector2d> ballPositions = new ArrayList<>();
             for (int i=0; i<balls.size(); i++)
-                ballPositions[i] = balls.get(i).position;
+                ballPositions.add(balls.get(i).position);
             path = PathGeneration.generateSimplifiedAutoCollectPath(robot, ballPositions);
         }
         drawRobotAndBalls(g2);
