@@ -66,7 +66,7 @@ public class Collection extends Component {
     public boolean outtakeAfterClutchEngage;
     private double timerStart = 0;
     private boolean timerRunning = false;
-    private boolean has3Balls = false, autoCollectHas3Balls = false;
+    private boolean has3Balls = false, prevHas3Balls, autoCollectHas3Balls = false;
     private final ElapsedTime intake3BallsTimer = new ElapsedTime();
     public final ElapsedTime clutchTimer = new ElapsedTime();
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
@@ -277,10 +277,14 @@ public class Collection extends Component {
     public boolean has3Balls() {
         return has3Balls;
     }
+    public boolean prevHas3Balls() {
+        return prevHas3Balls;
+    }
     public boolean autoCollectHas3Balls() {
         return autoCollectHas3Balls;
     }
     public void checkForIntakeBalls(double currentTime) {
+        prevHas3Balls = has3Balls;
         if (isBackBallDetected() && isFrontBallDetected()) {
             if (!timerRunning) {
                 timerStart = currentTime;

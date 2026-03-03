@@ -1,7 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.postCompAutos;
-
-import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Tolerance;
+package org.firstinspires.ftc.teamcode.opmode.autosBase;
 
 public class AutoParamsPid {
     public static class Collect {
@@ -9,7 +6,7 @@ public class AutoParamsPid {
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .45, thirdCollectDrivePower = .5;
         public double gateOpenDrive1Power = .8, gateOpenDrive2Power = .45;
         public double firstCorrectiveStrength = .3;
-        public double loadingZoneCollectDrivePower = 0.3;
+        public double loadingDrivePower = 0.25, loadingHeadingPower = .3;
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
@@ -31,35 +28,39 @@ public class AutoParamsPid {
 
         public double[] thirdNearWaypoint = { 20, 26.5, 35 };
         public double thirdNearWaypointXTol = 6, thirdNearWaypointYTol = 3, thirdNearWaypointHeadingTol = 5;
-        public double[] thirdNearControlPoint = { 34, 28, 60};
-        public double thirdNearT1 = 21, thirdNearT2 = 18;
+        public double[] thirdNearControlPoint = { 34, 29, 60};
+        public double thirdNearT1 = 23, thirdNearT2 = 18;
         public double thirdCloseHeadingKp = .008;
 
-        public double[] thirdFarControlPoint = {39, 40, 135};
-        public double thirdFarT1 = 30, thirdFarT2 = 20;
+        public double[] thirdFarControlPoint = {41, 28, 120};
+        public double thirdFarT1 = 29, thirdFarT2 = 20;
 
-        public double preLoadingXRed = 48.5, preLoadingYRed = 60.5, preLoadingARed = Math.toRadians(60), preLoadingXBlue = 48.5, preLoadingYBlue = -60.5, preLoadingABlue = Math.toRadians(-60);
-        public double postLoadingXRed = 62, postLoadingYRed = 62, postLoadingARed = Math.toRadians(65), postLoadingXBlue = 62, postLoadingYBlue = -62, postLoadingABlue = Math.toRadians(-65);
+//        public double preLoadingXRed = 48.5, preLoadingYRed = 60.5, preLoadingARed = Math.toRadians(60);
+//        public double preLoadingXBlue = 48.5, preLoadingYBlue = -60.5, preLoadingABlue = Math.toRadians(-60);
+        public double[] preLoading = { 49, 61, 40 };
+        public double[] preLoadingTol = { 1, 2, 2 };
+        public double[] loadingControlPoint = { 56, 63, 40 };
+        public double loadingControlT1 = 5, loadingControlT2 = 4;
+        public double[] postLoading = { 59.5, 64, 18 };
+        public double[] postLoadingTol = { 1.5, 1, 3 };
+//        public double postLoadingXRed = 62, postLoadingYRed = 62, postLoadingARed = Math.toRadians(65), postLoadingXBlue = 62, postLoadingYBlue = -62, postLoadingABlue = Math.toRadians(-65);
         public double cornerCollectXRed = 66, cornerCollectYRed = 68, cornerCollectARed = Math.toRadians(90);
         public double cornerCollectXBlue = 66, cornerCollectYBlue = -68, cornerCollectABlue = Math.toRadians(-90);
         public double cornerCollectRetryX = 55, cornerCollectRetryYRed = 46, cornerCollectRetryYBlue = -46;
 
-        public double gateOpenKPMult = 1.2;
-        public double[] gateOpen = { 7.8, 53, 90 };
+        public double[] gateOpen = { 7, 53, 90 };
 
         public double[] gateCollect = { 17, 64, 135 };
-        public double[] gateNearControlPoint = { 9, 36, 90 };
-        public double gateNearT1 = 27, gateNearT2 = 22;
+        public double[] gateNearWaypoint = { 4, 36, 90 };
+        public double[] gateNearWaypointTol = { 1.5, 4, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
     }
     public static class Shoot {
         public double earlyEngageClutchDist = 15;
-        public double minPower2Dist = 20;
-        public double minDrivePower1 = .99, minDrivePower2 = .5;
-        public double waypointTolX = 3, waypointTolY = 3, waypointTolA = Math.toRadians(5);
-        public Tolerance waypointTol = new BoxTolerance(waypointTolX, waypointTolY, Math.toRadians(waypointTolA));
-        public double waypointSlowDown = 0.3;
+        public double nearMinDrivePower2Dist = 20;
+        public double nearMinDrivePower1 = .99, minDrivePower2 = .5;
+        public double farMinDrivePower = .2;
 
         // shooting positions
         public double[] nearPreload = new double[] {-16, 19, 35};
@@ -69,8 +70,8 @@ public class AutoParamsPid {
         public double[] near3 = new double[] {-7, 25.5, 50};
         public double[] near3Last = new double[] {-20, 22, 40};
 
-        public double[] far = new double[] {54, 16};
-        public double farSetup1A = 180, farSetup2A = 170, farSetup3A = 150, farSetupLoadingA = 95;
+        public double[] farSpike = new double[] {52, 16, 145};
+        public double[] farLoading = new double[] { 52, 14, 90 };
 
         // shooting path waypoints to not hit other balls
         public double[] gateNearControlPoint = { 11, 36, 50 };
@@ -95,11 +96,17 @@ public class AutoParamsPid {
         // BLUE:
         // -61.77, -38.69, .654
         // -61.98, -38.35, .282
-        public double[] startFar = { 63, 16.6868, 180 };
+        public double[] startFarBlue = { 61.62, -17.9, 180 };
+        public double[] startFarRed = { 61.62, 17.9, 180 };
+        // BLUE:
+        // 61.685, -18.084, 179.189
+        // (61.575, -17.677, 179.744)
         public double[] gate1 = {-3, 55, 90};
         public double[] gate2 = {5, 55, 90};
         public double gateBackupDist = 3;
         public double gatePrepMinPower = 0.7, gateMinPower = 0.5;
+
+        public double[] parkFar = { 52, 20, 90 };
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.5;
@@ -111,6 +118,7 @@ public class AutoParamsPid {
         public double stopEverythingTime = 35;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double secondGaitWait = .9, thirdGateWait = 0;
+        public double farPreloadDriveDelay = .5;
 
     }
 }

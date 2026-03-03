@@ -34,6 +34,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
     public static double[] redCornerResetPose = { 62.0618, -63.1, 90 };
     public static double noMoveJoystickThreshold = 0.1;
+    public static int collect3RumbleMs = 500;
 
     BrainSTEMRobot robot;
 
@@ -110,6 +111,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.update();
 
             telemetry.addData("Alliance", BrainSTEMRobot.alliance);
+            robot.drive.pinpoint().printInfo(telemetry);
 
             if (printCollector)
                 robot.collection.printInfo();
@@ -132,6 +134,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();
+            fieldOverlay.clear();
             robot.drawRobotInfo(fieldOverlay);
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
@@ -164,6 +167,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDriver1() {
+        if(robot.collection.has3Balls() && !robot.collection.prevHas3Balls() && !inCompetition)
+            gp1.gamepad.rumble(collect3RumbleMs);
         robot.turret.addOscillationData = gamepad1.dpad_up;
         if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED) {
             if (gp1.gamepad.right_trigger > 0.2)
@@ -193,6 +198,18 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.limelight.localization.maxHeadingVarianceDeg = 0;
                 robot.limelight.localization.maxTranslationalError = 0;
                 robot.limelight.localization.maxHeadingErrorDeg = 0;
+            }
+        }
+        if(!inCompetition) {
+            if(gp1.isFirstA()) {
+                if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED) {
+                    robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
+                    robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
+                }
+                else {
+                    robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
+                    robot.collection.setCollectionState(Collection.CollectionState.OFF);
+                }
             }
         }
     }

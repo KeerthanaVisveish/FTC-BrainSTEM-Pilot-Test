@@ -1,14 +1,11 @@
-package org.firstinspires.ftc.teamcode.opmode.postCompAutos;
+package org.firstinspires.ftc.teamcode.opmode.autosBase;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 
-@Autonomous(name="RED AUTO PID")
 public class RedAutoPid extends AutoPid {
-    @Override
-    public void runOpMode() throws InterruptedException {
+    public RedAutoPid() {
         alliance = Alliance.RED;
-        super.runOpMode();
     }
 }
