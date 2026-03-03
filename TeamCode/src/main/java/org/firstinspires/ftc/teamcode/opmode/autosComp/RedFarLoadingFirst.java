@@ -7,6 +7,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.RedAutoPid;
 @Autonomous(name="RED FAR loading first")
 public class RedFarLoadingFirst extends RedAutoPid {
     public RedFarLoadingFirst() {
-        customizable.stringBuilder = customizable.loadingFirstFar;
+        customizable.stringBuilder = customizable.farLoadingFirst;
     }
 }

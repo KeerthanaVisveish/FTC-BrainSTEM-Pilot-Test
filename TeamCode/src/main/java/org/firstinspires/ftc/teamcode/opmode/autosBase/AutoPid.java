@@ -42,7 +42,8 @@ import java.util.ArrayList;
 @Config
 public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
-        public String soloNear = "n2ngngn1n3n", partnerNear = "n2ngngngn1n", loadingFirstFar = "flf3f", thirdFirstFar = "f3flf";
+        public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
+        public String farLoadingFirst = "flf3flf", farThirdFirst = "f3flflf";
         public String stringBuilder = "n2ngngngn1n";
         public boolean openGateOnFirst = false;
         public boolean openGateOnSecond = false;
@@ -67,9 +68,8 @@ public abstract class AutoPid extends LinearOpMode {
     private Pose2d start,
             collect1NearControlPoint, collect1FarControlPoint, collect1,
             collect2NearControlPoint, collect2FarControlPoint, collect2,
-            collect3NearControlPoint, collect3FarControlPoint, preCollect3Near, collect3,
-            preLoading, loadingControlPoint, postLoading,
-            cornerCollect, cornerCollectRetry,
+            collect3NearControlPoint, collect3FarControlPoint, preCollect3Near, preCollect3Far, collect3,
+            preLoading, loadingWaypoint, postLoading,
             gateCollectNearWaypoint, gateCollectFarControlPoint, gateCollectOpen, gateCollect,
             gate1, gate2,
             shootGateNearControlPoint,
@@ -78,7 +78,7 @@ public abstract class AutoPid extends LinearOpMode {
             shoot2Near, shoot2Far, shoot2FarControlPoint,
             shootGateNear, shootGateFar, shootGateFarControlPoint,
             shoot3Near, shoot3Far,
-            shootLoadingNear, shootLoadingFar, shootSetupLoadingFar;
+            shootLoadingNear, shootLoadingFar;
     private boolean isRed;
     private AutoState autoState;
     private Vector2d perpNearParkLine;
@@ -117,29 +117,40 @@ public abstract class AutoPid extends LinearOpMode {
         customizable.stringBuilder = customizable.stringBuilder.toLowerCase();
 
         boolean preloadNear = customizable.stringBuilder.charAt(0) == 'n';
-        double preloadX = preloadNear ? shoot.nearPreload[0] : shoot.farSpike[0];
-        double preloadY = preloadNear ? shoot.nearPreload[1] : shoot.farSpike[1];
-        double preloadA = getShootPose(preloadNear, customizable.stringBuilder.charAt(1) + "").heading.toDouble();
-        Pose2d preloadShootPose = isRed ? new Pose2d(preloadX, preloadY, preloadA) : new Pose2d(preloadX, -preloadY, preloadA);
-
+//        double preloadX = preloadNear ? shoot.nearPreload[0] : shoot.farSpike[0];
+//        double preloadY = preloadNear ? shoot.nearPreload[1] : shoot.farSpike[1];
+//        double preloadA = getShootPose(preloadNear, customizable.stringBuilder.charAt(1) + "").heading.toDouble();
+//        Pose2d preloadShootPose = isRed ? new Pose2d(preloadX, preloadY, preloadA) : new Pose2d(preloadX, -preloadY, preloadA);
+        Pose2d preloadShootPose;
+        if(preloadNear)
+            preloadShootPose = isRed ? createPose(shoot.nearPreload) : createInvertedPose(shoot.nearPreload);
+        else {
+            String nextLetter = customizable.stringBuilder.charAt(1) + "";
+            if(nextLetter.equals("l"))
+                preloadShootPose = isRed ? createPose(shoot.farPreloadLoading) : createInvertedPose(shoot.farPreloadLoading);
+            else
+                preloadShootPose = getShootPose(false, nextLetter);
+        }
         int numGateCollects = 0;
         boolean toNear = true;
         for(int i=0; i<numPaths; i++) {
             boolean last = i == numPaths - 1;
 
-            String info = customizable.stringBuilder.substring(i*2, i*2+3);
+            String info = customizable.stringBuilder.substring(i*2, Math.min(i*2+4, customizable.stringBuilder.length()));
             boolean fromNear = info.charAt(0) == 'n';
             String letter = info.charAt(1) + "";
             toNear = info.charAt(2) == 'n';
+            String nextLetter = info.length() == 3 ? letter : info.charAt(3) + "";
 
             Pose2d shootPose;
             if(last)
                 shootPose = getFinalShootPose(toNear, letter);
-            else
-                shootPose = getShootPose(toNear, letter);
+            else {
+                shootPose = getShootPose(toNear, toNear ? letter : nextLetter);
+            }
 
             telemetry.addData("STRING BUILDER", customizable.stringBuilder);
-            telemetry.addLine("Path " + (i+1) + ": letter: " + letter + " from near: " + fromNear + " to near: " + toNear);
+            telemetry.addLine("Path " + (i+1) + ": letter: " + letter + " from near: " + fromNear + " to near: " + toNear + ", last: " + last);
             telemetry.addData("Path " + (i+1) + " Shoot pose", MathUtils.formatPose3(shootPose));
             switch(letter) {
                 case "1" :
@@ -173,7 +184,7 @@ public abstract class AutoPid extends LinearOpMode {
                 numPaths > 7 ? actionOrder.get(7) : new SleepAction(0),
                 numPaths > 8 ? actionOrder.get(8) : new SleepAction(0),
                 new ParallelAction(
-                        toNear ? getFarParkDrive() : new SleepAction(0),
+                        !toNear ? getFarParkDrive() : new SleepAction(0),
                         autoCommands.stopIntake(),
                         autoCommands.stopShooter()
                 )
@@ -250,7 +261,7 @@ public abstract class AutoPid extends LinearOpMode {
 
     private Action getFarParkDrive() {
         return new DrivePath(robot.drive,
-                new Waypoint(parkFar).setPassPosition(true).setMinLinearPower(0.4).setMaxTime(0.8)
+                new Waypoint(parkFar).setPassPosition(true).setMinLinearPower(misc.minParkFarPower).setMaxTime(0.8)
         );
     }
     private Action getPreloadDriveAndShoot(Pose2d shootPose, boolean shootingNear) {
@@ -340,8 +351,8 @@ public abstract class AutoPid extends LinearOpMode {
                                 ) : new SleepAction(0)
                         )
                 ),
-                !notLast ? getShootAction(timeConstraints.lastShootExtraTime) :
-                !shootingNear ? getShootAction(0) : new SleepAction(0)
+                !shootingNear ? getShootAction(0) :
+                !notLast ? getShootAction(timeConstraints.lastShootExtraTime) : new SleepAction(0)
         );
     }
     private Action getShootAction(double extraShootTime) {
@@ -475,12 +486,18 @@ public abstract class AutoPid extends LinearOpMode {
         DrivePath thirdCollectDrive = new DrivePath(robot.drive, telemetry, w);
 
         if (fromNear) {
-            BoxTolerance preCollect3NearTol = new BoxTolerance(collect.thirdNearWaypointXTol, collect.thirdNearWaypointYTol, Math.toRadians(collect.thirdNearWaypointHeadingTol));
-            Waypoint preCollectNear = new Waypoint(preCollect3Near,
-                    preCollect3NearTol)
+            BoxTolerance preCollect3NearTol = new BoxTolerance(collect.thirdNearWaypointTol[0], collect.thirdNearWaypointTol[1], Math.toRadians(collect.thirdNearWaypointTol[2]));
+            Waypoint preCollectNear = new Waypoint(preCollect3Near, preCollect3NearTol)
                     .setPassPosition(true)
                     .setMinLinearPower(collect.collectDrivePower);
             thirdCollectDrive.addWaypoint(preCollectNear, 0);
+        }
+        else {
+            BoxTolerance preCollect3FarTol = new BoxTolerance(collect.thirdFarWaypointTol[0], collect.thirdFarWaypointTol[1], Math.toRadians(collect.thirdFarWaypointTol[2]));
+            Waypoint preCollectFar = new Waypoint(preCollect3Far, preCollect3FarTol)
+                    .setPassPosition(true)
+                    .setMinLinearPower(collect.collectDrivePower);
+            thirdCollectDrive.addWaypoint(preCollectFar, 0);
         }
         double controlY = fromNear ? collect3NearControlPoint.position.y : collect3FarControlPoint.position.y;
         Action thirdCollectAction = new ParallelAction(
@@ -493,11 +510,9 @@ public abstract class AutoPid extends LinearOpMode {
                         )
                 )
         );
-        if(!toNear)
-            shootPose = shootSetupLoadingFar;
         Waypoint thirdShootDest = new Waypoint(shootPose)
                 .setPassPosition(true)
-                .setHeadingLerp(PathParams.HeadingLerpType.TANGENT);
+                .setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT);
         if(toNear)
             thirdShootDest.setMaxTime(3);
         else
@@ -512,13 +527,16 @@ public abstract class AutoPid extends LinearOpMode {
 
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
                 new Waypoint(preLoading, preLoadingTol)
-                        .setMaxTime(2).setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
-                new Waypoint(postLoading, postLoadingTol)
-                        .setMinLinearPower(collect.loadingDrivePower).setMaxLinearPower(collect.loadingDrivePower)
+                        .setMaxTime(2)
+                        .setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
+                new Waypoint(loadingWaypoint)
+                        .setFixedLinearPower(collect.loadingDrivePower)
                         .setMaxHeadingPower(collect.loadingHeadingPower)
-                        .setMaxTime(1.5)
-                        .setControlPoint(loadingControlPoint, collect.loadingControlT1, collect.loadingControlT2
-                        )
+                        .setMaxTime(.9),
+                new Waypoint(postLoading, postLoadingTol)
+                        .setFixedLinearPower(collect.loadingDrivePower)
+                        .setMaxHeadingPower(collect.loadingHeadingPower)
+                        .setMaxTime(.7)
                         .setCustomEndCondition(() -> robot.collection.has3Balls()));
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
@@ -705,7 +723,6 @@ public abstract class AutoPid extends LinearOpMode {
 
         shootLoadingNear = shoot3Near;
         shootLoadingFar = isRed ? createPose(shoot.farLoading) : createInvertedPose(shoot.farLoading);
-        shootSetupLoadingFar = isRed ? createPose(shoot.farSetupLoading) : createInvertedPose(shoot.farSetupLoading);
 
         shoot1FarControlPoint = isRed ? createPose(shoot.far1ControlPoint) : createInvertedPose(shoot.far1ControlPoint);
         shoot2FarControlPoint = isRed ? createPose(shoot.far2ControlPoint) : createInvertedPose(shoot.far2ControlPoint);
@@ -738,6 +755,9 @@ public abstract class AutoPid extends LinearOpMode {
         preCollect3Near = isRed ?
                 createPose(collect.thirdNearWaypoint) :
                 createInvertedPose(collect.thirdNearWaypoint);
+        preCollect3Far = isRed ?
+                createPose(collect.thirdFarWaypoint) :
+                createInvertedPose(collect.thirdFarWaypoint);
         collect3NearControlPoint = isRed ?
                 createPose(collect.thirdNearControlPoint) :
                 createInvertedPose(collect.thirdNearControlPoint);
@@ -748,18 +768,12 @@ public abstract class AutoPid extends LinearOpMode {
         preLoading = isRed ?
                 createPose(collect.preLoading) :
                 createInvertedPose(collect.preLoading);
-        loadingControlPoint = isRed ?
-                createPose(collect.loadingControlPoint) :
-                createInvertedPose(collect.loadingControlPoint);
+        loadingWaypoint = isRed ?
+                createPose(collect.loadingWaypoint) :
+                createInvertedPose(collect.loadingWaypoint);
         postLoading = isRed ?
                 createPose(collect.postLoading) :
                 createInvertedPose(collect.postLoading);
-        cornerCollect = isRed ?
-                new Pose2d(collect.cornerCollectXRed, collect.cornerCollectYRed, collect.cornerCollectARed) :
-                new Pose2d(collect.cornerCollectXBlue, collect.cornerCollectYBlue, collect.cornerCollectABlue);
-        cornerCollectRetry = isRed ?
-                new Pose2d(collect.cornerCollectXRed, collect.cornerCollectRetryYRed, collect.cornerCollectARed) :
-                new Pose2d(collect.cornerCollectXBlue, collect.cornerCollectRetryYBlue, collect.cornerCollectABlue);
 
         gateCollectNearWaypoint = isRed ?
                 createPose(collect.gateNearWaypoint) :

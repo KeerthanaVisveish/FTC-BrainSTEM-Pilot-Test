@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Shooter extends Component {
     public static class ShooterParams {
+        public double ignoreHoodUpdateError = Math.toRadians(.5);
 //        public double kP = 0.5;
 //        public double kP = 6.75;
         public double A = 20, B = 6, k = -150, x0 = .06;
@@ -92,10 +93,13 @@ public class Shooter extends Component {
         if(testingParams.testing) {
             robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
-        else if(robot.shootingSystem.checkShootingWhileMoving
+        else if((robot.shootingSystem.checkShootingWhileMoving
                 || robot.shootingSystem.physicsExitAngleRads[0] != -1
                 || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
-            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad));
+        && Math.abs(robot.shootingSystem.hoodExitAngleRad - robot.shootingSystem.prevHoodExitAngleRad) < shooterParams.ignoreHoodUpdateError) {
+            double targetHoodPos = ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad);
+            robot.shootingSystem.setHoodPosition(targetHoodPos);
+        }
         updateBallShotTracking();
     }
     public void updateBallShotTracking() {

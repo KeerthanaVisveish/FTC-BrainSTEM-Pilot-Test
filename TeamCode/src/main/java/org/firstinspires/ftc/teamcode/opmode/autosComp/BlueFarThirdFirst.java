@@ -7,6 +7,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.BlueAutoPid;
 @Autonomous(name="BLUE FAR third first")
 public class BlueFarThirdFirst extends BlueAutoPid {
     public BlueFarThirdFirst() {
-        customizable.stringBuilder = customizable.thirdFirstFar;
+        customizable.stringBuilder = customizable.farThirdFirst;
     }
 }

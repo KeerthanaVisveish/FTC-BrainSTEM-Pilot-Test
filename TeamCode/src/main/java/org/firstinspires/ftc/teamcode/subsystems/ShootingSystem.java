@@ -94,7 +94,7 @@ public class ShootingSystem {
 
     private double filteredShooterSpeedTps, prevFilteredShooterSpeedTps, rawShooterSpeedTps;
     public double curExitSpeedMps;
-    public double ballExitAngleRad, hoodExitAngleRad;
+    public double ballExitAngleRad, hoodExitAngleRad, prevHoodExitAngleRad;
     public double[] physicsExitAngleRads;
     public OdoInfo robotVelCm;
     public double turretPosGoalDistIn, futureTurretPosGoalDistIn;
@@ -213,6 +213,7 @@ public class ShootingSystem {
     // pro: yes velocity-based hood adjustment
     // con: math is weird
     private void updatePhysicsProperties(double desiredBallDir, Vector2d noLookAheadRobotVelAtTurretMps, Vector2d lookAheadRobotVelAtTurretMps) {
+        prevHoodExitAngleRad = hoodExitAngleRad;
         checkShootingWhileMoving = distState == Dist.NEAR || distState == Dist.MID;
         // get delta y of projectory (need approximate exit height of the ball)
         double exitHeightM = ShootingMath.approximateExitHeightM(distState == Dist.NEAR);

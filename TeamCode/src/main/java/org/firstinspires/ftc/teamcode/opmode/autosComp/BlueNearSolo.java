@@ -7,6 +7,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.BlueAutoPid;
 @Autonomous(name="BLUE NEAR solo")
 public class BlueNearSolo extends BlueAutoPid {
     public BlueNearSolo() {
-        customizable.stringBuilder = customizable.soloNear;
+        customizable.stringBuilder = customizable.nearSolo;
     }
 }
