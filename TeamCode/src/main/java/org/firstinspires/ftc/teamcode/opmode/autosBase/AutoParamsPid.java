@@ -71,7 +71,8 @@ public class AutoParamsPid {
         public double[] near3Last = new double[] {-20, 22, 40};
 
         public double[] farSpike = new double[] {52, 16, 145};
-        public double[] farLoading = new double[] { 52, 14, 90 };
+        public double[] farSetupLoading = new double[] { 52, 16, 110 };
+        public double[] farLoading = new double[] { 52, 16, 90 };
 
         // shooting path waypoints to not hit other balls
         public double[] gateNearControlPoint = { 11, 36, 50 };

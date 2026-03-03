@@ -78,7 +78,7 @@ public abstract class AutoPid extends LinearOpMode {
             shoot2Near, shoot2Far, shoot2FarControlPoint,
             shootGateNear, shootGateFar, shootGateFarControlPoint,
             shoot3Near, shoot3Far,
-            shootLoadingNear, shootLoadingFar;
+            shootLoadingNear, shootLoadingFar, shootSetupLoadingFar;
     private boolean isRed;
     private AutoState autoState;
     private Vector2d perpNearParkLine;
@@ -340,7 +340,8 @@ public abstract class AutoPid extends LinearOpMode {
                                 ) : new SleepAction(0)
                         )
                 ),
-                !shootingNear || !notLast ? getShootAction(timeConstraints.lastShootExtraTime) : new SleepAction(0)
+                !notLast ? getShootAction(timeConstraints.lastShootExtraTime) :
+                !shootingNear ? getShootAction(0) : new SleepAction(0)
         );
     }
     private Action getShootAction(double extraShootTime) {
@@ -492,13 +493,13 @@ public abstract class AutoPid extends LinearOpMode {
                         )
                 )
         );
-
+        if(!toNear)
+            shootPose = shootSetupLoadingFar;
         Waypoint thirdShootDest = new Waypoint(shootPose)
-                .setPassPosition(true);
+                .setPassPosition(true)
+                .setHeadingLerp(PathParams.HeadingLerpType.TANGENT);
         if(toNear)
-            thirdShootDest
-                    .setMaxTime(3)
-                    .setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT);
+            thirdShootDest.setMaxTime(3);
         else
             thirdShootDest.setMaxTime(2);
         DrivePath thirdShootDrive = new DrivePath(robot.drive, telemetry, thirdShootDest);
@@ -704,6 +705,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         shootLoadingNear = shoot3Near;
         shootLoadingFar = isRed ? createPose(shoot.farLoading) : createInvertedPose(shoot.farLoading);
+        shootSetupLoadingFar = isRed ? createPose(shoot.farSetupLoading) : createInvertedPose(shoot.farSetupLoading);
 
         shoot1FarControlPoint = isRed ? createPose(shoot.far1ControlPoint) : createInvertedPose(shoot.far1ControlPoint);
         shoot2FarControlPoint = isRed ? createPose(shoot.far2ControlPoint) : createInvertedPose(shoot.far2ControlPoint);
