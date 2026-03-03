@@ -357,7 +357,7 @@ public class DrivePath implements Action {
 
         boolean setHeadingTangent = (waypoint.params.headingLerpType == PathParams.HeadingLerpType.TANGENT ||
                 waypoint.params.headingLerpType == PathParams.HeadingLerpType.REVERSE_TANGENT)
-                        && waypointDistAway > waypoint.params.tangentHeadingDeactivateThreshold;
+                        && waypointDistAway > waypoint.params.tangentHeadingDeactivateDist;
         double headingRadWaypointError;
         if(getCurParams().pathType == PathParams.PathType.CURVED)
             headingRadWaypointError = targetHeadingRad - rHeadingRad;

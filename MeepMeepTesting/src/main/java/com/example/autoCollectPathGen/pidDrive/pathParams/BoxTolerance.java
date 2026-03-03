@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen.pathParams;
+package com.example.autoCollectPathGen.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
@@ -17,6 +17,9 @@ public class BoxTolerance implements Tolerance {
         this.xTol = xTol;
         this.yTol = yTol;
         this.headingRadTol = headingRadTol;
+    }
+    public BoxTolerance(double[] tols) {
+        this(tols[0], tols[1], tols[2]);
     }
 
     public BoxTolerance(double distTol, double headingRadTol) {

@@ -1,10 +1,8 @@
-package com.example.autoCollectPathGen.pathParams;
-
+package com.example.autoCollectPathGen.pidDrive.pathParams;
 
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.example.autoCollectPathGen.MathUtils;
-
 
 import java.util.function.BooleanSupplier;
 
@@ -37,10 +35,10 @@ public class Waypoint {
        return pose.heading.toDouble();
     }
 
-    protected void setNextWaypoint(Waypoint waypoint) {
+    public void setNextWaypoint(Waypoint waypoint) {
         distToNextWaypoint = Math.hypot(waypoint.x() - x(), waypoint.y() - y());
     }
-    protected double getDistToNextWaypoint() {
+    public double getDistToNextWaypoint() {
         return distToNextWaypoint;
     }
 
@@ -53,16 +51,21 @@ public class Waypoint {
         params.maxLinearPower = maxLinearPower;
         return this;
     }
-    public Waypoint setMaxHeadingPower(double maxHeadingPower) {
-        params.maxHeadingPower = maxHeadingPower;
-        return this;
-    }
     public Waypoint setMinLinearPower(double minLinearPower) {
         params.minLinearPower = minLinearPower;
         return this;
     }
+    public Waypoint setFixedLinearPower(double fixedLinearPower) {
+        params.maxLinearPower = fixedLinearPower;
+        params.minLinearPower = fixedLinearPower;
+        return this;
+    }
     public Waypoint setMinHeadingPower(double minHeadingPower) {
         params.minHeadingPower = minHeadingPower;
+        return this;
+    }
+    public Waypoint setMaxHeadingPower(double maxHeadingPower) {
+        params.maxHeadingPower = maxHeadingPower;
         return this;
     }
     public Waypoint setSlowDownPercent(double percent) {
@@ -89,12 +92,25 @@ public class Waypoint {
         params.headingLerpType = lerpType;
         return this;
     }
+    public Waypoint setFarHeadingKP(double kP) {
+        params.farHeadingKp = kP;
+        return this;
+    }
+    public Waypoint setCloseHeadingKP(double kP) {
+        params.closeHeadingKp = kP;
+        return this;
+    }
+    public Waypoint setHeadingKPMult(double mult) {
+        params.closeHeadingKp *= mult;
+        params.farHeadingKp *= mult;
+        return this;
+    }
     public Waypoint prioritizeHeadingInBeginning() {
         params.prioritizeHeadingInBeginning = true;
         return this;
     }
     public Waypoint setHeadingTangentDeactivateThreshold(double t) {
-        params.tangentHeadingDeactivateThreshold = t;
+        params.tangentHeadingDeactivateDist = t;
         return this;
     }
     public Waypoint setControlPoint(Pose2d controlPoint, double tValueStartDistError, double tValueFinishDistError) {

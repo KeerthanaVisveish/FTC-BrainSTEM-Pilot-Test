@@ -3,11 +3,11 @@ package com.example.autoCollectPathGen;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.example.autoCollectPathGen.pathGeneration.Ball;
-import com.example.autoCollectPathGen.pathGeneration.PathDriveParams;
 import com.example.autoCollectPathGen.pathGeneration.PathGeneration;
 import com.example.autoCollectPathGen.pathGeneration.PathInfo;
 import com.example.autoCollectPathGen.pathGeneration.PathPose;
 import com.example.autoCollectPathGen.pathGeneration.ProblemBall;
+import com.example.autoCollectPathGen.pidDrive.pathParams.PathParams;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -188,7 +188,7 @@ public class PathGenPreview extends JPanel
         if (drawInfo) {
             g2.setColor(Color.BLACK);
             int numPiecesOfInfoPerPathPose = 3;
-            ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.simplifiedPathPoses : path.pathPoses;
+            ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.optimizedPathPoses : path.pathPoses;
             int width = 150;
             int generalInfoHeight = 100;
             int height = pathPoses.size() * 20 * numPiecesOfInfoPerPathPose + generalInfoHeight;
@@ -254,7 +254,7 @@ public class PathGenPreview extends JPanel
         if (path == null)
             return;
 
-        ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.simplifiedPathPoses : path.pathPoses;
+        ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.optimizedPathPoses : path.pathPoses;
         g2.setColor(Color.BLACK);
         Vector2d firstPosition = pathPoses.get(0).waypoint.pose.position;
 
@@ -287,9 +287,11 @@ public class PathGenPreview extends JPanel
             }
             else
                 drawPose(g2, pathPose.waypoint.pose, pathNodeRadius);
+            if (pathPose.waypoint.params.pathType == PathParams.PathType.CURVED)
+                drawPosition(g2, pathPose.waypoint.params.controlPoint.position, 1, true);
         }
 
-        ArrayList<Pose2d> poses = drawSimplifiedPath ? path.getSimplifiedPoses() : path.getPoses();
+        ArrayList<Pose2d> poses = drawSimplifiedPath ? path.getOptimizedPoses() : path.getPoses();
         poses.add(0, robot);
         if (drawRobotNodeIndex < 0) {
             drawRobotNodeIndex = 0;
@@ -318,21 +320,21 @@ public class PathGenPreview extends JPanel
             }
         }
         if (drawRobotNodeIndex > 0 || drawRobotNodeLerp != 0) {
-            Pose2d curPose = poses.get(drawRobotNodeIndex);
+            Pose2d robotOnPathPose = poses.get(drawRobotNodeIndex);
             int nextIndex = drawRobotNodeLerp >= 0 ? drawRobotNodeIndex + 1 : drawRobotNodeIndex - 1;
             if (nextIndex >= 0 && nextIndex < poses.size()) {
                 Pose2d nextPose = poses.get(nextIndex);
                 double headingLerpT = Math.max(-1, Math.min(1, drawRobotNodeLerp * 3));
-                Pose2d lerpedPose = new Pose2d(
-                        MathUtils.lerp(curPose.position.x, nextPose.position.x, Math.abs(drawRobotNodeLerp)),
-                        MathUtils.lerp(curPose.position.y, nextPose.position.y, Math.abs(drawRobotNodeLerp)),
-                        curPose.heading.plus(nextPose.heading.minus(curPose.heading) * Math.abs(headingLerpT)).toDouble()
+                robotOnPathPose = new Pose2d(
+                        MathUtils.lerp(robotOnPathPose.position.x, nextPose.position.x, Math.abs(drawRobotNodeLerp)),
+                        MathUtils.lerp(robotOnPathPose.position.y, nextPose.position.y, Math.abs(drawRobotNodeLerp)),
+                        robotOnPathPose.heading.plus(nextPose.heading.minus(robotOnPathPose.heading) * Math.abs(headingLerpT)).toDouble()
                 );
-                drawRobot(g2, lerpedPose);
+                drawRobot(g2, robotOnPathPose);
             }
             else {
                 drawRobotNodeLerp = 0;
-                drawRobot(g2, curPose);
+                drawRobot(g2, robotOnPathPose);
             }
         }
     }

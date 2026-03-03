@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen.pathParams;
+package com.example.autoCollectPathGen.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Pose2d;
 
@@ -10,7 +10,7 @@ public class PathParams {
         TANGENT,
         REVERSE_TANGENT
     }
-    protected enum PathType {
+    public enum PathType {
         NORMAL,
         CURVED
     }
@@ -19,7 +19,7 @@ public class PathParams {
     public static class DefaultParams {
         public double bigSpeedKp = 0.02, smallSpeedKp = 0.013, bigSpeedKd = 0, smallSpeedKd = 0.0001;
         public double speedKi = 0, speedKf = 0.075;
-        public double correctiveKp = 0.05;
+        public double correctiveKp = 0.035;
         public double correctiveStrength = 1;
         public double applyCloseSpeedPIDError = 5;
         public double closeHeadingKp = 0.01, closeHeadingKi = 0, closeHeadingKd = 0.001, headingKf = 0.1;
@@ -35,32 +35,34 @@ public class PathParams {
         public double tangentHeadingActivateThreshold = 23;
         public boolean prioritizeHeadingInBeginning = false;
         public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.1;
+        public boolean stopOnSuddenDecel = false;
     }
     public static DefaultParams defaultParams = new DefaultParams();
-    protected double lateralWeight, axialWeight;
-    protected double minLinearPower, maxLinearPower;
-    protected double minHeadingPower, maxHeadingPower;
+    public double lateralWeight, axialWeight;
+    public double minLinearPower, maxLinearPower;
+    public double minHeadingPower, maxHeadingPower;
     // decides how much the robot will slow down at this waypoint
     // if this equals 1, then the drivetrain will completely stop at this waypoint
     // if this equals 0, this waypoint will have no influence on slowing down the drivetrain as it approaches this point
-    protected double slowDownPercent;
+    public double slowDownPercent;
     // if passPosition is true, the robot only needs to pass its target position for drive path to consider it "in tolerance", not fall within tolerance of it
-    protected boolean passPosition;
-    protected double maxTime;
-    protected BooleanSupplier customEndCondition = () -> false;
+    public boolean passPosition;
+    public double maxTime;
+    public BooleanSupplier customEndCondition = () -> false;
 
-    protected double bigSpeedKp, smallSpeedKp, bigSpeedKd, smallSpeedKd;
-    protected double speedKi, speedKf;
-    protected double correctiveKp;
-    protected double correctiveStrength = 1; // percent between [0, 1] - decides strongly the corrective vector is weighted relative to the drive vector
-    protected double closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf;
-    protected double applyCloseSpeedPIDError;
-    protected HeadingLerpType headingLerpType;
-    protected PathType pathType;
-    protected Pose2d controlPoint;
-    protected double tValueStartDist, tValueFinishDist;
-    protected double tangentHeadingDeactivateThreshold, applyCloseHeadingPIDErrorDeg;
-    protected boolean prioritizeHeadingInBeginning;
+    public double bigSpeedKp, smallSpeedKp, bigSpeedKd, smallSpeedKd;
+    public double speedKi, speedKf;
+    public double correctiveKp;
+    public double correctiveStrength = 1; // percent between [0, 1] - decides strongly the corrective vector is weighted relative to the drive vector
+    public double closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf;
+    public double applyCloseSpeedPIDError;
+    public HeadingLerpType headingLerpType;
+    public PathType pathType;
+    public Pose2d controlPoint;
+    public double tValueStartDist, tValueFinishDist;
+    public double tangentHeadingDeactivateDist, applyCloseHeadingPIDErrorDeg;
+    public boolean prioritizeHeadingInBeginning;
+    public boolean stopOnSuddenDecel;
     public PathParams() {
         this(defaultParams.bigSpeedKp, defaultParams.smallSpeedKp, defaultParams.speedKi, defaultParams.bigSpeedKd, defaultParams.smallSpeedKd, defaultParams.speedKf, defaultParams.closeHeadingKp, defaultParams.closeHeadingKi, defaultParams.closeHeadingKd, defaultParams.farHeadingKp, defaultParams.farHeadingKi, defaultParams.farHeadingKd, defaultParams.headingKf);
     }
@@ -96,11 +98,12 @@ public class PathParams {
         headingLerpType = defaultParams.headingLerpType;
         pathType = defaultParams.pathType;
         tValueFinishDist = defaultParams.tValueMaxOutTime;
-        tangentHeadingDeactivateThreshold = defaultParams.tangentHeadingActivateThreshold;
+        tangentHeadingDeactivateDist = defaultParams.tangentHeadingActivateThreshold;
         applyCloseHeadingPIDErrorDeg = defaultParams.applyCloseHeadingPIDErrorDeg;
         slowDownPercent = 1;
         prioritizeHeadingInBeginning = defaultParams.prioritizeHeadingInBeginning;
         controlPoint = new Pose2d(0, 0, 0);
+        stopOnSuddenDecel = defaultParams.stopOnSuddenDecel;
     }
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;

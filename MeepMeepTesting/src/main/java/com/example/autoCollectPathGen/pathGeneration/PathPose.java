@@ -1,9 +1,8 @@
 package com.example.autoCollectPathGen.pathGeneration;
 
 
-import com.acmerobotics.roadrunner.Pose2d;
 import com.example.autoCollectPathGen.MathUtils;
-import com.example.autoCollectPathGen.pathParams.Waypoint;
+import com.example.autoCollectPathGen.pidDrive.pathParams.Waypoint;
 
 public class PathPose {
     public final Waypoint waypoint;
