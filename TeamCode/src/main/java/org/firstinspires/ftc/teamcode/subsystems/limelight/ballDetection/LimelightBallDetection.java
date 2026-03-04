@@ -103,6 +103,7 @@ public class LimelightBallDetection extends LLParent {
             telemetry.addData("primary tx", "null");
             telemetry.addData("primary ty", "null");
         }
+        telemetry.addData("giant clump", MathUtils.formatVec2(getCurrentGiantClumpPosition()));
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {
@@ -183,9 +184,7 @@ public class LimelightBallDetection extends LLParent {
     }
     public Action takeBallSnapshotAction() {
         return new SequentialAction(
-                new InstantAction(() -> {
-                    numImagesLeft = params.numImagesPerSnapshot;
-                }),
+                new InstantAction(() -> numImagesLeft = params.numImagesPerSnapshot),
                 packet -> numImagesLeft > 0
         );
     }

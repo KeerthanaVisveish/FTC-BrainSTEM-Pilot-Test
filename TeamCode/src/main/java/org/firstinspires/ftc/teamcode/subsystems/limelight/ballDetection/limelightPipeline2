@@ -26,6 +26,11 @@ def get_min_area(cy):
 def get_expected_area(cy):
     #y=0.241477x^{2}-124.37356x+16918.1321
     return 0.241477*cy**2-124.37356*cy+16918.1321
+def get_expected_radius(cy):
+    # area = pi * r^2
+    # r = sqrt(area / pi)
+    return math.sqrt(get_expected_area(cy) / math.pi)
+
 giant_clump_area_ratio_threshold = 2
 
 occluded_ball_border_size = 40

@@ -112,23 +112,37 @@ public class BrainSTEMRobot {
     public double getRawVoltage() {
         return drive.getRawVoltage();
     }
-    public Action scanForBalls(DoubleSupplier angle1Sup) {
-        return new SequentialAction(
-                limelight.ballDetection.clearBallSnapshots(),
-                turret.rotateToCustomTarget(angle1Sup),
-                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
-                limelight.ballDetection.takeBallSnapshotAction()
-        );
-    }
+
     public Action scanForBalls(DoubleSupplier angle1Sup, DoubleSupplier angle2Sup) {
         return new SequentialAction(
+                // first scan
                 limelight.ballDetection.clearBallSnapshots(),
-                turret.rotateToCustomTarget(angle1Sup),
-                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
-                limelight.ballDetection.takeBallSnapshotAction(),
-                turret.rotateToCustomTarget(angle2Sup),
-                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
-                limelight.ballDetection.takeBallSnapshotAction()
+                new SequentialAction(
+                        turret.rotateToCustomTarget(angle1Sup),
+                        new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
+                        limelight.ballDetection.takeBallSnapshotAction()
+                ),
+                // second scan
+                angle2Sup == null ?
+                        new InstantAction(() -> {}) :
+                        new Action() {
+                            Action secondScan = null;
+                            @Override
+                            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                                if (secondScan == null) {
+                                    if (limelight.ballDetection.getCombinedBlobPositions().size() >= 2)
+                                        return false;
+                                    secondScan = new SequentialAction(
+                                            turret.rotateToCustomTarget(angle2Sup),
+                                            new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
+                                            limelight.ballDetection.takeBallSnapshotAction()
+                                    );
+                                }
+                                return secondScan.run(telemetryPacket);
+                            }
+                        },
+
+                new InstantAction(() -> turret.setTurretState(Turret.TurretState.TRACKING))
         );
     }
     public Action lookAtClassifier(Turret.TurretState endingTurretState) {

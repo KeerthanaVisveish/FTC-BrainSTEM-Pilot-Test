@@ -561,7 +561,7 @@ public abstract class AutoPid extends LinearOpMode {
 
     private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
         Action limelightCollectAction = new SequentialAction(
-                robot.scanForBalls(() -> Math.toRadians(alliance == Alliance.RED ? 90 : -90)),
+                robot.scanForBalls(() -> Math.toRadians(alliance == Alliance.RED ? 90 : -90), null),
                 new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls)
         );
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
