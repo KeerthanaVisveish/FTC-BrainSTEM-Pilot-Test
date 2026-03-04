@@ -45,7 +45,7 @@ public class AutoParamsPid {
         public double[] postLoading = { 59.5, 64, 18 };
         public double[] postLoadingTol = { 1.5, 1, 3 };
 
-        public double[] gateOpen = { 7, 53, 90 };
+        public double[] gateOpen = { 7, 52, 90 };
 
         public double[] gateCollect = { 17, 64, 135 };
         public double[] gateNearWaypoint = { 4, 36, 90 };
@@ -122,6 +122,7 @@ public class AutoParamsPid {
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double secondGaitWait = .9, thirdGateWait = 0;
         public double farPreloadDriveDelay = .5;
+        public double maxLimelightWaitTime = 1;
 
     }
 }

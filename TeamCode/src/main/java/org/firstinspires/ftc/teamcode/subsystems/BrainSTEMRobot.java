@@ -19,6 +19,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.LimelightBallDetection;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
@@ -111,13 +112,22 @@ public class BrainSTEMRobot {
     public double getRawVoltage() {
         return drive.getRawVoltage();
     }
-
+    public Action scanForBalls(DoubleSupplier angle1Sup) {
+        return new SequentialAction(
+                limelight.ballDetection.clearBallSnapshots(),
+                turret.rotateToCustomTarget(angle1Sup),
+                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
+                limelight.ballDetection.takeBallSnapshotAction()
+        );
+    }
     public Action scanForBalls(DoubleSupplier angle1Sup, DoubleSupplier angle2Sup) {
         return new SequentialAction(
+                limelight.ballDetection.clearBallSnapshots(),
                 turret.rotateToCustomTarget(angle1Sup),
-                new SleepAction(0.03),
+                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                 limelight.ballDetection.takeBallSnapshotAction(),
                 turret.rotateToCustomTarget(angle2Sup),
+                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                 limelight.ballDetection.takeBallSnapshotAction()
         );
     }

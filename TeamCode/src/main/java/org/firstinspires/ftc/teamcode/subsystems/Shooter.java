@@ -48,6 +48,7 @@ public class Shooter extends Component {
     private double kP;
     private double pidVoltage, velocityVoltage, totalVoltage;
     private double targetVelMps;
+    private double lastUpdatedExitAng;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
@@ -96,9 +97,10 @@ public class Shooter extends Component {
         else if((robot.shootingSystem.checkShootingWhileMoving
                 || robot.shootingSystem.physicsExitAngleRads[0] != -1
                 || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
-        && Math.abs(robot.shootingSystem.hoodExitAngleRad - robot.shootingSystem.prevHoodExitAngleRad) < shooterParams.ignoreHoodUpdateError) {
+        && Math.abs(robot.shootingSystem.hoodExitAngleRad - lastUpdatedExitAng) > shooterParams.ignoreHoodUpdateError) {
             double targetHoodPos = ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad);
             robot.shootingSystem.setHoodPosition(targetHoodPos);
+            lastUpdatedExitAng = robot.shootingSystem.hoodExitAngleRad;
         }
         updateBallShotTracking();
     }

@@ -27,8 +27,10 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 @TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
 @Config
@@ -37,6 +39,11 @@ public class LoadingZoneBallCollection extends OpMode {
     public static double[] start = { 48 + 6.5, 8, 90 };
     public static boolean usePoseStorageStartPose = false;
     public static double scanAngle1 = 80, scanAngle2 = 110;
+    public enum ShowType {
+        CURRENT,
+        SCAN
+    }
+    public static ShowType showType = ShowType.CURRENT;
     private BrainSTEMRobot robot;
     private AutoCommands autoCommands;
 
@@ -86,24 +93,38 @@ public class LoadingZoneBallCollection extends OpMode {
         Pose2d robotPose = robot.drive.localizer.getPose();
 
         if (autoCollectAction == null && scanForBallsAction == null) {
-            ArrayList<Blob> blobs = robot.limelight.ballDetection.getCurrentBlobs();
-            mostRecentNodes = new ArrayList<>();
-            for (int i = 0; i < blobs.size(); i++)
-                mostRecentNodes.add(blobs.get(i).pos());
-
+            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
+            telemetry.addData("giant clump", MathUtils.formatVec1(giantClump));
+            if (giantClump == null) {
+                mostRecentNodes = showType == ShowType.CURRENT ?
+                        robot.limelight.ballDetection.getCurrentBlobPositions() :
+                        robot.limelight.ballDetection.getCombinedBlobPositions();
+            }
+            else
+                mostRecentNodes = new ArrayList<>(Arrays.asList(giantClump));
             pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
         }
+        if (pathInfo != null)
+            for (PathPose pathPose : pathInfo.optimizedPathPoses)
+                telemetry.addLine("" + pathPose.approachType);
         DrivePath autoCollectDrive = null;
         if (pathInfo != null) {
             autoCollectDrive = new DrivePath(robot.drive);
-            for (PathPose pathPose : pathInfo.optimizedPathPoses)
+            for (PathPose pathPose : pathInfo.optimizedPathPoses) {
                 autoCollectDrive.addWaypoint(pathPose.waypoint);
+                telemetry.addLine("" + pathPose.approachType);
+            }
         }
         if (autoCollectAction == null && scanForBallsAction == null) {
             if (gamepad1.left_trigger > 0.2)
                 robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
             else
                 robot.collection.setCollectionState(Collection.CollectionState.OFF);
+
+            if (gamepad1.dpad_up)
+                showType = ShowType.CURRENT;
+            else if (gamepad1.dpad_down)
+                showType = ShowType.SCAN;
 
             robot.drive.setDrivePowers(new PoseVelocity2d(
                     new Vector2d(
@@ -142,6 +163,7 @@ public class LoadingZoneBallCollection extends OpMode {
                 autoCollectAction = null;
         }
         if (scanForBallsAction != null) {
+            showType = ShowType.SCAN;
             TelemetryPacket packet = new TelemetryPacket();
             boolean keepGoing = scanForBallsAction.run(packet);
             FtcDashboard.getInstance().sendTelemetryPacket(packet);

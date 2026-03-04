@@ -2,22 +2,44 @@ import cv2
 import numpy as np
 import math
 
+x_resolution = 640
+y_resolution = 480
+
 # cropping
-min_y = 260
+# min_y = 280
+min_y = 280
 
 # color masking
 gaussian_blur_kernel = (3, 3)
-green_lb = (70, 80, 90)
+green_lb = (70, 80, 85)
 green_ub = (95, 255, 255)
-purple_lb = (132, 45, 70)
-purple_ub = (155, 255, 255)
+purple_lb = (132, 30, 20)
+purple_ub = (160, 255, 255)
 
 # color mask processing
 use_erode_dilate = True
 mask_erode1 = (6, 6)
 mask_dilate = (10, 10)
-mask_erode2 = (10, 10)
-min_area = 750
+mask_erode2 = (8, 8)
+def get_min_area(cy):
+    return 200
+def get_expected_area(cy):
+    #y=0.241477x^{2}-124.37356x+16918.1321
+    return 0.241477*cy**2-124.37356*cy+16918.1321
+giant_clump_area_ratio_threshold = 2
+
+occluded_ball_border_size = 40
+allow_segmentation_expected_area_percent = 0.8
+# angle of major axis -> max error
+def get_segmenting_max_error(angle_rad):
+    angle = abs(math.degrees(normalize_angle(angle_rad)))
+    if angle > 90:
+        angle = 180 - angle
+    x = angle
+    y=0.00455405*x+0.2
+    max_error = y
+    # print(f"max error: {round(max_error, 3)} | angle: {round(angle, 3)}")
+    return max_error
 
 # debug info
 show_mask = False
@@ -40,7 +62,15 @@ def runPipeline(image, llrobot):
     green_blob_info = get_blob_info(green_mask, final_img if draw_debug else None)
     purple_blob_info = get_blob_info(purple_mask, final_img if draw_debug else None)
     blob_info = green_blob_info + purple_blob_info
-
+    if draw_debug:
+        cv2.putText(
+                final_img,
+                f"num balls: {len(blob_info)}",
+                (int(20), int(20)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8, (255, 255, 255), 2,
+                cv2.LINE_AA
+            )
     python_outputs = np.array(blob_info).flatten()
     coords = (0, 0) if len(python_outputs) == 0 else (python_outputs[0], python_outputs[1])
     return contour_at_point(coords[0], coords[1]), final_img, python_outputs
@@ -68,12 +98,64 @@ def get_blob_info(mask, draw_img=None):
     cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     info = []
+    y_border = y_resolution - occluded_ball_border_size
+    left_border = occluded_ball_border_size
+    right_border = x_resolution - occluded_ball_border_size
     for c in contours:
         area = cv2.contourArea(c)
-        if (area > min_area):
-            successful = True
-            cx, cy = centroid_xy(c)
-            info.append([cx, cy, area])
+        cx, cy = centroid_xy(c)
+        min_area =  get_min_area(cy)
+        if (area < min_area):
+            continue
+        successful = True
+
+        expected_single_area = get_expected_area(cy)
+        area_ratio = area / expected_single_area
+        is_giant_clump = area_ratio > giant_clump_area_ratio_threshold
+        out_of_bounds = cy > y_border or cx < left_border or cx > right_border
+        is_single = len(c) < 5 or out_of_bounds
+        if not is_single:
+            (x, y), (width, height), angle = cv2.fitEllipse(c)
+            if draw_img is not None:
+                cv2.ellipse(
+                    draw_img,
+                    ((x, y), (width, height), angle),
+                    color=(0, 255, 0),
+                    thickness=2
+                )
+            major_axis = max(width, height)
+            minor_axis = min(width, height)
+            if minor_axis < allow_segmentation_expected_area_percent:
+                is_single = True
+
+        if not is_single:
+            major_angle = math.radians(angle if width > height else angle + 90)
+            num_balls = major_axis / minor_axis
+            max_error = get_segmenting_max_error(major_angle)
+            # print(f"num balls: {num_balls}")
+            # print(f"num balls: {num_balls}")
+            if num_balls <= 2 - max_error:
+                is_single = True
+            else:
+                actual_num_balls = int(num_balls + max_error)
+                # print(f"actual num balls: {actual_num_balls}===============")
+                singular_area = area / actual_num_balls
+                major_radius = major_axis / 2
+                cos = math.cos(major_angle)
+                sin = math.sin(major_angle)
+                start_x = x - cos * major_radius
+                start_y = y - sin * major_radius
+                increment_dist = major_axis / (actual_num_balls + 1)
+                dx = increment_dist * cos
+                dy = increment_dist * sin
+                for i in range(actual_num_balls):
+                    cur_x = start_x + dx * (i + 1)
+                    cur_y = start_y + dy * (i + 1)
+                    info.append([cur_x, cur_y, singular_area, -1])
+        if is_single:
+            info.append([cx, cy, area, 1 if is_giant_clump else -1])
+
+
 
     # sort blob info by area (biggest first)
     info.sort(key=lambda c: c[2], reverse=True)
@@ -83,13 +165,16 @@ def get_blob_info(mask, draw_img=None):
             cx = info[i][0]
             cy = info[i][1]
             area = info[i][2]
-
+            is_giant_clump = info[i][3] == 1
+            circle_col = (255, 0, 0) if is_giant_clump else (0, 0, 0)
+            cv2.circle(draw_img, (int(cx), int(cy)), 10, circle_col, 3)
+            color = (255, 255, 0)
             cv2.putText(
                 draw_img,
-                f"{i+1}: {int(area)}",
+                f"{i+1}",
                 (int(cx), int(cy)),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.6, (0, 255, 255), 2,
+                0.8, color, 2,
                 cv2.LINE_AA
             )
 
@@ -136,3 +221,7 @@ def contour_at_point(x, y, size=6):
         [x - s, y + s],
     ], dtype=np.int32).reshape((-1, 1, 2))
     return pts
+
+# Normalize angle to be between -pi and pi
+def normalize_angle(angle):
+    return (angle + math.pi) % (2 * math.pi) - math.pi

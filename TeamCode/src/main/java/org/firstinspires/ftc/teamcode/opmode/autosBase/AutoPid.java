@@ -42,6 +42,7 @@ import java.util.ArrayList;
 @Config
 public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
+        public String validCollectLetters = "123gla";
         public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
         public String farLoadingFirst = "flf3flf", farThirdFirst = "f3flflf";
         public String stringBuilder = "n2ngngngn1n";
@@ -106,7 +107,12 @@ public abstract class AutoPid extends LinearOpMode {
         declareCollectPoses();
         declareMiscPoses();
 
-        Limelight.startingPipeline = Limelight.CLASSIFIER_PIPELINE;
+        boolean preloadNear = customizable.stringBuilder.charAt(0) == 'n';
+        if (preloadNear)
+            Limelight.startingPipeline = Limelight.CLASSIFIER_PIPELINE;
+        else
+            Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
+
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, start);
         autoCommands = new AutoCommands(robot, telemetry);
 
@@ -116,7 +122,6 @@ public abstract class AutoPid extends LinearOpMode {
         ArrayList<Action> actionOrder = new ArrayList<>();
         customizable.stringBuilder = customizable.stringBuilder.toLowerCase();
 
-        boolean preloadNear = customizable.stringBuilder.charAt(0) == 'n';
 //        double preloadX = preloadNear ? shoot.nearPreload[0] : shoot.farSpike[0];
 //        double preloadY = preloadNear ? shoot.nearPreload[1] : shoot.farSpike[1];
 //        double preloadA = getShootPose(preloadNear, customizable.stringBuilder.charAt(1) + "").heading.toDouble();
@@ -141,6 +146,11 @@ public abstract class AutoPid extends LinearOpMode {
             String letter = info.charAt(1) + "";
             toNear = info.charAt(2) == 'n';
             String nextLetter = info.length() == 3 ? letter : info.charAt(3) + "";
+            if(fromNear && letter.equals("a"))
+                throw new IllegalArgumentException("cannot call limelight auto collect from near at path index " + i);
+
+            if(!customizable.validCollectLetters.contains(letter))
+                throw new IllegalArgumentException("invalid collectionOrder of " + customizable.stringBuilder + "; can only contain 1, 2, 3, G/g, L/l, or A/a");
 
             Pose2d shootPose;
             if(last)
@@ -163,11 +173,13 @@ public abstract class AutoPid extends LinearOpMode {
                     actionOrder.add(getThirdCollectAndShoot(shootPose, fromNear, toNear, last));
                     break;
                 case "l" : actionOrder.add(getLoadingCollectAndShoot(shootPose, toNear)); break;
-//                case "c": actionOrder.add(getRepeatedCornerCollectAndShoot(shootPose, fromNear, toNear)); break;
                 case "g":
                     numGateCollects++;
                     double waitTime = numGateCollects == 2 ? timeConstraints.secondGaitWait : numGateCollects == 3 ? timeConstraints.thirdGateWait : 0;
                     actionOrder.add(getGateCollectAndShoot(shootPose, fromNear, toNear, waitTime));
+                    break;
+                case "a":
+                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose));
                     break;
             }
         }
@@ -208,6 +220,7 @@ public abstract class AutoPid extends LinearOpMode {
                     robot.drawRobotInfo(fieldOverlay);
                     FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
                     telemetry.addData("auto state", autoState);
+                    robot.limelight.printInfo();
                     telemetry.update();
                     return true;
                 }
@@ -239,6 +252,7 @@ public abstract class AutoPid extends LinearOpMode {
             case "g": return shootClose ? shootGateNear : shootGateFar;
             case "3": return shootClose ? shoot3Near : shoot3Far;
             case "l": return shootClose ? shootLoadingNear : shootLoadingFar;
+            case "a": return shootLoadingFar;
             default: throw new IllegalArgumentException("invalid collectionOrder of " + customizable.stringBuilder + "; can only contain 1, 2, 3, L/l, or G/g");
         }
     }
@@ -252,11 +266,11 @@ public abstract class AutoPid extends LinearOpMode {
             case "3": return shootClose ?
                     isRed ? createPose(shoot.near3Last) : createInvertedPose(shoot.near3Last) :
                     isRed ? createPose(shoot.farSpike) : createInvertedPose(shoot.farSpike);
-            case "l": case "c":
+            case "l": case "a":
                 return shootClose ?
                         shootLoadingNear : shootLoadingFar;
-            default: throw new IllegalArgumentException("invalid collectionOrder of " + customizable.stringBuilder + "; can only contain 1, 2, 3, L/l, or G/g");
         }
+        return null;
     }
 
     private Action getFarParkDrive() {
@@ -545,27 +559,40 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
-    private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
-        Action limelightCollectAction = new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls);
+    private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
+        Action limelightCollectAction = new SequentialAction(
+                robot.scanForBalls(() -> Math.toRadians(alliance == Alliance.RED ? 90 : -90)),
+                new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls)
+        );
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
                 .setPassPosition(true));
 
-        return buildCollectAndShoot(limelightCollectAction, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
+        return buildCollectAndShoot(limelightCollectAction, new SleepAction(0), loadingShootDrive, false, timeConstraints.loadingSlowIntakeTime, true, false);
     }
     private Action getLimelightCollectDrive() {
         return new SequentialAction(
                 robot.limelight.ballDetection.takeBallSnapshotAction(),
                 new Action() {
                     DrivePath path = null;
+                    ElapsedTime timer = null;
                     @Override
                     public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                        if (timer == null) {
+                            timer = new ElapsedTime();
+                            timer.reset();
+                        }
+                        if (timer.seconds() > timeConstraints.maxLimelightWaitTime)
+                            return false;
+
                         if (path == null) {
                             Pose2d robotPose = robot.drive.localizer.getPose();
-                            ArrayList<Vector2d> ballPositions = robot.limelight.ballDetection.getCombinedBlobPositions();
+                            ArrayList<Vector2d> ballPositions = robot.limelight.ballDetection.getCurrentBlobPositions();
                             PathInfo pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, ballPositions);
-                            if (pathInfo == null)
+                            if (pathInfo == null) {
+                                telemetry.addLine("path is null");
                                 return true;
+                            }
                             path = new DrivePath(robot.drive);
                             for (PathPose pathPose : pathInfo.optimizedPathPoses)
                                 path.addWaypoint(pathPose.waypoint);
