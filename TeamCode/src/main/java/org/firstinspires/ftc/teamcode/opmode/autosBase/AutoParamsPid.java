@@ -52,6 +52,9 @@ public class AutoParamsPid {
         public double[] gateNearWaypointTol = { 1.5, 4, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
+
+        public double[] limelightScanPos1 = { 48, 60 };
+        public double[] limelightScanPos2 = { 24, 60 };
     }
     public static class Shoot {
         public double earlyEngageClutchDist = 15;

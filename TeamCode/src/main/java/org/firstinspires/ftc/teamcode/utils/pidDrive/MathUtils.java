@@ -162,10 +162,12 @@ public class MathUtils {
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], pose[1], Math.toRadians(pose[2]));
     }
-    public static Pose2d createPose(double[] pos, double headingDeg) {
-        return new Pose2d(pos[0], pos[1], Math.toRadians(headingDeg));
+    public static Pose2d createPose(double[] pose, double headingDeg) {
+        return new Pose2d(pose[0], pose[1], Math.toRadians(headingDeg));
     }
     public static Pose2d createInvertedPose(double[] pose) {
+        if(pose.length != 3)
+            throw new IllegalArgumentException("cannot call createInvertedPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
     }
     public static Pose2d createInvertedPose(double[] pos, double headingDeg) {
@@ -175,5 +177,10 @@ public class MathUtils {
         if(vec.length != 2)
             throw new IllegalArgumentException("cannot call createVec on " + Arrays.toString(vec) + " - must contain EXACTLY 2 elements");
         return new Vector2d(vec[0], vec[1]);
+    }
+    public static Vector2d createInvertedVec(double[] vec) {
+        if(vec.length != 2)
+            throw new IllegalArgumentException("cannot call createInvertedVec on " + Arrays.toString(vec) + " - must contain EXACTLY 2 elements");
+        return new Vector2d(vec[0], -vec[1]);
     }
 }

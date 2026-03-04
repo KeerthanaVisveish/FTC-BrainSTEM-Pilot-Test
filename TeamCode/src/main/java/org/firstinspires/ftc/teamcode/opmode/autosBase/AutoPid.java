@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode.opmode.autosBase;
 
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createInvertedPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createInvertedVec;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createVec;
 
 import androidx.annotation.NonNull;
 
@@ -38,6 +40,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 @Config
 public abstract class AutoPid extends LinearOpMode {
@@ -560,8 +563,17 @@ public abstract class AutoPid extends LinearOpMode {
     }
 
     private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
+        Vector2d scan1 = alliance == Alliance.RED ?
+                createVec(collect.limelightScanPos1) :
+                createInvertedVec(collect.limelightScanPos1);
+        Vector2d scan2 = alliance == Alliance.RED ?
+                createVec(collect.limelightScanPos2) :
+                createInvertedVec(collect.limelightScanPos2);
         Action limelightCollectAction = new SequentialAction(
-                robot.scanForBalls(() -> Math.toRadians(alliance == Alliance.RED ? 90 : -90), null),
+                robot.scanForBalls(
+                        () -> MathUtils.vecAngle(scan1.minus(robot.drive.pinpoint().getPose().position)),
+                        null
+                ),
                 new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls)
         );
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
@@ -587,7 +599,10 @@ public abstract class AutoPid extends LinearOpMode {
 
                         if (path == null) {
                             Pose2d robotPose = robot.drive.localizer.getPose();
-                            ArrayList<Vector2d> ballPositions = robot.limelight.ballDetection.getCurrentBlobPositions();
+                            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
+                            ArrayList<Vector2d> ballPositions = giantClump == null ?
+                                    robot.limelight.ballDetection.getCurrentBlobPositions() :
+                                    new ArrayList<>(Collections.singletonList(giantClump));
                             PathInfo pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, ballPositions);
                             if (pathInfo == null) {
                                 telemetry.addLine("path is null");
