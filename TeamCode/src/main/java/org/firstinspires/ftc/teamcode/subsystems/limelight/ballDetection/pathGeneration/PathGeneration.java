@@ -40,7 +40,7 @@ public class PathGeneration {
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
         if (pathGenParams.allowLaneCollect) {
-            if (densestLanes.get(0).numBalls() >= pathGenParams.alwaysUseLaneCollectNumBalls)
+            if (bestLane.numBalls() >= pathGenParams.alwaysUseLaneCollectNumBalls)
                 return generateLanePath(robotPose, bestLane);
             if (allBalls.size() == 2 && bestLane.numBalls() == 2)
                 return generateLanePath(robotPose, bestLane);

@@ -7,7 +7,8 @@ public class PathGenerationParams {
         public double robotLength = 16;
         public double shiftedLeftStartX = 40;
 
-        public boolean allowLaneCollect = false;
+        public boolean allowLaneCollect = true;
+        public int alwaysUseLaneCollectNumBalls = 2;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;
@@ -27,7 +28,7 @@ public class PathGenerationParams {
         public double preCollectOffset = 5;
         public double lastCollectPoseExtraDriveThrough = 4;
 
-        public double clusterMergeDist = 5.5;
+        public double clusterMergeDist = 0;
         public double clusterStrafingDist = 24;
         public double strafeCollectMaxAngleOffset = 15;
         public double strafeCollectDriveThroughDist = 3;
