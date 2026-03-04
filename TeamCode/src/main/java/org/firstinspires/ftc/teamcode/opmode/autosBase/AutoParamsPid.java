@@ -2,9 +2,9 @@ package org.firstinspires.ftc.teamcode.opmode.autosBase;
 
 public class AutoParamsPid {
     public static class Collect {
-        public double hitGateVelThreshold = 15, gateCollectHitWallThreshold = 15;
+        public double hitGateVelThreshold = 15;
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .45, thirdCollectDrivePower = .5;
-        public double gateOpenDrive1Power = .8, gateOpenDrive2Power = .45;
+        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .45, gateOpenDrive2MaxPower = .8;
         public double firstCorrectiveStrength = .3;
         public double loadingDrivePower = 0.25, loadingHeadingPower = .3;
 
@@ -45,11 +45,13 @@ public class AutoParamsPid {
         public double[] postLoading = { 59.5, 64, 18 };
         public double[] postLoadingTol = { 1.5, 1, 3 };
 
-        public double[] gateOpen = { 7, 52, 90 };
+        public double[] gateOpen = { 10.5, 57.5, 119 };
+        // 10.4, 57.6, 118.7
 
         public double[] gateCollect = { 17, 64, 135 };
         public double[] gateNearWaypoint = { 4, 36, 90 };
         public double[] gateNearWaypointTol = { 1.5, 4, 3 };
+        public double[] gateOpenTol = { 1, 2, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
 
@@ -117,8 +119,8 @@ public class AutoParamsPid {
     public static class TimeConstraints {
         public double maxShootTime = 1.5;
         public double lastShootExtraTime = 2;
-        public double gateOpeningWait = 0.2, gateCollectOpenWait = .05;
-        public double gateCollectMaxTime = .95;
+        public double gateOpeningWait = 1, gateCollectOpenWait = .05;
+        public double gateCollectMaxTime = .5;
         public double cornerCollectMaxTime = 1.9;
         public double autoEndTime = 29.5;
         public double stopEverythingTime = 35;
