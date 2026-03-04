@@ -8,7 +8,7 @@ public class PathGenerationParams {
         public double shiftedLeftStartX = 40;
 
         public boolean allowLaneCollect = true;
-        public int alwaysUseLaneCollectNumBalls = 2;
+        public int alwaysUseLaneCollectNumBalls = 3;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;

@@ -54,10 +54,12 @@ public class PathGenPreview extends JPanel
     static final double robotWidth = 13.5, robotLength = 16;
     static final double ballRadius = 2.5;
     static final double pathNodeRadius = 2;
-    static final double strokeSize = 0.5;
+    static final double thinStrokeSize = 0.5, strokeSize = 0.75, pathStrokeSize = 0.75;
+    static final boolean drawEdgeCaseLines = false;
     private final List<Pose2d> balls = new ArrayList<>();
     private Pose2d robot = new Pose2d(0, 0, 0);
     private int selectedPoseIndex = -2;
+    static final boolean drawAllPoses = false;
     private BufferedImage background;
 
     private boolean drawSimplifiedPath = true;
@@ -163,15 +165,20 @@ public class PathGenPreview extends JPanel
             int w = (int) (windowSize * ratio);
             int h = (int) (windowSize * ratio);
             g2.drawImage(background, 0, 0, getWidth(), getWidth(), x, y, x + w, y + h, null);
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g2.setColor(Color.DARK_GRAY);
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER));
+
         }
 
-        g2.setColor(Color.LIGHT_GRAY);
-        drawPosition(g2, new Vector2d(72, 72), PathGeneration.pathGenParams.cornerBallDistance, false);
-        drawPosition(g2, new Vector2d(72, -72), PathGeneration.pathGenParams.cornerBallDistance, false);
-        drawLine(g2, new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
-        drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
-        drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance));
-
+        if (drawEdgeCaseLines) {
+            drawPosition(g2, new Vector2d(72, 72), PathGeneration.pathGenParams.cornerBallDistance, false);
+            drawPosition(g2, new Vector2d(72, -72), PathGeneration.pathGenParams.cornerBallDistance, false);
+            drawLine(g2, new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
+            drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
+            drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance));
+        }
         if (regeneratePathPoses) {
             regeneratePathPoses = false;
 
@@ -215,7 +222,7 @@ public class PathGenPreview extends JPanel
     }
 
     private void drawRobotAndBalls(Graphics2D g2) {
-        g2.setColor(Color.GRAY);
+        g2.setColor(Color.LIGHT_GRAY);
         int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
         drawRobot(g2, robot);
@@ -243,8 +250,8 @@ public class PathGenPreview extends JPanel
             }
             if (isIgnoredBall)
                 g2.setColor(Color.GRAY);
-            else if (isProblemBall)
-                g2.setColor(Color.RED);
+//            else if (isProblemBall)
+//                g2.setColor(Color.RED);
             else
                 g2.setColor(Color.MAGENTA);
             drawPosition(g2, ball, ballRadius, true);
@@ -255,12 +262,14 @@ public class PathGenPreview extends JPanel
             return;
 
         ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.optimizedPathPoses : path.pathPoses;
-        g2.setColor(Color.BLACK);
+        g2.setColor(Color.WHITE);
         Vector2d firstPosition = pathPoses.get(0).waypoint.pose.position;
 
         Point p1 = fieldToDrawPosition(robot.position);
         Point p2 = fieldToDrawPosition(firstPosition);
-        g2.setColor(Color.BLACK);
+        g2.setColor(Color.WHITE);
+
+        g2.setStroke(new BasicStroke(fieldToDrawSize(pathStrokeSize)));
         g2.drawLine(p1.x, p1.y, p2.x, p2.y);
         for (int i=0; i<pathPoses.size(); i++) {
             PathPose pathPose = pathPoses.get(i);
@@ -269,11 +278,10 @@ public class PathGenPreview extends JPanel
             if (next != null) {
                 p1 = fieldToDrawPosition(pathPose.waypoint.pose.position);
                 p2 = fieldToDrawPosition(next.waypoint.pose.position);
-                g2.setColor(Color.BLACK);
+                g2.setColor(Color.WHITE);
                 g2.drawLine(p1.x, p1.y, p2.x, p2.y);
             }
 
-            g2.setColor(Color.GRAY);
             if (drawPathTolerances) {
                 ArrayList<Vector2d> corners = pathPose.waypoint.tolerance.getToleranceCorners(pathPose.waypoint.pose.position);
                 ArrayList<Point> cornerPoints = new ArrayList<>();
@@ -290,51 +298,57 @@ public class PathGenPreview extends JPanel
             if (pathPose.waypoint.params.pathType == PathParams.PathType.CURVED)
                 drawPosition(g2, pathPose.waypoint.params.controlPoint.position, 1, true);
         }
+        g2.setStroke(new BasicStroke(fieldToDrawSize(strokeSize)));
 
         ArrayList<Pose2d> poses = drawSimplifiedPath ? path.getOptimizedPoses() : path.getPoses();
-        poses.add(0, robot);
-        if (drawRobotNodeIndex < 0) {
-            drawRobotNodeIndex = 0;
-            drawRobotNodeLerp = 0;
+        if (drawAllPoses) {
+            g2.setStroke(new BasicStroke(fieldToDrawSize(thinStrokeSize)));
+            for (Pose2d pose : poses)
+                drawRobot(g2, pose);
         }
-        if (drawRobotNodeIndex >= poses.size()) {
-            drawRobotNodeIndex = poses.size() - 1;
-            drawRobotNodeLerp = 0;
-        }
-        if (drawRobotNodeIndex == poses.size() - 1)
-            drawRobotNodeLerp = Math.min(0, drawRobotNodeLerp);
-        if (drawRobotNodeLerp > 1) {
+        else {
+            poses.add(0, robot);
+            if (drawRobotNodeIndex < 0) {
+                drawRobotNodeIndex = 0;
+                drawRobotNodeLerp = 0;
+            }
+            if (drawRobotNodeIndex >= poses.size()) {
+                drawRobotNodeIndex = poses.size() - 1;
+                drawRobotNodeLerp = 0;
+            }
             if (drawRobotNodeIndex == poses.size() - 1)
-                drawRobotNodeLerp = 0;
-            else {
-                drawRobotNodeLerp %= 1;
-                drawRobotNodeIndex++;
+                drawRobotNodeLerp = Math.min(0, drawRobotNodeLerp);
+            if (drawRobotNodeLerp > 1) {
+                if (drawRobotNodeIndex == poses.size() - 1)
+                    drawRobotNodeLerp = 0;
+                else {
+                    drawRobotNodeLerp %= 1;
+                    drawRobotNodeIndex++;
+                }
+            } else if (drawRobotNodeLerp < -1) {
+                if (drawRobotNodeIndex == 0)
+                    drawRobotNodeLerp = 0;
+                else {
+                    drawRobotNodeLerp %= 1;
+                    drawRobotNodeIndex--;
+                }
             }
-        }
-        else if (drawRobotNodeLerp < -1) {
-            if (drawRobotNodeIndex == 0)
-                drawRobotNodeLerp = 0;
-            else {
-                drawRobotNodeLerp %= 1;
-                drawRobotNodeIndex--;
-            }
-        }
-        if (drawRobotNodeIndex > 0 || drawRobotNodeLerp != 0) {
-            Pose2d robotOnPathPose = poses.get(drawRobotNodeIndex);
-            int nextIndex = drawRobotNodeLerp >= 0 ? drawRobotNodeIndex + 1 : drawRobotNodeIndex - 1;
-            if (nextIndex >= 0 && nextIndex < poses.size()) {
-                Pose2d nextPose = poses.get(nextIndex);
-                double headingLerpT = Math.max(-1, Math.min(1, drawRobotNodeLerp * 3));
-                robotOnPathPose = new Pose2d(
-                        MathUtils.lerp(robotOnPathPose.position.x, nextPose.position.x, Math.abs(drawRobotNodeLerp)),
-                        MathUtils.lerp(robotOnPathPose.position.y, nextPose.position.y, Math.abs(drawRobotNodeLerp)),
-                        robotOnPathPose.heading.plus(nextPose.heading.minus(robotOnPathPose.heading) * Math.abs(headingLerpT)).toDouble()
-                );
-                drawRobot(g2, robotOnPathPose);
-            }
-            else {
-                drawRobotNodeLerp = 0;
-                drawRobot(g2, robotOnPathPose);
+            if (drawRobotNodeIndex > 0 || drawRobotNodeLerp != 0) {
+                Pose2d robotOnPathPose = poses.get(drawRobotNodeIndex);
+                int nextIndex = drawRobotNodeLerp >= 0 ? drawRobotNodeIndex + 1 : drawRobotNodeIndex - 1;
+                if (nextIndex >= 0 && nextIndex < poses.size()) {
+                    Pose2d nextPose = poses.get(nextIndex);
+                    double headingLerpT = Math.max(-1, Math.min(1, drawRobotNodeLerp * 3));
+                    robotOnPathPose = new Pose2d(
+                            MathUtils.lerp(robotOnPathPose.position.x, nextPose.position.x, Math.abs(drawRobotNodeLerp)),
+                            MathUtils.lerp(robotOnPathPose.position.y, nextPose.position.y, Math.abs(drawRobotNodeLerp)),
+                            robotOnPathPose.heading.plus(nextPose.heading.minus(robotOnPathPose.heading) * Math.abs(headingLerpT)).toDouble()
+                    );
+                    drawRobot(g2, robotOnPathPose);
+                } else {
+                    drawRobotNodeLerp = 0;
+                    drawRobot(g2, robotOnPathPose);
+                }
             }
         }
     }

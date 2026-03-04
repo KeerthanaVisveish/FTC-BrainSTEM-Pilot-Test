@@ -31,10 +31,12 @@ def get_expected_radius(cy):
     # r = sqrt(area / pi)
     return math.sqrt(get_expected_area(cy) / math.pi)
 
-giant_clump_area_ratio_threshold = 2
+giant_clump_area_ratio_threshold = 1.8
+giant_clump_height_ratio_threshold = 1.02
 
 occluded_ball_border_size = 40
 allow_segmentation_expected_area_percent = 0.8
+single_ball_major_minor_axis_ratio = 1.1
 # angle of major axis -> max error
 def get_segmenting_max_error(angle_rad):
     angle = abs(math.degrees(normalize_angle(angle_rad)))
@@ -47,7 +49,7 @@ def get_segmenting_max_error(angle_rad):
     return max_error
 
 # debug info
-show_mask = False
+show_mask = True
 draw_debug = False
 
 def runPipeline(image, llrobot):
@@ -114,49 +116,59 @@ def get_blob_info(mask, draw_img=None):
             continue
         successful = True
 
-        expected_single_area = get_expected_area(cy)
-        area_ratio = area / expected_single_area
-        is_giant_clump = area_ratio > giant_clump_area_ratio_threshold
-        out_of_bounds = cy > y_border or cx < left_border or cx > right_border
-        is_single = len(c) < 5 or out_of_bounds or is_giant_clump
-        if not is_single:
+        is_single = False
+        can_compute_ellipse = len(c) >= 5
+        is_giant_clump = False
+        bbox_left, bbox_top, bbox_width, bbox_height = cv2.boundingRect(c)
+
+        if can_compute_ellipse:
             (x, y), (width, height), angle = cv2.fitEllipse(c)
-            if draw_img is not None:
-                cv2.ellipse(
-                    draw_img,
-                    ((x, y), (width, height), angle),
-                    color=(0, 255, 0),
-                    thickness=2
-                )
             major_axis = max(width, height)
             minor_axis = min(width, height)
-            if minor_axis < allow_segmentation_expected_area_percent:
-                is_single = True
 
-        if not is_single:
-            major_angle = math.radians(angle if width > height else angle + 90)
-            num_balls = major_axis / minor_axis
-            max_error = get_segmenting_max_error(major_angle)
-            # print(f"num balls: {num_balls}")
-            # print(f"num balls: {num_balls}")
-            if num_balls <= 2 - max_error:
-                is_single = True
-            else:
-                actual_num_balls = int(num_balls + max_error)
-                # print(f"actual num balls: {actual_num_balls}===============")
-                singular_area = area / actual_num_balls
-                major_radius = major_axis / 2
-                cos = math.cos(major_angle)
-                sin = math.sin(major_angle)
-                start_x = x - cos * major_radius
-                start_y = y - sin * major_radius
-                increment_dist = major_axis / (actual_num_balls + 1)
-                dx = increment_dist * cos
-                dy = increment_dist * sin
-                for i in range(actual_num_balls):
-                    cur_x = start_x + dx * (i + 1)
-                    cur_y = start_y + dy * (i + 1)
-                    info.append([cur_x, cur_y, singular_area, -1])
+            expected_single_area = get_expected_area(cy)
+            expected_single_radius = get_expected_radius(cy)
+            area_ratio = area / expected_single_area
+            height_ratio = bbox_height * 0.5 / expected_single_radius
+            is_giant_clump = area_ratio > giant_clump_area_ratio_threshold and height_ratio > giant_clump_height_ratio_threshold
+            out_of_bounds = cy > y_border or cx < left_border or cx > right_border
+            is_single = out_of_bounds or is_giant_clump
+
+            if not is_single:
+                if area_ratio < allow_segmentation_expected_area_percent:
+                    is_single = True
+
+            if not is_single:
+                if draw_img is not None:
+                    cv2.ellipse(
+                        draw_img,
+                        ((x, y), (width, height), angle),
+                        color=(0, 255, 0),
+                        thickness=2
+                    )
+                major_angle = math.radians(angle if width > height else angle + 90)
+                num_balls = major_axis / minor_axis
+                max_error = get_segmenting_max_error(major_angle)
+                # print(f"num balls: {num_balls}")
+                # print(f"num balls: {num_balls}")
+                if num_balls <= 2 - max_error:
+                    is_single = True
+                else:
+                    actual_num_balls = int(num_balls / single_ball_major_minor_axis_ratio + max_error)
+                    # print(f"actual num balls: {actual_num_balls}===============")
+                    singular_area = area / actual_num_balls
+                    major_radius = major_axis / 2
+                    cos = math.cos(major_angle)
+                    sin = math.sin(major_angle)
+                    start_x = x - cos * major_radius
+                    start_y = y - sin * major_radius
+                    increment_dist = major_axis / (actual_num_balls + 1)
+                    dx = increment_dist * cos
+                    dy = increment_dist * sin
+                    for i in range(actual_num_balls):
+                        cur_x = start_x + dx * (i + 1)
+                        cur_y = start_y + dy * (i + 1)
+                        info.append([cur_x, cur_y, singular_area, -1])
         if is_single:
             info.append([cx, cy, area, 1 if is_giant_clump else -1])
 
