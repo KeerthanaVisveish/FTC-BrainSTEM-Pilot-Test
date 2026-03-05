@@ -32,7 +32,7 @@ public class LimelightBallDetection extends LLParent {
         public int numImagesPerSnapshot = 2;
         public double maxDistToCombineSnapshotBlobs = 1.5;
         public boolean showPythonOutputs = true;
-        public boolean drawBalls = false;
+        public boolean drawBalls = true;
         public double waitToScanAfterTurretMove = 0.5;
     }
     public static Params params = new Params();
@@ -52,6 +52,7 @@ public class LimelightBallDetection extends LLParent {
     public void update() {
         LLResult result = limelight.getLatestResult();
         pythonOutputs = result.getPythonOutput();
+        robot.telemetry.addLine("UPDATING PYTHON OUTPUTS IN LIMELIGHT");
 
         int numNonZeroEntries = 0;
         while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
@@ -151,29 +152,19 @@ public class LimelightBallDetection extends LLParent {
         return positions;
     }
     public ArrayList<Vector2d> getCombinedBlobPositions() {
-        ArrayList<ArrayList<Vector2d>> combinedRaw = new ArrayList<>();
-        for (ArrayList<Blob> snapshotBlobs : previousSnapshots) {
-            for (Blob snapshotBlob : snapshotBlobs) {
-                double minDist = -1;
-                ArrayList<Vector2d> closestList = null;
-                for (ArrayList<Vector2d> existingList : combinedRaw) {
-                    Vector2d currentAverage = MathUtils.getAverage(existingList);
-                    double dist = MathUtils.vecMag(currentAverage.minus(snapshotBlob.pos()));
-                    if (dist <= minDist) {
-                        minDist = dist;
-                        closestList = existingList;
-                    }
-                }
-                if (minDist != -1 && minDist < params.maxDistToCombineSnapshotBlobs) {
-                    closestList.add(snapshotBlob.pos());
-                }
-                else
-                    combinedRaw.add(new ArrayList<>(Collections.singletonList(snapshotBlob.pos())));
-            }
-        }
+//        ArrayList<Vector2d> allPositions = new ArrayList<>();
+//        for (ArrayList<Blob> snapshotBlobs : previousSnapshots) {
+//            for (Blob snapshotBlob : snapshotBlobs)
+//                allPositions.add(snapshotBlob.pos());
+//        }
         ArrayList<Vector2d> combined = new ArrayList<>();
-        for (ArrayList<Vector2d> readings : combinedRaw)
-            combined.add(MathUtils.getAverage(readings));
+//        for (Vector2d pos : allPositions) {
+//            ArrayList<Vector2d> closeEnoughBalls = new ArrayList<>();
+//            for (Vector2d check : allPositions)
+//                if (MathUtils.vecDist(check, pos) <= params.maxDistToCombineSnapshotBlobs)
+//                    closeEnoughBalls.add(check);
+//            combined.add(MathUtils.)
+//        }
         return combined;
     }
     public Action clearBallSnapshots() {

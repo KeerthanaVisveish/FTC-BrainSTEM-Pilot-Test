@@ -102,6 +102,10 @@ public class LoadingZoneBallCollection extends OpMode {
             }
             else
                 mostRecentNodes = new ArrayList<>(Arrays.asList(giantClump));
+            telemetry.addLine("MOST RECENT NODES==============");
+            for (Vector2d ballPos : mostRecentNodes)
+                telemetry.addData("ball pos: ", MathUtils.formatVec2(ballPos));
+
             pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
         }
         if (pathInfo != null)

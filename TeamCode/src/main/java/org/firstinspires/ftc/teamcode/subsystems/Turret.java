@@ -457,6 +457,8 @@ public class Turret extends Component {
                     double clippedAngle = Range.clip(targetRelAngle, -turretParams.maxAngle, turretParams.maxAngle);
                     targetEncoder = clippedAngle * turretParams.ticksPerRad;
                     positionError = targetEncoder - currentEncoder;
+                    telemetry.addData("rotating to field angle", Math.toDegrees(targetFieldAngleSup.getAsDouble()));
+                    telemetry.addData("rotating to turret angle", Math.toDegrees(clippedAngle));
                 }),
                 telemetryPacket -> positionError > powerTuning.noVoltageThreshold
         );

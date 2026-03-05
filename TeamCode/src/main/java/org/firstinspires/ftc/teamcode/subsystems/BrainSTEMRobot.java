@@ -44,7 +44,7 @@ public class BrainSTEMRobot {
     public LED led;
     public static Alliance alliance;
     private final ArrayList<Component> subsystems;
-    private final Telemetry telemetry;
+    public final Telemetry telemetry;
     public GamepadTracker g1;
 
     public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
@@ -130,7 +130,7 @@ public class BrainSTEMRobot {
                             @Override
                             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                                 if (secondScan == null) {
-                                    if (limelight.ballDetection.getCombinedBlobPositions().size() >= 2)
+                                    if (limelight.ballDetection.getCurrentBlobPositions().size() >= 2)
                                         return false;
                                     secondScan = new SequentialAction(
                                             turret.rotateToCustomTarget(angle2Sup),

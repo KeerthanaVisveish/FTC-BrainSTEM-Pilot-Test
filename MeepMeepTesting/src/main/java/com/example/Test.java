@@ -1,49 +1,51 @@
 package com.example;
 
+import com.acmerobotics.roadrunner.Vector2d;
+import com.example.autoCollectPathGen.MathUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+
 public class Test {
     public static void main(String[] args) {
-        System.out.println(errorIsOscillating(new double[] { 50, 1, 50, 1, 1 }));
     }
-    private static double noPowerThreshold = 1, prevEncoderOscillatingSize = 3;
-    private static boolean errorIsOscillating(double[] prevErrors) {
-        boolean oscillating = true;
-        boolean prevInBound = false;
-        boolean inBoundEveryTime = true;
-        for (int i = 0; i < prevEncoderOscillatingSize; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= noPowerThreshold;
-            if(!curInBound)
-                inBoundEveryTime = false;
-            if(i == 0) {
-                prevInBound = curInBound;
-                continue;
-            }
-            if(prevInBound == curInBound) {
-                oscillating = false;
-                break;
-            }
-            prevInBound = curInBound;
+    private static class Blob {
+        private Vector2d pos;
+        public Blob(double x, double y) {
+            this.pos = new Vector2d(x, y);
         }
-        if(oscillating)
-            return true;
-        if(inBoundEveryTime)
-            return false;
-        boolean ranAtLeastOnce = false;
-        for(int i = 0; i < prevErrors.length; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= noPowerThreshold;
-            if(i == 0) {
-                prevInBound = curInBound;
-                continue;
-            }
-            if (prevErrors[i] == noPowerThreshold)
-                continue;
-
-            ranAtLeastOnce = true;
-            if(prevInBound == curInBound)
-                return false;
-            prevInBound = curInBound;
+        public Vector2d pos() {
+            return pos;
         }
-        if (!ranAtLeastOnce)
-            return false;
-        return true;
+    }
+    private static ArrayList<ArrayList<Blob>> previousSnapshots = new ArrayList<>(
+            new ArrayList<>()
+    );
+    static double maxDistToCombineSnapshotBlobs = 2;
+    public ArrayList<Vector2d> getCombinedBlobPositions() {
+        ArrayList<ArrayList<Vector2d>> combinedRaw = new ArrayList<>();
+        for (ArrayList<Blob> snapshotBlobs : previousSnapshots) {
+            for (Blob snapshotBlob : snapshotBlobs) {
+                double minDist = -1;
+                ArrayList<Vector2d> closestList = null;
+                for (ArrayList<Vector2d> existingList : combinedRaw) {
+                    Vector2d currentAverage = MathUtils.getAverage(existingList);
+                    double dist = MathUtils.vecMag(currentAverage.minus(snapshotBlob.pos()));
+                    if (dist <= minDist) {
+                        minDist = dist;
+                        closestList = existingList;
+                    }
+                }
+                if (minDist != -1 && minDist < maxDistToCombineSnapshotBlobs) {
+                    closestList.add(snapshotBlob.pos());
+                }
+                else
+                    combinedRaw.add(new ArrayList<>(Collections.singletonList(snapshotBlob.pos())));
+            }
+        }
+        ArrayList<Vector2d> combined = new ArrayList<>();
+        for (ArrayList<Vector2d> readings : combinedRaw)
+            combined.add(MathUtils.getAverage(readings));
+        return combined;
     }
 }
