@@ -1,16 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Ball;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathDriveParams;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathFinder;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGenerationParams;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.ProblemBall;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Types;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
@@ -24,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+@Config
 public class PathGeneration {
     public static PathGenerationParams pathGenParams = new PathGenerationParams();
     public static PathDriveParams driveParams = new PathDriveParams();
@@ -488,7 +482,7 @@ public class PathGeneration {
                         }
                         break;
                     case CORNER:
-                        tolerance = new CircleTolerance(driveParams.collectCornerDistTol, driveParams.collectCornerHeadingTol);
+                        tolerance = new CircleTolerance(driveParams.collectCornerDistTol, Math.toRadians(driveParams.collectCornerHeadingTol));
                         minLinearPower = driveParams.collectCornerMinLinearPower;
                         preCollectPassPosition = true;
                         break;
@@ -641,7 +635,7 @@ public class PathGeneration {
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
             if (isWallSafe) {
-                Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                 Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
                 Pose2d controlPoint = getPreCollectPose(preCollectPose, approachAngle, driveParams.strafeCollectControlMaxOffset);
                 controlPoint = getWallSafePose(controlPoint);
@@ -674,7 +668,7 @@ public class PathGeneration {
                 }
                 if (isWallSafe) {
                     startCollectPose = new Pose2d(startCollectPose.position.x, startCollectPose.position.y, MathUtils.averageAngle(startCollectPose.heading.toDouble(), collectPose.heading.toDouble()));
-                    Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, driveParams.clusterStrafeHeadingTol);
+                    Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                     Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
                     Waypoint w2 = new Waypoint(startCollectPose).setPassPosition(true);
                     Waypoint w3 = new Waypoint(collectPose).setPassPosition(true).setMinLinearPower(driveParams.collectNormalMinLinearPower);
@@ -839,6 +833,7 @@ public class PathGeneration {
             return simplified;
         }
 
+        // remove unnecessary poses
         for (int i=0; i<pathPoses.size()-1; i++) {
             PathPose prev = !simplified.isEmpty() ? simplified.get(simplified.size() - 1) : null;
             Pose2d prevPose = prev != null ? prev.waypoint.pose : startPose;
@@ -846,11 +841,6 @@ public class PathGeneration {
             PathPose next = pathPoses.get(i + 1);
 
             Vector2d curToNext = next.waypoint.pose.position.minus(cur.waypoint.pose.position);
-            double distToNext = MathUtils.vecMag(curToNext);
-            if (distToNext >= driveParams.setHeadingTangentDistBetweenPoses) {
-                cur.waypoint.setHeadingLerp(PathParams.HeadingLerpType.TANGENT);
-                cur.waypoint.setHeadingTangentDeactivateThreshold(driveParams.correctHeadingBackFromTangentDist);
-            }
             // skip any poses between classifier or back wall strafes
             if (prev != null) {
                 if ((prev.approachType == Types.Approach.CLASSIFIER_STRAFE || prev.approachType == Types.Approach.LENIENT_CLASSIFIER_STRAFE)
@@ -879,15 +869,11 @@ public class PathGeneration {
             double curToNextHeadingSimplification = Math.toRadians(pathGenParams.maxCollectHeadingDifference.applyAsDouble(curToNextDist));
             if (cur.approachType == Types.Approach.NORMAL && next.approachType != Types.Approach.NORMAL)
                 curToNextHeadingSimplification *= 0.5;
-//            System.out.println(i + ": prev to cur heading diff: " + Math.toDegrees(prevToCurHeadingDiff) + " | cur to next heading diff: " + Math.toDegrees(curToNextHeadingDiff));
-//            System.out.println("    prev to cur heading simpli: " + Math.toDegrees(prevToCurHeadingSimplification) + " | cur to next heading simpli: " + Math.toDegrees(curToNextHeadingSimplification));
-//            System.out.println("    approach angle diff: " + Math.toDegrees(approachAngleDiff));
             double approachAngleSimplification = Math.toRadians(pathGenParams.maxCollectApproachDifference);
             boolean approachAnglesCloseEnough = Math.abs(approachAngleDiff) < approachAngleSimplification;
             boolean approachAnglesOppositeDirCloseEnough = Math.PI - Math.abs(approachAngleDiff) < approachAngleSimplification
                     && prevToCurDist <= pathGenParams.backTrackingMaxDistBetweenPoints;
             boolean headingCloseEnough = Math.abs(prevToCurHeadingDiff) < prevToCurHeadingSimplification && Math.abs(curToNextHeadingDiff) < curToNextHeadingSimplification;
-//            System.out.println("heading close: " + headingCloseEnough + " | approach close: " + approachAnglesCloseEnough + " | opposite approach close: " + approachAnglesOppositeDirCloseEnough);
             if (headingCloseEnough && (approachAnglesCloseEnough || approachAnglesOppositeDirCloseEnough)) {
                 double ignoreCollectHeadingDiff = pathGenParams.completelyIgnoreCollectPoseHeadingDiff;
                 double ignoreCollectApproachAngleDiff = pathGenParams.completelyIgnoreCollectPoseApproachAngleDiff;
@@ -904,16 +890,30 @@ public class PathGeneration {
                     cur.waypoint.pose = new Pose2d(projectedPosition, cur.waypoint.pose.heading);
                     simplified.add(new PathPose(cur.waypoint, cur.poseType, cur.ball, cur.approachType));
                 }
-//                System.out.println("meets conditions, skipping");
                 continue;
             }
 
-//            System.out.println("adding " + i);
             simplified.add(pathPoses.get(i));
         }
-//        System.out.println("adding " + (pathPoses.size() - 1));
         simplified.add(pathPoses.get(pathPoses.size() - 1));
-//        System.out.println("simplified inside function: " + simplified);
+
+        // optimize heading
+        for (int i=0; i<simplified.size(); i++) {
+            PathPose prev = i == 0 ? null : simplified.get(i - 1);
+            Pose2d prevPose = i == 0 ? startPose : prev.waypoint.pose;
+            PathPose cur = simplified.get(i);
+
+            boolean prevIsWeird = prev != null && prev.approachType != Types.Approach.NORMAL;
+            boolean curIsWeird = cur.approachType != Types.Approach.NORMAL;
+            if (prevIsWeird && curIsWeird)
+                continue;
+
+            if (MathUtils.vecDist(prevPose.position, cur.waypoint.pose.position) >= driveParams.setHeadingTangentDistBetweenPoses) {
+                cur.waypoint.setHeadingLerp(PathParams.HeadingLerpType.TANGENT);
+                cur.waypoint.setHeadingTangentDeactivateThreshold(driveParams.correctHeadingBackFromTangentDist);
+            }
+        }
+
         return simplified;
     }
 

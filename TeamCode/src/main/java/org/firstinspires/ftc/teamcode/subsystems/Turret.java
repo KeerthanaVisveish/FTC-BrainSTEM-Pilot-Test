@@ -472,7 +472,7 @@ public class Turret extends Component {
                             timer.reset();
                         }
                         telemetry.addData("ROTATE TO CUSTOM TARGET TIME", timer.seconds());
-                        return positionError > powerTuning.noVoltageThreshold;
+                        return positionError > powerTuning.noVoltageThreshold || timer.seconds() < 0.2;
                     }
                 }
         );

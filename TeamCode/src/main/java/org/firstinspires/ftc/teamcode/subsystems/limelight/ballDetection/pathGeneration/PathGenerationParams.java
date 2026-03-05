@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
-import com.acmerobotics.dashboard.config.Config;
-
 import java.util.function.DoubleUnaryOperator;
 
 public class PathGenerationParams {
@@ -10,7 +8,8 @@ public class PathGenerationParams {
         public double shiftedLeftStartX = 40;
 
         public boolean allowLaneCollect = true;
-        public int alwaysUseLaneCollectNumBalls = 1;
+        public int defaultAlwaysUseLaneCollectNumBalls = 3;
+        public int alwaysUseLaneCollectNumBalls = defaultAlwaysUseLaneCollectNumBalls;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;

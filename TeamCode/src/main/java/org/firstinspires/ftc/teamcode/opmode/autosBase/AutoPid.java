@@ -5,13 +5,9 @@ import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createInve
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createVec;
 
-import androidx.annotation.NonNull;
-
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.ParallelAction;
@@ -27,9 +23,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
@@ -40,11 +33,9 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 @Config
 public abstract class AutoPid extends LinearOpMode {
-    public static boolean throwError = true;
     public static class Customizable {
         public String validCollectLetters = "123gla";
         public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
@@ -564,7 +555,7 @@ public abstract class AutoPid extends LinearOpMode {
                 createInvertedVec(collect.limelightScanPos1);
 
 //        Action limelightCollectAction = new CustomEndAction(robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls);
-        Action limelightCollectAction = robot.getLimelightCollectDrive(scan1, timeConstraints.maxLimelightWaitTime);
+        Action limelightCollectAction = robot.getLimelightCollectSequence(scan1, timeConstraints.maxLimelightWaitTime);
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)

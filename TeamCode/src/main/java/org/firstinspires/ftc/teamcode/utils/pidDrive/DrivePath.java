@@ -264,7 +264,6 @@ public class DrivePath implements Action {
             double kfPower = -headingSign * getCurWaypoint().params.headingKf;
             headingPower += kfPower;
             headingPower = headingSign * Range.clip(Math.abs(headingPower), getCurParams().minHeadingPower, getCurParams().maxHeadingPower);
-            headingPower *= errorInfo.headingPowerDirFlip;
         }
 
 
@@ -354,25 +353,21 @@ public class DrivePath implements Action {
         boolean setHeadingTangent = (waypoint.params.headingLerpType == PathParams.HeadingLerpType.TANGENT ||
                 waypoint.params.headingLerpType == PathParams.HeadingLerpType.REVERSE_TANGENT)
                         && waypointDistAway > waypoint.params.tangentHeadingDeactivateDist;
-        double headingRadWaypointError;
+        double targetHeading;
         if(getCurParams().pathType == PathParams.PathType.CURVED)
-            headingRadWaypointError = targetHeadingRad - rHeadingRad;
+            targetHeading = targetHeadingRad;
         else if (setHeadingTangent) {
             if(waypoint.params.headingLerpType == PathParams.HeadingLerpType.TANGENT)
-                headingRadWaypointError = angleRadToTargetWaypoint - rHeadingRad;
+                targetHeading = angleRadToTargetWaypoint;
             else
-                headingRadWaypointError = MathUtils.angleNormDeltaRad(angleRadToTargetWaypoint + Math.PI) - rHeadingRad;
+                targetHeading = MathUtils.angleNormDeltaRad(angleRadToTargetWaypoint + Math.PI);
         }
         else
-            headingRadWaypointError = waypoint.headingRad() - rHeadingRad;
+            targetHeading = waypoint.headingRad();
 
-        // flip heading error if necessary
-        double absHeadingWaypointError = Math.abs(headingRadWaypointError);
-        boolean flipHeadingDirection = absHeadingWaypointError > Math.PI;
-        if (flipHeadingDirection)
-            headingRadWaypointError = Math.signum(headingRadWaypointError) * (2 * Math.PI - absHeadingWaypointError);
+        double headingRadWaypointError = MathUtils.angleNormDeltaRad(targetHeading - rHeadingRad);
 
-        return new ErrorInfo(xWaypointError, yWaypointError, waypointDistAway, headingRadWaypointError, flipHeadingDirection ? -1 : 1 );
+        return new ErrorInfo(xWaypointError, yWaypointError, waypointDistAway, headingRadWaypointError);
     }
     private double calculateLinearPower(Waypoint waypoint, double totalDistanceAway, double waypointDistAway) {
         PathParams params = waypoint.params;

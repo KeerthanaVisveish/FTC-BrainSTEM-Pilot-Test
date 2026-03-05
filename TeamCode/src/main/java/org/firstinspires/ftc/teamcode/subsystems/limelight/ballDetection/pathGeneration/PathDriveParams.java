@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGe
 
 public class PathDriveParams {
     public double setHeadingTangentDistBetweenPoses = 44;
-    public double correctHeadingBackFromTangentDist = 16;
+    public double correctHeadingBackFromTangentDist = 24;
     public double clusterStrafeParallelTol = 2;
     public double clusterStrafePerpendicularTol = 1;
     public double clusterStrafeHeadingTol = 3;
