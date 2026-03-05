@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 
 @Autonomous(name="RED LIMELIGHT TESTING AUTO")
-public class RedLimelightTestingAuto extends AutoPid {
+public class RedLimelightTestingAuto extends LimelightTestingAuto {
     public RedLimelightTestingAuto() {
         alliance = Alliance.RED;
     }

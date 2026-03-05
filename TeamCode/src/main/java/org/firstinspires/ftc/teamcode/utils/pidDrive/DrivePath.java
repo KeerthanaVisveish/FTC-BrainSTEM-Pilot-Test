@@ -25,19 +25,15 @@ import java.util.Arrays;
 @Config
 public class DrivePath implements Action {
     public static boolean showRobotPose = false;
-    private static Canvas fieldOverlay;
-    public static void enableFieldDrawing(Canvas fieldOverlay) {
-        DrivePath.fieldOverlay = fieldOverlay;
-    }
     private static DrivePath mostRecentPath = null;
-    public static void drawCurrentPath() {
+    public static void drawCurrentPath(Canvas fieldOverlay) {
         if (fieldOverlay == null)
             throw new IllegalStateException("fieldOverlay is null - need to call DrivePath.enableFieldDrawing(fieldOverlay)");
         if (mostRecentPath != null) {
-            mostRecentPath.drawPath();
+            mostRecentPath.drawPath(fieldOverlay);
 
             if (showRobotPose)
-                mostRecentPath.drawRobotPose(mostRecentPath.odo.getPose());
+                mostRecentPath.drawRobotPose(mostRecentPath.odo.getPose(), fieldOverlay);
         }
     }
     public static double baseVoltage = 13.5;
@@ -414,7 +410,7 @@ public class DrivePath implements Action {
     public double getWaypointDistanceError() {
         return waypointDistanceError;
     }
-    private void drawPath() {
+    private void drawPath(Canvas fieldOverlay) {
         Pose2d curWaypointPose = getCurWaypoint().pose;
 
         fieldOverlay.setStroke("gray");
@@ -428,7 +424,7 @@ public class DrivePath implements Action {
             Drawing.drawRobot(fieldOverlay, getCurParams().controlPoint);
         }
     }
-    private void drawRobotPose(Pose2d robotPose) {
+    private void drawRobotPose(Pose2d robotPose, Canvas fieldOverlay) {
         fieldOverlay.setStroke("green");
         Drawing.drawRobot(fieldOverlay, robotPose);
         Vector2d driveVectorToDraw = GeometryUtils.rotateVector(driveVector, robotPose.heading.toDouble()).times(10);

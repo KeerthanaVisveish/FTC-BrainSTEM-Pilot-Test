@@ -15,6 +15,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.opmode.testing.LoadingZoneBallCollection;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
@@ -25,10 +26,11 @@ public class LimelightTestingAuto extends AutoPid {
     @Override
     public void runOpMode() throws InterruptedException {
         TelemetryPacket field = new TelemetryPacket();
-        BrainSTEMRobot robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(LoadingZoneBallCollection.start));
-        AutoCommands autoCommands = new AutoCommands(robot, telemetry);
+        Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
+        robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(LoadingZoneBallCollection.start));
+        autoCommands = new AutoCommands(robot, telemetry);
 
-        Action autoAction = getLimelightLoadingZoneCollectAndShoot(new Pose2d(40, 16, 1.57));
+        Action autoAction = getLimelightLoadingZoneCollectAndShoot(new Pose2d(40, 16, 1.57), field);
         Action fullAutoAction = new ParallelAction(
                 packet -> {
                     field.fieldOverlay().clear();

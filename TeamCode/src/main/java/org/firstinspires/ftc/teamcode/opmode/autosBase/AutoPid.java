@@ -68,8 +68,8 @@ public abstract class AutoPid extends LinearOpMode {
 
     protected Alliance alliance;
     private ElapsedTime autoTimer;
-    private BrainSTEMRobot robot;
-    private AutoCommands autoCommands;
+    protected BrainSTEMRobot robot;
+    protected AutoCommands autoCommands;
     private Pose2d start,
             collect1NearControlPoint, collect1FarControlPoint, collect1,
             collect2NearControlPoint, collect2FarControlPoint, collect2,
@@ -93,8 +93,6 @@ public abstract class AutoPid extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
         fieldPacket = new TelemetryPacket();
-        Canvas fieldOverlay = fieldPacket.fieldOverlay();
-        DrivePath.enableFieldDrawing(fieldOverlay);
 
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
@@ -184,7 +182,7 @@ public abstract class AutoPid extends LinearOpMode {
                     actionOrder.add(getGateCollectAndShoot(shootPose, fromNear, toNear, waitTime));
                     break;
                 case "a":
-                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose));
+                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, fieldPacket));
                     break;
             }
         }
@@ -215,18 +213,15 @@ public abstract class AutoPid extends LinearOpMode {
         );
 
         Action fullAutoAction = new ParallelAction(
-                packet -> {
-                    fieldOverlay.clear();
-                    return true;
-                },
                 autoCommands.updateRobotInfo(),
                 new TimedAction(timedAutoAction, timeConstraints.stopEverythingTime).setEndFunction(robot.drive::stop),
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
+                    Tele
                     DrivePath.drawCurrentPath();
                     robot.drawRobotInfo(fieldOverlay);
-                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
+//                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
                     telemetry.addData("auto state", autoState);
                     robot.limelight.printInfo();
                     telemetry.update();
@@ -567,7 +562,7 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
-    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
+    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, TelemetryPacket fieldPacket) {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
@@ -580,7 +575,7 @@ public abstract class AutoPid extends LinearOpMode {
                         null
                 ),
                 autoCommands.runIntake(),
-                new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls),
+                new CustomEndAction(robot.getLimelightCollectDrive(timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls),
                 autoCommands.stopIntake()
         );
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
@@ -588,49 +583,6 @@ public abstract class AutoPid extends LinearOpMode {
                 .setPassPosition(true));
 
         return buildCollectAndShoot(limelightCollectAction, new SleepAction(0), loadingShootDrive, false, timeConstraints.loadingSlowIntakeTime, true, false);
-    }
-    private Action getLimelightCollectDrive() {
-        return new SequentialAction(
-                robot.limelight.ballDetection.takeBallSnapshotAction(),
-                new Action() {
-                    PathInfo pathInfo = null;
-                    DrivePath drivePath = null;
-                    ElapsedTime timer = null;
-                    Pose2d startPose = null;
-                    @Override
-                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                        if (timer == null) {
-                            timer = new ElapsedTime();
-                            timer.reset();
-                        }
-                        if (timer.seconds() > timeConstraints.maxLimelightWaitTime)
-                            return false;
-
-                        if (drivePath == null) {
-                            startPose = robot.drive.localizer.getPose();
-                            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
-                            ArrayList<Vector2d> ballPositions = giantClump == null ?
-                                    robot.limelight.ballDetection.getCurrentBlobPositions() :
-                                    new ArrayList<>(Collections.singletonList(giantClump));
-                            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
-                            if (pathInfo == null) {
-                                telemetry.addLine("path is null");
-                                return true;
-                            }
-                            drivePath = new DrivePath(robot.drive);
-                            for (PathPose pathPose : pathInfo.optimizedPathPoses) {
-                                drivePath.addWaypoint(pathPose.waypoint);
-                            }
-                            if (throwError)
-                                throw new IllegalArgumentException("path poses: " + pathInfo.optimizedPathPoses);
-                            for (int i=0; i<pathInfo.optimizedPathPoses.size(); i++)
-                                telemetry.addData(i + " PATH POSE", MathUtils.formatPose1(pathInfo.optimizedPathPoses.get(i).waypoint.pose));
-                        }
-                        robot.limelight.ballDetection.drawPath(fieldPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
-                        return drivePath.run(telemetryPacket);
-                    }
-                }
-        );
     }
 
     private Action getGateCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, double waitTime) {

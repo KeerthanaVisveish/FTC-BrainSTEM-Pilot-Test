@@ -1,0 +1,83 @@
+package org.firstinspires.ftc.teamcode.opmode.testing;
+
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
+
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.canvas.Canvas;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+
+import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
+import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
+import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+@TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
+@Config
+public class SimpleLoadingZoneBallCollection extends LinearOpMode {
+    public static int streamFPS = 5;
+    public static double[] start = { 48 + 6.5, 8, 90 };
+    public static boolean usePoseStorageStartPose = false;
+    private BrainSTEMRobot robot;
+
+    private Action autoCollectAction = null;
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetry.setMsTransmissionInterval(20);
+        Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
+        Pose2d startPose = usePoseStorageStartPose ? new Pose2d(PoseStorage.autoX, PoseStorage.autoY, PoseStorage.autoHeading) : createPose(start);
+        robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, startPose);
+        FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
+        AutoCommands autoCommands = new AutoCommands(robot, telemetry);
+
+        waitForStart();
+        robot.startOpmode();
+
+        Action autoAction = robot.getLimelightCollectDrive(2);
+        Action fullAutoAction = new ParallelAction(
+                packet -> {
+                    fieldPacket.fieldOverlay().clear();
+                    return true;
+                },
+                autoCommands.updateRobotInfo(),
+                new TimedAction(autoAction, 100).setEndFunction(robot.drive::stop),
+                autoCommands.updateRobot(),
+                autoCommands.savePoseContinuously(),
+                packet -> {
+                    robot.drawRobotInfo(fieldPacket.fieldOverlay());
+//                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
+                    telemetry.addData("auto state", autoState);
+                    robot.limelight.printInfo();
+                    telemetry.update();
+                    return true;
+                }
+        );
+
+    }
+}
