@@ -562,12 +562,9 @@ public abstract class AutoPid extends LinearOpMode {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
-        Vector2d scan2 = alliance == Alliance.RED ?
-                createVec(collect.limelightScanPos2) :
-                createInvertedVec(collect.limelightScanPos2);
 
 //        Action limelightCollectAction = new CustomEndAction(robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls);
-        Action limelightCollectAction = robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime);
+        Action limelightCollectAction = robot.getLimelightCollectDrive(scan1, timeConstraints.maxLimelightWaitTime);
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)

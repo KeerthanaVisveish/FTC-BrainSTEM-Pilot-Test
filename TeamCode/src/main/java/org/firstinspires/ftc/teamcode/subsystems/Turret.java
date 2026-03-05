@@ -1,6 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
@@ -8,6 +11,7 @@ import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.util.InterpLUT;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -459,9 +463,17 @@ public class Turret extends Component {
                     telemetry.addData("rotating to field angle", Math.toDegrees(targetFieldAngleSup.getAsDouble()));
                     telemetry.addData("rotating to turret angle", Math.toDegrees(clippedAngle));
                 }),
-                telemetryPacket -> {
-                    telemetry.addData("CUSTOM TARGET POSITION ERROR", positionError);
-                    return positionError > powerTuning.noVoltageThreshold;
+                new Action() {
+                    ElapsedTime timer = null;
+                    @Override
+                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                        if (timer == null) {
+                            timer = new ElapsedTime();
+                            timer.reset();
+                        }
+                        telemetry.addData("ROTATE TO CUSTOM TARGET TIME", timer.seconds());
+                        return positionError > powerTuning.noVoltageThreshold;
+                    }
                 }
         );
     }

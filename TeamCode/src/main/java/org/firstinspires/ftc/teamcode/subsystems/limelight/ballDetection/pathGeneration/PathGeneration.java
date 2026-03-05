@@ -1,9 +1,16 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Ball;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathDriveParams;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathFinder;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGenerationParams;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.ProblemBall;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Types;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
@@ -17,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
-@Config
 public class PathGeneration {
     public static PathGenerationParams pathGenParams = new PathGenerationParams();
     public static PathDriveParams driveParams = new PathDriveParams();
@@ -309,7 +315,6 @@ public class PathGeneration {
 
         ArrayList<Ball> allBallsInCluster = new ArrayList<>();
 
-        ArrayList<Ball> ballPathAfterClustering = new ArrayList<>();
         ArrayList<ClusterApproachPath> validClusterApproachPaths = new ArrayList<>();
         for (int i=0; i<ballPath.size(); i++) {
             Ball prev = i == 0 ? new Ball(robotPos) : ballPath.get(i - 1);
@@ -328,13 +333,10 @@ public class PathGeneration {
                         continue;
                     }
                 }
-                ballPathAfterClustering.add(cur);
             }
             // this only runs if current cluster has been finished merging
             // once current cluster has finished, find approach information
-            if (allBallsInCluster.isEmpty())
-                ballPathAfterClustering.add(cur);
-            else {
+            if (!allBallsInCluster.isEmpty()) {
                 ArrayList<ClusterApproach> clusterApproaches = new ArrayList<>();
                 for (int j=0; j<allBallsInCluster.size() - 1; j++) {
                     Ball curClusterBall = allBallsInCluster.get(j);
@@ -345,8 +347,6 @@ public class PathGeneration {
                 ClusterApproach clusterApproach = getBestClusterApproach(clusterApproaches);
                 problemBalls.addAll(clusterApproach.problemBalls);
                 if (clusterApproach.isWallSafe) {
-                    ballPathAfterClustering.add(clusterApproach.start);
-                    ballPathAfterClustering.add(clusterApproach.end);
                     ClusterApproachPath approachPath = new ClusterApproachPath(clusterApproach.start, clusterApproach.end, clusterApproach.pathPoses);
                     validClusterApproachPaths.add(approachPath);
                 }
@@ -359,13 +359,8 @@ public class PathGeneration {
                             break;
                         }
 
-                    // merge
-                    if (closeEnoughToMerge) {
-                        cur = new Ball(MathUtils.getAverage(Ball.toVecList(allBallsInCluster)));
-                        ballPathAfterClustering.add(cur);
-                    }
                     // choose easiest
-                    else {
+                    if (!closeEnoughToMerge) {
                         double closestToPrevDist = -1;
                         Ball closestToPrevBall = null;
                         for (Ball ballInCluster : allBallsInCluster) {
@@ -382,7 +377,6 @@ public class PathGeneration {
                                 problemBalls.add(new ProblemBall(ProblemBall.Severity.FAILED_CLUSTER_MERGE, ballInCluster.pos));
                             }
                         }
-                        ballPathAfterClustering.add(cur);
                     }
                 }
                 allBallsInCluster.clear();
@@ -391,15 +385,15 @@ public class PathGeneration {
         }
 
         // set path indexes of new path after clustering
-        for (int i=0; i<ballPathAfterClustering.size(); i++)
-            ballPathAfterClustering.get(i).pathIndex = i;
+        for (int i=0; i<ballPath.size(); i++)
+            ballPath.get(i).pathIndex = i;
 
-        for (int i=0; i<ballPathAfterClustering.size(); i++) {
+        for (int i=0; i<ballPath.size(); i++) {
             Pose2d prevPathPose = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).waypoint.pose : robotPose;
             Vector2d prevPathPos = !pathPoses.isEmpty() ? pathPoses.get(pathPoses.size() - 1).waypoint.pose.position : robotPos;
-            Ball prev = i == 0 ? new Ball(robotPos) : ballPathAfterClustering.get(i - 1);
-            Ball cur = ballPathAfterClustering.get(i);
-            Ball next = i < ballPathAfterClustering.size() - 1 ? ballPathAfterClustering.get(i + 1) : null;
+            Ball prev = i == 0 ? new Ball(robotPos) : ballPath.get(i - 1);
+            Ball cur = ballPath.get(i);
+            Ball next = i < ballPath.size() - 1 ? ballPath.get(i + 1) : null;
 
             boolean clusterAccountsForBall = false;
             for (ClusterApproachPath clusterApproachPath : validClusterApproachPaths) {
@@ -464,7 +458,7 @@ public class PathGeneration {
                     ArrayList<Vector2d> polygon = new ArrayList<>(Arrays.asList(robotCorners));
                     polygon.add(1, robotPos);
                     for (Ball ballToCheck : allBalls) {
-                        if (ballPathAfterClustering.contains(ballToCheck) || ballToCheck.type != Ball.BallType.CLASSIFIER_WALL)
+                        if (ballPath.contains(ballToCheck) || ballToCheck.type != Ball.BallType.CLASSIFIER_WALL)
                             continue;
                         boolean hitting = GeometryUtils.isCircleInsidePolygon(polygon, ballToCheck.pos, 1);
                         if (hitting)
@@ -534,7 +528,7 @@ public class PathGeneration {
                 problemBalls.add(new ProblemBall(ProblemBall.Severity.BACK_TRACKING, cur.ball.pos));
         }
 
-        return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, ballPathAfterClustering, pathPoses, problemBalls);
+        return new PathInfo(PathInfo.PathType.COMPLEX, robotPose, ballPath, pathPoses, problemBalls);
     }
     private static ClusterApproach getBestClusterApproach(ArrayList<ClusterApproach> possibleApproaches) {
         ClusterApproach bestApproach = null;
