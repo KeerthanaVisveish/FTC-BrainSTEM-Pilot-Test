@@ -16,6 +16,6 @@ public class PathPose {
     }
     @Override
     public String toString() {
-        return MathUtils.formatPose2(waypoint.pose);
+        return MathUtils.formatPose1(waypoint.pose);
     }
 }

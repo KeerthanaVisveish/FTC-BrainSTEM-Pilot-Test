@@ -46,8 +46,8 @@ public class Turret extends Component {
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .005, BPos = 0.04, x0Pos = 130, kPos = .03;
-        public double kD = 0.0007, kDExponent = 1.2;
+        public double APos = .004, BPos = 0.028, x0Pos = 130, kPos = .03;
+        public double kD = 0.0005, kDExponent = 1.2;
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
@@ -142,7 +142,6 @@ public class Turret extends Component {
 
     @Override
     public void update() {
-        currentEncoder = robot.shootingSystem.getTurretEncoder();
         double prevPositionError = positionError;
         double prevVelocity = currentVelocity;
         currentVelocity = robot.shootingSystem.getTurretVelTps();
@@ -460,7 +459,10 @@ public class Turret extends Component {
                     telemetry.addData("rotating to field angle", Math.toDegrees(targetFieldAngleSup.getAsDouble()));
                     telemetry.addData("rotating to turret angle", Math.toDegrees(clippedAngle));
                 }),
-                telemetryPacket -> positionError > powerTuning.noVoltageThreshold
+                telemetryPacket -> {
+                    telemetry.addData("CUSTOM TARGET POSITION ERROR", positionError);
+                    return positionError > powerTuning.noVoltageThreshold;
+                }
         );
     }
 }

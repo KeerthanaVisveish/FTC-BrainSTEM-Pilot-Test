@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode.opmode.autosBase;
 public class AutoParamsPid {
     public static class Collect {
         public double hitGateVelThreshold = 15;
-        public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .45, thirdCollectDrivePower = .5;
-        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .45, gateOpenDrive2MaxPower = .8;
+        public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
+        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .5, gateOpenDrive2MaxPower = .8;
         public double firstCorrectiveStrength = .3;
         public double loadingDrivePower = 0.25, loadingHeadingPower = .3;
 
@@ -32,10 +32,10 @@ public class AutoParamsPid {
         public double thirdNearT1 = 23, thirdNearT2 = 18;
         public double thirdCloseHeadingKp = .008;
 
-        public double[] thirdFarWaypoint = { 46, 28, 130 };
+        public double[] thirdFarWaypoint = { 46, 26, 130 };
         public double[] thirdFarWaypointTol = { 5, 3, 5 };
-        public double[] thirdFarControlPoint = {40, 28, 110};
-        public double thirdFarT1 = 27, thirdFarT2 = 23;
+        public double[] thirdFarControlPoint = {40, 27, 110};
+        public double thirdFarT1 = 26, thirdFarT2 = 20;
 
 //        public double preLoadingXRed = 48.5, preLoadingYRed = 60.5, preLoadingARed = Math.toRadians(60);
 //        public double preLoadingXBlue = 48.5, preLoadingYBlue = -60.5, preLoadingABlue = Math.toRadians(-60);
@@ -49,7 +49,7 @@ public class AutoParamsPid {
         // 10.4, 57.6, 118.7
 
         public double[] gateCollect = { 17, 64, 135 };
-        public double[] gateNearWaypoint = { 4, 36, 90 };
+        public double[] gateNearWaypoint = { 4, 36, 80 };
         public double[] gateNearWaypointTol = { 1.5, 4, 3 };
         public double[] gateOpenTol = { 1, 2, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
@@ -120,7 +120,7 @@ public class AutoParamsPid {
         public double maxShootTime = 1.5;
         public double lastShootExtraTime = 2;
         public double gateOpeningWait = 1, gateCollectOpenWait = .05;
-        public double gateCollectMaxTime = .5;
+        public double gateCollectMaxTime = .1;
         public double cornerCollectMaxTime = 1.9;
         public double autoEndTime = 29.5;
         public double stopEverythingTime = 35;

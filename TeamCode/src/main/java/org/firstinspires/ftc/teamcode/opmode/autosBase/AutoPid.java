@@ -44,6 +44,7 @@ import java.util.Collections;
 
 @Config
 public abstract class AutoPid extends LinearOpMode {
+    public static boolean throwError = true;
     public static class Customizable {
         public String validCollectLetters = "123gla";
         public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
@@ -214,12 +215,15 @@ public abstract class AutoPid extends LinearOpMode {
         );
 
         Action fullAutoAction = new ParallelAction(
+                packet -> {
+                    fieldOverlay.clear();
+                    return true;
+                },
                 autoCommands.updateRobotInfo(),
                 new TimedAction(timedAutoAction, timeConstraints.stopEverythingTime).setEndFunction(robot.drive::stop),
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
-                    fieldOverlay.clear();
                     DrivePath.drawCurrentPath();
                     robot.drawRobotInfo(fieldOverlay);
                     FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
@@ -563,7 +567,7 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
-    private Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
+    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
@@ -575,7 +579,9 @@ public abstract class AutoPid extends LinearOpMode {
                         () -> MathUtils.vecAngle(scan1.minus(robot.drive.pinpoint().getPose().position)),
                         null
                 ),
-                new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls)
+                autoCommands.runIntake(),
+                new CustomEndAction(getLimelightCollectDrive(), robot.collection::autoCollectHas3Balls),
+                autoCommands.stopIntake()
         );
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
@@ -612,8 +618,13 @@ public abstract class AutoPid extends LinearOpMode {
                                 return true;
                             }
                             drivePath = new DrivePath(robot.drive);
-                            for (PathPose pathPose : pathInfo.optimizedPathPoses)
+                            for (PathPose pathPose : pathInfo.optimizedPathPoses) {
                                 drivePath.addWaypoint(pathPose.waypoint);
+                            }
+                            if (throwError)
+                                throw new IllegalArgumentException("path poses: " + pathInfo.optimizedPathPoses);
+                            for (int i=0; i<pathInfo.optimizedPathPoses.size(); i++)
+                                telemetry.addData(i + " PATH POSE", MathUtils.formatPose1(pathInfo.optimizedPathPoses.get(i).waypoint.pose));
                         }
                         robot.limelight.ballDetection.drawPath(fieldPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
                         return drivePath.run(telemetryPacket);
@@ -621,65 +632,6 @@ public abstract class AutoPid extends LinearOpMode {
                 }
         );
     }
-//    private Action getRepeatedCornerCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
-//        DrivePath gateShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
-//                .setMaxTime(4));
-//
-//        return buildCollectAndShoot(repeatedCornerCollect(fromNear), new SleepAction(0), gateShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
-//    }
-//    private Action repeatedCornerCollect(boolean fromNear) {
-//        return new Action() {
-//            private Action gateCollectDrive, gateResetDrive;
-//            private boolean first = true;
-//            private boolean ranCollectDrive = false;
-//            private int numTimesCollected = 0;
-//
-//            @Override
-//            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-//                if (first) {
-//                    first = false;
-//                    resetCollectDrive();
-//                }
-//                if (!ranCollectDrive) {
-//                    if (!gateCollectDrive.run(telemetryPacket)) {
-//                        ranCollectDrive = true;
-//                        numTimesCollected++;
-//                        if (robot.collection.has3Balls() || numTimesCollected > customizable.maxCornerRetries)
-//                            return false;
-//                        resetRetryDrive();
-//                        resetCollectDrive();
-//                    }
-//                }
-//                if (ranCollectDrive) {
-//                    ranCollectDrive = gateResetDrive.run(telemetryPacket);
-//                }
-//                return true;
-//            }
-//            private void resetCollectDrive() {
-//                if (numTimesCollected == 0) {
-//                    double sign = isRed ? 1 : -1;
-//                    double collectTangent = fromNear ? sign * Math.toRadians(30) : sign * Math.toRadians(80);
-//                    gateCollectDrive = new CustomEndAction(robot.drive.actionBuilder(robot.drive.localizer.getPose())
-//                            .setTangent(collectTangent)
-//                            .splineToSplineHeading(cornerCollect, collectTangent)
-//                            .build(),
-//                            () -> robot.collection.has3Balls(), timeConstraints.cornerCollectMaxTime);
-//                }
-//                else {
-//                    gateCollectDrive = new CustomEndAction(robot.drive.actionBuilder(robot.drive.localizer.getPose())
-//                            .strafeToLinearHeading(new Vector2d(collect.cornerCollectRetryX, cornerCollect.position.y), cornerCollect.heading.toDouble())
-//                            .build(),
-//                            () -> robot.collection.has3Balls(), timeConstraints.cornerCollectMaxTime);
-//                }
-//            }
-//            private void resetRetryDrive() {
-//                gateResetDrive = new CustomEndAction(robot.drive.actionBuilder(robot.drive.localizer.getPose())
-//                        .strafeToLinearHeading(cornerCollectRetry.position, cornerCollectRetry.heading.toDouble())
-//                        .build(),
-//                        () -> robot.collection.has3Balls() || Math.abs(robot.drive.localizer.getPose().position.y) < (cornerCollectRetry.position.y) + 1);
-//            }
-//        };
-//    }
 
     private Action getGateCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, double waitTime) {
         DrivePath gateOpenDrive;

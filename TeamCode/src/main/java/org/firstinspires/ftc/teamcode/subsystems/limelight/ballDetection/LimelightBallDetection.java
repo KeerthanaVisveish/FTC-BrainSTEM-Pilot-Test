@@ -33,7 +33,7 @@ public class LimelightBallDetection extends LLParent {
         public double maxDistToCombineSnapshotBlobs = 1.5;
         public boolean showPythonOutputs = true;
         public boolean drawBalls = true;
-        public double waitToScanAfterTurretMove = 0.5;
+        public double waitToScanAfterTurretMove = 2;
     }
     public static Params params = new Params();
     private double[] pythonOutputs;

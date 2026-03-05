@@ -122,7 +122,7 @@ public class MathUtils {
         return sum / l.length;
     }
 
-    public static String formatPose(Pose2d pose) {
+    public static String formatPose1(Pose2d pose) {
         if (pose == null)
             return "null";
         return "(" + format1(pose.position.x) + ", " + format1(pose.position.y) + ", " + format1(Math.toDegrees(pose.heading.toDouble())) + ")";

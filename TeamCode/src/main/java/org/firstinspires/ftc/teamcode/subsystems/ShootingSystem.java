@@ -334,6 +334,7 @@ public class ShootingSystem {
     }
     private void updateTurretProperties(Pose2d robotPose) {
         turretMotor.updateInfo();
+        robot.turret.currentEncoder = getTurretEncoder();
 
         turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         futureTurretPos = ShootingMath.getTurretPose(futureRobotPose, 0).position;
