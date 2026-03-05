@@ -87,12 +87,10 @@ public abstract class AutoPid extends LinearOpMode {
     private boolean isRed;
     private AutoState autoState;
     private Vector2d perpNearParkLine;
-    private TelemetryPacket fieldPacket;
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
-        fieldPacket = new TelemetryPacket();
 
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
@@ -182,7 +180,7 @@ public abstract class AutoPid extends LinearOpMode {
                     actionOrder.add(getGateCollectAndShoot(shootPose, fromNear, toNear, waitTime));
                     break;
                 case "a":
-                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, fieldPacket));
+                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose));
                     break;
             }
         }
@@ -218,10 +216,8 @@ public abstract class AutoPid extends LinearOpMode {
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
-                    Tele
-                    DrivePath.drawCurrentPath();
-                    robot.drawRobotInfo(fieldOverlay);
-//                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
+                    DrivePath.drawCurrentPath(packet.fieldOverlay());
+                    robot.drawRobotInfo(packet.fieldOverlay());
                     telemetry.addData("auto state", autoState);
                     robot.limelight.printInfo();
                     telemetry.update();
@@ -562,22 +558,17 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
-    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, TelemetryPacket fieldPacket) {
+    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
         Vector2d scan2 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos2) :
                 createInvertedVec(collect.limelightScanPos2);
-        Action limelightCollectAction = new SequentialAction(
-                robot.scanForBalls(
-                        () -> MathUtils.vecAngle(scan1.minus(robot.drive.pinpoint().getPose().position)),
-                        null
-                ),
-                autoCommands.runIntake(),
-                new CustomEndAction(robot.getLimelightCollectDrive(timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls),
-                autoCommands.stopIntake()
-        );
+
+//        Action limelightCollectAction = new CustomEndAction(robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls);
+        Action limelightCollectAction = robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime);
+
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
                 .setPassPosition(true));

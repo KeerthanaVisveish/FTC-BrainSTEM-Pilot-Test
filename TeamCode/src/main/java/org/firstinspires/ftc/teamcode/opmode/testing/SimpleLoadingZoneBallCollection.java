@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmode.testing;
 
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createVec;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.canvas.Canvas;
@@ -44,8 +45,6 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
     public static boolean usePoseStorageStartPose = false;
     private BrainSTEMRobot robot;
 
-    private Action autoCollectAction = null;
-
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -56,28 +55,23 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
         AutoCommands autoCommands = new AutoCommands(robot, telemetry);
 
-        waitForStart();
-        robot.startOpmode();
-
-        Action autoAction = robot.getLimelightCollectDrive(2);
+        Action autoAction = robot.getLimelightCollectDrive(createVec(AutoPid.collect.limelightScanPos1), 2);
         Action fullAutoAction = new ParallelAction(
-                packet -> {
-                    fieldPacket.fieldOverlay().clear();
-                    return true;
-                },
                 autoCommands.updateRobotInfo(),
                 new TimedAction(autoAction, 100).setEndFunction(robot.drive::stop),
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
-                    robot.drawRobotInfo(fieldPacket.fieldOverlay());
-//                    FtcDashboard.getInstance().sendTelemetryPacket(fieldPacket);
-                    telemetry.addData("auto state", autoState);
+                    robot.drawRobotInfo(packet.fieldOverlay());
                     robot.limelight.printInfo();
                     telemetry.update();
                     return true;
                 }
         );
 
+        waitForStart();
+        robot.startOpmode();
+
+        Actions.runBlocking(fullAutoAction);
     }
 }

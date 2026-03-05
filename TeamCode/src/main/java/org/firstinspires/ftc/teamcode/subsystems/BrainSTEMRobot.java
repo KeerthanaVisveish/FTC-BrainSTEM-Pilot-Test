@@ -182,9 +182,11 @@ public class BrainSTEMRobot {
             }
         };
     }
-    public Action getLimelightCollectDrive(double maxLimelightWaitTime) {
+    public Action getLimelightCollectDrive(Vector2d lookPosition, double maxLimelightWaitTime) {
         return new SequentialAction(
-                limelight.ballDetection.takeBallSnapshotAction(),
+                turret.rotateToCustomTarget(() -> MathUtils.vecAngle(lookPosition.minus(drive.pinpoint().getPose().position))),
+                new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
+                new InstantAction(() -> collection.setCollectionState(Collection.CollectionState.INTAKE)),
                 new Action() {
                     PathInfo pathInfo = null;
                     DrivePath drivePath = null;
@@ -196,10 +198,11 @@ public class BrainSTEMRobot {
                             timer = new ElapsedTime();
                             timer.reset();
                         }
-                        if (timer.seconds() > maxLimelightWaitTime)
-                            return false;
 
                         if (drivePath == null) {
+                            if (timer.seconds() > maxLimelightWaitTime)
+                                return false;
+
                             startPose = drive.localizer.getPose();
                             Vector2d giantClump = limelight.ballDetection.getCurrentGiantClumpPosition();
                             ArrayList<Vector2d> ballPositions = giantClump == null ?
@@ -213,8 +216,6 @@ public class BrainSTEMRobot {
                             drivePath = new DrivePath(drive);
                             for (PathPose pathPose : pathInfo.optimizedPathPoses)
                                 drivePath.addWaypoint(pathPose.waypoint);
-//                            for (int i=0; i<pathInfo.optimizedPathPoses.size(); i++)
-//                                telemetry.addData(i + " PATH POSE", MathUtils.formatPose1(pathInfo.optimizedPathPoses.get(i).waypoint.pose));
                         }
                         limelight.ballDetection.drawPath(telemetryPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
                         return drivePath.run(telemetryPacket);
