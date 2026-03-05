@@ -54,6 +54,8 @@ public class DrivePath implements Action {
     private boolean shouldUpdatePose = false;
     private double waypointDistanceError;
     private boolean isRunning = false;
+    private final ElapsedTime customEndConfirmationTimer = new ElapsedTime();
+    private boolean prevCustomEndTriggered = false;
     public DrivePath(MecanumDrive drivetrain, Waypoint ...waypoints) {
         this(drivetrain, null, waypoints);
     }
@@ -185,11 +187,16 @@ public class DrivePath implements Action {
             inPositionTolerance = true;
 
         boolean inWaypointTolerance = inPositionTolerance && inHeadingTolerance;
+        boolean reachedMinTime = waypointTimer.seconds() >= getCurParams().minTime;
         boolean reachedMaxTime = getCurParams().hasMaxTime() && waypointTimer.seconds() >= getCurParams().maxTime;
 
-
+        boolean currentCustomEndTriggered = getCurParams().customEndCondition.getAsBoolean();
+        if (!prevCustomEndTriggered && currentCustomEndTriggered)
+            customEndConfirmationTimer.reset();
+        prevCustomEndTriggered = currentCustomEndTriggered;
+        boolean meetsCustomEnd = currentCustomEndTriggered && customEndConfirmationTimer.seconds() >= getCurParams().customEndConfirmationTime;
         // in tolerance
-        if (inWaypointTolerance || reachedMaxTime || getCurParams().customEndCondition.getAsBoolean()) {
+        if (reachedMinTime && (inWaypointTolerance || reachedMaxTime || meetsCustomEnd)) {
             // completely finished drive path
             if (curWaypointIndex + 1 >= waypoints.size()) {
                 if (getCurParams().slowDownPercent == 1)

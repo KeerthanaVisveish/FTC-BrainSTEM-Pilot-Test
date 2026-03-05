@@ -1,6 +1,11 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 public class PathDriveParams {
+    public double isStuckMaxLinearVel = 6;
+    public double isStuckMaxHeadingVel = 10;
+    public double isStuckConfirmationTime = 0.3;
+    public double startCheckingIsStuckTime = 0.5;
+
     public double setHeadingTangentDistBetweenPoses = 44;
     public double correctHeadingBackFromTangentDist = 24;
     public double clusterStrafeParallelTol = 2;
