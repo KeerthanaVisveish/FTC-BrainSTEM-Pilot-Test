@@ -48,7 +48,9 @@ public class ShootingSystem {
     }
     public static class GeneralParams {
         public double robotVelNoiseThreshold = .1;
-        public double farExitAng = Math.toRadians(38);
+        public double far1ExitAng = Math.toRadians(38);
+        public double far2SwitchY = 8;
+        public double far2ExitAng = Math.toRadians(36);
         public double maxShootingDist = 180;
         public double maxDynamicHoodError = Math.toRadians(12), enableHoodCheckDist = 146;
         public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3;
@@ -249,7 +251,9 @@ public class ShootingSystem {
         }
         else {
             futureDist = Math.min(futureDist, generalParams.maxShootingDist);
-            launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, generalParams.farExitAng), hoodParams.minExitAngRad};
+            int sign = BrainSTEMRobot.alliance == Alliance.RED ? -1 : 1;
+            double farExitAng = robot.drive.localizer.getPose().position.y * sign > generalParams.far2SwitchY ? generalParams.far2ExitAng : generalParams.far1ExitAng;
+            launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, farExitAng), hoodParams.minExitAngRad};
             ballTargetExitSpeedMps = launchVector[0];
             idealBallExitAng = launchVector[1];
             ballExitAngleRad = idealBallExitAng;
