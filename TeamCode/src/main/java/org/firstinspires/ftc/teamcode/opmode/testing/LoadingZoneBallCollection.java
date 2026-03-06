@@ -92,22 +92,22 @@ public class LoadingZoneBallCollection extends OpMode {
 
         Pose2d robotPose = robot.drive.localizer.getPose();
 
-        if (autoCollectAction == null && scanForBallsAction == null) {
-            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
-            telemetry.addData("giant clump", MathUtils.formatVec1(giantClump));
-            if (giantClump == null) {
-                mostRecentNodes = showType == ShowType.CURRENT ?
-                        robot.limelight.ballDetection.getCurrentBlobPositions() :
-                        robot.limelight.ballDetection.getCombinedBlobPositions();
-            }
-            else
-                mostRecentNodes = new ArrayList<>(Arrays.asList(giantClump));
-            telemetry.addLine("MOST RECENT NODES==============");
-            for (Vector2d ballPos : mostRecentNodes)
-                telemetry.addData("ball pos: ", MathUtils.formatVec2(ballPos));
-
-            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
-        }
+//        if (autoCollectAction == null && scanForBallsAction == null) {
+//            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
+//            telemetry.addData("giant clump", MathUtils.formatVec1(giantClump));
+//            if (giantClump == null) {
+//                mostRecentNodes = showType == ShowType.CURRENT ?
+//                        robot.limelight.ballDetection.getCurrentBlobPositions() :
+//                        robot.limelight.ballDetection.getCombinedBlobPositions();
+//            }
+//            else
+//                mostRecentNodes = new ArrayList<>(Arrays.asList(giantClump));
+//            telemetry.addLine("MOST RECENT NODES==============");
+//            for (Vector2d ballPos : mostRecentNodes)
+//                telemetry.addData("ball pos: ", MathUtils.formatVec2(ballPos));
+//
+//            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(robotPose, mostRecentNodes);
+//        }
         if (pathInfo != null)
             for (PathPose pathPose : pathInfo.optimizedPathPoses)
                 telemetry.addLine("" + pathPose.approachType);

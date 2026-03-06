@@ -20,6 +20,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Blob;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.LimelightBallDetection;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
@@ -138,7 +139,7 @@ public class BrainSTEMRobot {
                             @Override
                             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                                 if (secondScan == null) {
-                                    if (limelight.ballDetection.getCurrentBlobPositions().size() >= 2)
+                                    if (limelight.ballDetection.getCurrentBlobs().size() >= 2)
                                         return false;
                                     secondScan = new SequentialAction(
                                             turret.rotateToCustomTarget(angle2Sup),
@@ -218,11 +219,13 @@ public class BrainSTEMRobot {
                         return false;
 
                     startPose = drive.localizer.getPose();
-                    Vector2d giantClump = limelight.ballDetection.getCurrentGiantClumpPosition();
+
+                    ArrayList<Blob> ballBlobs = limelight.ballDetection.getCurrentBlobs();
+                    Vector2d giantClump = limelight.ballDetection.getGiantClumpPosition(ballBlobs);
                     ArrayList<Vector2d> ballPositions;
                     if (giantClump == null) {
-                        ballPositions = limelight.ballDetection.getCurrentBlobPositions();
                         PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = PathGeneration.pathGenParams.defaultAlwaysUseLaneCollectNumBalls;
+                        ballPositions = limelight.ballDetection.getBlobPositions(ballBlobs);
                     }
                     else {
                         ballPositions = new ArrayList<>(Collections.singletonList(giantClump));

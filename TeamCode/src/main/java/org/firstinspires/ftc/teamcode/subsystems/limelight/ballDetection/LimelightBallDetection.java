@@ -20,7 +20,6 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 @Config
 public class LimelightBallDetection extends LLParent {
@@ -29,7 +28,7 @@ public class LimelightBallDetection extends LLParent {
         public int numPiecesOfInfoPerBlob = 4;
         public double minDistFromFieldWall = 2.5;
         public boolean projectBallsInsideField = true;
-        public int numImagesPerSnapshot = 2;
+        public int numImagesPerSnapshot = 1;
         public double maxDistToCombineSnapshotBlobs = 1.5;
         public boolean showPythonOutputs = true;
         public boolean drawBalls = true;
@@ -104,7 +103,7 @@ public class LimelightBallDetection extends LLParent {
             telemetry.addData("primary tx", "null");
             telemetry.addData("primary ty", "null");
         }
-        telemetry.addData("giant clump", MathUtils.formatVec2(getCurrentGiantClumpPosition()));
+        telemetry.addData("giant clump", MathUtils.formatVec2(getGiantClumpPosition()));
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {
@@ -139,33 +138,57 @@ public class LimelightBallDetection extends LLParent {
             Drawing.drawRobotSimple(fieldOverlay, last, 3);
         }
     }
-    public Vector2d getCurrentGiantClumpPosition() {
+    public Vector2d getGiantClumpPosition(ArrayList<Blob> blobs) {
         for (Blob blob : currentBlobs)
             if (blob.isGiantClump)
                 return blob.pos();
         return null;
     }
-    public ArrayList<Vector2d> getCurrentBlobPositions() {
-        ArrayList<Vector2d> positions = new ArrayList<>();
-        for (int i = 0; i < currentBlobs.size(); i++)
-            positions.add(currentBlobs.get(i).pos());
-        return positions;
+
+    public ArrayList<Blob> getCurrentBlobs() {
+        return currentBlobs;
     }
-    public ArrayList<Vector2d> getCombinedBlobPositions() {
-//        ArrayList<Vector2d> allPositions = new ArrayList<>();
-//        for (ArrayList<Blob> snapshotBlobs : previousSnapshots) {
-//            for (Blob snapshotBlob : snapshotBlobs)
-//                allPositions.add(snapshotBlob.pos());
-//        }
-        ArrayList<Vector2d> combined = new ArrayList<>();
-//        for (Vector2d pos : allPositions) {
-//            ArrayList<Vector2d> closeEnoughBalls = new ArrayList<>();
-//            for (Vector2d check : allPositions)
-//                if (MathUtils.vecDist(check, pos) <= params.maxDistToCombineSnapshotBlobs)
-//                    closeEnoughBalls.add(check);
-//            combined.add(MathUtils.)
-//        }
+    public ArrayList<Blob> getCombinedBlobs() {
+        ArrayList<Blob> allBlobs = new ArrayList<>();
+        for (ArrayList<Blob> snapshotBlobs : previousSnapshots)
+            allBlobs.addAll(snapshotBlobs);
+
+        ArrayList<Blob> combined = new ArrayList<>();
+        ArrayList<Integer> indexesToSkip = new ArrayList<>();
+        for (int i=0; i<allBlobs.size(); i++) {
+            if (indexesToSkip.contains(i))
+                continue;
+
+            Blob blob = allBlobs.get(i);
+            boolean merge = false;
+            for (int j = 0; j < allBlobs.size(); j++) {
+                if (i == j)
+                    continue;
+
+                Blob check = allBlobs.get(j);
+                if (MathUtils.vecDist(blob.pos(), check.pos()) <= params.maxDistToCombineSnapshotBlobs) {
+                    double newTx = (blob.tx + check.tx) * 0.5;
+                    double newTy = (blob.ty + check.ty) * 0.5;
+                    Vector2d newPos = blob.pos().plus(check.pos()).times(0.5);
+                    double newArea = (blob.area + check.area) * 0.5;
+                    boolean isGiantClump = blob.isGiantClump || check.isGiantClump;
+                    combined.add(new Blob(newTx, newTy, newPos.x, newPos.y, newArea, isGiantClump));
+                    indexesToSkip.add(j);
+                    merge = true;
+                    break;
+                }
+            }
+            if (!merge) {
+                combined.add(blob);
+            }
+        }
         return combined;
+    }
+    public ArrayList<Vector2d> getBlobPositions(ArrayList<Blob> blobs) {
+        ArrayList<Vector2d> combinedPositions = new ArrayList<>();
+        for (Blob blob : blobs)
+            combinedPositions.add(blob.pos());
+        return combinedPositions;
     }
     public Action clearBallSnapshots() {
         return new InstantAction(() -> {
