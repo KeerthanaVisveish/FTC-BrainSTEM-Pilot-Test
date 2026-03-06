@@ -485,8 +485,8 @@ public abstract class AutoPid extends LinearOpMode {
                 .setMinLinearPower(collect.collectDrivePower);
         if(fromNear)
             w.setControlPoint(collect3NearControlPoint, collect.thirdNearT1, collect.thirdNearT2);
-        else
-            w.setControlPoint(collect3FarControlPoint, collect.thirdFarT1, collect.thirdFarT2);
+//        else
+//            w.setControlPoint(collect3FarControlPoint, collect.thirdFarT1, collect.thirdFarT2);
         DrivePath thirdCollectDrive = new DrivePath(robot.drive, telemetry, w);
 
         if (fromNear) {
@@ -503,7 +503,7 @@ public abstract class AutoPid extends LinearOpMode {
                     .setMinLinearPower(collect.collectDrivePower);
             thirdCollectDrive.addWaypoint(preCollectFar, 0);
         }
-        double controlY = fromNear ? collect3NearControlPoint.position.y : collect3FarControlPoint.position.y;
+        double controlY = fromNear ? collect3NearControlPoint.position.y : preCollect3Far.position.y;
         Action thirdCollectAction = new ParallelAction(
                 thirdCollectDrive,
                 new SequentialAction(
@@ -690,9 +690,9 @@ public abstract class AutoPid extends LinearOpMode {
         collect3NearControlPoint = isRed ?
                 createPose(collect.thirdNearControlPoint) :
                 createInvertedPose(collect.thirdNearControlPoint);
-        collect3FarControlPoint = isRed ?
-                createPose(collect.thirdFarControlPoint) :
-                createInvertedPose(collect.thirdFarControlPoint);
+//        collect3FarControlPoint = isRed ?
+//                createPose(collect.thirdFarControlPoint) :
+//                createInvertedPose(collect.thirdFarControlPoint);
 
         preLoading = isRed ?
                 createPose(collect.preLoading) :

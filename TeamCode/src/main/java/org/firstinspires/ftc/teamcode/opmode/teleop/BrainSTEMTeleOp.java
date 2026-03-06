@@ -230,6 +230,11 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
                 else
                     robot.collection.setCollectionState(Collection.CollectionState.OFF);
+            else if(gp2.isFirstX())
+                if(robot.collection.getCollectionState() != Collection.CollectionState.INTAKE_SLOW)
+                    robot.collection.setCollectionState(Collection.CollectionState.INTAKE_SLOW);
+                else
+                    robot.collection.setCollectionState(Collection.CollectionState.OFF);
         }
         if (gp2.isFirstLeftBumper())
             robot.collection.setFlickerState(Collection.FlickerState.HALF_UP_DOWN);

@@ -239,11 +239,13 @@ public class BrainSTEMRobot {
                     drivePath = new DrivePath(drive);
                     for (PathPose pathPose : pathInfo.optimizedPathPoses) {
                         Waypoint waypoint = pathPose.waypoint;
-                        OdoInfo vel = drive.pinpoint().getVelocity();
-                        double maxLinearVel = PathGeneration.driveParams.isStuckMaxLinearVel;
-                        double maxHeadingVel = Math.toRadians(PathGeneration.driveParams.isStuckMaxHeadingVel);
                         waypoint.setCustomEndCondition(
-                                () -> MathUtils.vecMag(vel.pos()) < maxLinearVel && Math.abs(vel.headingRad) < maxHeadingVel,
+                                () -> {
+                                    OdoInfo vel = drive.pinpoint().getVelocity();
+                                    double maxLinearVel = PathGeneration.driveParams.isStuckMaxLinearVel;
+                                    double maxHeadingVel = Math.toRadians(PathGeneration.driveParams.isStuckMaxHeadingVel);
+                                    return MathUtils.vecMag(vel.pos()) < maxLinearVel && Math.abs(vel.headingRad) < maxHeadingVel;
+                                },
                                 PathGeneration.driveParams.isStuckConfirmationTime
                         );
                         waypoint.setMinTime(PathGeneration.driveParams.startCheckingIsStuckTime);

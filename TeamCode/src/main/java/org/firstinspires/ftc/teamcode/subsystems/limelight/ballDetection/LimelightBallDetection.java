@@ -32,7 +32,11 @@ public class LimelightBallDetection extends LLParent {
         public double maxDistToCombineSnapshotBlobs = 1.5;
         public boolean showPythonOutputs = true;
         public boolean drawBalls = true;
-        public double waitToScanAfterTurretMove = 2;
+        public double waitToScanAfterTurretMove = 1.6;
+        public double[] rejectBallPosition = new double[] { 76, 70.5 };
+//        public double rejectBallRadius = 2.5;
+        public double rejectBallRadius = 0;
+
     }
     public static Params params = new Params();
     private double[] pythonOutputs;
@@ -67,7 +71,10 @@ public class LimelightBallDetection extends LLParent {
             double py = pythonOutputs[index + 1];
             double area = pythonOutputs[index + 2];
             boolean isGiantClump = pythonOutputs[index + 3] > 0;
-            currentBlobs.add(createBlob(px, py, area, isGiantClump));
+            Blob blob = createBlob(px, py, area, isGiantClump);
+            boolean shouldAddBlob = blob.isGiantClump || MathUtils.vecDist(MathUtils.createVec(params.rejectBallPosition), blob.pos()) > params.rejectBallRadius;
+            if (shouldAddBlob)
+                currentBlobs.add(blob);
         }
         if (numImagesLeft > 0) {
             numImagesLeft--;
@@ -103,7 +110,7 @@ public class LimelightBallDetection extends LLParent {
             telemetry.addData("primary tx", "null");
             telemetry.addData("primary ty", "null");
         }
-        telemetry.addData("giant clump", MathUtils.formatVec2(getGiantClumpPosition()));
+        telemetry.addData("giant clump", MathUtils.formatVec2(getGiantClumpPosition(currentBlobs)));
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {

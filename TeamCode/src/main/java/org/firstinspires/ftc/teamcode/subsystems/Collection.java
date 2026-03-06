@@ -17,7 +17,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, shooterTurretOffTargetIntakePow = 0;
+        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, shooterTurretOffTargetIntakePow = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -36,7 +36,7 @@ public class Collection extends Component {
     public static Params params = new Params();
 
     public enum CollectionState {
-        OFF, INTAKE, OUTTAKE,// CLUTCH_ENGAGE_INTAKE
+        OFF, INTAKE, INTAKE_SLOW, OUTTAKE,// CLUTCH_ENGAGE_INTAKE
     }
 
     public enum ClutchState {
@@ -120,6 +120,7 @@ public class Collection extends Component {
             case OUTTAKE:
                 collectorMotor.setPower(params.outtakeSpeed);
                 break;
+            case INTAKE_SLOW:
             case INTAKE:
                 shooterInitiallyGood = getClutchState() == ClutchState.ENGAGED && !robot.shootingSystem.shooterFirstGood();
                 outtakeAfterClutchEngage = false;
@@ -189,6 +190,7 @@ public class Collection extends Component {
 //                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
 //                    setCollectionState(CollectionState.OFF);
 //                break;
+            case INTAKE_SLOW:
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     boolean shouldUseSafetyInterlocks = !inAuto && params.useShootingSafetyInterlocks;
@@ -199,6 +201,8 @@ public class Collection extends Component {
                         meetsSafetyInterlocks = false;
                     if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks)
                         collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
+                    else if(getCollectionState() == CollectionState.INTAKE_SLOW)
+                        collectorMotor.setPower(params.slowShootIntakePower);
                     else
                         collectorMotor.setPower(params.shootIntakePow);
                 }

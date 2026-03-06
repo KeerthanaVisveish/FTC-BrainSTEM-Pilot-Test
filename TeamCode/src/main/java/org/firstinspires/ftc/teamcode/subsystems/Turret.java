@@ -46,7 +46,8 @@ public class Turret extends Component {
     }
     public static class PowerTuning {
 //        public double kAYInt = .0007, kASlope = -.0000000001, minKA = .0004;
-        public double kAYInt = 0.002, kASlope = -.0000001, minKA = 0;
+        public double kAYInt = 0.003, kASlope = -.0000001, minKA = 0;
+        public double accelVoltageSign = -1;
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
@@ -289,7 +290,7 @@ public class Turret extends Component {
         vVoltage = kV * targetVelocity;
 
         kA = Math.max(Math.abs(targetAccel) * powerTuning.kASlope + powerTuning.kAYInt, powerTuning.minKA);
-        aVoltage = targetVelocity == 0 ? kA * targetAccel : 0;
+        aVoltage = targetVelocity == 0 ? kA * targetAccel * powerTuning.accelVoltageSign : 0;
 
         totalVoltage = fVoltage + pVoltage + dVoltage + vVoltage + aVoltage;
         totalVoltage = Range.clip(totalVoltage, -powerTuning.maxVoltage, powerTuning.maxVoltage);
