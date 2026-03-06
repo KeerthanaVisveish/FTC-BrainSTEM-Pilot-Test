@@ -27,7 +27,7 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
-            printShooter = false, printTurret = true, printShootingSystem = false,
+            printShooter = true, printTurret = false, printShootingSystem = true,
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
     public static boolean inCompetition = true;
@@ -128,6 +128,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addData("ljx", gamepad1.left_stick_x * 100);
             telemetry.addData("ljy", gamepad1.left_stick_y * 100);
             telemetry.addData("rjx", gamepad1.right_stick_x * 100);
+            telemetry.addData("left stick button isFirst", gp1.isFirstLeftStickButton() ? 10 : 0);
             telemetry.addLine();
 
             telemetry.addData("dt", robot.shootingSystem.dt);
@@ -237,13 +238,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
         if (gp2.isFirstDpadLeft())
             robot.turret.changeEncoderAdjustment(Turret.turretParams.fineAdjust);
-        if (gp2.isFirstDpadRight())
+        else if (gp2.isFirstDpadRight())
             robot.turret.changeEncoderAdjustment(-Turret.turretParams.fineAdjust);
-
-        if (gp2.isFirstDpadUp())
-            robot.shooter.changeVelocityAdjustment(10);
-        if (gp2.isFirstDpadDown())
-            robot.shooter.changeVelocityAdjustment(-10);
+        if(gp2.isFirstLeftStickButton())
+            robot.shooter.changeVelocityAdjustment(-Shooter.shooterParams.fineAdjust);
+        else if(gp2.isFirstRightStickButton())
+            robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
 
         if(gp2.isFirstRightBumper()) {
             robot.limelight.localization.manualPoseUpdate = true;
