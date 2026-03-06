@@ -237,7 +237,7 @@ public class PathGeneration {
             angle -= Math.signum(angle) * Math.toRadians(pathGenParams.cornerCollectAngle);
 
         Pose2d collect1 = getCollectPose(ball1.pos, angle, 0);
-        Pose2d endCollect = getCollectPose(ball2.pos, angle, -pathGenParams.lastCollectPoseExtraDriveThrough);
+        Pose2d endCollect = getCollectPose(ball2.pos, angle, -100);
         if (72 - Math.abs(endCollect.position.y) <= pathGenParams.snapLaneToWallDistFromWall)
             endCollect = new Pose2d(endCollect.position.x, Math.signum(endCollect.position.y) * 72, endCollect.heading.toDouble());
 
@@ -245,18 +245,23 @@ public class PathGeneration {
         Pose2d wallSafeCollect = getStrictWallSafePose(endCollect);
         Pose2d wallSafePreCollect = getStrictWallSafePose(preCollect);
 
-        Waypoint waypoint1 = new Waypoint(wallSafePreCollect, new CircleTolerance());
-        double controlY = wallSafePreCollect.position.y - pathGenParams.laneCollectControlYOffset;
+        Waypoint waypoint1 = new Waypoint(wallSafePreCollect, new BoxTolerance(driveParams.lanePreCollectTol))
+                .setPassPosition(true)
+                .setMinLinearPower(driveParams.lanePreCollectMinLinearPower);
+        double controlY = wallSafePreCollect.position.y - pathGenParams.laneCollectControlYOffset * Math.signum(wallSafePreCollect.position.y);
         if (Math.abs(controlY) < Math.abs(startPose.position.y) + pathGenParams.laneCollectControlMinYOffsetFromRobot)
             controlY = startPose.position.y + Math.signum(startPose.position.y) * pathGenParams.laneCollectControlMinYOffsetFromRobot;
         Pose2d controlPose = new Pose2d(wallSafePreCollect.position.x, controlY, wallSafePreCollect.heading.toDouble());
-        Vector2d halfwayBetweenStartAndControl = controlPose.position.plus(startPose.position);
+        Vector2d startToControl = controlPose.position.minus(startPose.position);
+        Vector2d halfwayBetweenStartAndControl = startPose.position.plus(startToControl.times(0.65));
         Vector2d halfwayToPreCollect = wallSafePreCollect.position.minus(halfwayBetweenStartAndControl);
         double startLerpDist = MathUtils.vecMag(halfwayToPreCollect);
         double endLerpDist = Math.abs(wallSafePreCollect.position.y - controlY);
         waypoint1.setControlPoint(controlPose, startLerpDist, endLerpDist);
 
-        Waypoint waypoint3 = new Waypoint(wallSafeCollect, new CircleTolerance()).setPassPosition(true).setMinLinearPower(driveParams.laneCollectMinLinearPower);
+        Waypoint waypoint3 = new Waypoint(wallSafeCollect, new CircleTolerance())
+                .setPassPosition(true)
+                .setMinLinearPower(driveParams.laneCollectMinLinearPower);
         PathPose pathPose1 = new PathPose(waypoint1, Types.PoseType.PRECOLLECT, ball1, Types.Approach.NORMAL);
         PathPose pathPose3 = new PathPose(waypoint3, Types.PoseType.COLLECT, ball2, Types.Approach.NORMAL);
         ArrayList<PathPose> pathPoses = new ArrayList<>(Arrays.asList(pathPose1, pathPose3));

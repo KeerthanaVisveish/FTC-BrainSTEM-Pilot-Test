@@ -36,6 +36,10 @@ public class LED extends Component {
 
     @Override
     public void update(){
+        if (robot.turret.getTurretState() == Turret.TurretState.TRACK_CUSTOM_TARGET) {
+            setLed(white);
+            return;
+        }
         if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
             setLed(white);
             return;
