@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen.pathGeneration;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import com.acmerobotics.roadrunner.Pose2d;
 

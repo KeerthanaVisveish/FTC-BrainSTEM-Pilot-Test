@@ -2,12 +2,15 @@ package com.example.autoCollectPathGen;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.example.autoCollectPathGen.pathGeneration.Ball;
-import com.example.autoCollectPathGen.pathGeneration.PathGeneration;
-import com.example.autoCollectPathGen.pathGeneration.PathInfo;
-import com.example.autoCollectPathGen.pathGeneration.PathPose;
-import com.example.autoCollectPathGen.pathGeneration.ProblemBall;
-import com.example.autoCollectPathGen.pidDrive.pathParams.PathParams;
+
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Ball;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.ProblemBall;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -204,7 +207,7 @@ public class PathGenPreview extends JPanel
             g2.drawString("Path Type: " + path.pathType, 10, 15);
             g2.drawString("Max Regens: " + PathGeneration.pathGenParams.maxPathRegenerationAttempts, 10, 35);
             g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
-            g2.drawString("Robot: " + MathUtils.formatPose(robot), 10, 75);
+            g2.drawString("Robot: " + MathUtils.formatPose1(robot), 10, 75);
             for (int i=0; i<pathPoses.size(); i++) {
                 int startY = i*20*numPiecesOfInfoPerPathPose + generalInfoHeight;
                 int cellHeight = numPiecesOfInfoPerPathPose*20+10;
@@ -216,7 +219,7 @@ public class PathGenPreview extends JPanel
                 PathPose pathPose = pathPoses.get(i);
                 g2.drawString(i + ": " + pathPose.ball.type, 10, startY);
                 g2.drawString("    " + pathPose.approachType, 10, startY+20);
-                g2.drawString("    " + MathUtils.formatPose(pathPose.waypoint.pose), 10, startY+40);
+                g2.drawString("    " + MathUtils.formatPose1(pathPose.waypoint.pose), 10, startY+40);
             }
         }
     }

@@ -42,9 +42,12 @@ public class PathGenerationParams {
         public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
 
         public double cornerBallDistance = 7;
-        public double cornerCollectY = 73;
-        public double cornerCollectAngle = 10;
-        public double cornerCollectXOffset = 3;
+        public double cornerCollectAngle = 0;
+        public double createCornerYApproachPreCollectDist = 28;
+        public double cornerBallSwitchToXAngle = 23;
+        public double createCornerXApproachPreCollectAngleChange = 50;
+        public double createCornerXApproachPreCollectMinDist = 15;
+        public double cornerXApproachControlOffset = 8;
 
         public double wallStrafeCollectMinApproachAngle = 35;
         public double wallCollectAngle = 45;

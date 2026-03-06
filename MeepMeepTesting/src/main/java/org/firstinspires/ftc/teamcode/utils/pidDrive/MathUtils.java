@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen;
+package org.firstinspires.ftc.teamcode.utils.pidDrive;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -22,7 +22,7 @@ public class MathUtils {
             rad -= 2 * Math.PI;
         return rad;
     }
-    //    public static void main(String[] args) {
+//    public static void main(String[] args) {
 //        double step = Math.toRadians(40);
 //
 //        for (double i=0; i<2 * Math.PI; i+=step) {
@@ -122,7 +122,7 @@ public class MathUtils {
         return sum / l.length;
     }
 
-    public static String formatPose(Pose2d pose) {
+    public static String formatPose1(Pose2d pose) {
         if (pose == null)
             return "null";
         return "(" + format1(pose.position.x) + ", " + format1(pose.position.y) + ", " + format1(Math.toDegrees(pose.heading.toDouble())) + ")";
@@ -162,10 +162,12 @@ public class MathUtils {
             throw new IllegalArgumentException("cannot call createPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], pose[1], Math.toRadians(pose[2]));
     }
-    public static Pose2d createPose(double[] pos, double headingDeg) {
-        return new Pose2d(pos[0], pos[1], Math.toRadians(headingDeg));
+    public static Pose2d createPose(double[] pose, double headingDeg) {
+        return new Pose2d(pose[0], pose[1], Math.toRadians(headingDeg));
     }
     public static Pose2d createInvertedPose(double[] pose) {
+        if(pose.length != 3)
+            throw new IllegalArgumentException("cannot call createInvertedPose on " + Arrays.toString(pose) + " - must contain EXACTLY 3 elements");
         return new Pose2d(pose[0], -pose[1], Math.toRadians(-pose[2]));
     }
     public static Pose2d createInvertedPose(double[] pos, double headingDeg) {
@@ -175,5 +177,10 @@ public class MathUtils {
         if(vec.length != 2)
             throw new IllegalArgumentException("cannot call createVec on " + Arrays.toString(vec) + " - must contain EXACTLY 2 elements");
         return new Vector2d(vec[0], vec[1]);
+    }
+    public static Vector2d createInvertedVec(double[] vec) {
+        if(vec.length != 2)
+            throw new IllegalArgumentException("cannot call createInvertedVec on " + Arrays.toString(vec) + " - must contain EXACTLY 2 elements");
+        return new Vector2d(vec[0], -vec[1]);
     }
 }

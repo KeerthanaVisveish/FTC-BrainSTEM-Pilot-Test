@@ -1,7 +1,8 @@
-package com.example.autoCollectPathGen.pidDrive.pathParams;
+package org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Vector2d;
-import com.example.autoCollectPathGen.GeometryUtils;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;

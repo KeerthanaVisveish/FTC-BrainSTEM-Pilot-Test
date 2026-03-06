@@ -1,8 +1,9 @@
-package com.example.autoCollectPathGen.pidDrive.pathParams;
+package org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams;
 
 
 import com.acmerobotics.roadrunner.Pose2d;
-import com.example.autoCollectPathGen.MathUtils;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.function.BooleanSupplier;
 
@@ -20,7 +21,7 @@ public class Waypoint {
     public Waypoint(Pose2d pose, PathParams pathParams) {
         this(pose, new CircleTolerance(), pathParams);
     }
-   public Waypoint(Pose2d pose, Tolerance tolerance, PathParams pathParams) {
+    public Waypoint(Pose2d pose, Tolerance tolerance, PathParams pathParams) {
         this.pose = pose;
         this.tolerance = tolerance;
         this.params = pathParams;
@@ -32,7 +33,7 @@ public class Waypoint {
         return pose.position.y;
     }
     public double headingRad() {
-       return pose.heading.toDouble();
+        return pose.heading.toDouble();
     }
 
     public void setNextWaypoint(Waypoint waypoint) {
@@ -76,12 +77,21 @@ public class Waypoint {
         params.passPosition = passPosition;
         return this;
     }
+    public Waypoint setMinTime(double t) {
+        params.minTime = t;
+        return this;
+    }
     public Waypoint setMaxTime(double t) {
         params.maxTime = t;
         return this;
     }
     public Waypoint setCustomEndCondition(BooleanSupplier endCondition) {
         params.customEndCondition = endCondition;
+        return this;
+    }
+    public Waypoint setCustomEndCondition(BooleanSupplier endCondition, double confirmationTime) {
+        params.customEndCondition = endCondition;
+        params.customEndConfirmationTime = confirmationTime;
         return this;
     }
     public Waypoint setCorrectiveStrength(double correctiveStrength) {
@@ -125,6 +135,6 @@ public class Waypoint {
 
     @Override
     public String toString() {
-       return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingRad());
+        return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingRad());
     }
 }

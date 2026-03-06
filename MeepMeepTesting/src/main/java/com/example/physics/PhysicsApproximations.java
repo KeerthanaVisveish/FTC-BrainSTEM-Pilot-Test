@@ -1,9 +1,5 @@
-package com.example;
+package com.example.physics;
 
-
-import com.acmerobotics.roadrunner.Vector2d;
-
-import java.util.Arrays;
 
 public class PhysicsApproximations {
     public static double g = 9.81;

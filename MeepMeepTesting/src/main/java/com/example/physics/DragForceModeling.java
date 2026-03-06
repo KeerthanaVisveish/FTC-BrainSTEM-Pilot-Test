@@ -1,6 +1,4 @@
-package com.example;
-
-import com.acmerobotics.roadrunner.Vector2d;
+package com.example.physics;
 
 public class DragForceModeling {
     public static void main(String[] args) {
