@@ -24,8 +24,10 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Limelig
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
 
@@ -232,8 +234,20 @@ public class BrainSTEMRobot {
                         return true;
                     }
                     drivePath = new DrivePath(drive);
-                    for (PathPose pathPose : pathInfo.optimizedPathPoses)
-                        drivePath.addWaypoint(pathPose.waypoint);
+                    for (PathPose pathPose : pathInfo.optimizedPathPoses) {
+                        Waypoint waypoint = pathPose.waypoint;
+                        OdoInfo vel = drive.pinpoint().getVelocity();
+                        double maxLinearVel = PathGeneration.driveParams.isStuckMaxLinearVel;
+                        double maxHeadingVel = Math.toRadians(PathGeneration.driveParams.isStuckMaxHeadingVel);
+                        waypoint.setCustomEndCondition(
+                                () -> MathUtils.vecMag(vel.pos()) < maxLinearVel && Math.abs(vel.headingRad) < maxHeadingVel,
+                                PathGeneration.driveParams.isStuckConfirmationTime
+                        );
+                        waypoint.setMinTime(PathGeneration.driveParams.startCheckingIsStuckTime);
+
+                        drivePath.addWaypoint(waypoint);
+                    }
+
                 }
                 limelight.ballDetection.drawPath(telemetryPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
                 return drivePath.run(telemetryPacket);

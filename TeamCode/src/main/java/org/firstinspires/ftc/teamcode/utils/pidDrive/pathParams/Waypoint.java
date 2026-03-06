@@ -77,12 +77,21 @@ public class Waypoint {
         params.passPosition = passPosition;
         return this;
     }
+    public Waypoint setMinTime(double t) {
+        params.minTime = t;
+        return this;
+    }
     public Waypoint setMaxTime(double t) {
         params.maxTime = t;
         return this;
     }
     public Waypoint setCustomEndCondition(BooleanSupplier endCondition) {
         params.customEndCondition = endCondition;
+        return this;
+    }
+    public Waypoint setCustomEndCondition(BooleanSupplier endCondition, double confirmationTime) {
+        params.customEndCondition = endCondition;
+        params.customEndConfirmationTime = confirmationTime;
         return this;
     }
     public Waypoint setCorrectiveStrength(double correctiveStrength) {

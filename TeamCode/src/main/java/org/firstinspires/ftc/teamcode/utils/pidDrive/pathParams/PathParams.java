@@ -28,7 +28,7 @@ public class PathParams {
         public double lateralWeight = 1.9, axialWeight = 1; // weight the drive powers to correct for differences in driving
         public double minSpeed = 0, maxSpeed = 1;
         public double minHeadingSpeed = 0, maxHeadingSpeed = 1;
-        public double maxTime = 100;
+        public double minTime = 0, maxTime = 100;
         public HeadingLerpType headingLerpType = HeadingLerpType.LINEAR;
         public PathType pathType = PathType.NORMAL;
         public double tValueMaxOutTime = 1;
@@ -36,6 +36,7 @@ public class PathParams {
         public boolean prioritizeHeadingInBeginning = false;
         public double prioritizeHeadingThresholdDeg = 5, maxLinearPowerWhilePrioritizingHeading = 0.1;
         public boolean stopOnSuddenDecel = false;
+        public double suddenDecelMagnitudeThreshold = 60;
     }
     public static DefaultParams defaultParams = new DefaultParams();
     public double lateralWeight, axialWeight;
@@ -47,8 +48,9 @@ public class PathParams {
     public double slowDownPercent;
     // if passPosition is true, the robot only needs to pass its target position for drive path to consider it "in tolerance", not fall within tolerance of it
     public boolean passPosition;
-    public double maxTime;
+    public double minTime, maxTime;
     public BooleanSupplier customEndCondition = () -> false;
+    public double customEndConfirmationTime = 0;
 
     public double bigSpeedKp, smallSpeedKp, bigSpeedKd, smallSpeedKd;
     public double speedKi, speedKf;
@@ -63,6 +65,7 @@ public class PathParams {
     public double tangentHeadingDeactivateDist, applyCloseHeadingPIDErrorDeg;
     public boolean prioritizeHeadingInBeginning;
     public boolean stopOnSuddenDecel;
+    public double suddenDecelMagnitudeThreshold;
     public PathParams() {
         this(defaultParams.bigSpeedKp, defaultParams.smallSpeedKp, defaultParams.speedKi, defaultParams.bigSpeedKd, defaultParams.smallSpeedKd, defaultParams.speedKf, defaultParams.closeHeadingKp, defaultParams.closeHeadingKi, defaultParams.closeHeadingKd, defaultParams.farHeadingKp, defaultParams.farHeadingKi, defaultParams.farHeadingKd, defaultParams.headingKf);
     }
@@ -86,6 +89,7 @@ public class PathParams {
     private void initializeDefault() {
         correctiveKp = defaultParams.correctiveKp;
         correctiveStrength = defaultParams.correctiveStrength;
+        minTime = defaultParams.minTime;
         maxTime = defaultParams.maxTime;
         minLinearPower = defaultParams.minSpeed;
         maxLinearPower = defaultParams.maxSpeed;
@@ -104,6 +108,7 @@ public class PathParams {
         prioritizeHeadingInBeginning = defaultParams.prioritizeHeadingInBeginning;
         controlPoint = new Pose2d(0, 0, 0);
         stopOnSuddenDecel = defaultParams.stopOnSuddenDecel;
+        suddenDecelMagnitudeThreshold = defaultParams.suddenDecelMagnitudeThreshold;
     }
     public boolean hasMaxTime() {
         return maxTime != noMaxTime;
