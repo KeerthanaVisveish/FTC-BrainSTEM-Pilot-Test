@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Shooter extends Component {
     public static class ShooterParams {
+        public double fineAdjust = .05;
         public double ignoreHoodUpdateError = Math.toRadians(.5);
 //        public double kP = 0.5;
 //        public double kP = 6.75;
@@ -149,7 +150,8 @@ public class Shooter extends Component {
         telemetry.addData("  shooter low power", robot.shootingSystem.getShooterLowPower());
         telemetry.addData("  shooter filtered vel mps", robot.shootingSystem.curExitSpeedMps);
         telemetry.addData("  shooterGood", robot.shootingSystem.shooterNormGood());
-
+        telemetry.addData("  near vel adjustment", nearVelocityAdjustment);
+        telemetry.addData("  far vel adjustment", farVelocityAdjustment);
         telemetry.addLine();
         telemetry.addLine("HOOD------");
         telemetry.addData("  hood pos", robot.shootingSystem.getHoodPosition());
@@ -159,7 +161,11 @@ public class Shooter extends Component {
     public void changeVelocityAdjustment(double amount) {
         if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
             nearVelocityAdjustment += amount;
-        farVelocityAdjustment += amount;
+        else
+            farVelocityAdjustment += amount;
+    }
+    public double getCurVelocityAdjustment() {
+        return robot.shootingSystem.distState == ShootingSystem.Dist.FAR ? farVelocityAdjustment : nearVelocityAdjustment;
     }
     public ShooterState getShooterState() {
         return shooterState;

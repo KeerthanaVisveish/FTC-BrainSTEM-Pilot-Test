@@ -21,6 +21,8 @@ public class GamepadTracker {
     private int rightTriggerFrameCount = 0;
     private int startButtonFrameCount = 0;
     private int backButtonFrameCount = 0;
+    private int leftStickButtonFrameCount = 0;
+    private int rightStickButtonFrameCount = 0;
 
     public GamepadTracker(Gamepad gamepad) {
         this.gamepad = gamepad;
@@ -31,25 +33,28 @@ public class GamepadTracker {
             return;
 
         // Update each button's frame count
-        updateButtonFrame(gamepad.a, () -> aFrameCount, (c) -> aFrameCount = c);
-        updateButtonFrame(gamepad.b, () -> bFrameCount, (c) -> bFrameCount = c);
-        updateButtonFrame(gamepad.x, () -> xFrameCount, (c) -> xFrameCount = c);
-        updateButtonFrame(gamepad.y, () -> yFrameCount, (c) -> yFrameCount = c);
+        updateButtonFrame(gamepad.a, () -> aFrameCount, c -> aFrameCount = c);
+        updateButtonFrame(gamepad.b, () -> bFrameCount, c -> bFrameCount = c);
+        updateButtonFrame(gamepad.x, () -> xFrameCount, c -> xFrameCount = c);
+        updateButtonFrame(gamepad.y, () -> yFrameCount, c -> yFrameCount = c);
 
-        updateButtonFrame(gamepad.dpad_up, () -> dpadUpFrameCount, (c) -> dpadUpFrameCount = c);
-        updateButtonFrame(gamepad.dpad_down, () -> dpadDownFrameCount, (c) -> dpadDownFrameCount = c);
-        updateButtonFrame(gamepad.dpad_left, () -> dpadLeftFrameCount, (c) -> dpadLeftFrameCount = c);
-        updateButtonFrame(gamepad.dpad_right, () -> dpadRightFrameCount, (c) -> dpadRightFrameCount = c);
+        updateButtonFrame(gamepad.dpad_up, () -> dpadUpFrameCount, c -> dpadUpFrameCount = c);
+        updateButtonFrame(gamepad.dpad_down, () -> dpadDownFrameCount, c -> dpadDownFrameCount = c);
+        updateButtonFrame(gamepad.dpad_left, () -> dpadLeftFrameCount, c -> dpadLeftFrameCount = c);
+        updateButtonFrame(gamepad.dpad_right, () -> dpadRightFrameCount, c -> dpadRightFrameCount = c);
 
-        updateButtonFrame(gamepad.left_bumper, () -> leftBumperFrameCount, (c) -> leftBumperFrameCount = c);
-        updateButtonFrame(gamepad.right_bumper, () -> rightBumperFrameCount, (c) -> rightBumperFrameCount = c);
+        updateButtonFrame(gamepad.left_bumper, () -> leftBumperFrameCount, c -> leftBumperFrameCount = c);
+        updateButtonFrame(gamepad.right_bumper, () -> rightBumperFrameCount, c -> rightBumperFrameCount = c);
 
-        updateButtonFrame(gamepad.start, () -> startButtonFrameCount, (c) -> startButtonFrameCount = c);
-        updateButtonFrame(gamepad.back, () -> backButtonFrameCount, (c) -> backButtonFrameCount = c);
+        updateButtonFrame(gamepad.start, () -> startButtonFrameCount, c -> startButtonFrameCount = c);
+        updateButtonFrame(gamepad.back, () -> backButtonFrameCount, c -> backButtonFrameCount = c);
+
+        updateButtonFrame(gamepad.left_stick_button, () -> leftStickButtonFrameCount, c -> leftStickButtonFrameCount = c);
+        updateButtonFrame(gamepad.right_stick_button, () -> rightStickButtonFrameCount, c -> rightStickButtonFrameCount = c);
 
         // For triggers, consider them "pressed" if they exceed a threshold
-        updateButtonFrame(gamepad.left_trigger > 0.3, () -> leftTriggerFrameCount, (c) -> leftTriggerFrameCount = c);
-        updateButtonFrame(gamepad.right_trigger > 0.3, () -> rightTriggerFrameCount, (c) -> rightTriggerFrameCount = c);
+        updateButtonFrame(gamepad.left_trigger > 0.3, () -> leftTriggerFrameCount, c -> leftTriggerFrameCount = c);
+        updateButtonFrame(gamepad.right_trigger > 0.3, () -> rightTriggerFrameCount, c -> rightTriggerFrameCount = c);
     }
 
     private void updateButtonFrame(boolean isPressed, IntSupplier frameCountSupplier, IntConsumer frameCountSetter) {
@@ -80,5 +85,11 @@ public class GamepadTracker {
     }
     public boolean isFirstBack() {
         return backButtonFrameCount == 1;
+    }
+    public boolean isFirstLeftStickButton() {
+        return leftStickButtonFrameCount == 1;
+    }
+    public boolean isFirstRightStickButton() {
+        return rightStickButtonFrameCount == 1;
     }
 }

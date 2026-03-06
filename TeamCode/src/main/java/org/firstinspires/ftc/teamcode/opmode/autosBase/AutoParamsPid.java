@@ -6,7 +6,7 @@ public class AutoParamsPid {
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .5, gateOpenDrive2MaxPower = .8;
         public double firstCorrectiveStrength = .3;
-        public double loadingDrivePower = 0.25, loadingHeadingPower = .3;
+        public double loadingDrivePower = 0.4, loadingHeadingPower = .3;
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
@@ -45,11 +45,11 @@ public class AutoParamsPid {
         public double[] postLoading = { 59.5, 64, 18 };
         public double[] postLoadingTol = { 1.5, 1, 3 };
 
-        public double[] gateOpen = { 10.5, 57.5, 119 };
+        public double[] gateOpen = { 11.5, 57.5, 119 };
         // 10.4, 57.6, 118.7
 
         public double[] gateCollect = { 17, 64, 135 };
-        public double[] gateNearWaypoint = { 4, 36, 80 };
+        public double[] gateNearWaypoint = { 2, 36, 60 };
         public double[] gateNearWaypointTol = { 1.5, 4, 3 };
         public double[] gateOpenTol = { 1, 2, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
@@ -69,8 +69,9 @@ public class AutoParamsPid {
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-35, 25, 45};
         public double[] near2 = {-7, 25.5, 55};
+        public double[] nearGate = { -5.5, 24, 55 };
         public double[] near3 = {-7, 25.5, 50};
-        public double[] near3Last = {-20, 22, 40};
+        public double[] near3Last = {-20, 21, 35};
 
         public double[] farSpike = {52, 16, 145};
         public double[] farPreloadLoading = { 52, 16, 100 };

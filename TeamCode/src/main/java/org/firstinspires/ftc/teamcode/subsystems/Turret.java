@@ -38,7 +38,7 @@ public class Turret extends Component {
         public double shotOutOfRangeBuffer = Math.toRadians(0);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
-        public int fineAdjust = 3;
+        public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(90);
         public double maxClutchEngageError = 40; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
@@ -46,7 +46,7 @@ public class Turret extends Component {
     }
     public static class PowerTuning {
 //        public double kAYInt = .0007, kASlope = -.0000000001, minKA = .0004;
-        public double kAYInt = 0, kASlope = 0, minKA = 0;
+        public double kAYInt = 0.002, kASlope = -.0000001, minKA = 0;
         public double goalAngularVelSign = 1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
@@ -60,9 +60,9 @@ public class Turret extends Component {
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
         public double[] kfPosLookupData = new double[] {
-                -350, .75,
-                -300, .75,
-                -130, .75,
+                -350, .7,
+                -300, .7,
+                -130, .7,
                 0, .6,
                 30, .7,
                 100, .8,
@@ -74,10 +74,10 @@ public class Turret extends Component {
                 350, 1.1
         };
         public double[] kfNegLookupData = new double[] {
-                -350, -.85,
-                -300, -.85,
-                -156, -.85,
-                -130, -.8,
+                -350, -.75,
+                -300, -.75,
+                -156, -.75,
+                -130, -.75,
                 -75, -.75,
                 -25, -.75,
                 0, -.7,
@@ -329,7 +329,7 @@ public class Turret extends Component {
         lookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
 
         Pose2d pose = robot.drive.localizer.getPose();
-        boolean useSmallerRange = pose.position.x > 0 && Math.abs(pose.position.y) > turretParams.gateCollectYThreshold;
+        boolean useSmallerRange = pose.position.x > 0 && pose.position.x < 20 && Math.abs(pose.position.y) > turretParams.gateCollectYThreshold;
         double maxAngle = useSmallerRange ? turretParams.gateCollectMaxAngle : turretParams.maxAngle;
         inRange = Math.abs(lookAheadTargetRelAngleRad) <= maxAngle;
         if (!inRange) {

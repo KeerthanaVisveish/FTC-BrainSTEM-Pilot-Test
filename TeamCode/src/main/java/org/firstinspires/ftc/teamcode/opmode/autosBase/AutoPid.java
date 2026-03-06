@@ -39,7 +39,7 @@ public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
         public String validCollectLetters = "123gla";
         public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
-        public String farLoadingFirst = "flf3flf", farThirdFirst = "f3flflf";
+        public String farLoadingFirst = "flf3fafaf", farThirdFirst = "f3flfafaf";
         public String stringBuilder = "n2ngngngn1n";
         public boolean openGateOnFirst = false;
         public boolean openGateOnSecond = false;
@@ -531,16 +531,16 @@ public abstract class AutoPid extends LinearOpMode {
 
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
                 new Waypoint(preLoading, preLoadingTol)
-                        .setMaxTime(2)
+                        .setMaxTime(1.9)
                         .setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
                 new Waypoint(loadingWaypoint)
                         .setFixedLinearPower(collect.loadingDrivePower)
                         .setMaxHeadingPower(collect.loadingHeadingPower)
-                        .setMaxTime(.9),
+                        .setMaxTime(.6),
                 new Waypoint(postLoading, postLoadingTol)
                         .setFixedLinearPower(collect.loadingDrivePower)
                         .setMaxHeadingPower(collect.loadingHeadingPower)
-                        .setMaxTime(.7)
+                        .setMaxTime(.6)
                         .setCustomEndCondition(() -> robot.collection.has3Balls()));
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
@@ -643,7 +643,7 @@ public abstract class AutoPid extends LinearOpMode {
         shoot1Far = isRed ? createPose(shoot.farSpike) : createInvertedPose(shoot.farSpike);
         shoot2Near = isRed ? createPose(shoot.near2) : createInvertedPose(shoot.near2);
         shoot2Far = shoot1Far;
-        shootGateNear = shoot2Near;
+        shootGateNear = isRed ? createPose(shoot.nearGate) : createInvertedPose(shoot.nearGate);
         shootGateNearControlPoint = isRed ? createPose(shoot.gateNearControlPoint) : createInvertedPose(shoot.gateNearControlPoint);
         shootGateFar = shoot2Far;
         shootGateFarControlPoint = isRed ? createPose(shoot.gateFarControlPoint) : createInvertedPose(shoot.gateFarControlPoint);
