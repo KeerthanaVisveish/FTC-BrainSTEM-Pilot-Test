@@ -1,8 +1,7 @@
-package com.example.autoCollectPathGen.pathGeneration;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
-
-import com.example.autoCollectPathGen.MathUtils;
-import com.example.autoCollectPathGen.pidDrive.pathParams.Waypoint;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 public class PathPose {
     public final Waypoint waypoint;
@@ -17,6 +16,6 @@ public class PathPose {
     }
     @Override
     public String toString() {
-        return MathUtils.formatPose2(waypoint.pose);
+        return MathUtils.formatPose1(waypoint.pose);
     }
 }

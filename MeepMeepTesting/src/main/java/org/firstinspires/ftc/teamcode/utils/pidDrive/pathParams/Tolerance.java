@@ -1,4 +1,4 @@
-package com.example.autoCollectPathGen.pidDrive.pathParams;
+package org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Vector2d;
 

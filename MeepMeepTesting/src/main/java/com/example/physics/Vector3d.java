@@ -1,4 +1,4 @@
-package com.example;
+package com.example.physics;
 
 public class Vector3d {
     public static Vector3d j = new Vector3d(0, 1, 0);

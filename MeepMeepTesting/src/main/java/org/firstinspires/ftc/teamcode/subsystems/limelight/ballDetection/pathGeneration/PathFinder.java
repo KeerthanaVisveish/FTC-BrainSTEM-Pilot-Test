@@ -1,8 +1,9 @@
-package com.example.autoCollectPathGen.pathGeneration;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
-import com.example.autoCollectPathGen.MathUtils;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
 import java.util.List;

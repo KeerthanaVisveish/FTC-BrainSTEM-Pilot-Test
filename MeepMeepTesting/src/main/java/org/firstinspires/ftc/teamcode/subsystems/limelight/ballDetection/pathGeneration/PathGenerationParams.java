@@ -1,23 +1,24 @@
-package com.example.autoCollectPathGen.pathGeneration;
+package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
 import java.util.function.DoubleUnaryOperator;
 
 public class PathGenerationParams {
         public double robotWidth = 13 + 2 * 0.9382;
-        public double robotLength = 16;
+        public double robotLength = 16.5;
         public double shiftedLeftStartX = 40;
 
         public boolean allowLaneCollect = true;
-        public int alwaysUseLaneCollectNumBalls = 3;
+        public int defaultAlwaysUseLaneCollectNumBalls = 3;
+        public int alwaysUseLaneCollectNumBalls = defaultAlwaysUseLaneCollectNumBalls;
         public double normalLaneWidth = 6;
         public double againstBackWallLaneWidth = 9;
         public double laneAgainstBackWallMaxDist = 8;
         public double laneIncrement = 1;
         public double angleLaneCollectDistFromBackWall = 3.5;
         public double ignoreOptimizedLaneWidthSortingWidth = 3;
-        public double laneCollectControlYOffset = 15;
-        public double laneCollectControlMinYOffsetFromRobot = 12;
-        public double snapLaneToWallDistFromWall = 12;
+        public double laneCollectControlYOffset = 24;
+        public double laneCollectControlMinYOffsetFromRobot = 6;
+        public double snapLaneToWallDistFromWall = 16;
 
         public double maxPathRegenerationAttempts = 5;
         public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
@@ -28,7 +29,7 @@ public class PathGenerationParams {
         public double preCollectOffset = 5;
         public double lastCollectPoseExtraDriveThrough = 4;
 
-        public double clusterMergeDist = 0;
+        public double clusterMergeDist = 5.5;
         public double clusterStrafingDist = 24;
         public double strafeCollectMaxAngleOffset = 15;
         public double strafeCollectDriveThroughDist = 3;
@@ -41,9 +42,12 @@ public class PathGenerationParams {
         public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
 
         public double cornerBallDistance = 7;
-        public double cornerCollectY = 73;
-        public double cornerCollectAngle = 10;
-        public double cornerCollectXOffset = 3;
+        public double cornerCollectAngle = 0;
+        public double createCornerYApproachPreCollectDist = 28;
+        public double cornerBallSwitchToXAngle = 23;
+        public double createCornerXApproachPreCollectAngleChange = 50;
+        public double createCornerXApproachPreCollectMinDist = 15;
+        public double cornerXApproachControlOffset = 8;
 
         public double wallStrafeCollectMinApproachAngle = 35;
         public double wallCollectAngle = 45;

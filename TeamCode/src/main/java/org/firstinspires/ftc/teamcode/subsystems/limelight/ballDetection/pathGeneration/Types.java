@@ -7,14 +7,12 @@ public class Types {
         BACK_WALL_STRAFE,
         CLASSIFIER_STRAFE,
         LENIENT_CLASSIFIER_STRAFE,
-        CORNER_CONSTRAINED,
-        CORNER_LENIENT
+        CORNER
     }
 
     public enum PoseType {
         COLLECT,
         EDGE_CASE_PRECOLLECT,
-        LENIENT_CORNER_PRECOLLECT,
         PRECOLLECT
     }
 }

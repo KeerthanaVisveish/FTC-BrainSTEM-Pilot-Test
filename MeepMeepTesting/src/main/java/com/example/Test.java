@@ -1,7 +1,8 @@
 package com.example;
 
 import com.acmerobotics.roadrunner.Vector2d;
-import com.example.autoCollectPathGen.MathUtils;
+
+import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
