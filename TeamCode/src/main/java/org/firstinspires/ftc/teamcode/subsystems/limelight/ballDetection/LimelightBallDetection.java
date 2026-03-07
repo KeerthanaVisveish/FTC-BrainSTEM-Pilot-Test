@@ -114,17 +114,16 @@ public class LimelightBallDetection extends LLParent {
     }
     public void addBallInfo(Canvas fieldOverlay) {
         if (params.drawBalls) {
-            ArrayList<Vector2d> balls = new ArrayList<>();
-            for (int i=0; i<currentBlobs.size(); i++)
-                balls.add(currentBlobs.get(i).pos());
-            drawBalls(fieldOverlay, balls);
+            drawBalls(fieldOverlay, currentBlobs);
         }
     }
 
-    public void drawBalls(Canvas fieldOverlay, ArrayList<Vector2d> balls) {
+    public void drawBalls(Canvas fieldOverlay, ArrayList<Blob> balls) {
         fieldOverlay.setFill("purple");
-        for (Vector2d ball : balls)
-            fieldOverlay.fillCircle(ball.x, ball.y, 2.5);
+        for (Blob ball : balls) {
+            double radius = ball.isGiantClump ? 4.5 : 2.5;
+            fieldOverlay.fillCircle(ball.x, ball.y, radius);
+        }
     }
     public void drawPath(Canvas fieldOverlay, Pose2d startPose, ArrayList<Pose2d> autoCollectPathPoses) {
         ArrayList<Pose2d> posesToDraw = new ArrayList<>(autoCollectPathPoses);
