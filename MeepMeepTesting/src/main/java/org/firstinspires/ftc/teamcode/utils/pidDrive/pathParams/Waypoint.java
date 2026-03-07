@@ -21,7 +21,7 @@ public class Waypoint {
     public Waypoint(Pose2d pose, PathParams pathParams) {
         this(pose, new CircleTolerance(), pathParams);
     }
-    public Waypoint(Pose2d pose, Tolerance tolerance, PathParams pathParams) {
+   public Waypoint(Pose2d pose, Tolerance tolerance, PathParams pathParams) {
         this.pose = pose;
         this.tolerance = tolerance;
         this.params = pathParams;
@@ -33,7 +33,7 @@ public class Waypoint {
         return pose.position.y;
     }
     public double headingRad() {
-        return pose.heading.toDouble();
+       return pose.heading.toDouble();
     }
 
     public void setNextWaypoint(Waypoint waypoint) {
@@ -135,6 +135,6 @@ public class Waypoint {
 
     @Override
     public String toString() {
-        return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingRad());
+       return "x: " + x() + ", y: " + y() + ", heading: " + MathUtils.format2(headingRad());
     }
 }

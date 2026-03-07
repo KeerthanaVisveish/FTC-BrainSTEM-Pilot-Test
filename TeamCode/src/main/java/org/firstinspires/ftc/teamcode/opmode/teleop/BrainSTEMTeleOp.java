@@ -19,6 +19,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
+import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
@@ -28,9 +29,9 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = false;
-    public static boolean streamCameraToFTCDashboard = false;
-    public static boolean inCompetition = true;
+            printLimelight = true;
+    public static boolean streamCameraToFTCDashboard = true;
+    public static boolean inCompetition = false;
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
     public static double[] redCornerResetPose = { 62.2, -62.8, 90 };
     // RED:
@@ -59,6 +60,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         currentlyMoving = false;
         CommandScheduler.getInstance().reset();
 
+        Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose); //take pose from auto
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);
@@ -70,7 +72,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
-        if (streamCameraToFTCDashboard)
+        if (!inCompetition && streamCameraToFTCDashboard)
             FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, 10);
 
         while (opModeInInit()) {
@@ -254,15 +256,18 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         else if(gp2.isFirstRightStickButton())
             robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
 
-        if(gp2.isFirstRightBumper()) {
-            robot.limelight.localization.manualPoseUpdate = true;
-            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
-        }
+//        if(gp2.isFirstRightBumper()) {
+//            robot.limelight.localization.manualPoseUpdate = true;
+//            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
+//        }
         if (gp2.isFirstRightTrigger()) {
             Pose2d resetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(resetPose);
             robot.turret.resetAllEncoderAdjustments();
             robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
         }
+
+        if (gp2.isFirstBack())
+            robot.limelight.ballDetection.takeBallSnapshot();
     }
 }

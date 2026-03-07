@@ -16,7 +16,7 @@ public class Collection extends Component {
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
-        public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
+        public double has3BallsDelayPeriod = 0.4, autoCollectHasThreeBallsDelayPeriod = 0.7;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
@@ -26,10 +26,7 @@ public class Collection extends Component {
         public double flickerHalfUpPos = 0.4;
         public double flickerDownPos = 0.05;
         public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
-        public double shootOuttakeTimeAuto = 0.05;
-        public double postShootOuttakeWaitAuto = 0.;
         public double shootOuttakeTime = 0.05;
-        public double clutchEngageRunIntakeTime = 0.3;
         public boolean useShootingSafetyInterlocks = true;
     }
 
@@ -295,9 +292,9 @@ public class Collection extends Component {
                 timerRunning = true;
             } else {
                 double dt = currentTime - timerStart;
-                if (dt > params.delayPeriod)
+                if (dt > params.has3BallsDelayPeriod)
                     has3Balls = true;
-                if (dt > params.autoCollectDelayPeriod)
+                if (dt > params.autoCollectHasThreeBallsDelayPeriod)
                     autoCollectHas3Balls = true;
             }
         } else {

@@ -44,10 +44,8 @@ public class PathGenerationParams {
         public double cornerBallDistance = 7;
         public double cornerCollectAngle = 0;
         public double createCornerYApproachPreCollectDist = 28;
-        public double cornerBallSwitchToXAngle = 23;
-        public double createCornerXApproachPreCollectAngleChange = 50;
-        public double createCornerXApproachPreCollectMinDist = 15;
-        public double cornerXApproachControlOffset = 8;
+        public double cornerYApproachPreCollectOffset = 9;
+        public double cornerYApproachPreCollectAngle = 70;
 
         public double wallStrafeCollectMinApproachAngle = 35;
         public double wallCollectAngle = 45;

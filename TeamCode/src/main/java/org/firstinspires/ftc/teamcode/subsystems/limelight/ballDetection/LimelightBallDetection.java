@@ -23,26 +23,30 @@ import java.util.Arrays;
 
 @Config
 public class LimelightBallDetection extends LLParent {
+    public enum BallDrawType {
+        NONE,
+        CURRENT,
+        COMBINED
+    }
     public static class Params {
         public int maxBlobs = 5;
         public int numPiecesOfInfoPerBlob = 4;
-        public double minDistFromFieldWall = 2.5;
         public boolean projectBallsInsideField = true;
-        public int numImagesPerSnapshot = 1;
+        public double minDistFromFieldWall = 2.5;
+        public int numImagesPerSnapshot = 2;
         public double maxDistToCombineSnapshotBlobs = 1.5;
-        public boolean showPythonOutputs = true;
-        public boolean drawBalls = true;
+        public boolean showPythonOutputs = false, showPrimaryBlobInfo;
+        public BallDrawType ballDrawType = BallDrawType.COMBINED;
         public double waitToScanAfterTurretMove = 0.5;
         public double[] rejectBallPosition = new double[] { 76, 70.5 };
-//        public double rejectBallRadius = 2.5;
         public double rejectBallRadius = 0;
 
     }
     public static Params params = new Params();
     private double[] pythonOutputs;
     private int currentNumBlobs;
-    private ArrayList<Blob> currentBlobs;
-    private ArrayList<ArrayList<Blob>> previousSnapshots;
+    private final ArrayList<Blob> currentBlobs;
+    private final ArrayList<ArrayList<Blob>> previousSnapshots;
     private int numImagesLeft;
     public LimelightBallDetection(BrainSTEMRobot robot, Limelight3A limelight) {
         super(robot, limelight);
@@ -64,7 +68,7 @@ public class LimelightBallDetection extends LLParent {
         if (currentNumBlobs > params.maxBlobs)
             currentNumBlobs = params.maxBlobs;
 
-        currentBlobs = new ArrayList<>();
+        currentBlobs.clear();
         for (int i = 0; i < currentNumBlobs; i++) {
             int index = i * params.numPiecesOfInfoPerBlob;
             double px = pythonOutputs[index];
@@ -97,24 +101,38 @@ public class LimelightBallDetection extends LLParent {
     public void updateTelemetry(Telemetry telemetry) {
         if (params.showPythonOutputs)
             telemetry.addData("python outputs", Arrays.toString(pythonOutputs));
-        telemetry.addData("num blobs", currentNumBlobs);
-        telemetry.addData("blobs", currentBlobs);
-        if (!currentBlobs.isEmpty()) {
-            telemetry.addData("primary blob", currentBlobs.get(0));
-            telemetry.addData("primary tx", currentBlobs.get(0).tx);
-            telemetry.addData("primary ty", currentBlobs.get(0).ty);
-            telemetry.addData("primary field position", MathUtils.formatVec3(currentBlobs.get(0).pos()));
-        }
-        else {
-            telemetry.addData("primary blob", "null");
-            telemetry.addData("primary tx", "null");
-            telemetry.addData("primary ty", "null");
+        ArrayList<Blob> combinedBlobs = getCombinedBlobs();
+        telemetry.addData("num current blobs", currentNumBlobs);
+        telemetry.addData("num combined blobs", combinedBlobs.size());
+        telemetry.addData("current blobs", currentBlobs);
+        telemetry.addData("combined blobs", combinedBlobs);
+        telemetry.addData("num snapshots", previousSnapshots.size());
+
+        if (params.showPrimaryBlobInfo) {
+            if (!currentBlobs.isEmpty()) {
+                telemetry.addData("primary blob", currentBlobs.get(0));
+                telemetry.addData("primary tx", currentBlobs.get(0).tx);
+                telemetry.addData("primary ty", currentBlobs.get(0).ty);
+                telemetry.addData("primary field position", MathUtils.formatVec3(currentBlobs.get(0).pos()));
+            }
+            else {
+                telemetry.addData("primary blob", "null");
+                telemetry.addData("primary tx", "null");
+                telemetry.addData("primary ty", "null");
+            }
         }
         telemetry.addData("giant clump", MathUtils.formatVec2(getGiantClumpPosition(currentBlobs)));
     }
     public void addBallInfo(Canvas fieldOverlay) {
-        if (params.drawBalls) {
-            drawBalls(fieldOverlay, currentBlobs);
+        switch (params.ballDrawType) {
+            case NONE:
+                break;
+            case CURRENT:
+                drawBalls(fieldOverlay, currentBlobs);
+                break;
+            case COMBINED:
+                drawBalls(fieldOverlay, getCombinedBlobs());
+                break;
         }
     }
 
@@ -196,15 +214,13 @@ public class LimelightBallDetection extends LLParent {
             combinedPositions.add(blob.pos());
         return combinedPositions;
     }
-    public Action clearBallSnapshots() {
-        return new InstantAction(() -> {
-            previousSnapshots.clear();
-            numImagesLeft = 0;
-        });
+    public void takeBallSnapshot() {
+        previousSnapshots.clear();
+        numImagesLeft = params.numImagesPerSnapshot;
     }
     public Action takeBallSnapshotAction() {
         return new SequentialAction(
-                new InstantAction(() -> numImagesLeft = params.numImagesPerSnapshot),
+                new InstantAction(this::takeBallSnapshot),
                 packet -> numImagesLeft > 0
         );
     }

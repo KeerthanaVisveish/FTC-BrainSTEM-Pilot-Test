@@ -22,6 +22,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
+import org.firstinspires.ftc.teamcode.opmode.teleop.LimelightResetTele;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -84,10 +85,10 @@ public abstract class AutoPid extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
 
+        if (!LimelightResetTele.cameraIsReset)
+            throw new IllegalStateException("Limelight has not been reset - run LimelightResetTele");
+
         if(!BrainSTEMTeleOp.inCompetition) {
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
             telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
             telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
             telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
@@ -115,6 +116,7 @@ public abstract class AutoPid extends LinearOpMode {
             Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
 
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, start);
+        LimelightResetTele.cameraIsReset = false; // set to false for next run (tele does not care about this)
         autoCommands = new AutoCommands(robot, telemetry);
 
         int numPaths = (customizable.stringBuilder.length()-1) / 2; //3

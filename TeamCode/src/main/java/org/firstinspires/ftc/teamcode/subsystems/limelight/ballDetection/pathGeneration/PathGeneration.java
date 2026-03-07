@@ -241,7 +241,7 @@ public class PathGeneration {
         if (72 - Math.abs(endCollect.position.y) <= pathGenParams.snapLaneToWallDistFromWall)
             endCollect = new Pose2d(endCollect.position.x, Math.signum(endCollect.position.y) * 72, endCollect.heading.toDouble());
 
-        Pose2d preCollect = getPreCollectPose(collect1, angle, pathGenParams.preCollectOffset);
+        Pose2d preCollect = getPreCollectPose(collect1.position, collect1.heading.toDouble(), angle, pathGenParams.preCollectOffset);
         Pose2d wallSafeCollect = getStrictWallSafePose(endCollect);
         Pose2d wallSafePreCollect = getStrictWallSafePose(preCollect);
 
@@ -420,7 +420,7 @@ public class PathGeneration {
 
                 Pose2d collectPose = getCollectPose(cur.pos, collectInfo.collectAngle, 0);
                 collectPose = new Pose2d(collectPose.position.plus(collectInfo.collectOffset), collectPose.heading);
-                Pose2d preCollectPose = getPreCollectPose(collectPose, collectInfo.preCollectToCollectAngle, collectInfo.preCollectOffset);
+                Pose2d preCollectPose = getPreCollectPose(collectPose.position, collectInfo.preCollectAngle, collectInfo.preCollectToCollectAngle, collectInfo.preCollectOffset);
 
                 Pose2d wallSafeCollectPose = getWallSafePose(collectPose);
                 Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
@@ -438,7 +438,7 @@ public class PathGeneration {
                         validWallSafePose = wallSafeCollectPose.equals(collectPose);
                 }
                 if (!validWallSafePose) {
-                    wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose, collectInfo.preCollectToCollectAngle, collectInfo.preCollectOffset);
+                    wallSafePreCollectPose = getPreCollectPose(wallSafeCollectPose.position, collectInfo.preCollectAngle, collectInfo.preCollectToCollectAngle, collectInfo.preCollectOffset);
                     wallSafePreCollectPose = getWallSafePose(wallSafePreCollectPose);
                     problemBalls.add(new ProblemBall(ProblemBall.Severity.OUT_OF_BOUNDS, cur.pos));
                 }
@@ -468,36 +468,43 @@ public class PathGeneration {
                 Types.PoseType preCollectType = Types.PoseType.PRECOLLECT;
                 if (cur.type != Ball.BallType.NORMAL)
                     preCollectType = Types.PoseType.EDGE_CASE_PRECOLLECT;
-                Tolerance tolerance = new CircleTolerance();
-                double minLinearPower = driveParams.collectNormalMinLinearPower;
+                Tolerance collectTolerance = new CircleTolerance();
+                Tolerance preCollectTolerance = new CircleTolerance();
+                double collectMinLinearPower = driveParams.collectNormalMinLinearPower;
+                double preCollectMinLinearPower = driveParams.preCollectNormalMinLinearPower;
                 boolean preCollectPassPosition = false;
                 switch (cur.type) {
                     case CLASSIFIER_WALL:
                         if (collectInfo.approachType == Types.Approach.CLASSIFIER_STRAFE) {
-                            tolerance = new BoxTolerance(driveParams.classifierWallStrafeTol);
-                            minLinearPower = driveParams.collectWallStrafeMinLinearPower;
+                            collectTolerance = new BoxTolerance(driveParams.classifierWallStrafeTol);
+                            preCollectTolerance = collectTolerance;
+                            collectMinLinearPower = driveParams.collectWallStrafeMinLinearPower;
                         }
                         break;
                     case BACK_WALL:
                         if (collectInfo.approachType == Types.Approach.BACK_WALL_STRAFE) {
-                            tolerance = new BoxTolerance(driveParams.backWallStrafeTol);
-                            minLinearPower = driveParams.collectWallStrafeMinLinearPower;
+                            collectTolerance = new BoxTolerance(driveParams.backWallStrafeTol);
+                            preCollectTolerance = collectTolerance;
+                            collectMinLinearPower = driveParams.collectWallStrafeMinLinearPower;
                         }
                         break;
                     case CORNER:
-                        tolerance = new CircleTolerance(driveParams.collectCornerDistTol, Math.toRadians(driveParams.collectCornerHeadingTol));
-                        minLinearPower = driveParams.collectCornerMinLinearPower;
+                        collectTolerance = new CircleTolerance(driveParams.collectCornerDistTol, Math.toRadians(driveParams.collectCornerHeadingTol));
+                        preCollectTolerance = new CircleTolerance(driveParams.preCollectCornerDistTol, Math.toRadians(driveParams.preCollectCornerHeadingTol));
+                        collectMinLinearPower = driveParams.collectCornerMinLinearPower;
+                        preCollectMinLinearPower = driveParams.collectCornerMinLinearPower;
                         preCollectPassPosition = true;
                         break;
                 }
                 Waypoint w1 = null;
                 if (collectInfo.preCollectOffset != 0)
-                    w1 = new Waypoint(wallSafePreCollectPose, tolerance)
-                        .setPassPosition(preCollectPassPosition);
+                    w1 = new Waypoint(wallSafePreCollectPose, preCollectTolerance)
+                            .setPassPosition(preCollectPassPosition)
+                            .setMinLinearPower(preCollectMinLinearPower);
 
-                Waypoint w2 = new Waypoint(wallSafeCollectPose, tolerance)
+                Waypoint w2 = new Waypoint(wallSafeCollectPose, collectTolerance)
                         .setPassPosition(true)
-                        .setMinLinearPower(minLinearPower);
+                        .setMinLinearPower(collectMinLinearPower);
                 if (collectInfo.controlPose != null) {
                     Pose2d controlPose = new Pose2d(wallSafeCollectPose.position.plus(collectInfo.controlPose.position), collectInfo.controlPose.heading);
                     w2.setControlPoint(controlPose, collectInfo.controlLerpStart, collectInfo.controlLerpEnd);
@@ -643,13 +650,13 @@ public class PathGeneration {
 
             Pose2d collectPose = getWallSafePose(getCollectPose(actualEndPos, collectAngle, 0)); // not great but its fine
             Pose2d startCollectPose = getCollectPose(actualStartPos, collectAngle, 0);
-            Pose2d preCollectPose = getPreCollectPose(startCollectPose, approachAngle, pathGenParams.preCollectOffset);
+            Pose2d preCollectPose = getPreCollectPose(startCollectPose.position, startCollectPose.heading.toDouble(), approachAngle, pathGenParams.preCollectOffset);
             Pose2d wallSafePreCollectPose = getWallSafePose(preCollectPose);
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
             if (isWallSafe) {
                 Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                 Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
-                Pose2d controlPoint = getPreCollectPose(preCollectPose, approachAngle, driveParams.strafeCollectControlMaxOffset);
+                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
                 controlPoint = getWallSafePose(controlPoint);
                 w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);
 
@@ -673,7 +680,7 @@ public class PathGeneration {
                     collectAngle += changeAmount;
                     approachAngle += changeAmount;
                     startCollectPose = getCollectPose(start.pos, collectAngle, 0);
-                    preCollectPose = getPreCollectPose(startCollectPose, approachAngle, pathGenParams.preCollectOffset);
+                    preCollectPose = getPreCollectPose(startCollectPose.position, startCollectPose.heading.toDouble(), approachAngle, pathGenParams.preCollectOffset);
                     isWallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                     if (isWallSafe)
                         break;
@@ -718,10 +725,11 @@ public class PathGeneration {
         double curToNextBallDist = curToNextBall == null ? Double.MAX_VALUE : MathUtils.vecMag(curToNextBall);
         double preCollectToCollectAngle = 0;
         double collectAngle = 0;
+        double preCollectAngle = 0;
         double preCollectOffset = pathGenParams.preCollectOffset;
         double collectXOffset = 0;
         double collectYOffset = 0;
-        Types.Approach approachType = Types.Approach.NORMAL;
+        Types.Approach approachType = null;
         ProblemBall.Severity problemBallSeverity = null;
         Pose2d collectControlPoseOffset = null;
         double controlLerpStart = 0;
@@ -731,10 +739,7 @@ public class PathGeneration {
                 approachType = Types.Approach.CORNER;
                 problemBallSeverity = ProblemBall.Severity.CORNER;
 
-                double prevBallToCurBallAngle = MathUtils.v1ToV2Angle(prev.pos, cur.pos);
-                double min = Math.toRadians(pathGenParams.cornerBallSwitchToXAngle);
-                double max = Math.toRadians(180 - pathGenParams.cornerBallSwitchToXAngle);
-                boolean useYApproach = Math.abs(prevBallToCurBallAngle) >= min && Math.abs(prevBallToCurBallAngle) <= max;
+                boolean useYApproach = prev.type != Ball.BallType.CLASSIFIER_WALL;
                 collectXOffset = 24;
                 collectYOffset = Math.signum(wallAngle) * 24;
 
@@ -743,7 +748,8 @@ public class PathGeneration {
 
                     // poses too close, create precollect pose
                     if (prevToCurDist < pathGenParams.createCornerYApproachPreCollectDist) {
-                        preCollectOffset += 24;
+                        preCollectAngle = Math.signum(wallAngle) * Math.toRadians(pathGenParams.cornerYApproachPreCollectAngle);
+                        preCollectOffset = pathGenParams.cornerYApproachPreCollectOffset + 24;
                         preCollectToCollectAngle = Math.signum(wallAngle) * Math.toRadians(90);
                     }
                     // poses are far enough away, create control point
@@ -757,23 +763,12 @@ public class PathGeneration {
                         controlLerpEnd = driveParams.cornerControlLerpEnd;
                     }
                 }
+                // always create precollect pose for x approach
                 else {
                     collectAngle = Math.signum(wallAngle) * Math.toRadians(pathGenParams.cornerCollectAngle);
-
-                    double angleDiff = MathUtils.angleNormDeltaRad(collectAngle - prevBallToCurBallAngle);
-                    boolean anglesCloseEnough = Math.abs(angleDiff) < Math.toRadians(pathGenParams.createCornerXApproachPreCollectAngleChange);
-                    boolean tooClose = prevToCurDist < pathGenParams.createCornerXApproachPreCollectMinDist;
-                    // angles close enough or poses too close, create control point
-                    if (anglesCloseEnough || tooClose) {
-                        collectControlPoseOffset = new Pose2d(-pathGenParams.cornerXApproachControlOffset, 0, collectAngle);
-                        controlLerpStart = pathGenParams.preCollectOffset + 2;
-                        controlLerpEnd = pathGenParams.preCollectOffset;
-                    }
-                    // create precollect pose
-                    else {
-                        preCollectToCollectAngle = 0;
-                        preCollectOffset += 24;
-                    }
+                    preCollectAngle = collectAngle;
+                    preCollectToCollectAngle = 0;
+                    preCollectOffset += 24;
                 }
                 break;
             case CLASSIFIER_WALL:
@@ -804,7 +799,7 @@ public class PathGeneration {
                     preCollectToCollectAngle = Math.signum(dx) == 1 ? 0 : Math.PI;
 
                     Pose2d collectPose = getCollectPose(cur.pos, collectAngle, 0);
-                    Pose2d preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, pathGenParams.preCollectOffset);
+                    Pose2d preCollectPose = getPreCollectPose(collectPose.position, collectPose.heading.toDouble(), preCollectToCollectAngle, pathGenParams.preCollectOffset);
                     boolean wallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                     if (!wallSafe) {
                         problemBallSeverity = ProblemBall.Severity.UNIDEAL_APPROACH;
@@ -817,7 +812,7 @@ public class PathGeneration {
                             for (int i = 0; i < numTries; i++) {
                                 collectAngle += turnDirection * resolution;
                                 collectPose = getCollectPose(cur.pos, collectAngle, 0);
-                                preCollectPose = getPreCollectPose(collectPose, preCollectToCollectAngle, pathGenParams.preCollectOffset);
+                                preCollectPose = getPreCollectPose(collectPose.position, collectAngle, preCollectToCollectAngle, pathGenParams.preCollectOffset);
                                 wallSafe = preCollectPose.position.x == getWallSafePose(preCollectPose).position.x;
                                 if (wallSafe)
                                     break;
@@ -834,6 +829,8 @@ public class PathGeneration {
                     preCollectToCollectAngle = collectAngle;
                     collectXOffset = 0;
                 }
+                preCollectAngle = collectAngle;
+
                 break;
             case BACK_WALL:
                 if (Math.abs(defaultApproachAngle) > Math.toRadians(pathGenParams.wallStrafeCollectMinApproachAngle)) {
@@ -849,31 +846,34 @@ public class PathGeneration {
                     collectAngle = defaultApproachAngle;
                     preCollectToCollectAngle = collectAngle;
                 }
+                preCollectAngle = collectAngle;
                 break;
             case NORMAL:
             default:
                 approachType = Types.Approach.NORMAL;
                 collectAngle = defaultApproachAngle;
+                preCollectAngle = collectAngle;
                 preCollectToCollectAngle = collectAngle;
                 break;
         }
-        return new CollectInfo(problemBallSeverity, approachType, preCollectOffset, preCollectToCollectAngle, collectAngle, collectXOffset, collectYOffset, collectControlPoseOffset, controlLerpStart, controlLerpEnd);
+        return new CollectInfo(problemBallSeverity, approachType, preCollectOffset, preCollectAngle, preCollectToCollectAngle, collectAngle, collectXOffset, collectYOffset, collectControlPoseOffset, controlLerpStart, controlLerpEnd);
     }
 
     private static class CollectInfo {
         public final ProblemBall.Severity ballProblemSeverity;
         public final Types.Approach approachType;
-        public final double preCollectOffset, preCollectToCollectAngle, collectAngle;
+        public final double preCollectOffset, preCollectToCollectAngle, preCollectAngle, collectAngle;
         public final Vector2d collectOffset;
         public final Pose2d controlPose;
         public final double controlLerpStart, controlLerpEnd;
         public CollectInfo(ProblemBall.Severity ballProblemSeverity, Types.Approach approachType,
-                           double preCollectOffset, double preCollectToCollectAngle,
+                           double preCollectOffset, double preCollectAngle, double preCollectToCollectAngle,
                            double collectAngle, double collectXOffset, double collectYOffset,
                            Pose2d controlPose, double controlLerpStart, double controlLerpEnd) {
             this.ballProblemSeverity = ballProblemSeverity;
             this.approachType = approachType;
             this.preCollectOffset = preCollectOffset;
+            this.preCollectAngle = preCollectAngle;
             this.preCollectToCollectAngle = preCollectToCollectAngle;
             this.collectAngle = collectAngle;
             this.collectOffset = new Vector2d(collectXOffset, collectYOffset);
@@ -1047,9 +1047,9 @@ public class PathGeneration {
     }
     // assumes same heading as collect pose
     // the angle from pre collect to collect is not constrained to collect pose heading though
-    private static Pose2d getPreCollectPose(Pose2d collectPose, double angleToCollectPose, double offsetDistance) {
+    private static Pose2d getPreCollectPose(Vector2d collectPosition, double preCollectHeading, double angleToCollectPose, double offsetDistance) {
         double dx = Math.cos(angleToCollectPose) * offsetDistance;
         double dy = Math.sin(angleToCollectPose) * offsetDistance;
-        return new Pose2d(collectPose.position.x - dx, collectPose.position.y - dy, collectPose.heading.toDouble());
+        return new Pose2d(collectPosition.x - dx, collectPosition.y - dy, preCollectHeading);
     }
 }

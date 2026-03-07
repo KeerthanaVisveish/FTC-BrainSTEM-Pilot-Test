@@ -125,7 +125,6 @@ public class BrainSTEMRobot {
     public Action scanForBalls(DoubleSupplier angle1Sup, DoubleSupplier angle2Sup) {
         return new SequentialAction(
                 // first scan
-                limelight.ballDetection.clearBallSnapshots(),
                 new SequentialAction(
                         turret.rotateToCustomTarget(angle1Sup),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
@@ -195,68 +194,73 @@ public class BrainSTEMRobot {
                         generateLimelightCollectDrive(maxLimelightWaitTime),
                         new SequentialAction(
                                 new SleepAction(0.2),
-                                new InstantAction(() -> turret.setTurretState(Turret.TurretState.TRACKING))
+                                new InstantAction(() -> turret.setTurretState(Turret.TurretState.CENTER))
                         )
-                )
+                ),
+                new InstantAction(() -> turret.setTurretState(Turret.TurretState.TRACKING))
         );
     }
     private Action generateLimelightCollectDrive(double maxLimelightWaitTime) {
-        return new Action() {
-            PathInfo pathInfo = null;
-            DrivePath drivePath = null;
-            ElapsedTime timer = null;
-            Pose2d startPose = null;
+        return new SequentialAction(
+                limelight.ballDetection.takeBallSnapshotAction(),
+                new Action() {
+                    PathInfo pathInfo = null;
+                    DrivePath drivePath = null;
+                    ElapsedTime timer = null;
+                    Pose2d startPose = null;
 
-            @Override
-            public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                if (timer == null) {
-                    timer = new ElapsedTime();
-                    timer.reset();
+                    @Override
+                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                        if (timer == null) {
+                            timer = new ElapsedTime();
+                            timer.reset();
+                        }
+
+                        if (drivePath == null) {
+                            if (timer.seconds() > maxLimelightWaitTime)
+                                return false;
+
+                            startPose = drive.localizer.getPose();
+
+                            ArrayList<Blob> ballBlobs = limelight.ballDetection.getCombinedBlobs();
+                            Vector2d giantClump = limelight.ballDetection.getGiantClumpPosition(ballBlobs);
+                            ArrayList<Vector2d> ballPositions = limelight.ballDetection.getBlobPositions(ballBlobs);
+
+                            PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = PathGeneration.pathGenParams.defaultAlwaysUseLaneCollectNumBalls;
+                            pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
+                            if (pathInfo == null) {
+                                telemetry.addLine("path is null");
+                                return true;
+                            }
+
+                            if (pathInfo.pathType != PathInfo.PathType.LANE && giantClump != null) {
+                                ballPositions = new ArrayList<>(Collections.singletonList(giantClump));
+                                PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = 1;
+                                pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
+                            }
+
+                            drivePath = new DrivePath(drive);
+                            for (PathPose pathPose : pathInfo.optimizedPathPoses) {
+                               pathPose.waypoint
+                                       .setCustomEndCondition(
+                                                () -> {
+                                                    OdoInfo vel = drive.pinpoint().getVelocity();
+                                                    double maxLinearVel = PathGeneration.driveParams.isStuckMaxLinearVel;
+                                                    double maxHeadingVel = Math.toRadians(PathGeneration.driveParams.isStuckMaxHeadingVel);
+                                                    return MathUtils.vecMag(vel.pos()) < maxLinearVel && Math.abs(vel.headingRad) < maxHeadingVel;
+                                                },
+                                                PathGeneration.driveParams.isStuckConfirmationTime
+                                        )
+                                       .setMinTime(PathGeneration.driveParams.startCheckingIsStuckTime);
+
+                                drivePath.addWaypoint(pathPose.waypoint);
+                            }
+
+                        }
+                        limelight.ballDetection.drawPath(telemetryPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
+                        return drivePath.run(telemetryPacket);
+                    }
                 }
-
-                if (drivePath == null) {
-                    if (timer.seconds() > maxLimelightWaitTime)
-                        return false;
-
-                    startPose = drive.localizer.getPose();
-
-                    ArrayList<Blob> ballBlobs = limelight.ballDetection.getCurrentBlobs();
-                    Vector2d giantClump = limelight.ballDetection.getGiantClumpPosition(ballBlobs);
-                    ArrayList<Vector2d> ballPositions;
-                    if (giantClump == null) {
-                        PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = PathGeneration.pathGenParams.defaultAlwaysUseLaneCollectNumBalls;
-                        ballPositions = limelight.ballDetection.getBlobPositions(ballBlobs);
-                    }
-                    else {
-                        ballPositions = new ArrayList<>(Collections.singletonList(giantClump));
-                        PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = 1;
-                    }
-                    pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
-                    if (pathInfo == null) {
-                        telemetry.addLine("path is null");
-                        return true;
-                    }
-                    drivePath = new DrivePath(drive);
-                    for (PathPose pathPose : pathInfo.optimizedPathPoses) {
-                        Waypoint waypoint = pathPose.waypoint;
-                        waypoint.setCustomEndCondition(
-                                () -> {
-                                    OdoInfo vel = drive.pinpoint().getVelocity();
-                                    double maxLinearVel = PathGeneration.driveParams.isStuckMaxLinearVel;
-                                    double maxHeadingVel = Math.toRadians(PathGeneration.driveParams.isStuckMaxHeadingVel);
-                                    return MathUtils.vecMag(vel.pos()) < maxLinearVel && Math.abs(vel.headingRad) < maxHeadingVel;
-                                },
-                                PathGeneration.driveParams.isStuckConfirmationTime
-                        );
-                        waypoint.setMinTime(PathGeneration.driveParams.startCheckingIsStuckTime);
-
-                        drivePath.addWaypoint(waypoint);
-                    }
-
-                }
-                limelight.ballDetection.drawPath(telemetryPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
-                return drivePath.run(telemetryPacket);
-            }
-        };
+        );
     }
 }
