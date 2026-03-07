@@ -21,6 +21,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -83,6 +84,14 @@ public abstract class AutoPid extends LinearOpMode {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
 
+        if(!BrainSTEMTeleOp.inCompetition) {
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+        }
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
 
@@ -365,7 +374,10 @@ public abstract class AutoPid extends LinearOpMode {
                         new InstantAction(() -> autoState = AutoState.SHOOT),
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
-                        autoCommands.runIntake(),
+                        new SequentialAction(
+                                new CustomEndAction(new SleepAction(1), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
+                                autoCommands.runIntake()
+                        ),
                         new CustomEndAction(new SleepAction(timeConstraints.maxShootTime), () -> robot.shooter.ballsDoneExiting())
                 ),
                 new SleepAction(extraShootTime),

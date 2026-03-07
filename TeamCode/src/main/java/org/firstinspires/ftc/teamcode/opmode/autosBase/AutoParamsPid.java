@@ -39,7 +39,7 @@ public class AutoParamsPid {
 
 //        public double preLoadingXRed = 48.5, preLoadingYRed = 60.5, preLoadingARed = Math.toRadians(60);
 //        public double preLoadingXBlue = 48.5, preLoadingYBlue = -60.5, preLoadingABlue = Math.toRadians(-60);
-        public double[] preLoading = { 47.5, 61, 40 };
+        public double[] preLoading = { 46.5, 61, 40 };
         public double[] preLoadingTol = { 2, 1, 2 };
         public double[] loadingWaypoint = { 58, 64, 40 };
         public double[] postLoading = { 59.5, 64, 18 };
@@ -49,7 +49,7 @@ public class AutoParamsPid {
         // 10.4, 57.6, 118.7
 
         public double[] gateCollect = { 17, 64, 135 };
-        public double[] gateNearWaypoint = { 2, 36, 60 };
+        public double[] gateNearWaypoint = { 2, 36, 70 };
         public double[] gateNearWaypointTol = { 1.5, 4, 3 };
         public double[] gateOpenTol = { 1, 2, 3 };
         public double[] gateFarControlPoint = { 13, 35, 135 };
@@ -65,7 +65,7 @@ public class AutoParamsPid {
         public double farMinDrivePower = .2;
 
         // shooting positions
-        public double[] nearPreload = {-16, 19, 35};
+        public double[] nearPreload = {-16, 19, 50};
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-35, 25, 45};
         public double[] near2 = {-7, 25.5, 55};

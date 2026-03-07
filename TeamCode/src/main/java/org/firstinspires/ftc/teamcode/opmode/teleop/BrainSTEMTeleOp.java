@@ -27,12 +27,16 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
-            printShooter = true, printTurret = false, printShootingSystem = true,
+            printShooter = false, printTurret = false, printShootingSystem = false,
             printLimelight = false;
     public static boolean streamCameraToFTCDashboard = false;
     public static boolean inCompetition = true;
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
-    public static double[] redCornerResetPose = { 62.0618, -63.1, 90 };
+    public static double[] redCornerResetPose = { 62.2, -62.8, 90 };
+    // RED:
+    // (62.706, -62.288, 90.294)
+    // (62.038, -62.863, 89.575)
+    // (62.251, -62.892, 89.948)
     public static double noMoveJoystickThreshold = 0.1;
     public static int collect3RumbleMs = 500;
 

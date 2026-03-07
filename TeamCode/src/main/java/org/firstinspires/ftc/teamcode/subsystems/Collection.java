@@ -17,7 +17,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double delayPeriod = 0.5, autoCollectDelayPeriod = 0.7;
-        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, shooterTurretOffTargetIntakePow = 0;
+        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -194,13 +194,13 @@ public class Collection extends Component {
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {
                     boolean shouldUseSafetyInterlocks = !inAuto && params.useShootingSafetyInterlocks;
-                    boolean meetsSafetyInterlocks = robot.turret.inRangeForShot() && robot.turret.onTarget() && robot.shootingSystem.shooterNormGood();
+                    boolean meetsSafetyInterlocks = robot.shootingSystem.meetsSafetyInterlocks();
                     if (!shooterInitiallyGood && robot.shootingSystem.shooterFirstGood())
                         shooterInitiallyGood = true;
                     if (!shooterInitiallyGood)
                         meetsSafetyInterlocks = false;
                     if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks)
-                        collectorMotor.setPower(params.shooterTurretOffTargetIntakePow);
+                        collectorMotor.setPower(params.safetyInterlocksFailedPower);
                     else if(getCollectionState() == CollectionState.INTAKE_SLOW)
                         collectorMotor.setPower(params.slowShootIntakePower);
                     else

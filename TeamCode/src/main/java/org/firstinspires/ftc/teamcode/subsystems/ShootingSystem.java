@@ -468,6 +468,9 @@ public class ShootingSystem {
             return shooterInRange;
         return robot.shootingSystem.physicsExitAngleRads[0] != -1 && shooterInRange;
     }
+    public boolean meetsSafetyInterlocks() {
+        return robot.turret.inRange() && robot.turret.onTarget() && robot.shootingSystem.shooterNormGood();
+    }
     public double getShooterHighPower() {
         return shooterHighMotor.getPower();
     }
