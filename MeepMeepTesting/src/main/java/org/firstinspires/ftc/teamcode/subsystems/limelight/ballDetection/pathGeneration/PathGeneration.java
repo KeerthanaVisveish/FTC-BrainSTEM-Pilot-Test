@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
-import com.acmerobotics.dashboard.canvas.Circle;
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+@Config
 public class PathGeneration {
     public static PathGenerationParams pathGenParams = new PathGenerationParams();
     public static PathDriveParams driveParams = new PathDriveParams();

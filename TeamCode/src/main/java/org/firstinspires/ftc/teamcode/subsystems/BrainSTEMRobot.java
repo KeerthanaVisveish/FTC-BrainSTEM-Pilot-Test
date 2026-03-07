@@ -39,8 +39,8 @@ import java.util.function.DoubleSupplier;
 
 @Config
 public class BrainSTEMRobot {
-    public static double width = 13, length = 16; // inches
     public static double rampWidth = .9382;
+    public static double width = 13 + rampWidth * 2, length = 17.4; // inches
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
     public Turret turret;

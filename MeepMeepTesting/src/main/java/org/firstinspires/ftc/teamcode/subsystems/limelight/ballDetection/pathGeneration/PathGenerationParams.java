@@ -4,7 +4,7 @@ import java.util.function.DoubleUnaryOperator;
 
 public class PathGenerationParams {
         public double robotWidth = 13 + 2 * 0.9382;
-        public double robotLength = 16.5;
+        public double robotLength = 17.4;
         public double shiftedLeftStartX = 40;
 
         public boolean allowLaneCollect = true;

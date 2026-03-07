@@ -20,6 +20,8 @@ public class LimelightResetTele extends LinearOpMode {
         Limelight3A limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         limelight3A.pipelineSwitch(Limelight.APRIL_TAG_PIPELINE);
         limelight3A.start();
+        telemetry.addLine("Robot is Ready");
+        telemetry.update();
 
         waitForStart();
         FtcDashboard.getInstance().startCameraStream(limelight3A, 5);

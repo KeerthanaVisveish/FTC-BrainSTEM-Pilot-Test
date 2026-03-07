@@ -34,7 +34,7 @@ public class LimelightBallDetection extends LLParent {
         public boolean projectBallsInsideField = true;
         public double minDistFromFieldWall = 2.5;
         public int numImagesPerSnapshot = 2;
-        public double maxDistToCombineSnapshotBlobs = 1.5;
+        public double maxDistToCombineSnapshotBlobs = 2.25;
         public boolean showPythonOutputs = false, showPrimaryBlobInfo;
         public BallDrawType ballDrawType = BallDrawType.COMBINED;
         public double waitToScanAfterTurretMove = 0.5;

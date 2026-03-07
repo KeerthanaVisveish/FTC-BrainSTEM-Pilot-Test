@@ -20,6 +20,6 @@ public class PathDriveParams {
     public double[] lanePreCollectTol = new double[] { 3, 4, 5 };
     public double[] classifierWallStrafeTol = new double[] { 3, 1, 3 };
     public double[] backWallStrafeTol = new double[] { 3, 1, 3 };
-    public double collectCornerDistTol = 0.5, collectCornerHeadingTol = 5;
+    public double collectCornerDistTol = 1, collectCornerHeadingTol = 5;
     public double preCollectCornerDistTol = 2, preCollectCornerHeadingTol = 5;
 }
