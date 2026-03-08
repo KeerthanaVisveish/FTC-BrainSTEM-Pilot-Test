@@ -12,10 +12,12 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.Parking;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
@@ -267,7 +269,18 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
         }
 
-        if (gp2.isFirstBack())
-            robot.limelight.ballDetection.takeBallSnapshot();
+        if (gp2.isFirstY()) {
+            if (robot.parking.getParkState() != Parking.ParkState.EXTENDED)
+                robot.parking.setParkState(Parking.ParkState.EXTENDED);
+            else
+                robot.parking.setParkState(Parking.ParkState.RETRACTED);
+        }
+        if (Math.abs(gamepad2.left_stick_y) > 0.3) {
+            double inc = -Math.signum(gamepad2.left_stick_y) * Parking.PARK_PARAMS.TESTING_INC;
+            Parking.PARK_PARAMS.MIDDLE_POS = Range.clip(Parking.PARK_PARAMS.MIDDLE_POS + inc, Parking.PARK_PARAMS.RETRACTED_POS, Parking.PARK_PARAMS.EXTENDED_POS);
+            robot.parking.setParkState(Parking.ParkState.MIDDLE);
+        }
+//        if (gp2.isFirstBack())
+//            robot.limelight.ballDetection.takeBallScan();
     }
 }

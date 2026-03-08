@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Parking extends Component {
     public static class Params {
+        public double TESTING_INC = 0.02;
         public double RETRACTED_POS = 0.075;
         public double EXTENDED_POS = 0.9;
         public double MIDDLE_POS = 0.5;

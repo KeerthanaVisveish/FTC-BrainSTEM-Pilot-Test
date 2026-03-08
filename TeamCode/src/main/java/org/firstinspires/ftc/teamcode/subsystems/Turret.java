@@ -40,7 +40,7 @@ public class Turret extends Component {
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxAngle = Math.toRadians(90);
-        public double maxNearClutchEngageError = 40, maxFarClutchEngageError = 8; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 8; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
     public static class PowerTuning {
@@ -55,7 +55,7 @@ public class Turret extends Component {
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
-        public double AInertia = .045, BInertia = 0, kInertia = -25, x0Inertia = .15;
+        public double AInertia = .0, BInertia = 0, kInertia = -25, x0Inertia = .15;
         public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
         public double maxVoltage = 7;
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;

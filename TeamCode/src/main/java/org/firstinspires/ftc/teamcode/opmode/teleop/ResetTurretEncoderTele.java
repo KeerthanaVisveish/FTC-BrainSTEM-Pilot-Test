@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 
-@TeleOp(name="Reset Turret Encoder", group="Competition")
+@TeleOp(name="A Reset Turret Encoder", group="Competition")
 public class ResetTurretEncoderTele extends LinearOpMode {
     @Override
     public void runOpMode() {

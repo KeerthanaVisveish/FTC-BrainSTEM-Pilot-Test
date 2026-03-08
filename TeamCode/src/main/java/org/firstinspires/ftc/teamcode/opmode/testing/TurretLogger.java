@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-@TeleOp(name="Turret Logger")
+//@TeleOp(name="Turret Logger")
 public class TurretLogger extends LinearOpMode {
     private final static ArrayList<double[]> turretPrevErrors = new ArrayList<>();
     private final static ArrayList<Boolean> turretWasOscillating = new ArrayList<>();

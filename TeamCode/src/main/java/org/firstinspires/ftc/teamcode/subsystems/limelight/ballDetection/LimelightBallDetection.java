@@ -11,6 +11,7 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LLParent;
@@ -33,27 +34,35 @@ public class LimelightBallDetection extends LLParent {
         public int numPiecesOfInfoPerBlob = 4;
         public boolean projectBallsInsideField = true;
         public double minDistFromFieldWall = 2.5;
-        public int numImagesPerSnapshot = 2;
+        public int numSnapshotsPerScan = 2;
         public double maxDistToCombineSnapshotBlobs = 2.25;
         public boolean showPythonOutputs = false, showPrimaryBlobInfo;
         public BallDrawType ballDrawType = BallDrawType.COMBINED;
         public double waitToScanAfterTurretMove = 0.5;
-        public double[] rejectBallPosition = new double[] { 76, 70.5 };
-        public double rejectBallRadius = 0;
+        public double[] ballReflectionPosition = new double[] { 76, 70.5 };
+        public double ballReflectionRadius = 0;
+        public double[] validBallAreaRect = new double[] { 0, 12, 72, 60 };
+        public double[] gateAreaRect = new double[] { 0, 48, 12, 24 };
+        public boolean drawValidBallArea = true;
 
     }
     public static Params params = new Params();
     private double[] pythonOutputs;
     private int currentNumBlobs;
     private final ArrayList<Blob> currentBlobs;
-    private final ArrayList<ArrayList<Blob>> previousSnapshots;
-    private int numImagesLeft;
+    private final ArrayList<ArrayList<Blob>> previousSnapshots; // multiple snapshots per scan
+    private final ArrayList<ArrayList<Blob>> previousScans; // keep track of each scan and choose the best one
+    private int numSnapshotsLeft;
+    private double[] validRegionRect, gateRegionRect;
     public LimelightBallDetection(BrainSTEMRobot robot, Limelight3A limelight) {
         super(robot, limelight);
         pythonOutputs = new double[3];
         currentBlobs = new ArrayList<>();
         previousSnapshots = new ArrayList<>();
-        numImagesLeft = 0;
+        previousScans = new ArrayList<>();
+        numSnapshotsLeft = 0;
+        validRegionRect = params.validBallAreaRect;
+        gateRegionRect = params.gateAreaRect;
     }
     @Override
     public void update() {
@@ -76,13 +85,19 @@ public class LimelightBallDetection extends LLParent {
             double area = pythonOutputs[index + 2];
             boolean isGiantClump = pythonOutputs[index + 3] > 0;
             Blob blob = createBlob(px, py, area, isGiantClump);
-            boolean shouldAddBlob = blob.isGiantClump || MathUtils.vecDist(MathUtils.createVec(params.rejectBallPosition), blob.pos()) > params.rejectBallRadius;
+            boolean blobIsReflection = MathUtils.vecDist(MathUtils.createVec(params.ballReflectionPosition), blob.pos()) <= params.ballReflectionRadius;
+            validRegionRect = BrainSTEMRobot.alliance == Alliance.RED ? params.validBallAreaRect : invertPositiveRect(params.validBallAreaRect);
+            gateRegionRect = BrainSTEMRobot.alliance == Alliance.RED ? params.gateAreaRect : invertPositiveRect(params.gateAreaRect);
+            boolean blobIsInValidRange = insideRect(blob.pos(), validRegionRect) && !insideRect(blob.pos(), gateRegionRect);
+            boolean shouldAddBlob = blobIsInValidRange && (blob.isGiantClump || !blobIsReflection);
             if (shouldAddBlob)
                 currentBlobs.add(blob);
         }
-        if (numImagesLeft > 0) {
-            numImagesLeft--;
+        if (numSnapshotsLeft > 0) {
+            numSnapshotsLeft--;
             previousSnapshots.add(new ArrayList<>(currentBlobs));
+            if (numSnapshotsLeft == 0)
+                previousScans.add(getCombinedBlobsFromMostRecentScan());
         }
     }
 
@@ -101,7 +116,7 @@ public class LimelightBallDetection extends LLParent {
     public void updateTelemetry(Telemetry telemetry) {
         if (params.showPythonOutputs)
             telemetry.addData("python outputs", Arrays.toString(pythonOutputs));
-        ArrayList<Blob> combinedBlobs = getCombinedBlobs();
+        ArrayList<Blob> combinedBlobs = getCombinedBlobsFromMostRecentScan();
         telemetry.addData("num current blobs", currentNumBlobs);
         telemetry.addData("num combined blobs", combinedBlobs.size());
         telemetry.addData("current blobs", currentBlobs);
@@ -124,6 +139,11 @@ public class LimelightBallDetection extends LLParent {
         telemetry.addData("giant clump", MathUtils.formatVec2(getGiantClumpPosition(currentBlobs)));
     }
     public void addBallInfo(Canvas fieldOverlay) {
+        if (params.drawValidBallArea) {
+            fieldOverlay.setStroke("yellow");
+            fieldOverlay.strokeRect(validRegionRect[0], validRegionRect[1], validRegionRect[2], validRegionRect[3]);
+            fieldOverlay.strokeRect(gateRegionRect[0], gateRegionRect[1], gateRegionRect[2], gateRegionRect[3]);
+        }
         switch (params.ballDrawType) {
             case NONE:
                 break;
@@ -131,7 +151,7 @@ public class LimelightBallDetection extends LLParent {
                 drawBalls(fieldOverlay, currentBlobs);
                 break;
             case COMBINED:
-                drawBalls(fieldOverlay, getCombinedBlobs());
+                drawBalls(fieldOverlay, getCombinedBlobsFromMostRecentScan());
                 break;
         }
     }
@@ -172,7 +192,7 @@ public class LimelightBallDetection extends LLParent {
     public ArrayList<Blob> getCurrentBlobs() {
         return currentBlobs;
     }
-    public ArrayList<Blob> getCombinedBlobs() {
+    public ArrayList<Blob> getCombinedBlobsFromMostRecentScan() {
         ArrayList<Blob> allBlobs = new ArrayList<>();
         for (ArrayList<Blob> snapshotBlobs : previousSnapshots)
             allBlobs.addAll(snapshotBlobs);
@@ -208,20 +228,44 @@ public class LimelightBallDetection extends LLParent {
         }
         return combined;
     }
+    public ArrayList<Blob> getBlobsFromBestScan() {
+        ArrayList<Blob> bestScan = null;
+        for (ArrayList<Blob> scan : previousScans)
+            if (bestScan == null || scan.size() > bestScan.size())
+                bestScan = scan;
+        return bestScan;
+    }
     public ArrayList<Vector2d> getBlobPositions(ArrayList<Blob> blobs) {
         ArrayList<Vector2d> combinedPositions = new ArrayList<>();
         for (Blob blob : blobs)
             combinedPositions.add(blob.pos());
         return combinedPositions;
     }
-    public void takeBallSnapshot() {
-        previousSnapshots.clear();
-        numImagesLeft = params.numImagesPerSnapshot;
+    public Action clearAllScansAction() {
+        return new InstantAction(() -> {
+            previousScans.clear();
+            previousSnapshots.clear();
+            numSnapshotsLeft = 0;
+        });
     }
-    public Action takeBallSnapshotAction() {
+    public void takeBallScan() {
+        previousSnapshots.clear();
+        numSnapshotsLeft = params.numSnapshotsPerScan;
+    }
+    public Action takeBallScanAction() {
         return new SequentialAction(
-                new InstantAction(this::takeBallSnapshot),
-                packet -> numImagesLeft > 0
+                new InstantAction(this::takeBallScan),
+                packet -> numSnapshotsLeft > 0
         );
+    }
+    private boolean insideRect(Vector2d point, double[] rect) {
+        return point.x >= rect[0] && point.y >= rect[1] && point.x <= rect[0] + rect[2] && point.y <= rect[1] + rect[3];
+    }
+    private double[] invertPositiveRect(double[] rect) {
+        return new double[] {
+                rect[0],
+                -(rect[1] + rect[3]),
+                rect[2], rect[3]
+        };
     }
 }

@@ -33,6 +33,7 @@ public class PathGenerationParams {
         public double clusterStrafingDist = 24;
         public double strafeCollectMaxAngleOffset = 15;
         public double strafeCollectDriveThroughDist = 3;
+        public double classifierStrafeControlYOffset = 24, classifierStrafeControlLerpStart = 32, classifierStrafeControlLerpEnd = 25;
         public double strafeCollectMaxPerpendicularDistance = 2;
         public double maxCollectApproachDifference = 10;
         public double[] collectSimplificationConstants = new double[]{ 20, 75, 15, 0.3, 36 }; // low, range, center, steepness, ignore completely distance

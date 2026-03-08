@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.subsystems.LED;
 
-@TeleOp(name="Pre game test", group="Competition")
+@TeleOp(name="A Pre game test", group="Competition")
 public class PregameTestTele extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {

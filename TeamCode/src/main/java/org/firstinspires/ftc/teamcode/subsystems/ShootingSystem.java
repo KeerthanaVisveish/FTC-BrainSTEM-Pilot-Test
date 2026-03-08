@@ -35,8 +35,9 @@ public class ShootingSystem {
         public double nearBlueX = -64, nearBlueY = -64;
         public double midRedX = -64, midRedY = 68, midHeight = 38;
         public double midBlueX = -65.25, midBlueY = -64;
-        public double farRedX = -65, farRedY = 66, farHeight = 42;
+        public double farRedX = -65, farRedY = 66;
         public double farBlueX = -65.75, farBlueY = -64;
+        public double farHeight = 41;
         public double nearImpactAng = Math.toRadians(-25), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
         public double nearStateThreshold = 58;
     }
@@ -49,8 +50,8 @@ public class ShootingSystem {
     public static class GeneralParams {
         public double robotVelNoiseThreshold = .1;
         public double far1ExitAng = Math.toRadians(38);
-        public double far2SwitchY = 8;
-        public double far2ExitAng = Math.toRadians(36);
+        public double far2SwitchY = 6;
+        public double far2ExitAng = Math.toRadians(37);
         public double maxShootingDist = 180;
         public double maxDynamicHoodError = Math.toRadians(12), enableHoodCheckDist = 146;
         public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3;
@@ -503,12 +504,12 @@ public class ShootingSystem {
     public void drawShootingInfo(Canvas fieldOverlay) {
         // draw goal and shooting rings
         fieldOverlay.setStroke("yellow");
-        fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, 3);
+        fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, 3);
         if (testingParams.drawShootingRings) {
             fieldOverlay.setAlpha(0.4);
-            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, goalParams.nearStateThreshold); // end of near range, start of far range
-            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, generalParams.enableHoodCheckDist); // start of "hella far" range
-            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.y, generalParams.maxShootingDist); // max shooting distance
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, goalParams.nearStateThreshold); // end of near range, start of far range
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, generalParams.enableHoodCheckDist); // start of "hella far" range
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, generalParams.maxShootingDist); // max shooting distance
             fieldOverlay.setAlpha(1);
         }
 

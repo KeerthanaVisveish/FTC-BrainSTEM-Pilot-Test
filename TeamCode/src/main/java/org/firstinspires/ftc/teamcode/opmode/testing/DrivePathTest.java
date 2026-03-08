@@ -12,8 +12,8 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
-@TeleOp(name="DrivePathTest")
-@Config
+//@TeleOp(name="DrivePathTest")
+//@Config
 public class DrivePathTest extends LinearOpMode {
     public static double[] p0 = new double[] { 0, 0, 0};
     public static double[] p1 = new double[] { 24, 24, 90 };

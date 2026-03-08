@@ -30,7 +30,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import java.util.ArrayList;
 
 @Config
-@TeleOp(name="localization test", group="Competition")
+@TeleOp(name="A Localization Test", group="Competition")
 public class LocalizationTest extends LinearOpMode {
     public static double startX = 0, startY = 0, startA = 0;
     public static double mt2HeadingOffset = 0;

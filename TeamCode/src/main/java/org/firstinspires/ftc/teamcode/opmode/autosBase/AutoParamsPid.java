@@ -56,10 +56,10 @@ public class AutoParamsPid {
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
 
         public double[] limelightScanPos1 = { 48, 60 };
-        public double[] limelightScanPos2 = { 24, 60 };
+        public double[] limelightScanPos2 = { 12, 60 };
     }
     public static class Shoot {
-        public double earlyEngageClutchDist = 15;
+        public double earlyEngageClutchDist = 10;
         public double nearMinDrivePower2Dist = 20;
         public double nearMinDrivePower1 = .99, minDrivePower2 = .5;
         public double farMinDrivePower = .2;

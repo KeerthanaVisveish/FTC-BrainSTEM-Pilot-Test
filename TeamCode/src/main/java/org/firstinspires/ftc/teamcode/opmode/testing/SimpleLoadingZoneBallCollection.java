@@ -39,7 +39,7 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
         AutoCommands autoCommands = new AutoCommands(robot, telemetry);
 
-        Action autoAction = robot.getLimelightCollectSequence(createVec(AutoPid.collect.limelightScanPos1), 2);
+        Action autoAction = robot.getLimelightCollectSequence(createVec(AutoPid.collect.limelightScanPos1), createVec(AutoPid.collect.limelightScanPos2), 2);
         Action fullAutoAction = new ParallelAction(
                 autoCommands.updateRobotInfo(),
                 new TimedAction(autoAction, 100).setEndFunction(robot.drive::stop),

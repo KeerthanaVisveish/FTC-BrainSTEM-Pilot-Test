@@ -41,7 +41,7 @@ public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
         public String validCollectLetters = "123gla";
         public String nearSolo = "n2ngngn1n3n", nearPartner = "n2ngngngn1n";
-        public String farLoadingFirst = "flf3fafaf", farThirdFirst = "f3flfafaf";
+        public String farLoadingFirst = "flf3fafaf", farThirdFirst = "f3flfafaf", farLoadingLimelight = "flfafafaf";
         public String stringBuilder = "n2ngngngn1n";
         public boolean openGateOnFirst = false;
         public boolean openGateOnSecond = false;
@@ -89,9 +89,7 @@ public abstract class AutoPid extends LinearOpMode {
             throw new IllegalStateException("Limelight has not been reset - run LimelightResetTele");
 
         if(!BrainSTEMTeleOp.inCompetition) {
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
-            telemetry.addLine("IN COMPETITION IS NOTTTT ENABLED");
+            throw new IllegalStateException("In Competition is not true - run ToggleInCompetitionTele and press A");
         }
         autoTimer = new ElapsedTime();
         isRed = alliance == Alliance.RED;
@@ -567,9 +565,12 @@ public abstract class AutoPid extends LinearOpMode {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
+        Vector2d scan2 = alliance == Alliance.RED ?
+                createVec(collect.limelightScanPos2) :
+                createInvertedVec(collect.limelightScanPos2);
 
 //        Action limelightCollectAction = new CustomEndAction(robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls);
-        Action limelightCollectAction = robot.getLimelightCollectSequence(scan1, timeConstraints.maxLimelightWaitTime);
+        Action limelightCollectAction = robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWaitTime);
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)

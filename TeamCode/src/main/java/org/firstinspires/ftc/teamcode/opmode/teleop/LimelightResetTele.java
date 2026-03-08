@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 
-@TeleOp(name="Limelight Reset Tele", group="Competition")
+@TeleOp(name="A Limelight Reset Tele", group="Competition")
 public class LimelightResetTele extends LinearOpMode {
     public static boolean cameraIsReset = false;
     @Override
