@@ -88,7 +88,7 @@ public class PathParams {
     }
     private void initializeDefault() {
         correctiveKp = defaultParams.correctiveKp;
-        correctiveStrength = defaultParams.correctiveStrength;
+        correctiveStrength = pathType == PathType.NORMAL ? defaultParams.correctiveStrength : 0;
         minTime = defaultParams.minTime;
         maxTime = defaultParams.maxTime;
         minLinearPower = defaultParams.minSpeed;
