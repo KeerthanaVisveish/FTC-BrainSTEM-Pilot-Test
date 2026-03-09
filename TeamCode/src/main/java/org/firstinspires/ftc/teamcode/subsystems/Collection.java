@@ -159,6 +159,7 @@ public class Collection extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
+        telemetry.addData("clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
         telemetry.addData("collection state", collectionState);
         telemetry.addData("power", collectorMotor.getPower());
         telemetry.addData("flicker state", getFlickerState());
@@ -248,7 +249,7 @@ public class Collection extends Component {
                     flickerRight.setPosition(params.flickerFullUpPos);
                     flickerTimer.reset();
                     flickerStarted = true;
-                } else if (flickerTimer.seconds() > 0.3) {
+                } else if (flickerTimer.seconds() > 0.2) {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
                     flickerStarted = false;

@@ -12,21 +12,12 @@ public class Shooter extends Component {
     public static class ShooterParams {
         public double fineAdjust = .05;
         public double ignoreHoodUpdateError = Math.toRadians(.5);
-//        public double kP = 0.5;
-//        public double kP = 6.75;
         public double A = 20, B = 6, k = -150, x0 = .06;
-        public double kI = 0.0;
-        public double kD = 0.0;
-//        public double kV = 0.122;
         public double kVYInt = 1.63, kVSlope = -0.02005;
         public double shotVelDropThreshold = 30;
-        public double avg3BallShootTime = .7;
+        public double avg3BallShootTime = .5;
         public int startingShooterSpeedAdjustment = 0;
-//        public double minPower = -0.15, maxPower = 0.99;
         public double minVoltage = -2.025, maxVoltage = 15;
-//        public double shotRecoveryPower = 0.99;
-        public double shotRecoveryVoltage = 15;
-        public double shotRecoveryError = 0.08; // in meters per second
     }
     public static class TestingParams {
         public boolean testing = false;
@@ -45,11 +36,13 @@ public class Shooter extends Component {
     private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
+    private double oneFrameVelDif;
     private boolean wasPrevIncreasing;
     private double kP;
     private double pidVoltage, velocityVoltage, totalVoltage;
     private double targetVelMps;
     private double lastUpdatedExitAng;
+    private double maxVoltage;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
@@ -60,6 +53,7 @@ public class Shooter extends Component {
         nearVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
         farVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
         ballsExitingTimer = new ElapsedTime();
+        maxVoltage = shooterParams.maxVoltage;
     }
     public void setShooterVelocityPID(double targetVelMps, double curVelMps) {
         double error = targetVelMps - curVelMps;
@@ -69,8 +63,11 @@ public class Shooter extends Component {
         velocityVoltage = kV * targetVelMps;
         totalVoltage = pidVoltage + velocityVoltage;
 
-        totalVoltage = Range.clip(totalVoltage, shooterParams.minVoltage, shooterParams.maxVoltage);
+        totalVoltage = Range.clip(totalVoltage, shooterParams.minVoltage, maxVoltage);
         robot.shootingSystem.setShooterVoltage(totalVoltage);
+    }
+    public void setMaxVoltage(double m) {
+        maxVoltage = m;
     }
 
     @Override
@@ -110,11 +107,11 @@ public class Shooter extends Component {
         if(ballsCurrentlyExiting && ballsExitingTimer.seconds() > shooterParams.avg3BallShootTime)
             ballsCurrentlyExiting = false;
 
-        double dif = robot.shootingSystem.getFilteredShooterSpeedTps() - robot.shootingSystem.getPrevFilteredShooterSpeedTps();
+        oneFrameVelDif = robot.shootingSystem.getFilteredShooterSpeedTps() - robot.shootingSystem.getPrevFilteredShooterSpeedTps();
         boolean increasing;
-        if(dif > 0)
+        if(oneFrameVelDif > 0)
             increasing = true;
-        else if(dif == 0)
+        else if(oneFrameVelDif == 0)
             increasing = wasPrevIncreasing;
         else
             increasing = false;
@@ -137,6 +134,9 @@ public class Shooter extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");
+        telemetry.addData("one frame vel dif", oneFrameVelDif);
+        telemetry.addData("extrema dif", lastMax - lastMin);
+        telemetry.addData("balls currently exiting", ballsCurrentlyExiting ? 50 : 0);
         telemetry.addData("  shooter lookahead target vel", targetVelMps);
         telemetry.addData("  shooter no lookahead target vel mps", robot.shootingSystem.currentTargetExitSpeedMps);
         telemetry.addData("  shooter voltage total", totalVoltage);

@@ -31,9 +31,9 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = true;
+            printLimelight = false, printPark = false;
     public static boolean streamCameraToFTCDashboard = true;
-    public static boolean inCompetition = false;
+    public static boolean inCompetition = true, allowD1Shoot = false;
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
     public static double[] redCornerResetPose = { 62.2, -62.8, 90 };
     // RED:
@@ -131,6 +131,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.shooter.printInfo();
             if(printShootingSystem)
                 robot.shootingSystem.printInfo(telemetry);
+            if (printPark)
+                robot.parking.printInfo();
 
             telemetry.addLine();
             telemetry.addData("ljx", gamepad1.left_stick_x * 100);
@@ -209,8 +211,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.limelight.localization.maxHeadingErrorDeg = 0;
             }
         }
-        if(!inCompetition) {
-            if(gp1.isFirstA()) {
+        if(!inCompetition || allowD1Shoot) {
+            if(gp1.isFirstY()) {
                 if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED) {
                     robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
                     robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
@@ -272,8 +274,17 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gp2.isFirstY()) {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED)
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
-            else
+            else if (robot.turret.getTurretState() != Turret.TurretState.TRACK_CUSTOM_TARGET) {
+                robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxAngle);
+                robot.turret.setCustomTargetMinPower(Turret.turretParams.minParkRotateVoltage);
+                robot.turret.setCustomTargetPassPosition(true);
+            }
+            else {
                 robot.parking.setParkState(Parking.ParkState.RETRACTED);
+                robot.turret.setTurretState(Turret.TurretState.CENTER);
+                robot.turret.setCustomTargetMinPower(0);
+                robot.turret.setCustomTargetPassPosition(false);
+            }
         }
         if (Math.abs(gamepad2.left_stick_y) > 0.3) {
             double inc = -Math.signum(gamepad2.left_stick_y) * Parking.PARK_PARAMS.TESTING_INC;

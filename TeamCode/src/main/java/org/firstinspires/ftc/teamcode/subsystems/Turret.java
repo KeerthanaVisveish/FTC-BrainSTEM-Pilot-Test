@@ -34,6 +34,7 @@ public class Turret extends Component {
         public double testingTargetVel = 0;
     }
     public static class TurretParams {
+        public double minParkRotateVoltage = 9;
         public double gateCollectYThreshold = 58, gateCollectMaxAngle = Math.toRadians(30);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
@@ -46,16 +47,16 @@ public class Turret extends Component {
     public static class PowerTuning {
         public double ignoreGoalAngularVelThreshold = .0001;
 //        public double kAYInt = .0007, kASlope = -.0000000001, minKA = .0004;
-        public double kAYInt = 0.003, kASlope = -.0000001, minKA = 0;
+        public double kAYInt = 0.00, kASlope = 0, minKA = 0;
         public double accelVoltageSign = -1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
         public double APos = .004, BPos = 0.028, x0Pos = 130, kPos = .03;
-        public double kD = 0.0005, kDExponent = 1.2;
+        public double kD = 0.0005, kDExponent = 1.1;
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
-        public double AInertia = .0, BInertia = 0, kInertia = -25, x0Inertia = .15;
+        public double AInertia = .0, BInertia = -.000, kInertia = -3, x0Inertia = 1;
         public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
         public double maxVoltage = 7;
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
@@ -101,7 +102,7 @@ public class Turret extends Component {
     private PIDController pidController;
 //    private double targetVelocityFromRotation, targetVelocityFromTranslation;
     private double targetVelocity;
-    private double goalAngularVel;
+    private double goalAngularVel, goalAngularAccel;
     private double targetAccel;
     public double currentEncoder, currentVelocity, currentAcceleration;
     public double positionError, velocityError;
@@ -127,6 +128,9 @@ public class Turret extends Component {
     private boolean wasOscillating;
     public boolean addOscillationData = false;
     private double inertialAngleOffset;
+    private double trackCustomTargetMinPower;
+    private double trackCustomTargetStartEncoder;
+    private boolean trackCustomTargetPassPosition, trackCustomTargetPassPositionDone;
 
     public Turret(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
@@ -193,8 +197,16 @@ public class Turret extends Component {
             case TRACK_CUSTOM_TARGET:
                 inRange = true; // i clip targetEncoder so its always in range
                 positionError = targetEncoder - currentEncoder;
-                motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0);
-                robot.shootingSystem.setTurretVoltage(motorVoltage);
+                if(trackCustomTargetPassPosition &&
+                (trackCustomTargetPassPositionDone || Math.signum(positionError) != Math.signum(targetEncoder - trackCustomTargetStartEncoder))) {
+                    robot.shootingSystem.setTurretVoltage(0);
+                    trackCustomTargetPassPositionDone = true;
+                }
+                else {
+                    motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0);
+                    motorVoltage = Math.max(trackCustomTargetMinPower, Math.abs(motorVoltage)) * Math.signum(motorVoltage);
+                    robot.shootingSystem.setTurretVoltage(motorVoltage);
+                }
                 break;
         }
     }
@@ -308,7 +320,7 @@ public class Turret extends Component {
         return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
     }
     private double getLogisticInertialDistOffset(double x) {
-        return powerTuning.AInertia / (1 + Math.exp(powerTuning.kInertia * (x - powerTuning.x0Inertia))) + powerTuning.BInertia;
+        return Math.max(powerTuning.AInertia / (1 + Math.exp(powerTuning.kInertia * (x - powerTuning.x0Inertia))) + powerTuning.BInertia, 0);
     }
     public void setSmoothWhenOutOfRange(boolean smoothWhenOutOfRange) {
         this.smoothWhenOutOfRange = smoothWhenOutOfRange;
@@ -322,9 +334,13 @@ public class Turret extends Component {
         perpVelVec = new Vector2d(-robot.shootingSystem.futureTurretPosRelativeToGoal.y, robot.shootingSystem.futureTurretPosRelativeToGoal.x *1);
         perpVelVec = perpVelVec.div(robot.shootingSystem.futureTurretPosGoalDistIn);
         double dot = robot.shootingSystem.robotVelAtTurretIps.dot(perpVelVec);
+
+        double prevGoalAngularVel = goalAngularVel;
         goalAngularVel = dot / robot.shootingSystem.futureTurretPosGoalDistIn;
         if(Math.abs(goalAngularVel) < powerTuning.ignoreGoalAngularVelThreshold)
             goalAngularVel = 0;
+        goalAngularAccel = (goalAngularVel - prevGoalAngularVel) / robot.shootingSystem.dt;
+
         double targetAngularVelocity = goalAngularVel - robot.drive.pinpoint().getVelocity().headingRad;
         if(Math.abs(targetAngularVelocity) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
             targetAngularVelocity = 0;
@@ -336,7 +352,7 @@ public class Turret extends Component {
         // updating target angle
         noLookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad - robot.drive.localizer.getPose().heading.toDouble());
         lookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
-        inertialAngleOffset = getLogisticInertialDistOffset(Math.abs(goalAngularVel)) * Math.signum(goalAngularVel);
+        inertialAngleOffset = getLogisticInertialDistOffset(Math.abs(goalAngularAccel)) * -Math.signum(goalAngularAccel);
         lookAheadTargetRelAngleRad += inertialAngleOffset;
 
         Pose2d pose = robot.drive.localizer.getPose();
@@ -406,6 +422,7 @@ public class Turret extends Component {
         telemetry.addData("angle degree error", Math.toDegrees(positionError / turretParams.ticksPerRad));
         telemetry.addData("velocity error", velocityError);
         telemetry.addData("goal angular vel", goalAngularVel);
+        telemetry.addData("goal angular accel", goalAngularAccel);
         telemetry.addData("target robot angular vel", -robot.drive.pinpoint().driver.getHeadingVelocity(UnnormalizedAngleUnit.RADIANS));
         telemetry.addData("desired ball dir", Math.toDegrees(robot.shootingSystem.desiredBallDir));
         telemetry.addData("actual turret target angle", Math.toDegrees(robot.shootingSystem.lookAheadTurretTargetAngleRad));
@@ -444,7 +461,22 @@ public class Turret extends Component {
     public void setTurretState(TurretState turretState) {
         this.turretState = turretState;
     }
-    public Action rotateToCustomTarget(DoubleSupplier targetFieldAngleSup) {
+
+    public void rotateToRelativeCustomTarget(double targetAngle) {
+        setTurretState(TurretState.TRACK_CUSTOM_TARGET);
+        double clippedAngle = Range.clip(targetAngle, -turretParams.maxAngle, turretParams.maxAngle);
+        targetEncoder = clippedAngle * turretParams.ticksPerRad;
+        positionError = targetEncoder - currentEncoder;
+        trackCustomTargetStartEncoder = currentEncoder;
+    }
+    public void setCustomTargetMinPower(double p) {
+        trackCustomTargetMinPower = p;
+    }
+    public void setCustomTargetPassPosition(boolean passPosition) {
+        trackCustomTargetPassPosition = passPosition;
+        trackCustomTargetPassPositionDone = false;
+    }
+    public Action rotateToCustomTargetAction(DoubleSupplier targetFieldAngleSup) {
         return new SequentialAction(
                 new InstantAction(() -> {
                     turretState = TurretState.TRACK_CUSTOM_TARGET;

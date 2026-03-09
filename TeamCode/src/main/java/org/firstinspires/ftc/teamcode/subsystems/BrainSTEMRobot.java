@@ -126,7 +126,7 @@ public class BrainSTEMRobot {
                 limelight.ballDetection.clearAllScansAction(),
                 // first scan
                 new SequentialAction(
-                        turret.rotateToCustomTarget(angle1Sup),
+                        turret.rotateToCustomTargetAction(angle1Sup),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                         limelight.ballDetection.takeBallScanAction()
                 ),
@@ -141,7 +141,7 @@ public class BrainSTEMRobot {
                                     if (limelight.ballDetection.getCombinedBlobsFromMostRecentScan().size() >= 2)
                                         return false;
                                     secondScan = new SequentialAction(
-                                            turret.rotateToCustomTarget(angle2Sup),
+                                            turret.rotateToCustomTargetAction(angle2Sup),
                                             new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                                             limelight.ballDetection.takeBallScanAction()
                                     );
@@ -155,7 +155,7 @@ public class BrainSTEMRobot {
     }
     public Action lookAtClassifier(Turret.TurretState endingTurretState) {
         return new SequentialAction(
-                turret.rotateToCustomTarget(() -> {
+                turret.rotateToCustomTargetAction(() -> {
                     Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
                     Vector2d turretToClassifier = shootingSystem.turretPose.position.minus(classifierPosition);
                     return MathUtils.vecAngle(turretToClassifier);

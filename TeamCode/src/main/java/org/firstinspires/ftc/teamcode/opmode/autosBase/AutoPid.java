@@ -12,7 +12,6 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.SleepAction;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -24,6 +23,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.opmode.teleop.LimelightResetTele;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
@@ -66,9 +66,9 @@ public abstract class AutoPid extends LinearOpMode {
     private Pose2d start,
             collect1NearControlPoint, collect1FarControlPoint, collect1,
             collect2NearControlPoint, collect2FarControlPoint, collect2,
-            collect3NearControlPoint, collect3FarControlPoint, preCollect3Near, preCollect3Far, collect3,
+            collect3NearControlPoint, preCollect3Near, preCollect3Far, collect3,
             preLoading, loadingWaypoint, postLoading,
-            gateCollectNearWaypoint, gateCollectFarControlPoint, gateCollectOpen, gateCollect,
+            gateCollectNearWaypoint, gateCollectNearControlPoint, gateCollectFarControlPoint, gateCollectOpen, gateCollectOpenHold, gateCollect,
             gate1, gate2,
             shootGateNearControlPoint,
             parkFar;
@@ -231,7 +231,6 @@ public abstract class AutoPid extends LinearOpMode {
 
         telemetry.addData("2nd collect pose", MathUtils.formatPose3(collect2));
         telemetry.addData("3rd collect pose", MathUtils.formatPose3(collect3));
-        telemetry.addData("gate open pos", MathUtils.formatPose3(gateCollectOpen));
 
         telemetry.addData("alliance", alliance);
         telemetry.addData("auto string", customizable.stringBuilder);
@@ -310,9 +309,10 @@ public abstract class AutoPid extends LinearOpMode {
                         autoCommands.flickerHalfUp(),
                         autoCommands.speedUpShooter(),
                         autoCommands.enableTurretTracking(),
-                        preloadShootAction
+                        preloadShootAction,
+                        shootingNear ? getShootAction(0, 2.4) : new SleepAction(0)
                 ),
-                getShootAction(0)
+                !shootingNear ? getShootAction(0) : new SleepAction(0)
         );
     }
     private Action buildCollectAndShoot(Action collectDrive, Action gateDrive, DrivePath shootDrive, boolean shootingNear, double postIntakeTime, boolean runIntake, boolean notLast) {
@@ -332,9 +332,12 @@ public abstract class AutoPid extends LinearOpMode {
             shootDriveAction = shootDrive;
         }
         return new SequentialAction(
-                runIntake ? autoCommands.runIntake() : new SleepAction(0),
+                telemetryPacket -> {robot.shooter.setMaxVoltage(shootingNear ? shoot.maxNearShooterVoltage : Shooter.shooterParams.maxVoltage); return false; },
                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_COLLECT),
-                collectDrive,
+                new ParallelAction(
+                        collectDrive,
+                        runIntake ? new SequentialAction(new SleepAction(.3), autoCommands.runIntake()) : new SleepAction(0)
+                ),
                 new ParallelAction(
                         new SequentialAction(
                                 new ParallelAction(
@@ -368,17 +371,19 @@ public abstract class AutoPid extends LinearOpMode {
                 !notLast ? getShootAction(timeConstraints.lastShootExtraTime) : new SleepAction(0)
         );
     }
-    private Action getShootAction(double extraShootTime) {
+    private Action getShootAction(double extraShootTime, double shooterInterlockMaxTime) {
         return new SequentialAction(
                 new ParallelAction(
                         new InstantAction(() -> autoState = AutoState.SHOOT),
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(1), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
-                                autoCommands.runIntake()
-                        ),
-                        new CustomEndAction(new SleepAction(timeConstraints.maxShootTime), () -> robot.shooter.ballsDoneExiting())
+                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
+                                new ParallelAction(
+                                        autoCommands.runIntake(),
+                                        new CustomEndAction(new SleepAction(timeConstraints.maxShootTime), () -> robot.shooter.ballsDoneExiting())
+                                )
+                        )
                 ),
                 new SleepAction(extraShootTime),
                 new ParallelAction(
@@ -388,6 +393,9 @@ public abstract class AutoPid extends LinearOpMode {
                         new SleepAction(.1)
                 )
         );
+    }
+    private Action getShootAction(double extraShootTime) {
+        return getShootAction(extraShootTime, 0);
     }
     private Action getFirstCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, boolean last) {
         DrivePath firstCollectDrive;
@@ -467,11 +475,15 @@ public abstract class AutoPid extends LinearOpMode {
         double sign = isRed ? -1 : 1;
         Pose2d preGatePose = new Pose2d(gate2.position.x, gate2.position.y + sign * misc.gateBackupDist, gate2.heading.toDouble());
 
+        Action gateOpen = new CustomEndAction(
+                new DrivePath(robot.drive, telemetry,
+                    new Waypoint(preGatePose).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true),
+                    new Waypoint(gate2).setMinLinearPower(misc.gateMinPower).setPassPosition(true)),
+                () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold)
+                .setEndFunction(robot.drive::stop);
         Action secondGateDrive = customizable.openGateOnSecond ?
                 new SequentialAction(
-                        new DrivePath(robot.drive, telemetry,
-                                new Waypoint(preGatePose).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true),
-                                new Waypoint(gate2).setMinLinearPower(misc.gateMinPower).setPassPosition(true)),
+                        gateOpen,
                         new SleepAction(timeConstraints.gateOpeningWait)
                 )
                 : new SleepAction(0);
@@ -583,7 +595,7 @@ public abstract class AutoPid extends LinearOpMode {
         DrivePath gateOpenDrive;
         if (fromNear) {
             BoxTolerance waypointTol = new BoxTolerance(collect.gateNearWaypointTol[0], collect.gateNearWaypointTol[1], Math.toRadians(collect.gateNearWaypointTol[2]));
-            BoxTolerance openTol = new BoxTolerance(collect.gateOpenTol[0], collect.gateOpenTol[1], Math.toRadians(collect.gateOpenTol[2]));
+            BoxTolerance openTol = new BoxTolerance(collect.gateOpenTol);
             gateOpenDrive = new DrivePath(robot.drive, telemetry,
                     new Waypoint(gateCollectNearWaypoint, waypointTol)
                             .setMaxTime(1.3)
@@ -593,12 +605,13 @@ public abstract class AutoPid extends LinearOpMode {
                             .setMaxTime(1.5)
                             .setPassPosition(true)
                             .setMinLinearPower(collect.gateOpenDrive1MinPower)
+                            .setControlPoint(gateCollectNearControlPoint, collect.gateNearT1, collect.gateNearT2)
             );
         }
         else {
             gateOpenDrive = new DrivePath(robot.drive,
                     new Waypoint(gateCollectOpen)
-                            .setMaxTime(2.4)
+                            .setMaxTime(2)
                             .setPassPosition(true)
                             .setMinLinearPower(collect.gateOpenDrive1MinPower)
                             .setControlPoint(gateCollectFarControlPoint, collect.gateCollectOpenFarTStartError, collect.gateCollectOpenFarTFinishError)
@@ -610,27 +623,25 @@ public abstract class AutoPid extends LinearOpMode {
         Action gateOpenAction = new ParallelAction(
                 gateOpenCustomEndAction,
                 new SequentialAction(
-                        new CustomEndAction(() -> Math.abs(robot.drive.localizer.getPose().position.y) > 45),
+                        new CustomEndAction(() -> Math.abs(robot.drive.localizer.getPose().position.y) > 40),
                         new InstantAction(() -> gateOpenDrive.getCurWaypoint()
                                 .setMinLinearPower(collect.gateOpenDrive2MinPower)
                                 .setMaxLinearPower(collect.gateOpenDrive2MaxPower))
                 )
         );
+        DrivePath gateOpenHold = new DrivePath(robot.drive, new Waypoint(gateCollectOpenHold, new BoxTolerance(.1, .1, Math.toRadians(.1))).setMaxLinearPower(.2));
 
         DrivePath postGateOpenDrive = new DrivePath(robot.drive, new Waypoint(gateCollect)
-                .setMinLinearPower(misc.gateMinPower)
                 .setPassPosition(true)
                 .setMaxTime(1));
 
-        double yPower = misc.gateMinPower * (isRed ? -1 : 1);
         Action completeGateCollectDrive = new SequentialAction(
                 autoCommands.stopIntake(),
                 new SleepAction(waitTime),
                 gateOpenAction,
                 autoCommands.runIntake(),
                 new CustomEndAction(new SequentialAction(
-                        new SleepAction(timeConstraints.gateCollectOpenWait),
-                        new TimedAction(telemetryPacket -> {robot.drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, yPower), 0)); return true;}, .2),
+                        new TimedAction(gateOpenHold, timeConstraints.gateCollectOpenWait),
                         postGateOpenDrive,
                         new SleepAction(timeConstraints.gateCollectMaxTime)
                 ), robot.collection::has3Balls)
@@ -650,7 +661,7 @@ public abstract class AutoPid extends LinearOpMode {
                             .setControlPoint(shootGateFarControlPoint, shoot.gateFarTStartError, shoot.gateFarTFinishError)
             );
 
-        return buildCollectAndShoot(completeGateCollectDrive, new SleepAction(0), gateShootDrive, toNear, timeConstraints.postIntakeTime, false, true);
+        return buildCollectAndShoot(completeGateCollectDrive, new SleepAction(0), gateShootDrive, toNear, timeConstraints.postIntakeTime, true, true);
 
     }
     private void declareShootPoses() {
@@ -687,8 +698,8 @@ public abstract class AutoPid extends LinearOpMode {
                 createPose(second) :
                 createInvertedPose(second);
         collect2NearControlPoint = isRed ?
-                createPose(collect.secondNearControlPointRed) :
-                createPose(collect.secondNearControlPointBlue);
+                createPose(collect.secondNearControlPoint) :
+                createInvertedPose(collect.secondNearControlPoint);
         collect2FarControlPoint = isRed ?
                 createPose(collect.secondFarControlPoint) :
                 createInvertedPose(collect.secondFarControlPoint);
@@ -722,12 +733,18 @@ public abstract class AutoPid extends LinearOpMode {
         gateCollectNearWaypoint = isRed ?
                 createPose(collect.gateNearWaypoint) :
                 createInvertedPose(collect.gateNearWaypoint);
+        gateCollectNearControlPoint = isRed ?
+                createPose(collect.gateNearControlPoint) :
+                createInvertedPose(collect.gateNearControlPoint);
         gateCollectFarControlPoint = isRed ?
                 createPose(collect.gateFarControlPoint) :
                 createInvertedPose(collect.gateFarControlPoint);
         gateCollectOpen = isRed ?
                 createPose(collect.gateOpen) :
                 createInvertedPose(collect.gateOpen);
+        gateCollectOpenHold = isRed ?
+                createPose(collect.gateOpenHold) :
+                createInvertedPose(collect.gateOpenHold);
         gateCollect = isRed ?
                 createPose(collect.gateCollect) :
                 createInvertedPose(collect.gateCollect);
