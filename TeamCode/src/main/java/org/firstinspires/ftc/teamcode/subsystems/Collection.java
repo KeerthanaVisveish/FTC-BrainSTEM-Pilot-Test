@@ -16,7 +16,7 @@ public class Collection extends Component {
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
-        public double has3BallsDelayPeriod = 0.4, autoCollectHasThreeBallsDelayPeriod = 0.7;
+        public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.7;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
@@ -236,7 +236,7 @@ public class Collection extends Component {
                     flickerTimer.reset();
                     flickerStarted = true;
                 }
-                else if(flickerTimer.seconds() > 0.4) {
+                else if(flickerTimer.seconds() > 0.15) {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
                     flickerStarted = false;
@@ -274,6 +274,9 @@ public class Collection extends Component {
                 frontLeftLaserDist < params.laserBallThreshold;
 
 //        return frontRightLaserDist < params.LASER_BALL_THRESHOLD;
+    }
+    public boolean inAuto() {
+        return inAuto;
     }
 
     public boolean has3Balls() {

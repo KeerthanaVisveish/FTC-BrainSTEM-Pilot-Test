@@ -65,9 +65,9 @@ public abstract class AutoPid extends LinearOpMode {
     protected AutoCommands autoCommands;
     private Pose2d start,
             collect1NearControlPoint, collect1FarControlPoint, collect1,
-            collect2NearControlPoint, collect2FarControlPoint, collect2,
-            collect3NearControlPoint, preCollect3Near, preCollect3Far, collect3,
-            preLoading, loadingWaypoint, postLoading,
+            collect2NearWaypoint, collect2NearControlPoint, collect2FarControlPoint, collect2,
+            preCollect3Near, collect3NearControlPoint, preCollect3Far, collect3FarControlPoint, collect3,
+            preLoadingControlPoint, preLoading, loadingWaypoint, postLoading,
             gateCollectNearWaypoint, gateCollectNearControlPoint, gateCollectFarControlPoint, gateCollectOpen, gateCollectOpenHold, gateCollect,
             gate1, gate2,
             shootGateNearControlPoint,
@@ -76,7 +76,7 @@ public abstract class AutoPid extends LinearOpMode {
             shoot2Near, shoot2Far, shoot2FarControlPoint,
             shootGateNear, shootGateFar, shootGateFarControlPoint,
             shoot3Near, shoot3Far,
-            shootLoadingNear, shootLoadingFar;
+            shootLoadingNear, shootLoadingFar, shootLoadingFarControlPoint;
     private boolean isRed;
     private AutoState autoState;
     private Vector2d perpNearParkLine;
@@ -452,26 +452,21 @@ public abstract class AutoPid extends LinearOpMode {
         return buildCollectAndShoot(firstCollectAction, firstGateDrive, firstShootDrive, toNear, timeConstraints.postIntakeTime, true, !last);
     }
     private Action getSecondCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear) {
-        Waypoint collect2Dest = new Waypoint(collect2)
-                .setPassPosition(true)
-                .setMinLinearPower(collect.collectDrivePower);
-        if(fromNear)
-            collect2Dest.setControlPoint(collect2NearControlPoint, collect.secondNearT1, collect.secondNearT2);
-        else
-            collect2Dest.setControlPoint(collect2FarControlPoint, collect.secondFarT1, collect.secondFarT2);
-
-        DrivePath secondCollectDrive = new DrivePath(robot.drive, telemetry, collect2Dest);
-
-        double controlY = fromNear ? collect2NearControlPoint.position.y : collect2FarControlPoint.position.y;
-        Action secondCollectAction = new ParallelAction(
-                secondCollectDrive,
-                new SequentialAction(
-                        new CustomEndAction(() -> Math.abs(robot.drive.localizer.getPose().position.y) > Math.abs(controlY)),
-                        new InstantAction(() -> secondCollectDrive.getCurWaypoint()
-                                .setFixedLinearPower(collect.secondCollectDrivePower)
-                        )
-                )
-        );
+        DrivePath secondCollectDrive;
+        if(fromNear) {
+            BoxTolerance near2WaypointTol = new BoxTolerance(collect.secondNearWaypointTol);
+            secondCollectDrive = new DrivePath(robot.drive, telemetry,
+                    new Waypoint(collect2NearWaypoint, near2WaypointTol)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.collectDrivePower),
+                    new Waypoint(collect2)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.secondCollectDrivePower)
+                            .setControlPoint(collect2NearControlPoint, collect.secondNearT1, collect.secondNearT2));
+        }
+        else {
+            throw new RuntimeException("second collect not tuned from far; cannot incorporate 2f into string builder");
+        }
         double sign = isRed ? -1 : 1;
         Pose2d preGatePose = new Pose2d(gate2.position.x, gate2.position.y + sign * misc.gateBackupDist, gate2.heading.toDouble());
 
@@ -501,7 +496,7 @@ public abstract class AutoPid extends LinearOpMode {
                     .setPassPosition(true)
                     .setControlPoint(shoot2FarControlPoint, shoot.secondShootFarT1, shoot.secondShootFarT2));
 
-        return buildCollectAndShoot(secondCollectAction, secondGateDrive, secondShootDrive, toNear, timeConstraints.postIntakeTime, true, true);
+        return buildCollectAndShoot(secondCollectDrive, secondGateDrive, secondShootDrive, toNear, timeConstraints.postIntakeTime, true, true);
     }
     private Action getThirdCollectAndShoot(Pose2d shootPose, boolean fromNear, boolean toNear, boolean last) {
         Waypoint w = new Waypoint(collect3)
@@ -509,8 +504,8 @@ public abstract class AutoPid extends LinearOpMode {
                 .setMinLinearPower(collect.collectDrivePower);
         if(fromNear)
             w.setControlPoint(collect3NearControlPoint, collect.thirdNearT1, collect.thirdNearT2);
-//        else
-//            w.setControlPoint(collect3FarControlPoint, collect.thirdFarT1, collect.thirdFarT2);
+        else
+            w.setControlPoint(collect3FarControlPoint, collect.thirdFarT1, collect.thirdFarT2);
         DrivePath thirdCollectDrive = new DrivePath(robot.drive, telemetry, w);
 
         if (fromNear) {
@@ -552,25 +547,27 @@ public abstract class AutoPid extends LinearOpMode {
     private Action getLoadingCollectAndShoot(Pose2d shootPose, boolean toNear) {
         BoxTolerance preLoadingTol = new BoxTolerance(collect.preLoadingTol[0], collect.preLoadingTol[1], Math.toRadians(collect.preLoadingTol[2]));
         BoxTolerance postLoadingTol = new BoxTolerance(collect.postLoadingTol[0], collect.postLoadingTol[1], Math.toRadians(collect.postLoadingTol[2]));
-
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
                 new Waypoint(preLoading, preLoadingTol)
                         .setMaxTime(1.9)
-                        .setHeadingLerp(PathParams.HeadingLerpType.TANGENT),
+                        .setHeadingLerp(PathParams.HeadingLerpType.TANGENT)
+                        .setControlPoint(preLoadingControlPoint, collect.preLoadingT1, collect.preLoadingT2)
+                        .setPassPosition(true),
                 new Waypoint(loadingWaypoint)
                         .setFixedLinearPower(collect.loadingDrivePower)
-                        .setMaxHeadingPower(collect.loadingHeadingPower)
-                        .setMaxTime(.6),
+                        .setMaxTime(.9),
                 new Waypoint(postLoading, postLoadingTol)
-                        .setFixedLinearPower(collect.loadingDrivePower)
-                        .setMaxHeadingPower(collect.loadingHeadingPower)
-                        .setMaxTime(.6)
-                        .setCustomEndCondition(() -> robot.collection.has3Balls()));
-        DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
+                        .setMinLinearPower(collect.loadingDrivePower)
+                        .setMaxTime(.6));
+        Action loadingCollectAction = new CustomEndAction(loadingCollectDrive, robot.collection::has3Balls);
+        Waypoint w = new Waypoint(shootPose)
                 .setMaxTime(3)
-                .setPassPosition(true));
+                .setPassPosition(true);
+        if(!toNear)
+            w.setControlPoint(shootLoadingFarControlPoint, shoot.farLoadingT1, shoot.farLoadingT2);
+        DrivePath loadingShootDrive = new DrivePath(robot.drive, w);
 
-        return buildCollectAndShoot(loadingCollectDrive, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
+        return buildCollectAndShoot(loadingCollectAction, new SleepAction(0), loadingShootDrive, toNear, timeConstraints.loadingSlowIntakeTime, true, false);
     }
 
     protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose) {
@@ -678,6 +675,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         shootLoadingNear = shoot3Near;
         shootLoadingFar = isRed ? createPose(shoot.farLoading) : createInvertedPose(shoot.farLoading);
+        shootLoadingFarControlPoint = isRed ? createPose(shoot.farLoadingControlPoint) : createInvertedPose(shoot.farLoadingControlPoint);
 
         shoot1FarControlPoint = isRed ? createPose(shoot.far1ControlPoint) : createInvertedPose(shoot.far1ControlPoint);
         shoot2FarControlPoint = isRed ? createPose(shoot.far2ControlPoint) : createInvertedPose(shoot.far2ControlPoint);
@@ -697,6 +695,9 @@ public abstract class AutoPid extends LinearOpMode {
         collect2 = isRed ?
                 createPose(second) :
                 createInvertedPose(second);
+        collect2NearWaypoint = isRed ?
+                createPose(collect.secondNearWaypoint) :
+                createInvertedPose(collect.secondNearWaypoint);
         collect2NearControlPoint = isRed ?
                 createPose(collect.secondNearControlPoint) :
                 createInvertedPose(collect.secondNearControlPoint);
@@ -713,6 +714,9 @@ public abstract class AutoPid extends LinearOpMode {
         preCollect3Far = isRed ?
                 createPose(collect.thirdFarWaypoint) :
                 createInvertedPose(collect.thirdFarWaypoint);
+        collect3FarControlPoint = isRed ?
+                createPose(collect.thirdFarControlPoint) :
+                createInvertedPose(collect.thirdFarControlPoint);
         collect3NearControlPoint = isRed ?
                 createPose(collect.thirdNearControlPoint) :
                 createInvertedPose(collect.thirdNearControlPoint);
@@ -720,6 +724,9 @@ public abstract class AutoPid extends LinearOpMode {
 //                createPose(collect.thirdFarControlPoint) :
 //                createInvertedPose(collect.thirdFarControlPoint);
 
+        preLoadingControlPoint = isRed ?
+                createPose(collect.preLoadingControlPoint) :
+                createInvertedPose(collect.preLoadingControlPoint);
         preLoading = isRed ?
                 createPose(collect.preLoading) :
                 createInvertedPose(collect.preLoading);

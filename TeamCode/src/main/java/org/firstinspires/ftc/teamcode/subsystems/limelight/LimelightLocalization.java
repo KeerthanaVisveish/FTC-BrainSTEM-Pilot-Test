@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems.limelight;
 import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -35,8 +36,9 @@ public class LimelightLocalization extends LLParent {
     }
 
     public static class Params {
+        public double limelightTrust = .5;
         public boolean showValidLocalizationZones = true;
-        public double[] nearZoneLocalizeCircle = { -36, 0, 48 };
+        public double[] nearZoneLocalizeCircle = { -24, 0, 48 };
         public double maxUpdateTranslationalVel = 2, maxUpdateHeadingDegVel = 2; // inches and degrees
         public int maxUpdateTurretVelTicksPerSec = 1;
         public boolean allowUpdateAnywhereForFirst = false;
@@ -44,6 +46,7 @@ public class LimelightLocalization extends LLParent {
         public int numPrevFramesToAvg = 5;
         public double minTimeBetweenUpdates = 5;
         public boolean useMT2 = true;
+        public double jankPerpOffset = 0, jankParallelOffset = 0;
         public int numPrevPosesToPrint = 0;
         public LocalizationState offLocalizationState = LocalizationState.PASSIVE_READING;
     }
@@ -171,7 +174,10 @@ public class LimelightLocalization extends LLParent {
 
                 updateMaxErrors(lastAvgTurretPose, cameraPose);
 
-                robot.drive.localizer.setPose(robotPose);
+                Pose2d pinpointPose = robot.drive.localizer.getPose();
+                Vector2d avgPos = pinpointPose.position.times(1-params.limelightTrust).plus(robotPose.position.times(params.limelightTrust));
+                double avgHeading = pinpointPose.heading.toDouble() * (1-params.limelightTrust) + robotPose.heading.toDouble() * params.limelightTrust;
+                robot.drive.localizer.setPose(new Pose2d(avgPos, avgHeading));
                 numSetPoses++;
                 setState(params.offLocalizationState);
                 break;
@@ -269,7 +275,12 @@ public class LimelightLocalization extends LLParent {
             return;
         }
 
-        cameraPose = getAvgTurretPose(lastCameraPoses);
+        cameraPose = getAvgCameraPose(lastCameraPoses);
+        double a = cameraPose.heading.toDouble();
+        Vector2d parallelBasis = new Vector2d(Math.cos(a), Math.sin(a));
+        Vector2d perpBasis = new Vector2d(parallelBasis.y*1, -parallelBasis.x);
+        Vector2d jankOffset = parallelBasis.times(params.jankParallelOffset).plus(perpBasis.times(params.jankPerpOffset));
+        cameraPose = new Pose2d(cameraPose.position.plus(jankOffset), cameraPose.heading.toDouble());
         robotPose = calculateRobotPose(cameraPose);
     }
     private void setAllPosesToNull() {
@@ -292,7 +303,7 @@ public class LimelightLocalization extends LLParent {
         maxTranslationalError = Math.max(maxTranslationalError, translationalError);
         maxHeadingErrorDeg = Math.max(maxHeadingErrorDeg, headingErrorDeg);
     }
-    private Pose2d getAvgTurretPose(ArrayList<Pose3D> lastTurretPoses) {
+    private Pose2d getAvgCameraPose(ArrayList<Pose3D> lastTurretPoses) {
         double x = 0, y = 0, hRad = 0;
         for (Pose3D pose : lastTurretPoses) {
             x += pose.getPosition().x;

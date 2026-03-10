@@ -28,7 +28,7 @@ public class ShootingSystem {
     public static class TestingParams {
         public boolean powerTurret = true;
         public boolean powerLowShooter = true, powerHighShooter = true;
-        public boolean drawShootingRings = true;
+        public boolean drawShootingRings = false;
     }
     public static class GoalParams {
         public double nearRedX = -64, nearRedY = 66, nearHeight = 39;
@@ -52,7 +52,7 @@ public class ShootingSystem {
         public double far1ExitAng = Math.toRadians(38);
         public double far2SwitchY = 6;
         public double far2ExitAng = Math.toRadians(37);
-        public double maxShootingDist = 180;
+        public double maxShootingDist = 175;
         public double maxDynamicHoodError = Math.toRadians(12), enableHoodCheckDist = 146;
         public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3;
         public double lookAheadTime = 0.15; // time to look ahead for pose prediction

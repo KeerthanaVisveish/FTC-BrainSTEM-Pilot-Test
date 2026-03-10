@@ -4,9 +4,9 @@ public class AutoParamsPid {
     public static class Collect {
         public double hitGateVelThreshold = 15;
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
-        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .3, gateOpenDrive2MaxPower = .5;
+        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .1, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
-        public double loadingDrivePower = 0.4, loadingHeadingPower = .3;
+        public double loadingDrivePower = 0.35;
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
@@ -19,6 +19,8 @@ public class AutoParamsPid {
         public double[] firstControlPointFar = {-6, 31, 150};
         public double firstFarT1 = 30, firstFarT2 = 20;
 
+        public double[] secondNearWaypoint = { 8.5, 25, 65 };
+        public double[] secondNearWaypointTol = { 4, 3, 5 };
         public double[] secondNearControlPoint = { 8, 26.5, 65};
         public double secondNearT1 = 26.5, secondNearT2 = 20;
 
@@ -33,22 +35,27 @@ public class AutoParamsPid {
 
         public double[] thirdFarWaypoint = { 40, 25, 110 };
         public double[] thirdFarWaypointTol = { 3, 3, 5 };
-        public double[] preLoading = { 46.5, 61, 40 };
-        public double[] preLoadingTol = { 2, 1, 2 };
-        public double[] loadingWaypoint = { 58, 64, 40 };
-        public double[] postLoading = { 59.5, 64, 18 };
-        public double[] postLoadingTol = { 1.5, 1, 3 };
+        public double[] thirdFarControlPoint = { 38, 31, 100 };
+        public double thirdFarT1 = 23, thirdFarT2 = 18;
+
+        public double[] preLoadingControlPoint = { 49, 56, 70 };
+        public double preLoadingT1 = 14, preLoadingT2 = 10;
+        public double[] preLoading = { 51, 59.5, 55 }; // (53.024, 59.406, 60.84)
+        public double[] preLoadingTol = { 2, 2, 5 };
+        public double[] loadingWaypoint = { 62, 61, 60 };
+        public double[] postLoading = { 62.5, 63, 70 }; //  (61.434, 61.613, 11.484)
+        public double[] postLoadingTol = { 1, 1, 3 };
 
 
-        public double[] gateNearWaypoint = { 5, 32, 75 };
+        public double[] gateNearWaypoint = { 2, 32, 75 };
         public double[] gateNearWaypointTol = { 1.5, 4, 4 };
-        public double[] gateNearControlPoint = { 10.5, 40, 90 };
+        public double[] gateNearControlPoint = { 10, 40, 90 };
         public double gateNearT1 = 24, gateNearT2 = 20;
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
-        public double[] gateOpen = { 10.3, 60.4, 110 };
+        public double[] gateOpen = { 10.5, 60.5, 115 };
         public double[] gateOpenTol = { 1, 1, 1 };
-        public double[] gateOpenHold = { 10.5, 60.4, 110 };
+        public double[] gateOpenHold = { 10.5, 60.5, 115 };
         public double[] gateCollect = { 16, 62.5, 135 };
 
         public double[] limelightScanPos1 = { 48, 60 };
@@ -73,6 +80,8 @@ public class AutoParamsPid {
         public double[] farSpike = {52, 16, 145};
         public double[] farPreloadLoading = { 52, 16, 100 };
         public double[] farLoading = { 52, 16, 90 };
+        public double[] farLoadingControlPoint = { 55, 40, 90 };
+        public double farLoadingT1 = 35, farLoadingT2 = 20;
 
         // shooting path waypoints to not hit other balls
         public double[] gateNearControlPoint = { 11, 36, 50 };

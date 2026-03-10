@@ -133,9 +133,9 @@ public class LimelightClassifier extends LLParent {
     }
 
     public void addClassifierInfo(Canvas fieldOverlay) {
-        fieldOverlay.setStroke("yellow");
-        fieldOverlay.strokeCircle(params.closeX, params.closeY, params.closeRadius);
-        fieldOverlay.strokeCircle(params.farX, params.farY, params.farRadius);
+//        fieldOverlay.setStroke("yellow");
+//        fieldOverlay.strokeCircle(params.closeX, params.closeY, params.closeRadius);
+//        fieldOverlay.strokeCircle(params.farX, params.farY, params.farRadius);
     }
 
     private boolean inCloseZone(Pose2d robotPose) {

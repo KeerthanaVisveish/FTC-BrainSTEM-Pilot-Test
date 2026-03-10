@@ -14,7 +14,7 @@ public class Shooter extends Component {
         public double ignoreHoodUpdateError = Math.toRadians(.5);
         public double A = 20, B = 6, k = -150, x0 = .06;
         public double kVYInt = 1.63, kVSlope = -0.02005;
-        public double shotVelDropThreshold = 30;
+        public double shotVelDropThreshold = 30, targetVelStaticShotThreshold = .1;
         public double avg3BallShootTime = .5;
         public int startingShooterSpeedAdjustment = 0;
         public double minVoltage = -2.025, maxVoltage = 15;
@@ -36,6 +36,7 @@ public class Shooter extends Component {
     private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
+    private double prevTargetVelMps;
     private double oneFrameVelDif;
     private boolean wasPrevIncreasing;
     private double kP;
@@ -101,6 +102,7 @@ public class Shooter extends Component {
             lastUpdatedExitAng = robot.shootingSystem.hoodExitAngleRad;
         }
         updateBallShotTracking();
+        prevTargetVelMps = targetVelMps;
     }
     public void updateBallShotTracking() {
         ballsPreviouslyExiting = ballsCurrentlyExiting;
@@ -119,7 +121,7 @@ public class Shooter extends Component {
         if(increasing && !wasPrevIncreasing) {  // means relative min detected
             lastMin = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
             double velDrop = lastMax - lastMin;
-            if(velDrop >= shooterParams.shotVelDropThreshold) {
+            if(velDrop >= shooterParams.shotVelDropThreshold && Math.abs(targetVelMps - prevTargetVelMps) < shooterParams.targetVelStaticShotThreshold) {
                 if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE && !ballsCurrentlyExiting) {
                     ballsCurrentlyExiting = true;
                     ballsExitingTimer.reset();
