@@ -23,6 +23,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.opmode.teleop.LimelightResetTele;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -35,6 +36,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
 import java.util.ArrayList;
+import java.util.function.BooleanSupplier;
 
 @Config
 public abstract class AutoPid extends LinearOpMode {
@@ -45,7 +47,8 @@ public abstract class AutoPid extends LinearOpMode {
         public String stringBuilder = "n2ngngngn1n";
         public boolean openGateOnFirst = false;
         public boolean openGateOnSecond = false;
-        public boolean parkAbort = false;
+        public boolean forceNoMovementAtEnd = false;
+        public boolean smartPark = true;
     }
     public enum AutoState {
         DRIVE_TO_COLLECT,
@@ -184,6 +187,7 @@ public abstract class AutoPid extends LinearOpMode {
                     break;
             }
         }
+        final boolean finalToNear = toNear;
 
         Action autoAction = new SequentialAction(
                 getPreloadDriveAndShoot(preloadShootPose, customizable.stringBuilder.charAt(0) == 'n'),
@@ -195,24 +199,36 @@ public abstract class AutoPid extends LinearOpMode {
                 numPaths > 5 ? actionOrder.get(5) : new SleepAction(0),
                 numPaths > 6 ? actionOrder.get(6) : new SleepAction(0),
                 numPaths > 7 ? actionOrder.get(7) : new SleepAction(0),
-                numPaths > 8 ? actionOrder.get(8) : new SleepAction(0),
-                new ParallelAction(
-                        !toNear ? getFarParkDrive() : new SleepAction(0),
-                        autoCommands.stopIntake(),
-                        autoCommands.stopShooter()
-                )
+                numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
         );
 
-        Action timedAutoAction = new SequentialAction(
-                new CustomEndAction(autoAction, () -> customizable.parkAbort && autoTimer.seconds() > timeConstraints.autoEndTime),
-                autoCommands.stopIntake(),
-                autoCommands.stopShooter(),
-                new InstantAction(() -> robot.drive.stop())
+
+        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.parkOutsideShootingTime && robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist);
+        BooleanSupplier farShouldPark = () -> autoState == AutoState.SHOOT && autoTimer.seconds() > timeConstraints.farParkAfterShootingTime;
+        BooleanSupplier farShouldStop = () -> autoState != AutoState.SHOOT && autoTimer.seconds() > timeConstraints.parkOutsideShootingTime;
+
+        boolean[] shouldStop = { false };
+        boolean[] shouldPark = { false };
+
+        Action smartParkAction = new SequentialAction(
+                new ParallelAction(
+                        new CustomEndAction(autoAction, () -> shouldStop[0] || shouldPark[0]),
+                        new SequentialAction(
+                                new CustomEndAction(new SleepAction(30), () -> customizable.smartPark && (shouldPark[0] || (nearShouldStop.getAsBoolean() && finalToNear) || (farShouldStop.getAsBoolean() && !finalToNear))),
+                                new InstantAction(() -> shouldStop[0] = true)
+                        ),
+                        new SequentialAction(
+                                new CustomEndAction(new SleepAction(30), () -> customizable.smartPark && (shouldStop[0] || (!finalToNear && farShouldPark.getAsBoolean()))),
+                                new InstantAction(() -> shouldPark[0] = true)
+                        )
+                ),
+                shouldPark[0] ? getFarParkDrive() : new SleepAction(0)
         );
+
 
         Action fullAutoAction = new ParallelAction(
                 autoCommands.updateRobotInfo(),
-                new TimedAction(timedAutoAction, timeConstraints.stopEverythingTime).setEndFunction(robot.drive::stop),
+                smartParkAction,
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),
                 packet -> {
