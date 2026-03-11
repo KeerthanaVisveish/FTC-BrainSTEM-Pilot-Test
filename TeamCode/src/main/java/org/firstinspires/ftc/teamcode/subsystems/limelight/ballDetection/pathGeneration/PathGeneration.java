@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration;
 
+import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createVec;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
@@ -473,12 +475,14 @@ public class PathGeneration {
                 double collectMinLinearPower = driveParams.collectNormalMinLinearPower;
                 double preCollectMinLinearPower = driveParams.preCollectNormalMinLinearPower;
                 boolean preCollectPassPosition = false;
+                Vector2d collectCustomForceVector = new Vector2d(0, 0);
                 switch (cur.type) {
                     case CLASSIFIER_WALL:
                         if (collectInfo.approachType == Types.Approach.CLASSIFIER_STRAFE) {
                             collectTolerance = new BoxTolerance(driveParams.classifierWallStrafeTol);
                             preCollectTolerance = collectTolerance;
                             collectMinLinearPower = driveParams.collectWallStrafeMinLinearPower;
+                            collectCustomForceVector = createVec(driveParams.classifierStrafeCustomForce).times(Math.signum(cur.pos.y));
                         }
                         break;
                     case BACK_WALL:
@@ -512,7 +516,8 @@ public class PathGeneration {
 
                 Waypoint w2 = new Waypoint(wallSafeCollectPose, collectTolerance)
                         .setPassPosition(true)
-                        .setMinLinearPower(collectMinLinearPower);
+                        .setMinLinearPower(collectMinLinearPower)
+                        .setCustomForceVector(collectCustomForceVector);
                 if (collectInfo.collectControlPose != null) {
                     Pose2d controlPose = new Pose2d(wallSafeCollectPose.position.plus(collectInfo.collectControlPose.position), collectInfo.collectControlPose.heading);
                     w2.setControlPoint(controlPose, collectInfo.collectControlLerpStart, collectInfo.collectControlLerpEnd);

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams;
 
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.Vector2d;
 
 import java.util.function.BooleanSupplier;
 
@@ -26,6 +27,7 @@ public class PathParams {
         public double farHeadingKp = 0.012, farHeadingKi = 0, farHeadingKd = 0;
         public double applyCloseHeadingPIDErrorDeg = 15;
         public double lateralWeight = 1.9, axialWeight = 1; // weight the drive powers to correct for differences in driving
+        public Vector2d customForceVector = new Vector2d(0, 0);
         public double minSpeed = 0, maxSpeed = 1;
         public double minHeadingSpeed = 0, maxHeadingSpeed = 1;
         public double minTime = 0, maxTime = 100;
@@ -57,6 +59,7 @@ public class PathParams {
     public double correctiveKp;
     public double correctiveStrength = 1; // percent between [0, 1] - decides strongly the corrective vector is weighted relative to the drive vector
     public double closeHeadingKp, closeHeadingKi, closeHeadingKd, farHeadingKp, farHeadingKi, farHeadingKd, headingKf;
+    public Vector2d customForceVector;
     public double applyCloseSpeedPIDError;
     public HeadingLerpType headingLerpType;
     public PathType pathType;
@@ -97,6 +100,7 @@ public class PathParams {
         maxHeadingPower = defaultParams.maxHeadingSpeed;
         lateralWeight = defaultParams.lateralWeight;
         axialWeight = defaultParams.axialWeight;
+        customForceVector = defaultParams.customForceVector;
         passPosition = false;
         applyCloseSpeedPIDError = defaultParams.applyCloseSpeedPIDError;
         headingLerpType = defaultParams.headingLerpType;
