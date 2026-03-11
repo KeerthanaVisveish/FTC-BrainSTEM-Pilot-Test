@@ -121,6 +121,7 @@ public class AutoParamsPid {
         public double gatePrepMinPower = 0.7, gateMinPower = 0.5;
 
         public double smartParkNearDist = 25;
+        public double smartParkFarDist = 25;
         public double[] parkFar = { 52, 21, 90 };
         public double minParkFarPower = .8;
     }
@@ -129,7 +130,7 @@ public class AutoParamsPid {
         public double lastShootExtraTime = 2;
         public double gateOpeningWait = 1, gateCollectOpenWait = .2;
         public double gateCollectMaxTime = .6;
-        public double farParkAfterShootingTime = 29.1, parkOutsideShootingTime = 29.5;
+        public double farParkAfterShootingTime = 29.1, parkOutsideShootingTimeNear = 29.4, farParkOutsideShootingTime = 28;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double secondGaitWait = .5, thirdGateWait = .5;
         public double farPreloadDriveDelay = .5;

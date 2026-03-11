@@ -23,7 +23,7 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.opmode.teleop.LimelightResetTele;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.LED;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -82,7 +82,7 @@ public abstract class AutoPid extends LinearOpMode {
             shootLoadingNear, shootLoadingFar, shootLoadingFarControlPoint;
     private boolean isRed;
     private AutoState autoState;
-    private Vector2d perpNearParkLine;
+    private Vector2d perpNearParkLine, perpFarParkLine, farParkLineOrigin;
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -99,6 +99,8 @@ public abstract class AutoPid extends LinearOpMode {
 
         perpNearParkLine = isRed ? new Vector2d(1, 1) : new Vector2d(1, -1);
         perpNearParkLine = perpNearParkLine.div(Math.hypot(perpNearParkLine.x, perpNearParkLine.y));
+        perpFarParkLine = isRed ? new Vector2d(-1, 1) : new Vector2d(-1, -1);
+        farParkLineOrigin = new Vector2d(48, 0);
 
         if(customizable.stringBuilder.charAt(0) == 'n')
             start = isRed ? createPose(misc.startNearRed) : createPose(misc.startNearBlue);
@@ -202,27 +204,37 @@ public abstract class AutoPid extends LinearOpMode {
                 numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
         );
 
-
-        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.parkOutsideShootingTime && robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist);
-        BooleanSupplier farShouldPark = () -> autoState == AutoState.SHOOT && autoTimer.seconds() > timeConstraints.farParkAfterShootingTime;
-        BooleanSupplier farShouldStop = () -> autoState != AutoState.SHOOT && autoTimer.seconds() > timeConstraints.parkOutsideShootingTime;
+//        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.parkOutsideShootingTime && robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist);
+        BooleanSupplier farShouldParkExtra = () -> autoState == AutoState.DRIVE_TO_SHOOT && autoTimer.seconds() > timeConstraints.farParkOutsideShootingTime && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) < misc.smartParkFarDist;
+        BooleanSupplier farShouldPark = () -> farShouldParkExtra.getAsBoolean() || (autoState == AutoState.SHOOT && autoTimer.seconds() > timeConstraints.farParkAfterShootingTime);
+        BooleanSupplier farShouldStop = () -> !farShouldParkExtra.getAsBoolean() && (autoState != AutoState.SHOOT && autoTimer.seconds() > timeConstraints.farParkOutsideShootingTime);
+        BooleanSupplier nearShouldStop = () -> false;
+//        BooleanSupplier farShouldPark = () -> false;
+//        BooleanSupplier farShouldStop = () -> false;
 
         boolean[] shouldStop = { false };
         boolean[] shouldPark = { false };
+        boolean[] autoActionDone = { false };
 
         Action smartParkAction = new SequentialAction(
                 new ParallelAction(
-                        new CustomEndAction(autoAction, () -> shouldStop[0] || shouldPark[0]),
-                        new SequentialAction(
-                                new CustomEndAction(new SleepAction(30), () -> customizable.smartPark && (shouldPark[0] || (nearShouldStop.getAsBoolean() && finalToNear) || (farShouldStop.getAsBoolean() && !finalToNear))),
-                                new InstantAction(() -> shouldStop[0] = true)
-                        ),
-                        new SequentialAction(
-                                new CustomEndAction(new SleepAction(30), () -> customizable.smartPark && (shouldStop[0] || (!finalToNear && farShouldPark.getAsBoolean()))),
-                                new InstantAction(() -> shouldPark[0] = true)
+                        new CustomEndAction(autoAction, () -> shouldStop[0] || shouldPark[0])
+                            .setEndFunction(() -> autoActionDone[0] = true),
+                        new CustomEndAction(
+                                new ParallelAction(
+                                        new CustomEndAction(() -> (nearShouldStop.getAsBoolean() && finalToNear) || (farShouldStop.getAsBoolean() && !finalToNear))
+                                            .setEndFunction(() -> shouldStop[0] = true),
+                                        new CustomEndAction(() -> !finalToNear && farShouldPark.getAsBoolean())
+                                            .setEndFunction(() -> shouldPark[0] = true)
+                                ),
+                                () -> !customizable.smartPark || autoActionDone[0] || shouldStop[0] || shouldPark[0]
                         )
                 ),
-                shouldPark[0] ? getFarParkDrive() : new SleepAction(0)
+                new CustomEndAction(() -> shouldStop[0] || shouldPark[0] || autoActionDone[0]),
+                new ParallelAction(
+                        shouldPark[0] || (!shouldPark[0] && !shouldStop[0] && !finalToNear) ? getFarParkDrive() : telemetryPacket -> {robot.drive.stop(); return true; },
+                        telemetryPacket -> {robot.led.setAutoDone(); return false; }
+                )
         );
 
 
@@ -235,6 +247,9 @@ public abstract class AutoPid extends LinearOpMode {
                     DrivePath.drawCurrentPath(packet.fieldOverlay());
                     robot.drawRobotInfo(packet.fieldOverlay());
                     telemetry.addData("auto state", autoState);
+                    telemetry.addData("SHOULD PARK", shouldPark[0]);
+                    telemetry.addData("SHOULD STOP", shouldStop[0]);
+                    telemetry.addData("AUTO ACTION DONE", autoActionDone[0]);
                     robot.limelight.printInfo();
                     telemetry.update();
                     return true;
@@ -558,6 +573,7 @@ public abstract class AutoPid extends LinearOpMode {
             thirdShootDest.setMaxTime(2);
         DrivePath thirdShootDrive = new DrivePath(robot.drive, telemetry, thirdShootDest);
 
+//        return thirdCollectAction;
         return buildCollectAndShoot(thirdCollectAction, new SleepAction(0), thirdShootDrive, toNear, timeConstraints.postIntakeTime, true, !last);
     }
     private Action getLoadingCollectAndShoot(Pose2d shootPose, boolean toNear) {

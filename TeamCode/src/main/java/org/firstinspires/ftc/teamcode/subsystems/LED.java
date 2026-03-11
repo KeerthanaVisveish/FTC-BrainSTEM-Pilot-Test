@@ -13,12 +13,12 @@ public class LED extends Component {
     public static double white = 0.99, green = 0.45, yellow = 0.35, lightBlue = .55, blue = 0.6, purple = 0.666, red = 0.279;
     public static double shooterFlashOnTime = 0.3, shooterFlashOffTime = 0.2;
     public static double turretFlashOnTime = 0.07, turretFlashOffTime = 0.07;
-    public static double confirmSuccessfulPoseUpdateTime = 0.2;
+    public static double confirmSuccessfulPoseUpdateTime = 0.3;
     private final ServoImplEx left_led;
     private final ServoImplEx right_led;
     private final ElapsedTime shooterFlashTimer, turretFlashTimer;
     public double lastPinpointResetTimeMs;
-
+    private boolean autoDone;
     public LED(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
 
@@ -36,6 +36,10 @@ public class LED extends Component {
 
     @Override
     public void update(){
+        if(autoDone) {
+            setLed(lightBlue);
+            return;
+        }
         if (robot.turret.getTurretState() == Turret.TurretState.TRACK_CUSTOM_TARGET) {
             setLed(white);
             return;
@@ -50,7 +54,7 @@ public class LED extends Component {
             setLed(blue);
             return;
         }
-        if (System.currentTimeMillis() - lastPinpointResetTimeMs < 200) {
+        if (System.currentTimeMillis() - lastPinpointResetTimeMs < confirmSuccessfulPoseUpdateTime * 1000) {
             setLed(blue);
             return;
         }
@@ -88,5 +92,8 @@ public class LED extends Component {
     public void setLed(double position) {
         left_led.setPosition(position);
         right_led.setPosition(position);
+    }
+    public void setAutoDone() {
+        autoDone = true;
     }
 }

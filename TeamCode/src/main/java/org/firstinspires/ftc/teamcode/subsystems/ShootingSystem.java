@@ -61,7 +61,7 @@ public class ShootingSystem {
         // efficiency coef regression: y=-0.0766393x+0.446492
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
         public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
-        public double maxShootWhileMovingSpeed = 0.6;
+        public double maxShootWhileMovingSpeed = 1;
 
         // estimated accel thresholds: position: 20, heading: 5
     }

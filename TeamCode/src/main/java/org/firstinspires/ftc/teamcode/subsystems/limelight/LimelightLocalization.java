@@ -43,7 +43,7 @@ public class LimelightLocalization extends LLParent {
         public int maxUpdateTurretVelTicksPerSec = 1;
         public boolean allowUpdateAnywhereForFirst = false;
         public double ableToUpdateConfirmationTime = 0.2;
-        public int numPrevFramesToAvg = 5;
+        public int numPrevFramesToAvg = 4;
         public double minTimeBetweenUpdates = 5;
         public boolean useMT2 = true;
         public double jankPerpOffset = 0, jankParallelOffset = 0;
@@ -51,7 +51,7 @@ public class LimelightLocalization extends LLParent {
         public LocalizationState offLocalizationState = LocalizationState.PASSIVE_READING;
     }
 
-    public static LocalizationType localizationType = LocalizationType.ON_COMMAND;
+    public static LocalizationType localizationType = LocalizationType.CONTINUOUS;
     public static Params params = new Params();
     public Pose2d cameraPose, robotPose, rawCameraPose, rawRobotPose;
     private LLResult aprilTagResult;

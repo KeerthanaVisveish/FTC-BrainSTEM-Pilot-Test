@@ -27,6 +27,8 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
+import java.time.OffsetDateTime;
+
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
@@ -270,8 +272,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp2.isFirstY()) {
-            if (robot.parking.getParkState() != Parking.ParkState.EXTENDED)
+            if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
+                robot.turret.setTurretState(Turret.TurretState.CENTER);
+            }
             else if (robot.turret.getTurretState() != Turret.TurretState.TRACK_CUSTOM_TARGET) {
                 robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxAngle);
                 robot.turret.setCustomTargetMinPower(Turret.turretParams.minParkRotateVoltage);
