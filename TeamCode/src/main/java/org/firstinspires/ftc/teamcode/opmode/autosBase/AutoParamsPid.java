@@ -3,10 +3,11 @@ package org.firstinspires.ftc.teamcode.opmode.autosBase;
 public class AutoParamsPid {
     public static class Collect {
         public double hitGateVelThreshold = 15;
+        public double hitBallVelThreshold = 15;
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .1, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
-        public double loadingDrivePower = 0.35;
+        public double loadingDrivePower = 0.35, loadingMinHeadingPower = .5;
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
@@ -24,9 +25,6 @@ public class AutoParamsPid {
         public double[] secondNearControlPoint = { 12, 27, 70};
         public double secondNearT1 = 26, secondNearT2 = 18;
         public double secondNearCloseHeadingKP = .008;
-
-        public double[] secondFarControlPoint = {19, 26.5, 135};
-        public double secondFarT1 = 30, secondFarT2 = 20;
 
         public double[] thirdNearWaypoint = { 20, 26.5, 35 };
         public double[] thirdNearWaypointTol = { 6, 3, 5 };
@@ -60,7 +58,12 @@ public class AutoParamsPid {
         public double[] postLoading = { 62.5, 63, 70 }; //  (61.434, 61.613, 11.484)
         public double[] postLoadingTol = { 1, 1, 3 };
         public double[] loadingCorner = { 62, 63, 90 };
+        public double loadingCornerBackup = 5;
         public double[] loadingCornerWaypoint = { 62, 30, 90 };
+        public double[] loadingCornerWaypointTol = { 3, 2, 5, };
+        public double[] loadingGateWait = { 43, 59, 135 };
+        public double[] loadingGateWaitWaypoint = { 47, 50, 135 };
+        public double[] loadingGateWaitWaypointTol = { 3, 3, 5 };
 
         public double[] limelightScanPos1 = { 48, 60 };
         public double[] limelightScanPos2 = { 12, 60 };
@@ -134,9 +137,8 @@ public class AutoParamsPid {
         public double lastShootExtraTime = 2;
         public double gateOpeningWait = .9, gateCollectOpenWait = .12, gateTapWait = .5;
         public double gateCollectMaxTime = .5;
-        public double farParkAfterShootingTime = 29.1, parkOutsideShootingTimeNear = 29.4, farParkOutsideShootingTime = 28;
+        public double farParkTime = 29.1, nearParkStopTime = 29, farParkStopTime = 28;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
-        public double secondGaitWait = .5, thirdGateWait = .5;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWaitTime = 1;
 
