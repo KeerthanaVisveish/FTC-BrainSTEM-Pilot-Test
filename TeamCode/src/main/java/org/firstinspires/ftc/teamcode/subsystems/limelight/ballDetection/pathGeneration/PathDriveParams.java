@@ -12,6 +12,7 @@ public class PathDriveParams {
     public double clusterStrafePerpendicularTol = 1;
     public double clusterStrafeHeadingTol = 3;
     public double strafeCollectControlMaxOffset = 10, strafeCollectControlStartError = 20, strafeCollectControlEndError = 15;
+    public double[] classifierStrafeCustomForce = new double[] { 0, 0.2, };
     public double collectNormalMinLinearPower = 0.2, preCollectNormalMinLinearPower = 0.2;
     public double collectWallStrafeMinLinearPower = 0.6;
     public double collectCornerMinLinearPower = 0.4;

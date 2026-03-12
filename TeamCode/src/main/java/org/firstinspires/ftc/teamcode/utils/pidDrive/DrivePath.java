@@ -55,7 +55,7 @@ public class DrivePath implements Action {
     private double splineT;
     private Pose2d prevWaypointPose, targetPose;
     private final ArrayList<Vector2d> prevPositions = new ArrayList<>();
-    private Vector2d driveVector, correctiveVector, combinedDirectionVector;
+    private Vector2d driveVector, correctiveVector, customForceVector, combinedDirectionVector;
     private boolean shouldUpdatePose = false;
     private double waypointDistanceError;
     private final ElapsedTime customEndConfirmationTimer = new ElapsedTime();
@@ -251,8 +251,11 @@ public class DrivePath implements Action {
         Vector2d correction = getCorrectiveVector(robotPose, prevWaypointPose.position, targetPose.position);
         correctiveVector = new Vector2d(correction.x * getCurParams().axialWeight, correction.y * getCurParams().lateralWeight);
 
+        // optional custom force vector
+        customForceVector = GeometryUtils.rotateVector(getCurParams().customForceVector, -robotPose.heading.toDouble());
+
         // final vector
-        combinedDirectionVector = driveVector.plus(correctiveVector);
+        combinedDirectionVector = driveVector.plus(correctiveVector).plus(customForceVector);
         double powerMag = Math.hypot(combinedDirectionVector.x, combinedDirectionVector.y);
         if (powerMag > 1)
             combinedDirectionVector = combinedDirectionVector.div(powerMag);

@@ -127,6 +127,7 @@ public class BrainSTEMRobot {
                 // first scan
                 new SequentialAction(
                         turret.rotateToCustomTargetAction(angle1Sup),
+                        new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                         limelight.ballDetection.takeBallScanAction()
                 ),
@@ -142,6 +143,7 @@ public class BrainSTEMRobot {
                                         return false;
                                     secondScan = new SequentialAction(
                                             turret.rotateToCustomTargetAction(angle2Sup),
+                                            new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                                             new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                                             limelight.ballDetection.takeBallScanAction()
                                     );
