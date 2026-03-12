@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.opmode.testing;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -26,6 +27,7 @@ public class DrivePathTest extends LinearOpMode {
 
         telemetry.addLine("robot ready");
         telemetry.update();
+        DrivePath.showRobotPose = true;
 
         waitForStart();
 
@@ -34,7 +36,12 @@ public class DrivePathTest extends LinearOpMode {
                 Waypoint w1 = new Waypoint(createPose(p1), new BoxTolerance(distTol, headingTol));
                 Waypoint w2 = new Waypoint(createPose(p2), new BoxTolerance(distTol, headingTol));
                 DrivePath path = new DrivePath(drive, w1, w2);
-                Actions.runBlocking(path);
+                Actions.runBlocking(
+                        new ParallelAction(
+                                path,
+                                telemetryPacket -> {DrivePath.drawCurrentPath(telemetryPacket.fieldOverlay()); return true;}
+                        )
+                );
             }
         }
     }

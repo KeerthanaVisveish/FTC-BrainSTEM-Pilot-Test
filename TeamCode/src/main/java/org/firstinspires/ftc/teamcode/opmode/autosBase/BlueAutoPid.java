@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 
-public class BlueAutoPid extends AutoPid {
+public class BlueAutoPid extends AutoPidNew {
     public BlueAutoPid() {
-        alliance = Alliance.BLUE;
+        customizable.alliance = Alliance.BLUE;
     }
 }

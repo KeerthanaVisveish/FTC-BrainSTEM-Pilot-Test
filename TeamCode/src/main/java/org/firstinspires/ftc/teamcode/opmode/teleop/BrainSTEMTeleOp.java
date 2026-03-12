@@ -42,7 +42,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     // (62.706, -62.288, 90.294)
     // (62.038, -62.863, 89.575)
     // (62.251, -62.892, 89.948)
-    public static double noMoveJoystickThreshold = 0.1;
+    public static double noMoveJoystickThreshold = 0.1, joystickNoiseThreshold = .03;
+    public static double dpadMovePower = .2;
 
     BrainSTEMRobot robot;
 
@@ -168,14 +169,23 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             return;
         }
         currentlyMoving = Math.abs(gamepad1.left_stick_x) > noMoveJoystickThreshold || Math.abs(gamepad1.left_stick_y) > noMoveJoystickThreshold || Math.abs(gamepad1.right_stick_x) > noMoveJoystickThreshold;
+        boolean noJoystickActivity = Math.abs(gamepad1.left_stick_x) < joystickNoiseThreshold && Math.abs(gamepad1.left_stick_y) < joystickNoiseThreshold && Math.abs(gamepad1.right_stick_x) < noMoveJoystickThreshold;
         double amp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
-        robot.drive.setDrivePowers(new PoseVelocity2d(
-                new Vector2d(
-                        -gamepad1.left_stick_y,
-                        -gamepad1.left_stick_x
-                ).times(amp),
-                -gamepad1.right_stick_x * amp
-        ));
+        if(!noJoystickActivity)
+            robot.drive.setDrivePowers(new PoseVelocity2d(
+                    new Vector2d(
+                            -gamepad1.left_stick_y,
+                            -gamepad1.left_stick_x
+                    ).times(amp),
+                    -gamepad1.right_stick_x * amp
+            ));
+        else
+            robot.drive.setDrivePowers(new PoseVelocity2d(
+                    new Vector2d(
+                            gamepad1.dpad_right ? dpadMovePower : gamepad1.dpad_left ? -dpadMovePower : 0,
+                            gamepad1.dpad_up ? dpadMovePower : gamepad1.dpad_down ? -dpadMovePower : 0
+                    ), 0
+            ));
     }
 
     private void updateDriver1() {

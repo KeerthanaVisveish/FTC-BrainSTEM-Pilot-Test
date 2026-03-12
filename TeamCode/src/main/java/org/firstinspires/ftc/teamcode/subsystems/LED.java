@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization
 
 @Config
 public class LED extends Component {
-    public static double white = 0.99, green = 0.45, yellow = 0.35, lightBlue = .55, blue = 0.6, purple = 0.666, red = 0.279;
+    public static double white = 0.99, green = 0.45, yellow = 0.35, orange = .3, lightBlue = .55, blue = 0.6, purple = 0.666, red = 0.279;
     public static double shooterFlashOnTime = 0.3, shooterFlashOffTime = 0.2;
     public static double turretFlashOnTime = 0.07, turretFlashOffTime = 0.07;
     public static double confirmSuccessfulPoseUpdateTime = 0.3;
@@ -38,6 +38,10 @@ public class LED extends Component {
     public void update(){
         if(autoDone) {
             setLed(lightBlue);
+            return;
+        }
+        if(robot.parking.getParkState() == Parking.ParkState.EXTENDED) {
+            setLed(orange);
             return;
         }
         if (robot.turret.getTurretState() == Turret.TurretState.TRACK_CUSTOM_TARGET) {
