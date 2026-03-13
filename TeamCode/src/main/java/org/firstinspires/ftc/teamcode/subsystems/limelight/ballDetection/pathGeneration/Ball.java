@@ -51,11 +51,11 @@ public class Ball {
         double distFromCorner = Math.hypot(distFromClassifierWall, distFromBackWall);
 
         BallType ballType = BallType.NORMAL;
-        if (distFromCorner < PathGeneration.pathGenParams.cornerBallDistance)
+        if (distFromCorner < PathGeneration.cornerParams.cornerBallDistance)
             ballType = BallType.CORNER;
-        else if (distFromClassifierWall < PathGeneration.pathGenParams.classifierWallDistance)
+        else if (distFromClassifierWall < PathGeneration.wallStrafeParams.classifierWallDistance)
             ballType = BallType.CLASSIFIER_WALL;
-        else if (distFromBackWall < PathGeneration.pathGenParams.backWallDistance)
+        else if (distFromBackWall < PathGeneration.wallStrafeParams.backWallDistance)
             ballType = BallType.BACK_WALL;
         return ballType;
     }

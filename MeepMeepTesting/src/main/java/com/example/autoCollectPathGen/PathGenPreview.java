@@ -176,11 +176,11 @@ public class PathGenPreview extends JPanel
         }
 
         if (drawEdgeCaseLines) {
-            drawPosition(g2, new Vector2d(72, 72), PathGeneration.pathGenParams.cornerBallDistance, false);
-            drawPosition(g2, new Vector2d(72, -72), PathGeneration.pathGenParams.cornerBallDistance, false);
-            drawLine(g2, new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
-            drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, 72 - PathGeneration.pathGenParams.classifierWallDistance));
-            drawLine(g2, new Vector2d(-72 + PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance), new Vector2d(72 - PathGeneration.pathGenParams.backWallDistance, -72 + PathGeneration.pathGenParams.classifierWallDistance));
+            drawPosition(g2, new Vector2d(72, 72), PathGeneration.cornerParams.cornerBallDistance, false);
+            drawPosition(g2, new Vector2d(72, -72), PathGeneration.cornerParams.cornerBallDistance, false);
+            drawLine(g2, new Vector2d(72 - PathGeneration.wallStrafeParams.backWallDistance, -72 + PathGeneration.wallStrafeParams.classifierWallDistance), new Vector2d(72 - PathGeneration.wallStrafeParams.backWallDistance, 72 - PathGeneration.wallStrafeParams.classifierWallDistance));
+            drawLine(g2, new Vector2d(-72 + PathGeneration.wallStrafeParams.backWallDistance, 72 - PathGeneration.wallStrafeParams.classifierWallDistance), new Vector2d(72 - PathGeneration.wallStrafeParams.backWallDistance, 72 - PathGeneration.wallStrafeParams.classifierWallDistance));
+            drawLine(g2, new Vector2d(-72 + PathGeneration.wallStrafeParams.backWallDistance, -72 + PathGeneration.wallStrafeParams.classifierWallDistance), new Vector2d(72 - PathGeneration.wallStrafeParams.backWallDistance, -72 + PathGeneration.wallStrafeParams.classifierWallDistance));
         }
         if (regeneratePathPoses) {
             regeneratePathPoses = false;
@@ -205,7 +205,7 @@ public class PathGenPreview extends JPanel
             g2.fillRect(0, 0, width, height);
             g2.setColor(Color.WHITE);
             g2.drawString("Path Type: " + path.pathType, 10, 15);
-            g2.drawString("Max Regens: " + PathGeneration.pathGenParams.maxPathRegenerationAttempts, 10, 35);
+            g2.drawString("Max Regens: " + PathGeneration.regenerationParams.maxPathRegenerationAttempts, 10, 35);
             g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
             g2.drawString("Robot: " + MathUtils.formatPose1(robot), 10, 75);
             for (int i=0; i<pathPoses.size(); i++) {
@@ -575,11 +575,11 @@ public class PathGenPreview extends JPanel
                 shouldRepaint = true;
                 break;
             case KeyEvent.VK_UP:
-                PathGeneration.pathGenParams.maxPathRegenerationAttempts++;
+                PathGeneration.regenerationParams.maxPathRegenerationAttempts++;
                 regeneratePathPoses = true;
                 break;
             case KeyEvent.VK_DOWN:
-                PathGeneration.pathGenParams.maxPathRegenerationAttempts = Math.max(0, PathGeneration.pathGenParams.maxPathRegenerationAttempts - 1);
+                PathGeneration.regenerationParams.maxPathRegenerationAttempts = Math.max(0, PathGeneration.regenerationParams.maxPathRegenerationAttempts - 1);
                 regeneratePathPoses = true;
                 break;
             case KeyEvent.VK_1: numRandomBallsToGenerate = 1; break;
