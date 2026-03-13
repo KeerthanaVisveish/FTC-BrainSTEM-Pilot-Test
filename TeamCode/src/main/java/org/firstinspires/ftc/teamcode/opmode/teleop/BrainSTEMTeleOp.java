@@ -27,10 +27,9 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
-import java.time.OffsetDateTime;
-
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
+    public static int limelightStartingPipeline = 2;
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
             printLimelight = false, printPark = false;
@@ -43,7 +42,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     // (62.038, -62.863, 89.575)
     // (62.251, -62.892, 89.948)
     public static double noMoveJoystickThreshold = 0.1, joystickNoiseThreshold = .03;
-    public static double dpadMovePower = .2;
+    public static double dpadAxialPower = .2, dpadLateralPower = .35;
 
     BrainSTEMRobot robot;
 
@@ -64,11 +63,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         currentlyMoving = false;
         CommandScheduler.getInstance().reset();
 
-        Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
+        Limelight.startingPipeline = inCompetition ? Limelight.APRIL_TAG_PIPELINE : Limelight.BALL_DETECTION_PIPELINE;
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose); //take pose from auto
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);
         robot.setG1(gp1);
+        telemetry.addData("Alliance", BrainSTEMRobot.alliance);
         telemetry.addData("starting pose", MathUtils.formatPose3(startPose));
         if (!robot.limelight.limelight.isConnected())
             telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
@@ -119,39 +119,31 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
             robot.updateInfo(currentlyMoving);
             robot.update();
-
-            telemetry.addData("Alliance", BrainSTEMRobot.alliance);
             robot.drive.pinpoint().printInfo(telemetry);
 
-            if (printCollector)
-                robot.collection.printInfo();
-            if (printLimelight)
-                robot.limelight.printInfo();
-            if (printTurret)
-                robot.turret.printInfo();
-            if (printShooter)
-                robot.shooter.printInfo();
-            if(printShootingSystem)
-                robot.shootingSystem.printInfo(telemetry);
-            if (printPark)
-                robot.parking.printInfo();
+            if(!inCompetition) {
+                if (printCollector)
+                    robot.collection.printInfo();
+                if (printLimelight)
+                    robot.limelight.printInfo();
+                if (printTurret)
+                    robot.turret.printInfo();
+                if (printShooter)
+                    robot.shooter.printInfo();
+                if (printShootingSystem)
+                    robot.shootingSystem.printInfo(telemetry);
+                if (printPark)
+                    robot.parking.printInfo();
 
-            telemetry.addLine();
-            telemetry.addData("ljx", gamepad1.left_stick_x * 100);
-            telemetry.addData("ljy", gamepad1.left_stick_y * 100);
-            telemetry.addData("rjx", gamepad1.right_stick_x * 100);
-            telemetry.addData("left stick button isFirst", gp1.isFirstLeftStickButton() ? 10 : 0);
-            telemetry.addLine();
+                TelemetryPacket packet = new TelemetryPacket();
+                Canvas fieldOverlay = packet.fieldOverlay();
+                fieldOverlay.clear();
+                robot.drawRobotInfo(fieldOverlay);
+                FtcDashboard.getInstance().sendTelemetryPacket(packet);
+            }
 
             telemetry.addData("dt", robot.shootingSystem.dt);
 
-            TelemetryPacket packet = new TelemetryPacket();
-            Canvas fieldOverlay = packet.fieldOverlay();
-            fieldOverlay.clear();
-            robot.drawRobotInfo(fieldOverlay);
-            FtcDashboard.getInstance().sendTelemetryPacket(packet);
-
-//            telemetry.addData("FPS", MathUtils.format2(framesRunning / timeRunning));
             telemetry.update();
 
             Pose2d p = robot.drive.localizer.getPose();
@@ -182,8 +174,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         else
             robot.drive.setDrivePowers(new PoseVelocity2d(
                     new Vector2d(
-                            gamepad1.dpad_right ? dpadMovePower : gamepad1.dpad_left ? -dpadMovePower : 0,
-                            gamepad1.dpad_up ? dpadMovePower : gamepad1.dpad_down ? -dpadMovePower : 0
+                            gamepad1.dpad_up ? dpadAxialPower : gamepad1.dpad_down ? -dpadAxialPower : 0,
+                            gamepad1.dpad_left ? dpadLateralPower : gamepad1.dpad_right ? -dpadLateralPower : 0
                     ), 0
             ));
     }

@@ -30,14 +30,14 @@ public class LimelightBallDetection extends LLParent {
         COMBINED
     }
     public static class Params {
-        public int maxBlobs = 5;
+        public int maxBlobs = 50;
         public int numPiecesOfInfoPerBlob = 4;
         public boolean projectBallsInsideField = true;
         public double minDistFromFieldWall = 2.5;
         public int numSnapshotsPerScan = 2;
         public double maxDistToCombineSnapshotBlobs = 2.25;
         public boolean showPythonOutputs = false, showPrimaryBlobInfo;
-        public BallDrawType ballDrawType = BallDrawType.COMBINED;
+        public BallDrawType ballDrawType = BallDrawType.CURRENT;
         public double waitToScanAfterTurretMove = 0.5;
         public double[] ballReflectionPosition = new double[] { 76, 70.5 };
         public double ballReflectionRadius = 0;
@@ -54,6 +54,8 @@ public class LimelightBallDetection extends LLParent {
     private final ArrayList<ArrayList<Blob>> previousScans; // keep track of each scan and choose the best one
     private int numSnapshotsLeft;
     private double[] validRegionRect, gateRegionRect;
+
+    public ArrayList<double[]> ballPixelCoords;
     public LimelightBallDetection(BrainSTEMRobot robot, Limelight3A limelight) {
         super(robot, limelight);
         pythonOutputs = new double[3];
@@ -63,6 +65,7 @@ public class LimelightBallDetection extends LLParent {
         numSnapshotsLeft = 0;
         validRegionRect = params.validBallAreaRect;
         gateRegionRect = params.gateAreaRect;
+        ballPixelCoords = new ArrayList<>();
     }
     @Override
     public void update() {
@@ -78,6 +81,7 @@ public class LimelightBallDetection extends LLParent {
             currentNumBlobs = params.maxBlobs;
 
         currentBlobs.clear();
+        ballPixelCoords.clear();
         for (int i = 0; i < currentNumBlobs; i++) {
             int index = i * params.numPiecesOfInfoPerBlob;
             double px = pythonOutputs[index];
@@ -90,7 +94,7 @@ public class LimelightBallDetection extends LLParent {
             gateRegionRect = BrainSTEMRobot.alliance == Alliance.RED ? params.gateAreaRect : invertPositiveRect(params.gateAreaRect);
             boolean blobIsInValidRange = insideRect(blob.pos(), validRegionRect) && !insideRect(blob.pos(), gateRegionRect);
             boolean shouldAddBlob = blobIsInValidRange && (blob.isGiantClump || !blobIsReflection);
-            if (shouldAddBlob)
+//            if (shouldAddBlob)
                 currentBlobs.add(blob);
         }
         if (numSnapshotsLeft > 0) {
@@ -104,6 +108,7 @@ public class LimelightBallDetection extends LLParent {
     private Blob createBlob(double px, double py, double area, boolean isGiantClump) {
         double tx = Limelight.pixelXToTx(px);
         double ty = Limelight.pixelYToTy(py);
+        ballPixelCoords.add(new double[] {px, py});
         Pose2d cameraPose = Limelight.getLimelightPose(robot.shootingSystem.turretPose);
         Vector2d fieldPosition = Limelight.calculateBallFieldPosition(cameraPose, tx, ty);
         if (params.projectBallsInsideField)
@@ -119,9 +124,14 @@ public class LimelightBallDetection extends LLParent {
         ArrayList<Blob> combinedBlobs = getCombinedBlobsFromMostRecentScan();
         telemetry.addData("num current blobs", currentNumBlobs);
         telemetry.addData("num combined blobs", combinedBlobs.size());
-        telemetry.addData("current blobs", currentBlobs);
+        telemetry.addData("current blobs", Arrays.toString(currentBlobs.toArray()));
         telemetry.addData("combined blobs", combinedBlobs);
         telemetry.addData("num snapshots", previousSnapshots.size());
+
+        telemetry.addLine("BALL PIXEL COORDS");
+        for(int i = 0; i < ballPixelCoords.size(); i++)
+            telemetry.addData("ball" + (i+1), ballPixelCoords.get(i)[0] + ", " + ballPixelCoords.get(i)[1]);
+
 
         if (params.showPrimaryBlobInfo) {
             if (!currentBlobs.isEmpty()) {

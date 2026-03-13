@@ -15,6 +15,8 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Limelig
 import org.firstinspires.ftc.teamcode.subsystems.limelight.classifier.LimelightClassifier;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 
+import java.util.ArrayList;
+
 @Config
 public class Limelight extends Component {
     public static class HardwareParams {
@@ -24,7 +26,7 @@ public class Limelight extends Component {
         public double verticalAngleOffset = -1.5;
         public double axialDistanceOffset = 5;
         public double hFOV = 54.5;
-        public double vFOV = 42;
+        public double vFOVYInt = 50, vFOVSlope = 0;
         public double cameraHeight = 11.9685;
     }
     public static class DrawingParams {
@@ -148,7 +150,8 @@ public class Limelight extends Component {
     }
     // gets the vertical angle of a pixel in degrees
     public static double pixelYToTy(double pixelY) {
-        double focalLengthYPixels = hardwareParams.resolutionHeight * 0.5 / Math.tan(Math.toRadians(hardwareParams.vFOV * 0.5));
+        double vFOV = pixelY * hardwareParams.vFOVSlope + hardwareParams.vFOVYInt;
+        double focalLengthYPixels = hardwareParams.resolutionHeight * 0.5 / Math.tan(Math.toRadians(vFOV * 0.5));
         double ty = Math.toDegrees(Math.atan((hardwareParams.resolutionHeight * 0.5 - pixelY) / focalLengthYPixels));
         return ty + hardwareParams.verticalAngleOffset;
     }

@@ -37,7 +37,7 @@ public class LED extends Component {
     @Override
     public void update(){
         if(autoDone) {
-            setLed(lightBlue);
+            setLed(orange);
             return;
         }
         if(robot.parking.getParkState() == Parking.ParkState.EXTENDED) {

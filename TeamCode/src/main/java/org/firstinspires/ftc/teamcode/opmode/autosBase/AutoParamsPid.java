@@ -7,7 +7,8 @@ public class AutoParamsPid {
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .1, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
-        public double loadingDrivePower = 0.35, loadingMinHeadingPower = .5;
+        public double loadingSlowDrivePower = 0.35, loadingMinHeadingPower = .6;
+        public double loadingNormDrivePower = .5;
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
@@ -55,13 +56,13 @@ public class AutoParamsPid {
         public double[] preLoading = { 51, 59.5, 55 }; // (53.024, 59.406, 60.84)
         public double[] preLoadingTol = { 2, 2, 5 };
         public double[] loadingWaypoint = { 62, 61, 60 };
-        public double[] postLoading = { 62.5, 63, 70 }; //  (61.434, 61.613, 11.484)
-        public double[] postLoadingTol = { 1, 1, 3 };
-        public double[] loadingCorner = { 62, 63, 90 };
+        public double[] postLoading = { 62.5, 65, 100 }; //  (61.434, 61.613, 11.484)
+        public double[] postLoadingTol = { 1, 1, 1 };
+        public double[] loadingCorner = { 64, 63, 90 };
         public double loadingCornerBackup = 5;
-        public double[] loadingCornerWaypoint = { 62, 30, 90 };
-        public double[] loadingCornerWaypointTol = { 3, 2, 5, };
-        public double[] loadingGateWait = { 43, 59, 135 };
+        public double[] loadingCornerControlPoint = { 64, 30, 90 };
+        public double loadingCornerT1 = 37, loadingCornerT2 = 34;
+        public double[] loadingGateWait = { 43, 62.5, 150 };
         public double[] loadingGateWaitWaypoint = { 47, 50, 135 };
         public double[] loadingGateWaitWaypointTol = { 3, 3, 5 };
 
@@ -128,16 +129,15 @@ public class AutoParamsPid {
         public double gatePrepMinPower = .7, gateMinPower = .5;
 
         public double smartParkNearDist = 25;
-        public double smartParkFarDist = 25;
-        public double[] parkFar = { 52, 21, 90 };
-        public double minParkFarPower = .8;
+        public double smartParkFarDist = 20;
+        public double[] parkFar = { 52, 24, 90 };
+        public double minParkFarPower = .5;
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.4;
-        public double lastShootExtraTime = 2;
         public double gateOpeningWait = .9, gateCollectOpenWait = .12, gateTapWait = .5;
         public double gateCollectMaxTime = .5;
-        public double farParkTime = 29.1, nearParkStopTime = 29, farParkStopTime = 28;
+        public double farParkTime = 29.1, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWaitTime = 1;
