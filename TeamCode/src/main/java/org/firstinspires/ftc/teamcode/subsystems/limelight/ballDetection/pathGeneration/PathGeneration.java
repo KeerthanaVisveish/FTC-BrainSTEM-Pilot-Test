@@ -79,7 +79,7 @@ public class PathGeneration {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
 //                System.out.println("shifted left path `========");
                 PathInfo shiftedLeftPathInfo = generateComplexPath(robotPose, allBalls, shiftedLeftRawBallPath);
-                if (shiftedLeftPathInfo.numGoodBalls() > pathInfo.numGoodBalls()) {
+                if (shiftedLeftPathInfo.numGoodBalls() >= pathInfo.numGoodBalls()) {
                     pathfinderStartPose = shiftedLeftRobotPose;
                     pathInfo = shiftedLeftPathInfo;
                 }
@@ -534,6 +534,20 @@ public class PathGeneration {
             }
         }
 
+        // make all classifier strafes end in the corner
+        if (!pathPoses.isEmpty()) {
+            PathPose last = pathPoses.get(pathPoses.size() - 1);
+            if (last.approachType == Types.Approach.CLASSIFIER_STRAFE && pathPoses.size() >= 2) {
+                PathPose secondLast = pathPoses.get(pathPoses.size() - 2);
+                double dx = last.waypoint.pose.position.x - secondLast.waypoint.pose.position.x;
+                if (Math.signum(dx) == 1) {
+                    Vector2d newPosition = last.waypoint.pose.position.plus(new Vector2d(50, 0));
+                    last.waypoint.pose = new Pose2d(newPosition, last.waypoint.pose.heading);
+                    ;
+                }
+            }
+        }
+
         // strictly bind path poses to inside the field
         for (int i=0; i<pathPoses.size(); i++) {
             PathPose cur = pathPoses.get(i);
@@ -860,9 +874,14 @@ public class PathGeneration {
                 preCollectAngle = collectAngle;
 
                 if (approachType == Types.Approach.CLASSIFIER_STRAFE) {
-                    preCollectControlPoseOffset = new Pose2d(0, Math.signum(wallAngle) * -wallStrafeParams.classifierStrafeControlYOffset, preCollectAngle);
-                    preCollectControlLerpStart = wallStrafeParams.classifierStrafeControlLerpStart;
-                    preCollectControlLerpEnd = wallStrafeParams.classifierStrafeControlLerpEnd;
+                    double strafeDx = cur.pos.minus(prev.pos).x;
+                    if (Math.signum(strafeDx) == 1) {
+                        double dyFromPrevPose = Math.abs(cur.pos.y - prevPathPose.position.y);
+                        double controlYOffset = Math.min(dyFromPrevPose - 8, wallStrafeParams.classifierStrafeControlYOffset);
+                        preCollectControlPoseOffset = new Pose2d(0, Math.signum(wallAngle) * -controlYOffset, preCollectAngle);
+                        preCollectControlLerpStart = wallStrafeParams.classifierStrafeControlLerpStart;
+                        preCollectControlLerpEnd = wallStrafeParams.classifierStrafeControlLerpEnd;
+                    }
                 }
                 break;
             case BACK_WALL:

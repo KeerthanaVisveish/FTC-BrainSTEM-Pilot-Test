@@ -94,7 +94,7 @@ public class LimelightBallDetection extends LLParent {
             gateRegionRect = BrainSTEMRobot.alliance == Alliance.RED ? params.gateAreaRect : invertPositiveRect(params.gateAreaRect);
             boolean blobIsInValidRange = insideRect(blob.pos(), validRegionRect) && !insideRect(blob.pos(), gateRegionRect);
             boolean shouldAddBlob = blobIsInValidRange && (blob.isGiantClump || !blobIsReflection);
-//            if (shouldAddBlob)
+            if (shouldAddBlob)
                 currentBlobs.add(blob);
         }
         if (numSnapshotsLeft > 0) {
