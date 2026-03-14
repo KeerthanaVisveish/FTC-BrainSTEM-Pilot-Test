@@ -153,6 +153,7 @@ public abstract class AutoPidNew extends LinearOpMode {
         telemetry.addData("ALLIANCE", alliance);
         telemetry.addData("STRING BUILDER", stringBuilder);
         int i = 0;
+        String prevCollectLetter = "";
         while(true) {
             numPaths++;
             int shootI;
@@ -194,8 +195,9 @@ public abstract class AutoPidNew extends LinearOpMode {
             }
             if(shotTime == -1)
                 throw new RuntimeException("shot time is negative 1; startI " + shotTimeStartI + ", endI: " + shotTimeEndI);
-
             shotTimeStartI = shotTimeEndI;
+
+            boolean initiallyExtake = prevCollectLetter.equals("3") || prevCollectLetter.equals("l") || prevCollectLetter.equals("a");
 
             telemetry.addLine("Path " + numPaths + ": collect: " + collectionData + " from near: " + fromNear + " to near: " + toNear + ", last: " + last + ", shot time: " + shotTime);
             switch(collectionLetter) {
@@ -246,6 +248,7 @@ public abstract class AutoPidNew extends LinearOpMode {
             if(last)
                 break;
             i = shootI;
+            prevCollectLetter = collectionLetter;
         }
         final boolean finalToNear = toNear;
         Action autoAction = new SequentialAction(

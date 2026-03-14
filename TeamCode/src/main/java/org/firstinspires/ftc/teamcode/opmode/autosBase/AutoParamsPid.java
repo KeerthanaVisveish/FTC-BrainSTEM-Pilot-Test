@@ -12,7 +12,7 @@ public class AutoParamsPid {
 
         public double[] first = {-11.5, 47.5, 90};
         public double[] second = {12, 48, 90};
-        public double[] secondIfOpenGate = {12, 44, 90};
+        public double[] secondIfOpenGate = {12, 45.5, 90};
         public double[] third = {36, 50, 90};
 
         public double[] firstControlPointNear = { -10, 31, 90 };
@@ -40,11 +40,11 @@ public class AutoParamsPid {
 
         public double[] gateNearWaypoint = { 2, 32, 75 };
         public double[] gateNearWaypointTol = { 1.5, 4, 4 };
-        public double[] gateNearControlPoint = { 11, 40, 90 };
-        public double gateNearT1 = 23, gateNearT2 = 20;
+        public double[] gateNearControlPoint = { 11, 39, 90 };
+        public double gateNearT1 = 25, gateNearT2 = 20;
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
-        public double[] gateOpen = { 10.5, 60.5, 115 };
+        public double[] gateOpen = { 10.2, 60.5, 115 };
         public double[] gateOpenTol = { 1, 1, 1 };
         public double[] gateOpenHold = { 10.5, 60.5, 115 };
         public double[] gateCollect = { 16, 63, 135 };
@@ -134,7 +134,7 @@ public class AutoParamsPid {
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.4;
-        public double gateOpeningWait = .9, gateCollectOpenWait = .12, gateTapWait = .5;
+        public double gateOpeningWait = .7, gateCollectOpenWait = .12, gateTapWait = .3;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 29.1, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;

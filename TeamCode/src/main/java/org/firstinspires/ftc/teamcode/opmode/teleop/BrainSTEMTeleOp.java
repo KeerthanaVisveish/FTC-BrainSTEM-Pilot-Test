@@ -134,13 +134,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.shootingSystem.printInfo(telemetry);
                 if (printPark)
                     robot.parking.printInfo();
-
-                TelemetryPacket packet = new TelemetryPacket();
-                Canvas fieldOverlay = packet.fieldOverlay();
-                fieldOverlay.clear();
-                robot.drawRobotInfo(fieldOverlay);
-                FtcDashboard.getInstance().sendTelemetryPacket(packet);
             }
+            TelemetryPacket packet = new TelemetryPacket();
+            Canvas fieldOverlay = packet.fieldOverlay();
+            fieldOverlay.clear();
+            robot.drawRobotInfo(fieldOverlay);
+            FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
             telemetry.addData("dt", robot.shootingSystem.dt);
 
