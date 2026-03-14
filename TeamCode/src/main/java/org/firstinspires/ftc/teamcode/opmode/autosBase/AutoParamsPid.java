@@ -38,18 +38,20 @@ public class AutoParamsPid {
         public double[] thirdFarControlPoint = { 38, 31, 100 };
         public double thirdFarT1 = 23, thirdFarT2 = 18;
 
-        public double[] gateNearWaypoint = { 2, 32, 75 };
+        public double[] gateNearWaypoint = { 2, 26, 75 };
         public double[] gateNearWaypointTol = { 1.5, 4, 4 };
-        public double[] gateNearControlPoint = { 11, 39, 90 };
-        public double gateNearT1 = 25, gateNearT2 = 20;
+        public double[] gateNearWaypoint2 = { 9, 41, 90 };
+//        public double[] gateNearControlPoint = { 13, 60, 85 };
+//        public double gateNearCorrectiveStrength = 1.3;
+//        public double gateNearT1 = 25, gateNearT2 = 20;
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
-        public double[] gateOpen = { 10.2, 60.5, 115 };
+        public double[] gateOpen = { 9, 60.5, 115 };
         public double[] gateOpenTol = { 1, 1, 1 };
-        public double[] gateOpenHold = { 10.5, 60.5, 115 };
+        public double[] gateOpenHold = { 9, 60.5, 115 };
         public double[] gateCollect = { 16, 63, 135 };
-        public double[] gateTapBackup = { 10, 56, 120 };
-        public double[] gateTap = { 7, 58.5, 80 };
+        public double[] gateTapBackup = { 8, 56, 120 };
+        public double[] gateTap = { 6, 58.5, 80 };
 
         public double[] preLoadingWaypoint = { 54, 49, 95 };
         public double[] preLoadingWaypointTol = { 3, 5 };
@@ -80,7 +82,7 @@ public class AutoParamsPid {
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-35, 25, 45};
         public double[] near2 = {-7, 25.5, 55};
-        public double[] nearGate = { -4, 24, 55 };
+        public double[] nearGate = { -5.5, 23, 55 };
         public double[] near3 = {-7, 25.5, 50};
         public double[] near3Last = {-20, 21, 38};
 
@@ -106,7 +108,7 @@ public class AutoParamsPid {
 
     public static class Misc {
         public double[] startNearRed = { -60.3, 39.8, 0 };
-        public double[] startNearBlue = { -60.5, -38.52, 0 };
+        public double[] startNearBlue = { -60.5, -39.8, 0 };
         // RED:
         // -60.614, 39.928, -.491
         // -60.093, 40.032, -0.341
