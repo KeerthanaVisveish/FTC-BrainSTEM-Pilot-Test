@@ -123,9 +123,8 @@ public class PathGeneration {
         if (generalParams.allowLaneCollect) {
             int complexNumBalls = optimalPathInfo.numGoodBalls();
             int laneNumBalls = bestLane.numBalls();
-            if (complexNumBalls == laneNumBalls)
-                return complexNumBalls == 1 ? optimalPathInfo : generateLanePath(robotPose, bestLane);
-            return complexNumBalls > laneNumBalls ? optimalPathInfo : generateLanePath(robotPose, bestLane);
+            if (complexNumBalls > 1 && complexNumBalls <= laneNumBalls)
+                optimalPathInfo = generateLanePath(robotPose, bestLane);
         }
         return optimalPathInfo;
     }
@@ -877,7 +876,7 @@ public class PathGeneration {
 
                 if (approachType == Types.Approach.CLASSIFIER_STRAFE) {
                     double strafeDx = cur.pos.minus(prev.pos).x;
-                    if (Math.signum(strafeDx) == 1) {
+                    if (Math.signum(strafeDx) != Math.signum(collectXOffset)) {
                         double dyFromPrevPose = Math.abs(cur.pos.y - prevPathPose.position.y);
                         double controlYOffset = Math.min(dyFromPrevPose - 8, wallStrafeParams.classifierStrafeControlYOffset);
                         preCollectControlPoseOffset = new Pose2d(0, Math.signum(wallAngle) * -controlYOffset, preCollectAngle);

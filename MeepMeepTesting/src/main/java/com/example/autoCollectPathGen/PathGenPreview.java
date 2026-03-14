@@ -49,10 +49,10 @@ public class PathGenPreview extends JPanel
 
     static Vector2d bottomLeft = new Vector2d(0, 0);
     static Vector2d bottomLeftDraw = new Vector2d(0, 0);
-    static double windowSize = 72;
+    static double windowSize = 90;
     static int extraViewBuffer = 20;
     static boolean constrainBallsInsideField = true;
-    static double drawScale = 4;
+    static double drawScale = 8;
     static final double robotHitboxRadius = 8;
     static final double robotWidth = 13.5, robotLength = 16;
     static final double ballRadius = 2.5;
@@ -229,7 +229,7 @@ public class PathGenPreview extends JPanel
         int strokeSize = fieldToDrawSize(PathGenPreview.strokeSize);
         g2.setStroke(new BasicStroke(strokeSize));
         drawRobot(g2, robot);
-        drawRobot(g2, PathGeneration.pathfinderStartPose);
+//        drawRobot(g2, PathGeneration.pathfinderStartPose);
         Pose2d wallSafePose = PathGeneration.getWallSafePose(robot);
         drawRobot(g2, wallSafePose);
 
