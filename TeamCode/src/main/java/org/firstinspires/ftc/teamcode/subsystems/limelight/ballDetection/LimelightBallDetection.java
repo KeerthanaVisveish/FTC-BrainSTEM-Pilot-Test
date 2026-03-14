@@ -38,7 +38,7 @@ public class LimelightBallDetection extends LLParent {
         public double maxDistToCombineSnapshotBlobs = 2.25;
         public boolean showPythonOutputs = false, showPrimaryBlobInfo;
         public BallDrawType ballDrawType = BallDrawType.CURRENT;
-        public double waitToScanAfterTurretMove = 0.5;
+        public double waitToScanAfterTurretMove = 0.25;
         public double[] ballReflectionPosition = new double[] { 76, 70.5 };
         public double ballReflectionRadius = 0;
         public double[] validBallAreaRect = new double[] { 0, 12, 72, 60 };

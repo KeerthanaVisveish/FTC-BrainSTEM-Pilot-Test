@@ -79,7 +79,7 @@ public class PathGeneration {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
 //                System.out.println("shifted left path `========");
                 PathInfo shiftedLeftPathInfo = generateComplexPath(robotPose, allBalls, shiftedLeftRawBallPath);
-                if (shiftedLeftPathInfo.numGoodBalls() >= pathInfo.numGoodBalls()) {
+                if (shiftedLeftPathInfo.numGoodBalls() > pathInfo.numGoodBalls()) {
                     pathfinderStartPose = shiftedLeftRobotPose;
                     pathInfo = shiftedLeftPathInfo;
                 }
@@ -695,9 +695,9 @@ public class PathGeneration {
             if (isWallSafe) {
                 Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                 Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
-                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
-                controlPoint = getWallSafePose(controlPoint);
-                w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);
+//                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
+//                controlPoint = getWallSafePose(controlPoint);
+//                w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);
 
                 Ball actualEndBall = new Ball(actualEndPos);
                 double minLinearPower = actualEndBall.type == Ball.BallType.CORNER ? driveParams.collectCornerMinLinearPower : driveParams.collectNormalMinLinearPower;

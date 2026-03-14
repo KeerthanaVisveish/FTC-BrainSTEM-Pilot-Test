@@ -104,6 +104,7 @@ public class AutoParamsPid {
 
         public double[] far2ControlPoint = { 22, 38, 130 };
         public double secondShootFarT1 = 20, secondShootFarT2 = 10;
+        public double limelightHeadingTangentDeactivateDist = 28;
     }
 
     public static class Misc {

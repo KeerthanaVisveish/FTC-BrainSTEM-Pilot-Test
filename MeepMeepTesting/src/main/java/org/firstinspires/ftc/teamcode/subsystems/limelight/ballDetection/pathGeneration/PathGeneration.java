@@ -47,7 +47,7 @@ public class PathGeneration {
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
         if (generalParams.allowLaneCollect) {
-            if (bestLane.numBalls() >= laneCollectParams.alwaysUseLaneCollectNumBalls)
+            if (bestLane.numBalls() > laneCollectParams.alwaysUseLaneCollectNumBalls)
                 return generateLanePath(robotPose, bestLane);
             if (allBalls.size() == 2 && bestLane.numBalls() == 2)
                 return generateLanePath(robotPose, bestLane);
@@ -695,9 +695,9 @@ public class PathGeneration {
             if (isWallSafe) {
                 Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
                 Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
-                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
-                controlPoint = getWallSafePose(controlPoint);
-                w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);
+//                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
+//                controlPoint = getWallSafePose(controlPoint);
+//                w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);
 
                 Ball actualEndBall = new Ball(actualEndPos);
                 double minLinearPower = actualEndBall.type == Ball.BallType.CORNER ? driveParams.collectCornerMinLinearPower : driveParams.collectNormalMinLinearPower;

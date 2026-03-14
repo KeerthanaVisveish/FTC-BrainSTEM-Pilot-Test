@@ -756,12 +756,13 @@ public abstract class AutoPidNew extends LinearOpMode {
                 createVec(collect.limelightScanPos2) :
                 createInvertedVec(collect.limelightScanPos2);
 
-//        Action limelightCollectAction = new CustomEndAction(robot.getLimelightCollectDrive(createVec(collect.limelightScanPos1), timeConstraints.maxLimelightWaitTime), robot.collection::autoCollectHas3Balls);
         Action limelightCollectAction = robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWaitTime);
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)
-                .setPassPosition(true));
+                .setPassPosition(true)
+                .setHeadingLerp(PathParams.HeadingLerpType.REVERSE_TANGENT)
+                .setHeadingTangentDeactivateThreshold(shoot.limelightHeadingTangentDeactivateDist));
 
         return buildCollectAndShoot(limelightCollectAction, new SleepAction(0), loadingShootDrive, false, timeConstraints.loadingSlowIntakeTime, true, true, shotTime, initiallyExtake);
     }

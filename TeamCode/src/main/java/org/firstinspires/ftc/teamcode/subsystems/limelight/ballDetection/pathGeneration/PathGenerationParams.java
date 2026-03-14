@@ -26,7 +26,7 @@ public class PathGenerationParams {
                 public double snapLaneToWallDistFromWall = 16;
         }
         public static class Regeneration {
-                public double shiftedLeftStartX = 35;
+                public double shiftedLeftStartX = 40;
                 public double maxPathRegenerationAttempts = 5;
         }
         public static class ClusterStrafe {
