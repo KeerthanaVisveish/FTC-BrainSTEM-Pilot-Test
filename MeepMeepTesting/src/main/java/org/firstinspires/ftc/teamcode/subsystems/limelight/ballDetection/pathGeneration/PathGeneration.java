@@ -860,7 +860,9 @@ public class PathGeneration {
                 preCollectAngle = collectAngle;
 
                 if (approachType == Types.Approach.CLASSIFIER_STRAFE) {
-                    preCollectControlPoseOffset = new Pose2d(0, Math.signum(wallAngle) * -wallStrafeParams.classifierStrafeControlYOffset, preCollectAngle);
+                    double dyFromPrevPose = Math.abs(cur.pos.y - prevPathPose.position.y);
+                    double controlYOffset = Math.min(dyFromPrevPose - 8, wallStrafeParams.classifierStrafeControlYOffset);
+                    preCollectControlPoseOffset = new Pose2d(0, Math.signum(wallAngle) * -controlYOffset, preCollectAngle);
                     preCollectControlLerpStart = wallStrafeParams.classifierStrafeControlLerpStart;
                     preCollectControlLerpEnd = wallStrafeParams.classifierStrafeControlLerpEnd;
                 }
