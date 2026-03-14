@@ -979,25 +979,23 @@ public abstract class AutoPidNew extends LinearOpMode {
                 createPose(collect.gateNearWaypoint) :
                 createInvertedPose(collect.gateNearWaypoint);
         gateCollectNearWaypoint2 = isRed ?
-                createPose(collect.gateNearWaypoint2) :
+                new Pose2d(collect.gateNearWaypoint2[0] + collect.gatePropertiesRedXOffset, collect.gateNearWaypoint2[1], Math.toRadians(collect.gateNearWaypoint2[2])) :
                 createInvertedPose(collect.gateNearWaypoint2);
         gateCollectFarControlPoint = isRed ?
                 createPose(collect.gateFarControlPoint) :
                 createInvertedPose(collect.gateFarControlPoint);
         gateCollectOpen = isRed ?
-                createPose(collect.gateOpen) :
+                new Pose2d(collect.gateOpen[0] + collect.gatePropertiesRedXOffset, collect.gateOpen[1], Math.toRadians(collect.gateOpen[2])) :
                 createInvertedPose(collect.gateOpen);
-        gateCollectOpenHold = isRed ?
-                createPose(collect.gateOpenHold) :
-                createInvertedPose(collect.gateOpenHold);
+        gateCollectOpenHold = gateCollectOpen;
         gateCollect = isRed ?
-                createPose(collect.gateCollect) :
+                new Pose2d(collect.gateCollect[0] + collect.gatePropertiesRedXOffset, collect.gateCollect[1], Math.toRadians(collect.gateCollect[2])) :
                 createInvertedPose(collect.gateCollect);
         gateTapBackup = isRed ?
-                createPose(collect.gateTapBackup) :
+                new Pose2d(collect.gateTapBackup[0] + collect.gatePropertiesRedXOffset, collect.gateTapBackup[1], Math.toRadians(collect.gateTapBackup[2])) :
                 createInvertedPose(collect.gateTapBackup);
         gateTap = isRed ?
-                createPose(collect.gateTap) :
+                new Pose2d(collect.gateTap[0] + collect.gatePropertiesRedXOffset, collect.gateTap[1], Math.toRadians(collect.gateTap[2])) :
                 createInvertedPose(collect.gateTap);
     }
     private void declareMiscPoses() {

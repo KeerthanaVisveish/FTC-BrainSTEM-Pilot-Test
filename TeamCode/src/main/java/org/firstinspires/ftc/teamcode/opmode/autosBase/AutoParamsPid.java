@@ -47,8 +47,8 @@ public class AutoParamsPid {
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
         public double[] gateOpen = { 9, 60.5, 115 };
+        public double gatePropertiesRedXOffset = 0;
         public double[] gateOpenTol = { 1, 1, 1 };
-        public double[] gateOpenHold = { 9, 60.5, 115 };
         public double[] gateCollect = { 16, 63, 135 };
         public double[] gateTapBackup = { 8, 56, 120 };
         public double[] gateTap = { 6, 58.5, 80 };
