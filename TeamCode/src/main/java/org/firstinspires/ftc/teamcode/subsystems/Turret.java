@@ -252,9 +252,7 @@ public class Turret extends Component {
                 return false;
             prevInBound = curInBound;
         }
-        if (!ranAtLeastOnce)
-            return false;
-        return true;
+        return ranAtLeastOnce;
     }
 
     public double calculateTurretVoltage(double actualTargetEncoder, double positionError, double prevPositionError, double robotSpeedAtTurret) {
@@ -479,15 +477,16 @@ public class Turret extends Component {
     public Action rotateToCustomTargetAction(DoubleSupplier targetFieldAngleSup) {
         return new SequentialAction(
                 new InstantAction(() -> {
-                    turretState = TurretState.TRACK_CUSTOM_TARGET;
+//                    turretState = TurretState.TRACK_CUSTOM_TARGET;
                     double targetFieldAngle = targetFieldAngleSup.getAsDouble();
                     double robotAngle = robot.drive.localizer.getPose().heading.toDouble();
                     double targetRelAngle = MathUtils.angleNormDeltaRad(targetFieldAngle - robotAngle);
-                    double clippedAngle = Range.clip(targetRelAngle, -turretParams.maxAngle, turretParams.maxAngle);
-                    targetEncoder = clippedAngle * turretParams.ticksPerRad;
-                    positionError = targetEncoder - currentEncoder;
+                    rotateToRelativeCustomTarget(targetRelAngle);
+//                    double clippedAngle = Range.clip(targetRelAngle, -turretParams.maxAngle, turretParams.maxAngle);
+//                    targetEncoder = clippedAngle * turretParams.ticksPerRad;
+//                    positionError = targetEncoder - currentEncoder;
                     telemetry.addData("rotating to field angle", Math.toDegrees(targetFieldAngleSup.getAsDouble()));
-                    telemetry.addData("rotating to turret angle", Math.toDegrees(clippedAngle));
+//                    telemetry.addData("rotating to turret angle", Math.toDegrees(clippedAngle));
                 }),
                 new Action() {
                     ElapsedTime timer = null;
