@@ -26,7 +26,7 @@ public class PathGenerationParams {
         }
         public static class Regeneration {
                 public double shiftedLeftStartX = 40;
-                public double maxPathRegenerationAttempts = 5;
+                public double maxPathRegenerationAttempts = 0;
         }
         public static class ClusterStrafe {
                 public double clusterMergeDist = 5.5;
@@ -36,19 +36,18 @@ public class PathGenerationParams {
 
         }
         public static class WallStrafe {
-
-                public double classifierStrafeControlYOffset = 24;
-                public double classifierStrafeControlLerpStart = 32;
-                public double classifierStrafeControlLerpEnd = 25;
+                public double classifierWallDistance = 7;
+                public double backWallDistance = 6;
+                public double wallStrafeCollectAngle = 50;
+                public double wallStrafeOffsetFromStart = 0;
                 public double wallStrafeCollectDriveThroughDist = 3;
-
-                public double lenientClassifierStrafeAngleDiff = 70;
+                public double lenientClassifierStrafeAngleDiff = 0; // disabling for now
                 public double distToNextPointForceStrictClassifierStrafe = 15;
                 public double wallStrafeCollectMinApproachAngle = 35;
                 public double wallStrafeAlwaysDistToNext = 24;
-                public double wallStrafeCollectAngle = 45;
-                public double classifierWallDistance = 7;
-                public double backWallDistance = 6;
+                public double classifierStrafeControlYOffset = 24;
+                public double classifierStrafeControlLerpStart = 32;
+                public double classifierStrafeControlLerpEnd = 25;
         }
         public static class Corner {
 

@@ -453,7 +453,7 @@ public class PathGeneration {
                     problemBalls.add(new ProblemBall(collectInfo.ballProblemSeverity, cur.pos));
 
                 // add extra collect dist for last ball
-                if (next == null && cur.type == Ball.BallType.NORMAL) {
+                if (next == null && collectInfo.approachType == Types.Approach.NORMAL) {
                     collectPose = getCollectPose(cur.pos, collectInfo.collectAngle, -generalParams.lastCollectPoseExtraDriveThrough);
                     wallSafeCollectPose = getWallSafePose(collectPose);
                 }
@@ -587,6 +587,8 @@ public class PathGeneration {
             if (Math.abs(approach.angleDiff) < Math.abs(bestApproach.angleDiff))
                 bestApproach = approach;
         }
+//        System.out.println("possible approaches: " + possibleApproaches);
+//        System.out.println("best approach: " + bestApproach);
         return bestApproach;
     }
     private static class ClusterApproachPath {
@@ -623,13 +625,16 @@ public class PathGeneration {
 
             Vector2d prevToStart = startBall.pos.minus(prevBall.pos);
             Vector2d startToEnd = endBall.pos.minus(startBall.pos);
-            angleDiff = MathUtils.angleRadDiff(startToEnd, prevToStart);
+            angleDiff = MathUtils.angleRadDiff(prevToStart, startToEnd);
 
             double maxStrafeAngleOffset = Math.min(Math.abs(angleDiff), Math.toRadians(clusterStrafeParams.clusterStrafeCollectMaxAngleOffset));
-            if (angleDiff > 0)
-                collectAngle = approachAngle - maxStrafeAngleOffset;
-            else
+            System.out.println(startBall + " | " + endBall);
+            if (Math.signum(startToEnd.x) > 0)
                 collectAngle = approachAngle + maxStrafeAngleOffset;
+            else
+                collectAngle = approachAngle - maxStrafeAngleOffset;
+//            System.out.println("sign of start to end: " + Math.signum(startToEnd.x));
+//            System.out.println("collect angle: " + Math.toDegrees(collectAngle));
 
             this.allBallsInCluster = new ArrayList<>(allBallsInCluster);
             Vector2d approachDir = new Vector2d(Math.cos(approachAngle), Math.sin(approachAngle));
@@ -814,10 +819,10 @@ public class PathGeneration {
                     if (Math.abs(angDiff) < Math.toRadians(wallStrafeParams.lenientClassifierStrafeAngleDiff)) {
                         approachType = Types.Approach.LENIENT_CLASSIFIER_STRAFE;
                         collectAngle = MathUtils.averageAngle(collectAngle, prevToCurAngle);
-                        preCollectOffset += Math.abs(collectXOffset) * 0.25;
+                        preCollectOffset += Math.abs(wallStrafeParams.wallStrafeOffsetFromStart) * 0.25;
                     }
                     else
-                        preCollectOffset += Math.abs(collectXOffset);
+                        preCollectOffset += Math.abs(wallStrafeParams.wallStrafeOffsetFromStart);
 
                     preCollectToCollectAngle = Math.signum(dx) == 1 ? 0 : Math.PI;
 
@@ -930,7 +935,13 @@ public class PathGeneration {
             PathPose cur = pathPoses.get(i);
             PathPose next = pathPoses.get(i + 1);
 
-            Vector2d curToNext = next.waypoint.pose.position.minus(cur.waypoint.pose.position);
+            // never skip in these situations
+            if (((cur.approachType == Types.Approach.CLASSIFIER_STRAFE || cur.approachType == Types.Approach.LENIENT_CLASSIFIER_STRAFE)) &&
+                    (next.approachType == Types.Approach.CORNER)) {
+                simplified.add(pathPoses.get(i));
+                continue;
+            }
+
             // skip any poses between classifier or back wall strafes
             if (prev != null) {
                 if ((prev.approachType == Types.Approach.CLASSIFIER_STRAFE || prev.approachType == Types.Approach.LENIENT_CLASSIFIER_STRAFE)
@@ -939,14 +950,9 @@ public class PathGeneration {
                 if (prev.approachType == Types.Approach.BACK_WALL_STRAFE && next.approachType == Types.Approach.BACK_WALL_STRAFE)
                     continue;
             }
-            // never skip in these situations
-            if ((cur.approachType == Types.Approach.CLASSIFIER_STRAFE || cur.approachType == Types.Approach.LENIENT_CLASSIFIER_STRAFE) &&
-                    (next.approachType == Types.Approach.CORNER)) {
-                simplified.add(pathPoses.get(i));
-                continue;
-            }
 
             Vector2d prevToCur = cur.waypoint.pose.position.minus(prevPose.position);
+            Vector2d curToNext = next.waypoint.pose.position.minus(cur.waypoint.pose.position);
 
             double prevToCurHeadingDiff = MathUtils.angleNormDeltaRad(cur.waypoint.pose.heading.toDouble() - prevPose.heading.toDouble());
             double curToNextHeadingDiff = MathUtils.angleNormDeltaRad(next.waypoint.pose.heading.toDouble() - cur.waypoint.pose.heading.toDouble());
