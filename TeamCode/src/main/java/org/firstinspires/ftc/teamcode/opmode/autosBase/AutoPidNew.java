@@ -850,7 +850,7 @@ public abstract class AutoPidNew extends LinearOpMode {
                 new SleepAction(waitTime),
                 gateOpenAction,
                 new CustomEndAction(new SequentialAction(
-                        new TimedAction(gateOpenHold, timeConstraints.gateCollectOpenWait),
+                        new CustomEndAction(new TimedAction(gateOpenHold, timeConstraints.gateCollectOpenWait), robot.collection::jammed),
                         postGateOpenDrive,
                         new SleepAction(timeConstraints.gateCollectMaxTime)
                 ), robot.collection::has3Balls),

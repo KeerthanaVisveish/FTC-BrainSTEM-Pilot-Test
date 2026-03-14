@@ -116,9 +116,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             updateDriver2();
             updateDriver1();
             CommandScheduler.getInstance().run();
-
             robot.updateInfo(currentlyMoving);
             robot.update();
+
+
             robot.drive.pinpoint().printInfo(telemetry);
 
             if(!inCompetition) {
@@ -293,10 +294,15 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.turret.setCustomTargetPassPosition(false);
             }
         }
-        if (Math.abs(gamepad2.left_stick_y) > 0.3) {
-            double inc = -Math.signum(gamepad2.left_stick_y) * Parking.PARK_PARAMS.TESTING_INC;
-            Parking.PARK_PARAMS.MIDDLE_POS = Range.clip(Parking.PARK_PARAMS.MIDDLE_POS + inc, Parking.PARK_PARAMS.RETRACTED_POS, Parking.PARK_PARAMS.EXTENDED_POS);
-            robot.parking.setParkState(Parking.ParkState.MIDDLE);
+        if (!inCompetition) {
+            if(Math.abs(gamepad2.left_stick_y) > .3) {
+                robot.parking.setParkState(Parking.ParkState.OFF);
+                robot.parking.setLeftParkPosition(robot.parking.parkLeftServo.getPosition() + Parking.PARK_PARAMS.TESTING_INC * Math.signum(gamepad2.left_stick_y));
+            }
+            if(Math.abs(gamepad2.right_stick_y) > .3) {
+                robot.parking.setParkState(Parking.ParkState.OFF);
+                robot.parking.setRightParkPosition(robot.parking.parkRightServo.getPosition() + Parking.PARK_PARAMS.TESTING_INC * Math.signum(gamepad2.right_stick_y));
+            }
         }
 //        if (gp2.isFirstBack())
 //            robot.limelight.ballDetection.takeBallScan();

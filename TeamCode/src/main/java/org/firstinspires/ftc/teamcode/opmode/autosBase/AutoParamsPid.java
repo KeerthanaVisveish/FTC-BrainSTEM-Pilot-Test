@@ -39,7 +39,7 @@ public class AutoParamsPid {
         public double thirdFarT1 = 23, thirdFarT2 = 18;
 
         public double[] gateNearWaypoint = { 2, 26, 75 };
-        public double[] gateNearWaypointTol = { 1.5, 4, 4 };
+        public double[] gateNearWaypointTol = { 2, 4, 5 };
         public double[] gateNearWaypoint2 = { 9, 41, 90 };
 //        public double[] gateNearControlPoint = { 13, 60, 85 };
 //        public double gateNearCorrectiveStrength = 1.3;
@@ -84,7 +84,7 @@ public class AutoParamsPid {
         public double[] near2 = {-7, 25.5, 55};
         public double[] nearGate = { -5.5, 23, 55 };
         public double[] near3 = {-7, 25.5, 50};
-        public double[] near3Last = {-20, 21, 38};
+        public double[] near3Last = {-25, 18, 38};
 
         public double[] farSpike = {52, 16, 145};
         public double[] farPreloadLoading = { 52, 16, 100 };
@@ -144,7 +144,7 @@ public class AutoParamsPid {
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWaitTime = 1;
         public double shooterInterlockMaxWaitTime = .1;
-        public double nearPostFlickerShootTime = .1, farPostFlickerShootTime = .2;
+        public double nearPostFlickerShootTime = .2, farPostFlickerShootTime = .2;
 
     }
 }

@@ -10,15 +10,15 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Parking extends Component {
     public static class Params {
-        public double TESTING_INC = 0.02;
-        public double RETRACTED_POS = 0.075;
+        public double TESTING_INC = 0.001;
+        public double RETRACTED_POS = 0.15;
         public double EXTENDED_POS = 0.7;
-        public double MIDDLE_POS = 0.5;
+        public int leftLowerBound = 500, rightLowerBound = 500;
     }
 
     public static Params PARK_PARAMS = new Params();
     public enum ParkState {
-        RETRACTED, EXTENDED, MIDDLE
+        RETRACTED, EXTENDED, OFF
     }
     public ServoImplEx parkLeftServo;
     public ServoImplEx parkRightServo;
@@ -28,16 +28,22 @@ public class Parking extends Component {
         super(hardwareMap, telemetry, robot);
 
         parkLeftServo = hardwareMap.get(ServoImplEx.class, "parkLeft");
-        parkLeftServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        parkLeftServo.setPwmRange(new PwmControl.PwmRange(PARK_PARAMS.leftLowerBound, 2500));
 
         parkRightServo = hardwareMap.get(ServoImplEx.class, "parkRight");
-        parkRightServo.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        parkRightServo.setPwmRange(new PwmControl.PwmRange(PARK_PARAMS.rightLowerBound, 2500));
 
         setParkState(ParkState.RETRACTED);
     }
 
     public void setParkServoPosition(double position) {
+        setLeftParkPosition(position);
+        setRightParkPosition(position);
+    }
+    public void setLeftParkPosition(double position) {
         parkLeftServo.setPosition(position);
+    }
+    public void setRightParkPosition(double position) {
         parkRightServo.setPosition(position);
     }
 
@@ -59,11 +65,17 @@ public class Parking extends Component {
             case EXTENDED:
                 setParkServoPosition(PARK_PARAMS.EXTENDED_POS);
                 break;
-            case MIDDLE:
-                setParkServoPosition(PARK_PARAMS.MIDDLE_POS);
-                break;
         }
     }
     @Override
-    public void update() {}
+    public void update() {
+        switch (parkState) {
+            case RETRACTED:
+                setParkServoPosition(PARK_PARAMS.RETRACTED_POS);
+                break;
+            case EXTENDED:
+                setParkServoPosition(PARK_PARAMS.EXTENDED_POS);
+                break;
+        }
+    }
 }

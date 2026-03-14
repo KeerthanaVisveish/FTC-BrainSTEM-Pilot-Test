@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @Config
 public class Collection extends Component {
@@ -28,6 +29,8 @@ public class Collection extends Component {
         public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
         public double shootOuttakeTime = 0.05;
         public boolean useShootingSafetyInterlocks = true;
+        public double jammedCurrentThreshold = 8000;
+        public double confirmJamTime = .2;
     }
 
     public static Params params = new Params();
@@ -50,7 +53,6 @@ public class Collection extends Component {
     private final ServoImplEx flickerLeft;
 
     private final ElapsedTime flickerTimer = new ElapsedTime();
-    private boolean flickerStarted = false;
 
     private final AnalogInput frontRightLaser;
     private final AnalogInput frontLeftLaser;
@@ -58,6 +60,7 @@ public class Collection extends Component {
     private final AnalogInput backBottomLaser;
 
     private CollectionState collectionState;
+    private ElapsedTime jamTimer;
     private ClutchState clutchState;
     private FlickerState flickerState;
     public boolean outtakeAfterClutchEngage;
@@ -98,6 +101,8 @@ public class Collection extends Component {
 
         intake3BallsTimer.reset();
         clutchTimer.reset();
+        jamTimer = new ElapsedTime();
+        jamTimer.reset();
     }
 
     public void setInAuto(boolean inAuto) {
@@ -153,6 +158,15 @@ public class Collection extends Component {
                 break;
             case FULL_UP_DOWN:
                 setCollectionState(CollectionState.OFF);
+                flickerLeft.setPosition(params.flickerFullUpPos);
+                flickerRight.setPosition(params.flickerFullUpPos);
+                flickerTimer.reset();
+                break;
+            case HALF_UP_DOWN:
+                flickerLeft.setPosition(params.flickerHalfUpPos);
+                flickerRight.setPosition(params.flickerHalfUpPos);
+                flickerTimer.reset();
+                break;
         }
     }
 
@@ -164,10 +178,13 @@ public class Collection extends Component {
         telemetry.addData("power", collectorMotor.getPower());
         telemetry.addData("flicker state", getFlickerState());
         telemetry.addData("flicker left pos", flickerLeft.getPosition());
+        telemetry.addData("flicker timer", flickerTimer.seconds());
         telemetry.addData("bl dist", backLeftLaserDist);
         telemetry.addData("br dist", backRightLaserDist);
         telemetry.addData("fl dist", frontLeftLaserDist);
         telemetry.addData("fr dist", frontRightLaserDist);
+        telemetry.addData("intake current", collectorMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("in auto", inAuto);
     }
 
     @Override
@@ -180,35 +197,24 @@ public class Collection extends Component {
         }
         framesRunning++;
 
+        if(collectorMotor.getCurrent(CurrentUnit.MILLIAMPS) < params.jammedCurrentThreshold)
+            jamTimer.reset();
+
         switch (getFlickerState()) {
             case FULL_UP:
             case DOWN:
                 break;
             case HALF_UP_DOWN:
-                if(!flickerStarted) {
-                    flickerLeft.setPosition(params.flickerHalfUpPos);
-                    flickerRight.setPosition(params.flickerHalfUpPos);
-                    flickerTimer.reset();
-                    flickerStarted = true;
-                }
-                else if(flickerTimer.seconds() > 0.15) {
+                if(flickerTimer.seconds() > 0.15) {
                     flickerLeft.setPosition(params.flickerDownPos);
                     flickerRight.setPosition(params.flickerDownPos);
-                    flickerStarted = false;
                     setFlickerState(FlickerState.DOWN);
                 }
                 break;
             case FULL_UP_DOWN:
                 if(!inAuto)
                     setCollectionState(CollectionState.OFF);
-                if (!flickerStarted) {
-                    flickerLeft.setPosition(params.flickerFullUpPos);
-                    flickerRight.setPosition(params.flickerFullUpPos);
-                    flickerTimer.reset();
-                    flickerStarted = true;
-                }
-                else if(flickerTimer.seconds() > .4) {
-                    flickerStarted = false;
+                if(flickerTimer.seconds() > .4) {
                     setFlickerState(FlickerState.DOWN);
                 }
                 else if (flickerTimer.seconds() > .2) {
@@ -313,5 +319,8 @@ public class Collection extends Component {
             has3Balls = false;
             autoCollectHas3Balls = false;
         }
+    }
+    public boolean jammed() {
+        return jamTimer.seconds() > params.confirmJamTime;
     }
 }
