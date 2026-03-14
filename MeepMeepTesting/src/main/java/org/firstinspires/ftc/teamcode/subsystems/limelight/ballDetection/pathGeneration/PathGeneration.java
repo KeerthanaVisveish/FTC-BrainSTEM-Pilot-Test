@@ -256,12 +256,14 @@ public class PathGeneration {
                 .setPassPosition(true)
                 .setMinLinearPower(driveParams.lanePreCollectMinLinearPower);
 
-        double dirToBall = Math.signum(wallSafePreCollect.position.y - startPose.position.y);
-        double controlY = wallSafePreCollect.position.y - laneCollectParams.laneCollectControlYOffset * dirToBall;
-        double dirToControlY = Math.signum(controlY - (startPose.position.y + laneCollectParams.laneCollectControlMinYOffsetFromRobot * dirToBall));
-        if (dirToControlY != dirToBall)
-            controlY = startPose.position.y + dirToBall * laneCollectParams.laneCollectControlMinYOffsetFromRobot;
-        Pose2d controlPose = new Pose2d(wallSafePreCollect.position.x, controlY, wallSafePreCollect.heading.toDouble());
+        double dx = wallSafePreCollect.position.minus(startPose.position).x;
+        double dirYToBall = Math.signum(wallSafePreCollect.position.y - startPose.position.y);
+        double controlX = startPose.position.x + dx * laneCollectParams.laneCollectControlXOffsetPercent;
+        double controlY = wallSafePreCollect.position.y - laneCollectParams.laneCollectControlYOffset * dirYToBall;
+        double dirToControlY = Math.signum(controlY - (startPose.position.y + laneCollectParams.laneCollectControlMinYOffsetFromRobot * dirYToBall));
+        if (dirToControlY != dirYToBall)
+            controlY = startPose.position.y + dirYToBall * laneCollectParams.laneCollectControlMinYOffsetFromRobot;
+        Pose2d controlPose = new Pose2d(controlX, controlY, wallSafePreCollect.heading.toDouble());
         Vector2d startToControl = controlPose.position.minus(startPose.position);
         Vector2d halfwayBetweenStartAndControl = startPose.position.plus(startToControl.times(0.65));
         Vector2d halfwayToPreCollect = wallSafePreCollect.position.minus(halfwayBetweenStartAndControl);
