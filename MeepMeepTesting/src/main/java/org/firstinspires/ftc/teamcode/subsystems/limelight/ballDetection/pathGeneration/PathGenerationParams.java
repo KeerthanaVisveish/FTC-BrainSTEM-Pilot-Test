@@ -21,6 +21,7 @@ public class PathGenerationParams {
                 public double angleLaneCollectDistFromBackWall = 3.5;
                 public double ignoreOptimizedLaneWidthSortingWidth = 3;
                 public double laneCollectControlYOffset = 24;
+                public double laneCollectControlXOffsetPercent = 0.8;
                 public double laneCollectControlMinYOffsetFromRobot = 6;
                 public double snapLaneToWallDistFromWall = 16;
         }
