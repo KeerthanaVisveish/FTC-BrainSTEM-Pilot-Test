@@ -25,6 +25,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Limelig
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
@@ -143,7 +144,7 @@ public class BrainSTEMRobot {
                                         return false;
                                     secondScan = new SequentialAction(
                                             turret.rotateToCustomTargetAction(angle2Sup),
-                                            new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
+//                                            new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                                             new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                                             limelight.ballDetection.takeBallScanAction()
                                     );
@@ -207,7 +208,7 @@ public class BrainSTEMRobot {
     private Action generateLimelightCollectDrive(double maxLimelightWaitTime) {
         return new Action() {
             PathInfo pathInfo = null;
-            DrivePath drivePath = null;
+            TimedAction timedDrivePath = null;
             ElapsedTime timer = null;
             Pose2d startPose = null;
 
@@ -218,7 +219,7 @@ public class BrainSTEMRobot {
                     timer.reset();
                 }
 
-                if (drivePath == null) {
+                if (timedDrivePath == null) {
                     if (timer.seconds() > maxLimelightWaitTime)
                         return false;
 
@@ -241,7 +242,7 @@ public class BrainSTEMRobot {
                         pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
                     }
 
-                    drivePath = new DrivePath(drive);
+                    DrivePath drivePath = new DrivePath(drive);
                     for (PathPose pathPose : pathInfo.optimizedPathPoses) {
                        pathPose.waypoint
                                .setCustomEndCondition(
@@ -257,10 +258,12 @@ public class BrainSTEMRobot {
 
                         drivePath.addWaypoint(pathPose.waypoint);
                     }
+                    double maxTime = pathInfo.pathType == PathInfo.PathType.COMPLEX ? PathGeneration.generalParams.complexCollectMaxTime : PathGeneration.laneCollectParams.laneCollectMaxTime;
+                    timedDrivePath = new TimedAction(drivePath, maxTime);
 
                 }
                 limelight.ballDetection.drawPath(telemetryPacket.fieldOverlay(), startPose, pathInfo.getOptimizedPoses());
-                return drivePath.run(telemetryPacket);
+                return timedDrivePath.run(telemetryPacket);
             }
         };
     }

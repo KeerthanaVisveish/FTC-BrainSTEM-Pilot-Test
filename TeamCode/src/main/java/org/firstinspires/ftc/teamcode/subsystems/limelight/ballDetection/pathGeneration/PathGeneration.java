@@ -47,7 +47,7 @@ public class PathGeneration {
         ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
         Lane bestLane = getBestLane(robotPose.position, densestLanes);
         if (generalParams.allowLaneCollect) {
-            if (bestLane.numBalls() >= laneCollectParams.alwaysUseLaneCollectNumBalls)
+            if (bestLane.numBalls() > laneCollectParams.alwaysUseLaneCollectNumBalls)
                 return generateLanePath(robotPose, bestLane);
             if (allBalls.size() == 2 && bestLane.numBalls() == 2)
                 return generateLanePath(robotPose, bestLane);
@@ -79,7 +79,7 @@ public class PathGeneration {
                 ArrayList<Ball> shiftedLeftRawBallPath = Ball.toBallList(shiftedLeftRawPath);
 //                System.out.println("shifted left path `========");
                 PathInfo shiftedLeftPathInfo = generateComplexPath(robotPose, allBalls, shiftedLeftRawBallPath);
-                if (shiftedLeftPathInfo.numGoodBalls() > pathInfo.numGoodBalls()) {
+                if (shiftedLeftPathInfo.numGoodBalls() >= pathInfo.numGoodBalls()) {
                     pathfinderStartPose = shiftedLeftRobotPose;
                     pathInfo = shiftedLeftPathInfo;
                 }
@@ -123,9 +123,8 @@ public class PathGeneration {
         if (generalParams.allowLaneCollect) {
             int complexNumBalls = optimalPathInfo.numGoodBalls();
             int laneNumBalls = bestLane.numBalls();
-            if (complexNumBalls == laneNumBalls)
-                return complexNumBalls == 1 ? optimalPathInfo : generateLanePath(robotPose, bestLane);
-            return complexNumBalls > laneNumBalls ? optimalPathInfo : generateLanePath(robotPose, bestLane);
+            if (complexNumBalls > 1 && complexNumBalls <= laneNumBalls)
+                optimalPathInfo = generateLanePath(robotPose, bestLane);
         }
         return optimalPathInfo;
     }

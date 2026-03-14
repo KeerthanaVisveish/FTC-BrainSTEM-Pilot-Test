@@ -16,7 +16,7 @@ public class Collection extends Component {
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
-        public double has3BallsDelayPeriod = 0.2, autoCollectHasThreeBallsDelayPeriod = 0.4;
+        public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.5;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;

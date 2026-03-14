@@ -10,6 +10,8 @@ public class PathGenerationParams {
                 public double collectPoseOffsetDistance = 7;
                 public double preCollectOffset = 5;
                 public double lastCollectPoseExtraDriveThrough = 4;
+                public double complexCollect1BallMaxTime = 3.5;
+                public double complexCollectMaxTime = 5;
         }
         public static class LaneCollect {
                 public int defaultAlwaysUseLaneCollectNumBalls = 3;
@@ -24,9 +26,10 @@ public class PathGenerationParams {
                 public double laneCollectControlXOffsetPercent = 0.8;
                 public double laneCollectControlMinYOffsetFromRobot = 6;
                 public double snapLaneToWallDistFromWall = 16;
+                public double laneCollectMaxTime = 3.5;
         }
         public static class Regeneration {
-                public double shiftedLeftStartX = 40;
+                public double shiftedLeftStartX = 35;
                 public double maxPathRegenerationAttempts = 5;
         }
         public static class ClusterStrafe {

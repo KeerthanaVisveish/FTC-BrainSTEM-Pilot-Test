@@ -139,7 +139,7 @@ public class AutoParamsPid {
         public double maxShootTime = 1.4;
         public double gateOpeningWait = .7, gateCollectOpenWait = .12, gateTapWait = .3;
         public double gateCollectMaxTime = .5;
-        public double farParkTime = 29.1, nearParkStopTime = 29, stopAllTime = 31;
+        public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWaitTime = 1;
