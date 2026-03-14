@@ -29,7 +29,6 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
-    public static int limelightStartingPipeline = 2;
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
             printLimelight = false, printPark = false;
@@ -41,8 +40,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     // (62.706, -62.288, 90.294)
     // (62.038, -62.863, 89.575)
     // (62.251, -62.892, 89.948)
-    public static double noMoveJoystickThreshold = 0.1, joystickNoiseThreshold = .03;
-    public static double dpadAxialPower = .2, dpadLateralPower = .35;
+    public static double noMoveJoystickThreshold = 0.1;
+    public static double parkDriveAxialAmp = .3, parkDriveLateralAmp = .5, slowTurnAmp = .25;
+    public static double currentDriveAxialAmp = 1, currentDriveLateralAmp = 1, currentTurnAmp = 1;
 
     BrainSTEMRobot robot;
 
@@ -156,28 +156,32 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDrive() {
+        if(gp1.isFirstA())
+            if(currentDriveAxialAmp == 1) {
+                currentDriveAxialAmp = parkDriveAxialAmp;
+                currentDriveLateralAmp = parkDriveLateralAmp;
+                currentTurnAmp = slowTurnAmp;
+            }
+            else {
+                currentDriveAxialAmp = 1;
+                currentDriveLateralAmp = 1;
+                currentTurnAmp = 1;
+            }
+
         if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE && robot.limelight.localization.manualPoseUpdate) {
             robot.drive.stop();
             return;
         }
         currentlyMoving = Math.abs(gamepad1.left_stick_x) > noMoveJoystickThreshold || Math.abs(gamepad1.left_stick_y) > noMoveJoystickThreshold || Math.abs(gamepad1.right_stick_x) > noMoveJoystickThreshold;
-        boolean noJoystickActivity = Math.abs(gamepad1.left_stick_x) < joystickNoiseThreshold && Math.abs(gamepad1.left_stick_y) < joystickNoiseThreshold && Math.abs(gamepad1.right_stick_x) < noMoveJoystickThreshold;
-        double amp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
-        if(!noJoystickActivity)
-            robot.drive.setDrivePowers(new PoseVelocity2d(
-                    new Vector2d(
-                            -gamepad1.left_stick_y,
-                            -gamepad1.left_stick_x
-                    ).times(amp),
-                    -gamepad1.right_stick_x * amp
-            ));
-        else
-            robot.drive.setDrivePowers(new PoseVelocity2d(
-                    new Vector2d(
-                            gamepad1.dpad_up ? dpadAxialPower : gamepad1.dpad_down ? -dpadAxialPower : 0,
-                            gamepad1.dpad_left ? dpadLateralPower : gamepad1.dpad_right ? -dpadLateralPower : 0
-                    ), 0
-            ));
+        double shootWhileMovingAmp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
+
+        robot.drive.setDrivePowers(new PoseVelocity2d(
+                new Vector2d(
+                        -gamepad1.left_stick_y * currentDriveAxialAmp,
+                        -gamepad1.left_stick_x * currentDriveLateralAmp
+                ).times(shootWhileMovingAmp),
+                -gamepad1.right_stick_x * shootWhileMovingAmp * currentTurnAmp
+        ));
     }
 
     private void updateDriver1() {

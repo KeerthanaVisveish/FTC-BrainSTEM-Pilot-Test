@@ -127,7 +127,7 @@ public class BrainSTEMRobot {
                 // first scan
                 new SequentialAction(
                         turret.rotateToCustomTargetAction(angle1Sup),
-                        new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
+//                        new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                         limelight.ballDetection.takeBallScanAction()
                 ),
@@ -228,7 +228,7 @@ public class BrainSTEMRobot {
                     Vector2d giantClump = limelight.ballDetection.getGiantClumpPosition(ballBlobs);
                     ArrayList<Vector2d> ballPositions = limelight.ballDetection.getBlobPositions(ballBlobs);
 
-                    PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = PathGeneration.pathGenParams.defaultAlwaysUseLaneCollectNumBalls;
+                    PathGeneration.laneCollectParams.alwaysUseLaneCollectNumBalls = PathGeneration.laneCollectParams.defaultAlwaysUseLaneCollectNumBalls;
                     pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
                     if (pathInfo == null) {
                         telemetry.addLine("path is null");
@@ -237,7 +237,7 @@ public class BrainSTEMRobot {
 
                     if (pathInfo.pathType != PathInfo.PathType.LANE && giantClump != null) {
                         ballPositions = new ArrayList<>(Collections.singletonList(giantClump));
-                        PathGeneration.pathGenParams.alwaysUseLaneCollectNumBalls = 1;
+                        PathGeneration.laneCollectParams.alwaysUseLaneCollectNumBalls = 1;
                         pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
                     }
 
