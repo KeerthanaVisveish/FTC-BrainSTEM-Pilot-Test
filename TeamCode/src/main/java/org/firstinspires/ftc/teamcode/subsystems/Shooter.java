@@ -15,7 +15,7 @@ public class Shooter extends Component {
         public double A = 20, B = 6, k = -150, x0 = .06;
         public double kVYInt = 1.63, kVSlope = -0.02005;
         public double shotVelDropThreshold = 30, targetVelStaticShotThreshold = .1;
-        public double avg3BallShootTime = .5;
+        public double avg3BallShootTime = .55;
         public int startingShooterSpeedAdjustment = 0;
         public double minVoltage = -2.025, maxVoltage = 15;
     }

@@ -33,6 +33,7 @@ import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.CircleTolerance;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
@@ -43,7 +44,7 @@ import java.util.function.BooleanSupplier;
 public abstract class AutoPidNew extends LinearOpMode {
     public static class Customizable {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
-        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gtn g.4n g.4n 1n";
+        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gtn g.4n g.3n 1n";
         public String farLoadingFirst = "f lf 3f af af", farLoadingLimelight = "f lf af af af";
         public String custom = "n 1n 2n 3n";
         public Alliance alliance = Alliance.RED;
@@ -70,7 +71,7 @@ public abstract class AutoPidNew extends LinearOpMode {
             collect1NearControlPoint, collect1FarControlPoint, collect1,
             collect2NearWaypoint, collect2NearControlPoint, collect2, collect2IfOpenGate,
             preCollect3Near, collect3NearControlPoint, preCollect3Far, collect3FarControlPoint, collect3,
-            preLoadingControlPoint, preLoading, loadingWaypoint, postLoading,
+            preLoadingWaypoint, preLoading, loadingWaypoint, postLoading, postLoading2,
             loadingCornerControlPoint, loadingCorner,
             loadingGateWaitWaypoint, loadingGateWait,
             gateCollectNearWaypoint, gateCollectNearControlPoint, gateCollectFarControlPoint, gateCollectOpen, gateCollectOpenHold, gateCollect, gateTapBackup, gateTap,
@@ -260,7 +261,9 @@ public abstract class AutoPidNew extends LinearOpMode {
                 numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
         );
 
-        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.nearParkStopTime && (robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist) || autoState == AutoState.DRIVE_TO_COLLECT);
+        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.nearParkStopTime
+                && (robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist
+                || autoState == AutoState.DRIVE_TO_COLLECT));
         BooleanSupplier farShouldPark = () -> autoTimer.seconds() > timeConstraints.farParkTime && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) < misc.smartParkFarDist;
         BooleanSupplier farShouldStop = () -> (autoState == AutoState.DRIVE_TO_COLLECT || autoState == AutoState.DRIVE_TO_SHOOT)
                 && autoTimer.seconds() > timeConstraints.farParkTime
@@ -317,6 +320,7 @@ public abstract class AutoPidNew extends LinearOpMode {
                     telemetry.addData("SHOULD STOP", shouldStop[0]);
                     telemetry.addData("AUTO ACTION DONE", autoActionDone[0]);
 //                    robot.limelight.printInfo();
+                    robot.turret.printInfo();
                     telemetry.update();
                     return true;
                 }
@@ -403,9 +407,9 @@ public abstract class AutoPidNew extends LinearOpMode {
                         autoCommands.speedUpShooter(),
                         autoCommands.enableTurretTracking(),
                         preloadShootAction,
-                        shootingNear ? getShootAction(0, 2.4) : new SleepAction(0)
+                        shootingNear ? getShootAction(2.4, .2) : new SleepAction(0)
                 ),
-                !shootingNear ? getShootAction() : new SleepAction(0)
+                !shootingNear ? getShootAction(0, timeConstraints.farPostFlickerShootTime) : new SleepAction(0)
         );
     }
     private Action buildCollectAndShoot(Action collectDrive, Action gateDrive, DrivePath shootDrive, boolean shootingNear, double postIntakeTime, boolean runIntake, boolean notLast, double shotTime) {
@@ -457,18 +461,18 @@ public abstract class AutoPidNew extends LinearOpMode {
                                             double dot = robot.drive.localizer.getPose().position.dot(perpNearParkLine);
                                             return dot < shoot.earlyEngageClutchDist;
                                         }),
-                                        getShootAction()
+                                        getShootAction(timeConstraints.shooterInterlockMaxWaitTime, timeConstraints.nearPostFlickerShootTime)
                                 ) : new SleepAction(0)
                         )
                 ),
-                shootEarly ? new SleepAction(0) : shotTime == 0 ? getShootAction() :
+                shootEarly ? new SleepAction(0) : shotTime == 0 ? getShootAction(timeConstraints.shooterInterlockMaxWaitTime, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime) :
                         new SequentialAction(
                                 new CustomEndAction(() -> autoTimer.seconds() >= shotTime),
-                                getShootAction()
+                                getShootAction(timeConstraints.shooterInterlockMaxWaitTime, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime)
                         )
         );
     }
-    private Action getShootAction(double extraShootTime, double shooterInterlockMaxTime) {
+    private Action getShootAction(double shooterInterlockMaxTime, double postFlickWaitTime) {
         return new SequentialAction(
                 new ParallelAction(
                         new InstantAction(() -> autoState = AutoState.SHOOT),
@@ -482,17 +486,13 @@ public abstract class AutoPidNew extends LinearOpMode {
                                 )
                         )
                 ),
-                new SleepAction(extraShootTime),
                 new ParallelAction(
                         autoCommands.disengageClutch(),
                         autoCommands.stopIntake(),
                         autoCommands.flickerUp(),
-                        new SleepAction(.1)
+                        new SleepAction(postFlickWaitTime)
                 )
         );
-    }
-    private Action getShootAction() {
-        return getShootAction(0, 0);
     }
     private Action getFirstCollectAndShoot(Pose2d shootPose, double shotTime, boolean fromNear, boolean toNear, boolean openGate, boolean last) {
         DrivePath firstCollectDrive;
@@ -648,21 +648,26 @@ public abstract class AutoPidNew extends LinearOpMode {
         return buildCollectAndShoot(thirdCollectAction, new SleepAction(0), thirdShootDrive, toNear, timeConstraints.postIntakeTime, true, !last, shotTime);
     }
     private Action getLoadingCollectAndShoot(Pose2d shootPose, double shotTime) {
-        BoxTolerance preLoadingTol = new BoxTolerance(collect.preLoadingTol);
-        BoxTolerance postLoadingTol = new BoxTolerance(collect.postLoadingTol);
+        CircleTolerance preLoadingTol = new CircleTolerance(collect.preLoadingWaypointTol);
         DrivePath loadingCollectDrive = new DrivePath(robot.drive,
-                new Waypoint(preLoading, preLoadingTol)
+                new Waypoint(preLoadingWaypoint, preLoadingTol)
+                        .setMaxTime(1.3)
+                        .setPassPosition(true)
+                        .setMinLinearPower(collect.loadingNormDrivePower),
+                new Waypoint(preLoading)
                         .setMaxTime(1.9)
-                        .setHeadingLerp(PathParams.HeadingLerpType.TANGENT)
-                        .setControlPoint(preLoadingControlPoint, collect.preLoadingT1, collect.preLoadingT2)
                         .setPassPosition(true),
                 new Waypoint(loadingWaypoint)
                         .setFixedLinearPower(collect.loadingSlowDrivePower)
                         .setMaxTime(.9),
-                new Waypoint(postLoading, postLoadingTol)
+                new Waypoint(postLoading)
                         .setMinLinearPower(collect.loadingSlowDrivePower)
                         .setMinHeadingPower(collect.loadingMinHeadingPower)
-                        .setMaxTime(1)
+                        .setMaxTime(.65)
+                        .setCustomEndCondition(robot.collection::has3Balls),
+                new Waypoint(postLoading2)
+                        .setMinLinearPower(collect.loadingNormDrivePower)
+                        .setMaxTime(.6)
                         .setCustomEndCondition(robot.collection::has3Balls));
         Waypoint w = new Waypoint(shootPose)
                 .setMaxTime(3)
@@ -933,9 +938,9 @@ public abstract class AutoPidNew extends LinearOpMode {
 //                createPose(collect.thirdFarControlPoint) :
 //                createInvertedPose(collect.thirdFarControlPoint);
 
-        preLoadingControlPoint = isRed ?
-                createPose(collect.preLoadingControlPoint) :
-                createInvertedPose(collect.preLoadingControlPoint);
+        preLoadingWaypoint = isRed ?
+                createPose(collect.preLoadingWaypoint) :
+                createInvertedPose(collect.preLoadingWaypoint);
         preLoading = isRed ?
                 createPose(collect.preLoading) :
                 createInvertedPose(collect.preLoading);
@@ -945,6 +950,9 @@ public abstract class AutoPidNew extends LinearOpMode {
         postLoading = isRed ?
                 createPose(collect.postLoading) :
                 createInvertedPose(collect.postLoading);
+        postLoading2 = isRed ?
+                createPose(collect.postLoading2) :
+                createInvertedPose(collect.postLoading2);
         loadingCornerControlPoint = isRed ?
                 createPose(collect.loadingCornerControlPoint) :
                 createInvertedPose(collect.loadingCornerControlPoint);

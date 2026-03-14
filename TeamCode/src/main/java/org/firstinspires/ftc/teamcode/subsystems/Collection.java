@@ -16,7 +16,7 @@ public class Collection extends Component {
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
-        public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.7;
+        public double has3BallsDelayPeriod = 0.2, autoCollectHasThreeBallsDelayPeriod = 0.4;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
@@ -180,6 +180,42 @@ public class Collection extends Component {
         }
         framesRunning++;
 
+        switch (getFlickerState()) {
+            case FULL_UP:
+            case DOWN:
+                break;
+            case HALF_UP_DOWN:
+                if(!flickerStarted) {
+                    flickerLeft.setPosition(params.flickerHalfUpPos);
+                    flickerRight.setPosition(params.flickerHalfUpPos);
+                    flickerTimer.reset();
+                    flickerStarted = true;
+                }
+                else if(flickerTimer.seconds() > 0.15) {
+                    flickerLeft.setPosition(params.flickerDownPos);
+                    flickerRight.setPosition(params.flickerDownPos);
+                    flickerStarted = false;
+                    setFlickerState(FlickerState.DOWN);
+                }
+                break;
+            case FULL_UP_DOWN:
+                if(!inAuto)
+                    setCollectionState(CollectionState.OFF);
+                if (!flickerStarted) {
+                    flickerLeft.setPosition(params.flickerFullUpPos);
+                    flickerRight.setPosition(params.flickerFullUpPos);
+                    flickerTimer.reset();
+                    flickerStarted = true;
+                } else if (flickerTimer.seconds() > 0.2) {
+                    flickerLeft.setPosition(params.flickerDownPos);
+                    flickerRight.setPosition(params.flickerDownPos);
+                    flickerStarted = false;
+                    setFlickerState(FlickerState.DOWN);
+                }
+                break;
+        }
+
+
         switch (getCollectionState()) {
             case OFF:
             case OUTTAKE:
@@ -222,39 +258,6 @@ public class Collection extends Component {
             case UNENGAGED:
                 outtakeAfterClutchEngage = true;
                 clutchTimer.reset();
-                break;
-        }
-
-        switch (getFlickerState()) {
-            case FULL_UP:
-            case DOWN:
-                break;
-            case HALF_UP_DOWN:
-                if(!flickerStarted) {
-                    flickerLeft.setPosition(params.flickerHalfUpPos);
-                    flickerRight.setPosition(params.flickerHalfUpPos);
-                    flickerTimer.reset();
-                    flickerStarted = true;
-                }
-                else if(flickerTimer.seconds() > 0.15) {
-                    flickerLeft.setPosition(params.flickerDownPos);
-                    flickerRight.setPosition(params.flickerDownPos);
-                    flickerStarted = false;
-                    setFlickerState(FlickerState.DOWN);
-                }
-                break;
-            case FULL_UP_DOWN:
-                if (!flickerStarted) {
-                    flickerLeft.setPosition(params.flickerFullUpPos);
-                    flickerRight.setPosition(params.flickerFullUpPos);
-                    flickerTimer.reset();
-                    flickerStarted = true;
-                } else if (flickerTimer.seconds() > 0.2) {
-                    flickerLeft.setPosition(params.flickerDownPos);
-                    flickerRight.setPosition(params.flickerDownPos);
-                    flickerStarted = false;
-                    setFlickerState(FlickerState.DOWN);
-                }
                 break;
         }
 

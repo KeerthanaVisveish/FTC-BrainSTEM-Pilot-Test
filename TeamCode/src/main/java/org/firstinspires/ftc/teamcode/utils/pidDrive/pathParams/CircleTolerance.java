@@ -20,6 +20,9 @@ public class CircleTolerance implements Tolerance {
     public CircleTolerance() {
         this(defaultParams.distTol, Math.toRadians(defaultParams.headingDegTol));
     }
+    public CircleTolerance(double[] tol) {
+        this(tol[0], Math.toRadians(tol[1]));
+    }
     @Override
     public boolean inPositionTolerance(double xError, double yError) {
         return Math.hypot(xError, yError) <= distTol;

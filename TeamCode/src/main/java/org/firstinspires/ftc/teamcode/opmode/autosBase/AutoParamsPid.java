@@ -7,7 +7,7 @@ public class AutoParamsPid {
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .1, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
-        public double loadingSlowDrivePower = 0.35, loadingMinHeadingPower = .6;
+        public double loadingSlowDrivePower = 0.3, loadingMinHeadingPower = .65;
         public double loadingNormDrivePower = .5;
 
         public double[] first = {-11.5, 47.5, 90};
@@ -51,13 +51,12 @@ public class AutoParamsPid {
         public double[] gateTapBackup = { 10, 56, 120 };
         public double[] gateTap = { 7, 58.5, 80 };
 
-        public double[] preLoadingControlPoint = { 49, 56, 70 };
-        public double preLoadingT1 = 14, preLoadingT2 = 10;
-        public double[] preLoading = { 51, 59.5, 55 }; // (53.024, 59.406, 60.84)
-        public double[] preLoadingTol = { 2, 2, 5 };
+        public double[] preLoadingWaypoint = { 54, 49, 95 };
+        public double[] preLoadingWaypointTol = { 3, 5 };
+        public double[] preLoading = { 48, 59.5, 55 }; // (53.024, 59.406, 60.84)
         public double[] loadingWaypoint = { 62, 61, 60 };
-        public double[] postLoading = { 62.5, 65, 100 }; //  (61.434, 61.613, 11.484)
-        public double[] postLoadingTol = { 1, 1, 1 };
+        public double[] postLoading = { 63.5, 61, 95 }; //  (61.434, 61.613, 11.484)
+        public double[] postLoading2 = { 63, 64, 90 };
         public double[] loadingCorner = { 64, 63, 90 };
         public double loadingCornerBackup = 5;
         public double[] loadingCornerControlPoint = { 64, 30, 90 };
@@ -141,6 +140,8 @@ public class AutoParamsPid {
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWaitTime = 1;
+        public double shooterInterlockMaxWaitTime = .1;
+        public double nearPostFlickerShootTime = .1, farPostFlickerShootTime = .2;
 
     }
 }
