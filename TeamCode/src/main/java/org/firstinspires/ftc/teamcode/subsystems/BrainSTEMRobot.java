@@ -128,7 +128,6 @@ public class BrainSTEMRobot {
                 // first scan
                 new SequentialAction(
                         turret.rotateToCustomTargetAction(angle1Sup),
-//                        new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                         limelight.ballDetection.takeBallScanAction()
                 ),
@@ -144,7 +143,6 @@ public class BrainSTEMRobot {
                                         return false;
                                     secondScan = new SequentialAction(
                                             turret.rotateToCustomTargetAction(angle2Sup),
-//                                            new InstantAction(() -> turret.setCustomTargetPassPosition(true)),
                                             new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                                             limelight.ballDetection.takeBallScanAction()
                                     );
@@ -156,6 +154,27 @@ public class BrainSTEMRobot {
                 new InstantAction(() -> turret.setTurretState(Turret.TurretState.TRACKING))
         );
     }
+//    public Action scanForBalls(DoubleSupplier angleSup) {
+//        return new SequentialAction(
+//                limelight.ballDetection.clearAllScansAction(),
+//                // first scan
+//                new ParallelAction(
+//                        new SequentialAction(
+//                                new InstantAction(() -> {
+//                                    turret.setCustomTargetMinPower(LimelightBallDetection.params.scanTurretPower);
+//                                    turret.setCustomTargetMaxPower(LimelightBallDetection.params.scanTurretPower);
+//                                }),
+//                                turret.rotateToCustomTargetAction(angleSup)
+//                        ),
+//                        limelight.ballDetection.takeRepeatedBallScansAction()
+//                ),
+//                new InstantAction(() -> {
+//                    turret.setTurretState(Turret.TurretState.TRACKING);
+//                    turret.setCustomTargetMaxPower(0.99);
+//                    turret.setCustomTargetMinPower(0);
+//                })
+//        );
+//    }
     public Action lookAtClassifier(Turret.TurretState endingTurretState) {
         return new SequentialAction(
                 turret.rotateToCustomTargetAction(() -> {
