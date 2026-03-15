@@ -15,13 +15,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 import org.firstinspires.ftc.teamcode.opmode.testing.TurretLogger;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
-import java.util.Arrays;
 import java.util.function.DoubleSupplier;
 
 @Config
@@ -499,9 +497,12 @@ public class Turret extends Component {
                             timer.reset();
                         }
                         telemetry.addData("ROTATE TO CUSTOM TARGET TIME", timer.seconds());
-                        return positionError > powerTuning.noVoltageThreshold || timer.seconds() < 0.2;
+                        return isAccurate() || timer.seconds() < 0.2;
                     }
                 }
         );
+    }
+    public boolean isAccurate() {
+        return Math.abs(positionError) < powerTuning.noVoltageThreshold;
     }
 }

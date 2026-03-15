@@ -44,6 +44,7 @@ public class LimelightBallDetection extends LLParent {
         public double[] validBallAreaRect = new double[] { 0, 12, 72, 60 };
         public double[] gateAreaRect = new double[] { 0, 48, 12, 24 };
         public boolean drawValidBallArea = true;
+        public double scanTurretVoltage = 4;
 
     }
     public static Params params = new Params();
@@ -263,6 +264,12 @@ public class LimelightBallDetection extends LLParent {
         numSnapshotsLeft = params.numSnapshotsPerScan;
     }
     public Action takeBallScanAction() {
+        return new SequentialAction(
+                new InstantAction(this::takeBallScan),
+                packet -> numSnapshotsLeft > 0
+        );
+    }
+    public Action takeRepeatedBallScansAction() {
         return new SequentialAction(
                 new InstantAction(this::takeBallScan),
                 packet -> numSnapshotsLeft > 0

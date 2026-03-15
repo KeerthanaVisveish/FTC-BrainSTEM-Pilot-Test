@@ -44,7 +44,7 @@ import java.util.function.BooleanSupplier;
 public abstract class AutoPidNew extends LinearOpMode {
     public static class Customizable {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
-        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gtn g.4n g.3n 1n";
+        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2on gn gtn 1n";
         public String farLoadingFirst = "f lf 3f af af", farLoadingLimelight = "f lf af af af";
         public String custom = "n 1n 2n 3n";
         public Alliance alliance = Alliance.RED;
@@ -242,7 +242,9 @@ public abstract class AutoPidNew extends LinearOpMode {
                     actionOrder.add(loadingAction);
                     break;
                 case "a":
-                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, shotTime, initiallyExtake));
+                    waitTime = parseWaitTime(collectionData);
+                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, shotTime, initiallyExtake, waitTime));
+                    telemetry.addData("  wait time", waitTime);
                     break;
             }
             if(last)
@@ -576,13 +578,13 @@ public abstract class AutoPidNew extends LinearOpMode {
         else {
             throw new RuntimeException("second collect not tuned from far; cannot incorporate 2f into string builder");
         }
-        double sign = isRed ? -1 : 1;
-        Pose2d preGatePose = new Pose2d(gate2.position.x, gate2.position.y + sign * misc.gate2BackupDist, gate2.heading.toDouble());
+//        double sign = isRed ? -1 : 1;
+//        Pose2d preGatePose = new Pose2d(gate2.position.x, gate2.position.y + sign * misc.gate2BackupDist, gate2.heading.toDouble());
 
         Action gateOpen = new CustomEndAction(
                 new DrivePath(robot.drive, telemetry,
-                        new Waypoint(preGatePose).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true),
-                        new Waypoint(gate2).setMinLinearPower(misc.gateMinPower).setPassPosition(true)),
+//                        new Waypoint(preGatePose).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true),
+                        new Waypoint(gate2).setMinLinearPower(misc.gateMinPower).setPassPosition(true).setMinTime(.15)),
                 () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold)
                 .setEndFunction(robot.drive::stop);
         Action secondGateDrive = openGate ?
@@ -748,7 +750,7 @@ public abstract class AutoPidNew extends LinearOpMode {
         return buildCollectAndShoot(loadingGateWaitCollectAction, new SleepAction(0), shootDrive, false, timeConstraints.loadingSlowIntakeTime, true, true, shotTime, initiallyExtake);
     }
 
-    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, double shotTime, boolean initiallyExtake) {
+    protected Action getLimelightLoadingZoneCollectAndShoot(Pose2d shootPose, double shotTime, boolean initiallyExtake, double waitTime) {
         Vector2d scan1 = alliance == Alliance.RED ?
                 createVec(collect.limelightScanPos1) :
                 createInvertedVec(collect.limelightScanPos1);
@@ -756,7 +758,10 @@ public abstract class AutoPidNew extends LinearOpMode {
                 createVec(collect.limelightScanPos2) :
                 createInvertedVec(collect.limelightScanPos2);
 
-        Action limelightCollectAction = robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWaitTime);
+        Action limelightCollectAction = new SequentialAction(
+                new SleepAction(waitTime),
+                robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWaitTime)
+        );
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)
                 .setMaxTime(3)

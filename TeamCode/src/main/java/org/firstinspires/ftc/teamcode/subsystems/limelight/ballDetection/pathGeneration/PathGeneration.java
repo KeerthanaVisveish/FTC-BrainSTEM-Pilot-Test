@@ -693,7 +693,8 @@ public class PathGeneration {
             isWallSafe = wallSafePreCollectPose.equals(preCollectPose);
             if (isWallSafe) {
                 Tolerance preCollectTolerance = new RotatedBoxTolerance(driveParams.clusterStrafeParallelTol, driveParams.clusterStrafePerpendicularTol, approachAngle, Math.toRadians(driveParams.clusterStrafeHeadingTol));
-                Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance);
+                Waypoint w1 = new Waypoint(preCollectPose, preCollectTolerance)
+                        .setMinLinearPower(driveParams.preCollectClusterStrafeMinLinearPower);
 //                Pose2d controlPoint = getPreCollectPose(preCollectPose.position, preCollectPose.heading.toDouble(), approachAngle, driveParams.strafeCollectControlMaxOffset);
 //                controlPoint = getWallSafePose(controlPoint);
 //                w1.setControlPoint(controlPoint, driveParams.strafeCollectControlStartError, driveParams.strafeCollectControlEndError);

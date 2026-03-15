@@ -5,7 +5,7 @@ public class AutoParamsPid {
         public double hitGateVelThreshold = 15;
         public double hitBallVelThreshold = 15;
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
-        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .1, gateOpenDrive2MaxPower = .4;
+        public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .2, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
         public double loadingSlowDrivePower = 0.3, loadingMinHeadingPower = .65;
         public double loadingNormDrivePower = .5;
@@ -41,6 +41,7 @@ public class AutoParamsPid {
         public double[] gateNearWaypoint = { 2, 26, 75 };
         public double[] gateNearWaypointTol = { 2, 4, 5 };
         public double[] gateNearWaypoint2 = { 9, 41, 90 };
+        public double[] gateNearWaypoint2Tol = { 3, 4, 7 };
 //        public double[] gateNearControlPoint = { 13, 60, 85 };
 //        public double gateNearCorrectiveStrength = 1.3;
 //        public double gateNearT1 = 25, gateNearT2 = 20;
@@ -108,8 +109,8 @@ public class AutoParamsPid {
     }
 
     public static class Misc {
-        public double[] startNearRed = { -60.3, 39.8, 0 };
-        public double[] startNearBlue = { -60.5, -39.8, 0 };
+        public double[] startNearRed = { -60.3, 39.05, 0 };
+        public double[] startNearBlue = { -60.5, -39.05, 0 };
         // RED:
         // -60.614, 39.928, -.491
         // -60.093, 40.032, -0.341
@@ -125,9 +126,9 @@ public class AutoParamsPid {
         // (62.043, 15.995, -179.94)
         // (61.841, 15.906, -179.922)
         //(61.965, 16.458, -179.724)
-        public double[] gate1 = {-5, 55, 90};
-        public double[] gate2 = {7, 55, 90};
-        public double gate1BackupDist = 3, gate2BackupDist = 5;
+        public double[] gate1 = { -5, 55, 90 };
+        public double[] gate2 = { 4.5, 55.5, 90 };
+        public double gate1BackupDist = 3;
         public double gatePrepMinPower = .7, gateMinPower = .5;
 
         public double smartParkNearDist = 25;
@@ -137,7 +138,7 @@ public class AutoParamsPid {
     }
     public static class TimeConstraints {
         public double maxShootTime = 1.4;
-        public double gateOpeningWait = .7, gateCollectOpenWait = .12, gateTapWait = .3;
+        public double gateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = .3;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
