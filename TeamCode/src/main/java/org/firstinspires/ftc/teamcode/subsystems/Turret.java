@@ -497,7 +497,6 @@ public class Turret extends Component {
                             timer.reset();
                         }
                         telemetry.addData("ROTATE TO CUSTOM TARGET TIME", timer.seconds());
-                        return positionError > powerTuning.noVoltageThreshold || timer.seconds() < 0.2;
                         return isAccurate() || timer.seconds() < 0.2;
                     }
                 }
@@ -505,4 +504,5 @@ public class Turret extends Component {
     }
     public boolean isAccurate() {
         return Math.abs(positionError) < powerTuning.noVoltageThreshold;
+    }
 }
