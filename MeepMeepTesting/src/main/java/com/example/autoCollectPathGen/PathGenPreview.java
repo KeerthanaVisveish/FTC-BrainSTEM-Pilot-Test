@@ -58,6 +58,7 @@ public class PathGenPreview extends JPanel
     static final double ballRadius = 2.5;
     static final double pathNodeRadius = 2;
     static final double thinStrokeSize = 0.5, strokeSize = 0.75, pathStrokeSize = 0.75;
+    static final double incrementPathAmount = 0.01;
     static final boolean drawEdgeCaseLines = false;
     private final List<Pose2d> balls = new ArrayList<>();
     private Pose2d robot = new Pose2d(0, 0, 0);
@@ -74,6 +75,7 @@ public class PathGenPreview extends JPanel
     private boolean generateRedRandomBalls = false;
     private PathInfo path;
     private boolean regeneratePathPoses = true;
+    private boolean incrementPath = true;
     public PathGenPreview(String backgroundImagePath) {
         loadFromFile();
 
@@ -94,6 +96,23 @@ public class PathGenPreview extends JPanel
                 System.err.println("Failed to load image: " + backgroundImagePath);
             }
         }
+
+        new Thread(() -> {
+            double loopTime = 5000;
+            double lastUpdateTime = System.currentTimeMillis();
+            while (incrementPath) {
+                double curTime = System.currentTimeMillis();
+                double dt = curTime - lastUpdateTime;
+                if (dt < loopTime)
+                    continue;
+
+                lastUpdateTime = curTime;
+                System.out.println("new update");
+
+                generateRandomBalls();
+                SwingUtilities.invokeLater(this::repaint);
+            }
+        }).start();
     }
     private void loadFromFile() {
         try {
@@ -593,39 +612,8 @@ public class PathGenPreview extends JPanel
             case KeyEvent.VK_R: generateRedRandomBalls = true; break;
             case KeyEvent.VK_B: generateRedRandomBalls = false; break;
             case KeyEvent.VK_G:
-                drawRobotNodeIndex = 0;
-                drawRobotNodeLerp = 0;
-                selectedPoseIndex = -2;
-                balls.clear();
-                for (int i=0; i<numRandomBallsToGenerate; i++) {
-                    boolean hittingAnotherBall;
-                    double x, y;
-                    do {
-                        hittingAnotherBall = false;
-                        double xPercent = 1 - Math.pow(Math.random(), 2);
-                        double yPercent = 1 - Math.pow(Math.random(), 10);
-
-                        x = xPercent * (36 - 2.5) + 36;
-                        y = yPercent * (24 - 2.5) + 48;
-                        if (!generateRedRandomBalls)
-                            y *= -1;
-                        for (Pose2d ball : balls) {
-                            Vector2d curBall = new Vector2d(x, y);
-                            Vector2d curBallToBall = ball.position.minus(curBall);
-                            double dist = MathUtils.vecMag(curBallToBall);
-                            if (dist < 5) {
-                                curBall = curBall.plus(curBallToBall.div(dist).times(5 - dist));
-                                curBallToBall = ball.position.minus(curBall);
-                                dist = MathUtils.vecMag(curBallToBall);
-                                hittingAnotherBall = dist < 5;
-                                break;
-                            }
-                        }
-                    } while (hittingAnotherBall);
-                    balls.add(new Pose2d(x, y, 0));
-                }
+                generateRandomBalls();
                 shouldRepaint = true;
-                regeneratePathPoses = true;
                 break;
         }
 
@@ -650,14 +638,49 @@ public class PathGenPreview extends JPanel
     @Override public void mouseExited(MouseEvent e) {}
     @Override public void mouseMoved(MouseEvent e) {}
 
+    private void generateRandomBalls() {
+        drawRobotNodeIndex = 0;
+        drawRobotNodeLerp = 0;
+        selectedPoseIndex = -2;
+        balls.clear();
+        for (int i=0; i<numRandomBallsToGenerate; i++) {
+            boolean hittingAnotherBall;
+            double x, y;
+            do {
+                hittingAnotherBall = false;
+                double xPercent = 1 - Math.pow(Math.random(), 1.5);
+                double yPercent = 1 - Math.pow(Math.random(), 2);
+
+                x = xPercent * (36 - 2.5) + 36;
+                y = yPercent * (24 - 2.5) + 48;
+                if (!generateRedRandomBalls)
+                    y *= -1;
+                for (Pose2d ball : balls) {
+                    Vector2d curBall = new Vector2d(x, y);
+                    Vector2d curBallToBall = ball.position.minus(curBall);
+                    double dist = MathUtils.vecMag(curBallToBall);
+                    if (dist < 5) {
+                        curBall = curBall.plus(curBallToBall.div(dist).times(5 - dist));
+                        curBallToBall = ball.position.minus(curBall);
+                        dist = MathUtils.vecMag(curBallToBall);
+                        hittingAnotherBall = dist < 5;
+                        break;
+                    }
+                }
+            } while (hittingAnotherBall);
+            balls.add(new Pose2d(x, y, 0));
+        }
+        regeneratePathPoses = true;
+    }
+
     // ---------------- Main ----------------
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Circle Editor");
+            JFrame frame = new JFrame("Path");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.add(new PathGenPreview("/com/example/autoCollectPathGen/img.png"));
-            frame.setResizable(false);
+//            frame.setResizable(false);
             frame.pack();
             frame.setFocusable(true);
             frame.setLocationRelativeTo(null);
