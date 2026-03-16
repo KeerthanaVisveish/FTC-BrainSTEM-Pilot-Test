@@ -38,7 +38,7 @@ public class Turret extends Component {
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public double maxAngle = Math.toRadians(90);
+        public double maxTeleAngle = Math.toRadians(85), maxAutoAngle = Math.toRadians(90);
         public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 8; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
@@ -56,35 +56,35 @@ public class Turret extends Component {
         public double AVel = 0, BVel = 0, x0Vel = 0, kVel = 0;
         public double AInertia = .0, BInertia = -.000, kInertia = -3, x0Inertia = 1;
         public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
-        public double maxVoltage = 7;
+        public double maxVoltageInRange = 7, maxVoltageOutOfRange = 4;
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
         public double[] kfPosLookupData = new double[] {
-                -350, .7,
-                -300, .7,
-                -130, .7,
-                0, .6,
-                30, .7,
-                100, .8,
-                160, .8,
-                170, .9,
-                190, 1,
-                230, 1,
-                300, 1.1,
-                350, 1.1
+                -350, .65,
+                -300, .65,
+                -130, .65,
+                0, .55,
+                30, .65,
+                100, .75,
+                160, .75,
+                170, .85,
+                190, .95,
+                230, .95,
+                300, 1.05,
+                350, 1.05
         };
         public double[] kfNegLookupData = new double[] {
-                -350, -.75,
-                -300, -.75,
-                -156, -.75,
-                -130, -.75,
-                -75, -.75,
-                -25, -.75,
-                0, -.7,
-                5, -.65,
-                110, -.65,
-                170, -.7,
-                350, -.7
+                -350, -.7,
+                -300, -.7,
+                -156, -.7,
+                -130, -.7,
+                -75, -.7,
+                -25, -.7,
+                0, -.65,
+                5, -.6,
+                110, -.6,
+                170, -.65,
+                350, -.65
         };
     }
     public static TestingParams testingParams = new TestingParams();
@@ -173,10 +173,10 @@ public class Turret extends Component {
             return;
         }
 
-        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
-            robot.shootingSystem.setTurretVoltage(0);
-            return;
-        }
+//        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
+//            robot.shootingSystem.setTurretVoltage(0);
+//            return;
+//        }
 
         double motorVoltage;
         switch (turretState) {
@@ -275,7 +275,8 @@ public class Turret extends Component {
         onTarget = Math.abs(actualTargetEncoder - currentEncoder) <= maxError;
 
         double dir = Math.signum(positionError);
-        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        double maxAngle = robot.collection.inAuto() ? turretParams.maxAutoAngle : turretParams.maxTeleAngle;
+        double maxBound = maxAngle * turretParams.ticksPerRad;
         double input = Range.clip(currentEncoder, -maxBound, maxBound); // reversing input if traveling in the opposite direction
         fVoltage = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
 
@@ -303,7 +304,8 @@ public class Turret extends Component {
         aVoltage = targetVelocity == 0 ? kA * targetAccel * powerTuning.accelVoltageSign : 0;
 
         totalVoltage = fVoltage + pVoltage + dVoltage + vVoltage + aVoltage;
-        totalVoltage = Range.clip(totalVoltage, -powerTuning.maxVoltage, powerTuning.maxVoltage);
+        double maxVolts = inRange ? powerTuning.maxVoltageInRange : powerTuning.maxVoltageOutOfRange;
+        totalVoltage = Range.clip(totalVoltage, -maxVolts, maxVolts);
         return totalVoltage;
     }
     private double getLogisticErrorKP(double errorMag) {
@@ -351,9 +353,10 @@ public class Turret extends Component {
         inertialAngleOffset = getLogisticInertialDistOffset(Math.abs(goalAngularAccel)) * -Math.signum(goalAngularAccel);
         lookAheadTargetRelAngleRad += inertialAngleOffset;
 
+        double absoluteMaxAngle = robot.collection.inAuto() ? turretParams.maxAutoAngle : turretParams.maxTeleAngle;
         Pose2d pose = robot.drive.localizer.getPose();
         boolean useSmallerRange = pose.position.x > 0 && pose.position.x < 20 && Math.abs(pose.position.y) > turretParams.gateCollectYThreshold;
-        double maxAngle = useSmallerRange ? turretParams.gateCollectMaxAngle : turretParams.maxAngle;
+        double maxAngle = useSmallerRange ? turretParams.gateCollectMaxAngle : absoluteMaxAngle;
         inRange = Math.abs(lookAheadTargetRelAngleRad) <= maxAngle;
         if (!inRange) {
             double sign = Math.signum(lookAheadTargetRelAngleRad);
@@ -381,7 +384,7 @@ public class Turret extends Component {
 
         targetEncoder = (int) (lookAheadTargetRelAngleRad * turretParams.ticksPerRad);
         targetEncoder += robot.shootingSystem.distState != ShootingSystem.Dist.FAR ? nearEncoderAdjustment : farEncoderAdjustment;
-        double maxBound = turretParams.maxAngle * turretParams.ticksPerRad;
+        double maxBound = absoluteMaxAngle * turretParams.ticksPerRad;
         targetEncoder = Range.clip(targetEncoder, -maxBound, maxBound);
         positionError = targetEncoder - currentEncoder;
     }
@@ -461,7 +464,7 @@ public class Turret extends Component {
 
     public void rotateToRelativeCustomTarget(double targetAngle) {
         setTurretState(TurretState.TRACK_CUSTOM_TARGET);
-        double clippedAngle = Range.clip(targetAngle, -turretParams.maxAngle, turretParams.maxAngle);
+        double clippedAngle = Range.clip(targetAngle, -turretParams.maxTeleAngle, turretParams.maxTeleAngle);
         targetEncoder = clippedAngle * turretParams.ticksPerRad;
         positionError = targetEncoder - currentEncoder;
         trackCustomTargetStartEncoder = currentEncoder;
