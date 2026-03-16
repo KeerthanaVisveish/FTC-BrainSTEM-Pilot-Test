@@ -58,7 +58,6 @@ public class PathGenPreview extends JPanel
     static final double ballRadius = 2.5;
     static final double pathNodeRadius = 2;
     static final double thinStrokeSize = 0.5, strokeSize = 0.75, pathStrokeSize = 0.75;
-    static final double incrementPathAmount = 0.01;
     static final boolean drawEdgeCaseLines = false;
     private final List<Pose2d> balls = new ArrayList<>();
     private Pose2d robot = new Pose2d(0, 0, 0);
@@ -75,7 +74,10 @@ public class PathGenPreview extends JPanel
     private boolean generateRedRandomBalls = false;
     private PathInfo path;
     private boolean regeneratePathPoses = true;
-    private boolean incrementPath = true;
+    private boolean finishedTraversingPath = false;
+    private boolean autoTraversePath = false;
+    private ArrayList<Pose2d> poses = new ArrayList<>();
+    private boolean isRunning = true;
     public PathGenPreview(String backgroundImagePath) {
         loadFromFile();
 
@@ -98,18 +100,34 @@ public class PathGenPreview extends JPanel
         }
 
         new Thread(() -> {
-            double loopTime = 5000;
+            double loopTime = 20;
             double lastUpdateTime = System.currentTimeMillis();
-            while (incrementPath) {
+            while (isRunning) {
                 double curTime = System.currentTimeMillis();
                 double dt = curTime - lastUpdateTime;
+//                System.out.println("auto traverse: " + autoTraversePath);
                 if (dt < loopTime)
                     continue;
 
                 lastUpdateTime = curTime;
-                System.out.println("new update");
+//                System.out.println("new update");
 
-                generateRandomBalls();
+                double increment = 0.5;
+                if (poses.size() >= 2 && drawRobotNodeIndex + 1 < poses.size()) {
+                    Pose2d curPose = poses.get(drawRobotNodeIndex);
+                    Pose2d nextPose = poses.get(drawRobotNodeIndex + 1);
+                    increment /= MathUtils.vecDist(curPose.position, nextPose.position);
+                }
+//                System.out.println("increment: " + increment);
+                drawRobotNodeLerp += increment;
+
+                if (finishedTraversingPath) {
+                    numRandomBallsToGenerate = (int) (Math.random() * 5 + 2);
+                    generateRedRandomBalls = true;
+                    generateRandomBalls();
+                    drawRobotNodeIndex = 0;
+                    drawRobotNodeLerp = 0;
+                }
                 SwingUtilities.invokeLater(this::repaint);
             }
         }).start();
@@ -219,14 +237,15 @@ public class PathGenPreview extends JPanel
             int numPiecesOfInfoPerPathPose = 3;
             ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.optimizedPathPoses : path.pathPoses;
             int width = 150;
-            int generalInfoHeight = 100;
+            int generalInfoHeight = 120;
             int height = pathPoses.size() * 20 * numPiecesOfInfoPerPathPose + generalInfoHeight;
             g2.fillRect(0, 0, width, height);
             g2.setColor(Color.WHITE);
-            g2.drawString("Path Type: " + path.pathType, 10, 15);
-            g2.drawString("Max Regens: " + PathGeneration.regenerationParams.maxPathRegenerationAttempts, 10, 35);
-            g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 55);
-            g2.drawString("Robot: " + MathUtils.formatPose1(robot), 10, 75);
+            g2.drawString("Auto Traverse: " + autoTraversePath, 10, 15);
+            g2.drawString("Path Type: " + path.pathType, 10, 35);
+            g2.drawString("Max Regens: " + PathGeneration.regenerationParams.maxPathRegenerationAttempts, 10, 55);
+            g2.drawString("Simple Path: " + drawSimplifiedPath, 10, 75);
+            g2.drawString("Robot: " + MathUtils.formatPose1(robot), 10, 95);
             for (int i=0; i<pathPoses.size(); i++) {
                 int startY = i*20*numPiecesOfInfoPerPathPose + generalInfoHeight;
                 int cellHeight = numPiecesOfInfoPerPathPose*20+10;
@@ -322,7 +341,7 @@ public class PathGenPreview extends JPanel
         }
         g2.setStroke(new BasicStroke(fieldToDrawSize(strokeSize)));
 
-        ArrayList<Pose2d> poses = drawSimplifiedPath ? path.getOptimizedPoses() : path.getPoses();
+        poses = drawSimplifiedPath ? path.getOptimizedPoses() : path.getPoses();
         if (drawAllPoses) {
             g2.setStroke(new BasicStroke(fieldToDrawSize(thinStrokeSize)));
             for (Pose2d pose : poses)
@@ -338,6 +357,9 @@ public class PathGenPreview extends JPanel
                 drawRobotNodeIndex = poses.size() - 1;
                 drawRobotNodeLerp = 0;
             }
+
+//            System.out.println(poses.size() + " | " + drawRobotNodeIndex + " | " + drawRobotNodeLerp);
+            finishedTraversingPath = drawRobotNodeIndex >= poses.size() - 1 && drawRobotNodeLerp >= 0;
             if (drawRobotNodeIndex == poses.size() - 1)
                 drawRobotNodeLerp = Math.min(0, drawRobotNodeLerp);
             if (drawRobotNodeLerp > 1) {
@@ -615,6 +637,10 @@ public class PathGenPreview extends JPanel
                 generateRandomBalls();
                 shouldRepaint = true;
                 break;
+            case KeyEvent.VK_O:
+                autoTraversePath = !autoTraversePath;
+                shouldRepaint = true;
+                break;
         }
 
         bottomLeftDraw = new Vector2d(
@@ -679,8 +705,15 @@ public class PathGenPreview extends JPanel
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Path");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new PathGenPreview("/com/example/autoCollectPathGen/img.png"));
+            PathGenPreview preview = new PathGenPreview("/com/example/autoCollectPathGen/img.png");
+            frame.add(preview);
 //            frame.setResizable(false);
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    preview.isRunning = false;
+                }
+            });
             frame.pack();
             frame.setFocusable(true);
             frame.setLocationRelativeTo(null);

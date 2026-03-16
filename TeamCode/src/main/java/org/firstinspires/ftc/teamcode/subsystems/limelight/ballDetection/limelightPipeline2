@@ -11,10 +11,11 @@ min_y = 280
 
 # color masking
 gaussian_blur_kernel = (3, 3)
-green_lb = (70, 80, 85)
-green_ub = (95, 255, 255)
-purple_lb = (132, 30, 20)
-purple_ub = (160, 255, 255)
+green_lb = (60, 80, 20)
+# green_lb = (255, 255, 255)
+green_ub = (90, 255, 255)
+purple_lb = (120, 30, 20)
+purple_ub = (158, 255, 255)
 
 # color mask processing
 use_erode_dilate = True
@@ -50,7 +51,7 @@ def get_segmenting_max_error(angle_rad):
 
 # debug info
 show_mask = True
-draw_debug = False
+draw_debug = True
 
 def runPipeline(image, llrobot):
     # finding color contours===============================
