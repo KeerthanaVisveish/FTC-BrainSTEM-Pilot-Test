@@ -70,10 +70,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         robot.setG1(gp1);
         telemetry.addData("Alliance", BrainSTEMRobot.alliance);
         telemetry.addData("starting pose", MathUtils.formatPose3(startPose));
-        if (!robot.limelight.limelight.isConnected())
-            telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
-        if (!robot.limelight.limelight.isRunning())
-            telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
+//        if (!robot.limelight.limelight.isConnected())
+//            telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
+//        if (!robot.limelight.limelight.isRunning())
+//            telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
         if (!inCompetition && streamCameraToFTCDashboard)
@@ -266,10 +266,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         else if(gp2.isFirstRightStickButton())
             robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
 
-        if(gp2.isFirstRightBumper()) {
-            robot.limelight.localization.manualPoseUpdate = true;
-            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
-        }
+//        if(gp2.isFirstRightBumper()) {
+//            robot.limelight.localization.manualPoseUpdate = true;
+//            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
+//        }
         if (gp2.isFirstRightTrigger()) {
             Pose2d resetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(resetPose);
@@ -283,7 +283,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.turret.setTurretState(Turret.TurretState.CENTER);
             }
             else if (robot.turret.getTurretState() != Turret.TurretState.TRACK_CUSTOM_TARGET) {
-                robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxAngle);
+                robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxTeleAngle);
                 robot.turret.setCustomTargetMinPower(Turret.turretParams.minParkRotateVoltage);
                 robot.turret.setCustomTargetPassPosition(true);
             }

@@ -44,7 +44,7 @@ import java.util.function.BooleanSupplier;
 public abstract class AutoPidNew extends LinearOpMode {
     public static class Customizable {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
-        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2on gn gtn 1n";
+        public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gn gn gn 1n";
         public String farLoadingFirst = "f lf 3f af af", farLoadingLimelight = "f lf af af af";
         public String custom = "n 1n 2n 3n";
         public Alliance alliance = Alliance.RED;
@@ -94,9 +94,6 @@ public abstract class AutoPidNew extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         telemetry.setMsTransmissionInterval(11);
-
-        if (!LimelightResetTele.cameraIsReset)
-            throw new IllegalStateException("Limelight has not been reset - run LimelightResetTele");
 
         if(!BrainSTEMTeleOp.inCompetition)
             throw new IllegalStateException("In Competition is not true - run ToggleInCompetitionTele and press A");

@@ -42,7 +42,7 @@ public class BrainSTEMRobot {
     public static double rampWidth = .9382;
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
     public static boolean enableSubsystems = true;
-    public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
+    public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = false, enablePark = true, enableLED = true;
     public Turret turret;
     public Shooter shooter;
     public ShootingSystem shootingSystem;
@@ -113,7 +113,7 @@ public class BrainSTEMRobot {
 
         shootingSystem.drawShootingInfo(fieldOverlay);
 
-        limelight.addLimelightInfo(fieldOverlay);
+//        limelight.addLimelightInfo(fieldOverlay);
     }
     public double getFilteredVoltage() {
         return drive.getFilteredVoltage();
