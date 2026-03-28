@@ -40,14 +40,14 @@ public class AutoParamsPid {
 
         public double[] gateNearWaypoint = { 2, 26, 75 };
         public double[] gateNearWaypointTol = { 2, 4, 5 };
-        public double[] gateNearWaypoint2 = { 9, 41, 90 };
+        public double[] gateNearWaypoint2 = { 10, 41, 88 };
         public double[] gateNearWaypoint2Tol = { 3, 4, 7 };
 //        public double[] gateNearControlPoint = { 13, 60, 85 };
 //        public double gateNearCorrectiveStrength = 1.3;
 //        public double gateNearT1 = 25, gateNearT2 = 20;
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
-        public double[] gateOpen = { 9, 60.5, 115 };
+        public double[] gateOpen = { 11, 58, 110 };
         public double gatePropertiesRedXOffset = 0;
         public double[] gateOpenTol = { 1, 1, 1 };
         public double[] gateCollect = { 16, 63, 135 };
@@ -137,7 +137,7 @@ public class AutoParamsPid {
         public double minParkFarPower = .5;
     }
     public static class TimeConstraints {
-        public double maxShootTime = 1.4;
+        public double maxShootTime = 1.2;
         public double gateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = .3;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
