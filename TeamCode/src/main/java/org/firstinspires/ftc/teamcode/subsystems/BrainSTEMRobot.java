@@ -41,6 +41,7 @@ import java.util.function.DoubleSupplier;
 public class BrainSTEMRobot {
     public static double rampWidth = .9382;
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
+    public static boolean useNewShooting =  true;
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
     public Turret turret;
@@ -89,10 +90,13 @@ public class BrainSTEMRobot {
     public void setG1(GamepadTracker g1) {
         this.g1 = g1;
     }
-    public void updateInfo(boolean useTurretLookAhead) {
+    public void updateInfo() {
         drive.updateVoltageFiltering();
         drive.updatePoseEstimate();
-        shootingSystem.updateInfo(useTurretLookAhead);
+        if(useNewShooting)
+            shootingSystem.updatePropertiesNew();
+        else
+            shootingSystem.updatePropertiesOld();
     }
     public void update() {
         Pose2d pose = drive.localizer.getPose();

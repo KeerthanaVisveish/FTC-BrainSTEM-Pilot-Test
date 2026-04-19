@@ -19,18 +19,14 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Blob;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 @TeleOp(name="Loading Zone Ball Collection", group="Limelight")
 @Config
@@ -67,7 +63,7 @@ public class LoadingZoneBallCollection extends OpMode {
     public void init_loop() {
         if (gamepad1.start && gamepad1.backWasPressed())
             robot.shootingSystem.resetTurretEncoder();
-        robot.shootingSystem.updateInfo(false);
+        robot.shootingSystem.updatePropertiesOld();
         telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
 
         robot.limelight.printInfo();
@@ -175,7 +171,7 @@ public class LoadingZoneBallCollection extends OpMode {
                 scanForBallsAction = null;
         }
 
-        robot.updateInfo(true);
+        robot.updateInfo();
         robot.update();
 
         Pose2d p = robot.drive.localizer.getPose();

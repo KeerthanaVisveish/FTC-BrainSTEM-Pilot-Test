@@ -23,7 +23,7 @@ public class AutoCommands {
 
     public Action updateRobotInfo() {
         return packet -> {
-            robot.updateInfo(true);
+            robot.updateInfo();
             return true;
         };
     }

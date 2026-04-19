@@ -13,7 +13,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
+import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LLParent;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 
@@ -154,7 +154,7 @@ public class LimelightClassifier extends LLParent {
     }
     private double getCameraY() {
         Pose2d robotPose = robot.drive.localizer.getPose();
-        Pose2d turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
+        Pose2d turretPose = ShootingMathOld.getTurretPose(robotPose, robot.turret.curRelAngleRad);
         return Limelight.getLimelightPose(turretPose).position.y;
     }
     public Action readBallsInClassifier() {

@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
+import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
 
 //@TeleOp(name="Power Efficiency Tester", group="TestingParams")
 //@Config
@@ -45,8 +45,8 @@ public class EfficiencyCoefficientTester extends OpMode {
     }
     @Override
     public void loop() {
-        robot.shootingSystem.updateInfo(false);
-        robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(controls.ballExitAngleRad));
+        robot.shootingSystem.updatePropertiesOld();
+        robot.shootingSystem.setHoodPosition(ShootingMathOld.getHoodServoPosition(controls.ballExitAngleRad));
 
         if (gamepad1.aWasPressed())
             controls.powerShooter = !controls.powerShooter;
@@ -62,7 +62,7 @@ public class EfficiencyCoefficientTester extends OpMode {
         else {
             // under the assumption that the turret is facing the robot's direction, only the x offset of the exit position matters
             Pose2d start = new Pose2d(0, 0, 0);
-            Vector2d exitPosition = ShootingMath.getExitPositionInches(ShootingMath.getTurretPose(start, 0), controls.ballExitAngleRad);
+            Vector2d exitPosition = ShootingMathOld.getExitPositionInches(ShootingMathOld.getTurretPose(start, 0), controls.ballExitAngleRad);
 
             double efficiencyCoefficient = controls.efficiencyCoefB + controls.ballExitAngleRad * controls.efficiencyCoefM;
             double targetVelMetersPerSec;
@@ -72,15 +72,15 @@ public class EfficiencyCoefficientTester extends OpMode {
             if(!controls.useVelOverDistance) {
                 totalDistanceTraveledMeters = (controls.distanceToShootBallInches - BrainSTEMRobot.length / 2 + Math.abs(exitPosition.x)) * 0.0254;
 
-                double initialHeightMeters = ShootingMath.getExactExitHeightMeters(controls.ballExitAngleRad);
-                double finalHeightMeters = ShootingMath.shooterSystemParams.ballRadiusMeters + (controls.heightToShootBallInches * 0.0254);
+                double initialHeightMeters = ShootingMathOld.getExactExitHeightMeters(controls.ballExitAngleRad);
+                double finalHeightMeters = ShootingMathOld.shooterSystemParams.ballRadiusMeters + (controls.heightToShootBallInches * 0.0254);
                 changeInYMeters = finalHeightMeters - initialHeightMeters;
 
                 targetVelMetersPerSec = calculateTargetExitVelocity(totalDistanceTraveledMeters, changeInYMeters, controls.ballExitAngleRad);
-                targetExitVelTicksPerSec = ShootingMath.exitMpsToMotorTicksPerSec(targetVelMetersPerSec, efficiencyCoefficient);
+                targetExitVelTicksPerSec = ShootingMathOld.exitMpsToMotorTicksPerSec(targetVelMetersPerSec, efficiencyCoefficient);
             }
             else {
-                targetVelMetersPerSec = ShootingMath.ticksPerSecToExitSpeedMps(controls.velToShootBallTps, efficiencyCoefficient);
+                targetVelMetersPerSec = ShootingMathOld.ticksPerSecToExitSpeedMps(controls.velToShootBallTps, efficiencyCoefficient);
                 targetExitVelTicksPerSec = controls.velToShootBallTps;
             }
 

@@ -21,7 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.LED;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
+import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
@@ -88,7 +88,7 @@ public class LocalizationTest extends LinearOpMode {
             Pose2d pinpointRobotPose = drive.localizer.getPose();
             double relativeTurretAngle = Turret.getTurretRelativeAngleRad(motor.getCurrentPosition());
 
-            Pose2d pinpointTurretPose = ShootingMath.getTurretPose(pinpointRobotPose, relativeTurretAngle);
+            Pose2d pinpointTurretPose = ShootingMathOld.getTurretPose(pinpointRobotPose, relativeTurretAngle);
             Pose2d pinpointCameraPose = Limelight.getLimelightPose(pinpointTurretPose);
 
             if (useMegaTag2) {
@@ -114,7 +114,7 @@ public class LocalizationTest extends LinearOpMode {
                 llCameraPose = new Pose2d(cameraPos.x, cameraPos.y, cameraHeading);
                 if (llCameraPose.position.x != 0 || llCameraPose.position.y != 0 || llCameraPose.heading.toDouble() != 0) {
                     llTurretPose = Limelight.getTurretPose(llCameraPose);
-                    llRobotPose = ShootingMath.getRobotPose(llTurretPose, relativeTurretAngle);
+                    llRobotPose = ShootingMathOld.getRobotPose(llTurretPose, relativeTurretAngle);
                 }
             }
 
@@ -134,7 +134,7 @@ public class LocalizationTest extends LinearOpMode {
                 }
                 filteredLlCameraPose = new Pose2d(x / prevLlCameraPoses.size(), y / prevLlCameraPoses.size(), hRad / prevLlCameraPoses.size());
                 filteredLlTurretPose = Limelight.getTurretPose(filteredLlCameraPose);
-                filteredLlRobotPose = ShootingMath.getRobotPose(filteredLlTurretPose, relativeTurretAngle);
+                filteredLlRobotPose = ShootingMathOld.getRobotPose(filteredLlTurretPose, relativeTurretAngle);
             }
 
             if (gamepad1.y)

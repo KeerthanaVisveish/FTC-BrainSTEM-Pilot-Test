@@ -12,7 +12,6 @@ import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
@@ -83,7 +82,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (!inCompetition) {
                 if (gamepad1.start && gamepad1.backWasPressed())
                     robot.shootingSystem.resetTurretEncoder();
-                robot.shootingSystem.updateInfo(false);
+                robot.shootingSystem.updatePropertiesOld();
                 telemetry.addData("reset turret encoder", "hold START + BACK");
                 telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
             }
@@ -116,7 +115,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             updateDriver2();
             updateDriver1();
             CommandScheduler.getInstance().run();
-            robot.updateInfo(currentlyMoving);
+            robot.updateInfo();
             robot.update();
 
 

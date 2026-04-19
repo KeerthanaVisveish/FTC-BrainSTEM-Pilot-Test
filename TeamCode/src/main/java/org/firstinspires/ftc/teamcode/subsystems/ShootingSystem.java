@@ -17,11 +17,17 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
-import org.firstinspires.ftc.teamcode.utils.math.Vector3d;
+import org.firstinspires.ftc.teamcode.utils.math.Vector3dOld;
 import org.firstinspires.ftc.teamcode.utils.misc.MotorCacher;
 import org.firstinspires.ftc.teamcode.utils.misc.ServoImplCacher;
+import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt1;
+import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt2;
+import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMath;
+import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
+//import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMath;
 
 import java.util.Arrays;
+import java.util.function.ToDoubleFunction;
 
 @Config
 public class ShootingSystem {
@@ -75,13 +81,13 @@ public class ShootingSystem {
     }
     public Dist distState;
     public boolean usingHighArc;
-    public Vector3d nearGoalPos, midGoalPos, farGoalPos;
+    public Vector3dOld nearGoalPos, midGoalPos, farGoalPos;
     public Vector2d corner;
     private final HardwareMap hardwareMap;
     private final BrainSTEMRobot robot;
     private MotorCacher turretMotor, shooterLowMotor, shooterHighMotor;
     private ServoImplCacher hoodLeftServo, hoodRightServo;
-    public Vector3d goalPosIn;
+    public Vector3dOld goalPosIn;
     public Vector2d futureTurretPosRelativeToGoal;
     public double impactAngleRad;
     public Pose2d futureRobotPose;
@@ -89,7 +95,7 @@ public class ShootingSystem {
     public Vector2d robotVelAtTurretIps, lookAheadRobotVelAtTurretIps;
     public double robotSpeedAtTurretIps, lookAheadRobotSpeedAtTurretIps;
 
-    public Vector3d lookAheadTargetExitVelMps;
+    public Vector3dOld lookAheadTargetExitVelMps;
     public double lookAheadTurretTargetAngleRad, currentTurretTargetAngleRad;
     public double lookAheadTargetExitSpeedMps, currentTargetExitSpeedMps;
     public double ballTargetExitSpeedMps, idealBallExitAng;
@@ -110,12 +116,12 @@ public class ShootingSystem {
     public ShooterLookup lookupTable;
     public double relGoalHeightM;
     public boolean checkShootingWhileMoving, currentlyShootingWhileMoving;
+    private final ShootingMath shootingMathNew;
     public ShootingSystem(HardwareMap hardwareMap, BrainSTEMRobot robot) {
         this.hardwareMap = hardwareMap;
         this.robot = robot;
 
-//        if(robot != null)
-//            ballExitPos = ShootingMath.getExitPositionInches(ShootingMath.getTurretPose(robot.drive.localizer.getPose(), 0), ballExitAngleRad);
+        shootingMathNew = new ShootingMath();
 
         initTurret();
         initShooter();
@@ -133,15 +139,15 @@ public class ShootingSystem {
     public void updateGoalPoses() {
         if(BrainSTEMRobot.alliance == Alliance.BLUE) {
             corner = new Vector2d(-72, -72);
-            nearGoalPos = new Vector3d(goalParams.nearBlueX, goalParams.nearHeight, goalParams.nearBlueY);
-            midGoalPos = new Vector3d(goalParams.midBlueX, goalParams.midHeight, goalParams.midBlueY);
-            farGoalPos = new Vector3d(goalParams.farBlueX, goalParams.farHeight, goalParams.farBlueY);
+            nearGoalPos = new Vector3dOld(goalParams.nearBlueX, goalParams.nearHeight, goalParams.nearBlueY);
+            midGoalPos = new Vector3dOld(goalParams.midBlueX, goalParams.midHeight, goalParams.midBlueY);
+            farGoalPos = new Vector3dOld(goalParams.farBlueX, goalParams.farHeight, goalParams.farBlueY);
         }
         else {
             corner = new Vector2d(-72, 72);
-            nearGoalPos = new Vector3d(goalParams.nearRedX, goalParams.nearHeight, goalParams.nearRedY);
-            midGoalPos = new Vector3d(goalParams.midRedX, goalParams.midHeight, goalParams.midRedY);
-            farGoalPos = new Vector3d(goalParams.farRedX, goalParams.farHeight, goalParams.farRedY);
+            nearGoalPos = new Vector3dOld(goalParams.nearRedX, goalParams.nearHeight, goalParams.nearRedY);
+            midGoalPos = new Vector3dOld(goalParams.midRedX, goalParams.midHeight, goalParams.midRedY);
+            farGoalPos = new Vector3dOld(goalParams.farRedX, goalParams.farHeight, goalParams.farRedY);
         }
     }
     private void initTurret() {
@@ -174,7 +180,7 @@ public class ShootingSystem {
         rawHoodRightServo.setPwmRange(new PwmControl.PwmRange(hoodParams.downPWM, hoodParams.upPWM));
         this.hoodRightServo = new ServoImplCacher(rawHoodRightServo);
     }
-    public void updateInfo(boolean useTurretLookAhead) {
+    public void updatePropertiesOld() {
         updateGoalPoses();
 
         double prevTimeMs = curTimeMs;
@@ -187,7 +193,7 @@ public class ShootingSystem {
         Pose2d robotPose = robot.drive.localizer.getPose();
         futureRobotPose = robot.drive.pinpoint().getNextPoseSimple(generalParams.lookAheadTime);
 
-        updateGoalProperties(robotPose.position);
+        updateGoalPos(robotPose.position);
 
         updateTurretProperties(robotPose);
         shooterHighMotor.updateInfo();
@@ -202,15 +208,49 @@ public class ShootingSystem {
             filteredShooterSpeedTps = filteredShooterSpeedTps * a_s + rawShooterSpeedTps * (1 - a_s);
         }
 
-//        desiredBallDir = Math.atan2(goalPosIn.z - futureBallExitPos.y, goalPosIn.x - futureBallExitPos.x);
         desiredBallDir = Math.atan2(goalPosIn.z - futureTurretPos.y, goalPosIn.x - futureTurretPos.x);
 
         Vector2d robotVelAtTurretMps = robotVelAtTurretIps.times(.0254);
         Vector2d lookAheadRobotVelAtTurretMps = lookAheadRobotVelAtTurretIps.times(.0254);
-//        if(testingParams.usingLookup)
-//            updateLookupProperties(desiredBallDir, robotVelAtTurretMps);
-//        else
-            updatePhysicsProperties(desiredBallDir, robotVelAtTurretMps, lookAheadRobotVelAtTurretMps);
+        updatePhysicsProperties(desiredBallDir, robotVelAtTurretMps, lookAheadRobotVelAtTurretMps);
+    }
+
+    public void updatePropertiesNew() {
+        Vector3d exitPosM = new Vector3d(turretPose.position.x, turretPose.position.y, ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR)).times(.0254);
+        Vector2d robotPos = robot.drive.pinpoint().getPose().position;
+        Vector3d robotPosM = new Vector3d(robotPos.x, robotPos.y, 0).times(.0254);
+        OdoInfo robotVel = robot.drive.pinpoint().getVelocity();
+        Vector3d robotVelCm = new Vector3d(robotVel.x, robotVel.y, 0);
+        double robotAngularVel = robot.drive.pinpoint().getVelocity().headingRad;
+        Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z);
+        ToDoubleFunction<Double> shooterConversion = exitAngle -> {
+            double e = calcEfficiencyCoef(exitAngle);
+            return ShootingMathOld.ticksPerSecToExitSpeedMps(1, e);
+        };
+        AnswerKeyPt1 lookAheadAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, generalParams.lookAheadTime);
+        AnswerKeyPt2 lookAheadAnswerKeyPt2 = shootingMathNew.godSolvePart2(lookAheadAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
+
+        AnswerKeyPt1 currentAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, 0);
+        AnswerKeyPt2 currentAnswerKeyPt2 = shootingMathNew.godSolvePart2(currentAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
+
+        if(lookAheadAnswerKeyPt1.solutionExists) {
+            lookAheadTargetExitSpeedMps = lookAheadAnswerKeyPt1.launchData.speed;
+            if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
+                if(lookAheadAnswerKeyPt2.solutionExists) {
+                    lookAheadTurretTargetAngleRad = lookAheadAnswerKeyPt2.launchData.turretAng;
+                    hoodExitAngleRad = lookAheadAnswerKeyPt2.launchData.exitAng;
+                }
+            }
+            else {
+                lookAheadTurretTargetAngleRad = lookAheadAnswerKeyPt1.launchData.turretAng;
+                hoodExitAngleRad = lookAheadAnswerKeyPt1.launchData.exitAng;
+            }
+        }
+        if(currentAnswerKeyPt1.solutionExists) {
+            currentTargetExitSpeedMps = lookAheadAnswerKeyPt1.launchData.speed;
+            if(currentAnswerKeyPt2.solutionExists)
+                currentTurretTargetAngleRad = currentAnswerKeyPt2.launchData.turretAng;
+        }
     }
 
     // pro: yes velocity-based hood adjustment
@@ -218,14 +258,14 @@ public class ShootingSystem {
     private void updatePhysicsProperties(double desiredBallDir, Vector2d noLookAheadRobotVelAtTurretMps, Vector2d lookAheadRobotVelAtTurretMps) {
         checkShootingWhileMoving = distState == Dist.NEAR || distState == Dist.MID;
         // get delta y of projectory (need approximate exit height of the ball)
-        double exitHeightM = ShootingMath.approximateExitHeightM(distState == Dist.NEAR);
+        double exitHeightM = ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR);
         relGoalHeightM = (goalPosIn.y * 0.0254 - exitHeightM);
         double futureDist = futureTurretPosGoalDistIn * 0.0254;
 
         double[] launchVector;
 
         if(checkShootingWhileMoving) {
-            launchVector = ShootingMath.calculateLaunchVectorWithImpactAngle(futureDist, relGoalHeightM, impactAngleRad);
+            launchVector = ShootingMathOld.calculateLaunchVectorWithImpactAngle(futureDist, relGoalHeightM, impactAngleRad);
             ballTargetExitSpeedMps = launchVector[0];
             ballExitAngleRad = launchVector[1];
 
@@ -234,19 +274,19 @@ public class ShootingSystem {
                 noLookAheadRobotVelAtTurretMps = new Vector2d(0, 0);
                 lookAheadRobotVelAtTurretMps = new Vector2d(0, 0);
             }
-            lookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, launchVector[1], launchVector[0], lookAheadRobotVelAtTurretMps);
+            lookAheadTargetExitVelMps = ShootingMathOld.calculateActualTargetExitVel(desiredBallDir, launchVector[1], launchVector[0], lookAheadRobotVelAtTurretMps);
             double baseLength = Math.hypot(lookAheadTargetExitVelMps.x, lookAheadTargetExitVelMps.z);
             hoodExitAngleRad = Range.clip(Math.atan2(lookAheadTargetExitVelMps.y, baseLength), hoodParams.minExitAngRad, hoodParams.maxExitAngRad);
             lookAheadTurretTargetAngleRad = Math.atan2(lookAheadTargetExitVelMps.z, lookAheadTargetExitVelMps.x);
 
             efficiencyCoef = calcEfficiencyCoef(hoodExitAngleRad);
-            curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
+            curExitSpeedMps = ShootingMathOld.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
             lookAheadTargetExitSpeedMps = Math.hypot( baseLength, lookAheadTargetExitVelMps.y );
 
             double noLookAheadDist = turretPosGoalDistIn * 0.0254;
-            double[] noLookAheadLaunchVector = ShootingMath.calculateLaunchVectorWithImpactAngle(noLookAheadDist, relGoalHeightM, impactAngleRad);
+            double[] noLookAheadLaunchVector = ShootingMathOld.calculateLaunchVectorWithImpactAngle(noLookAheadDist, relGoalHeightM, impactAngleRad);
             double noLookAheadBallDir = Math.atan2(goalPosIn.z - turretPose.position.y, goalPosIn.x - turretPose.position.x);
-            Vector3d noLookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(noLookAheadBallDir, noLookAheadLaunchVector[1], noLookAheadLaunchVector[0], noLookAheadRobotVelAtTurretMps);
+            Vector3dOld noLookAheadTargetExitVelMps = ShootingMathOld.calculateActualTargetExitVel(noLookAheadBallDir, noLookAheadLaunchVector[1], noLookAheadLaunchVector[0], noLookAheadRobotVelAtTurretMps);
             currentTurretTargetAngleRad = Math.atan2(noLookAheadTargetExitVelMps.z, lookAheadTargetExitVelMps.x);
             currentTargetExitSpeedMps = Math.hypot( Math.hypot(noLookAheadTargetExitVelMps.x, noLookAheadTargetExitVelMps.y), noLookAheadTargetExitVelMps.z );
         }
@@ -254,31 +294,31 @@ public class ShootingSystem {
             futureDist = Math.min(futureDist, generalParams.maxShootingDist);
             int sign = BrainSTEMRobot.alliance == Alliance.RED ? -1 : 1;
             double farExitAng = robot.drive.localizer.getPose().position.y * sign > generalParams.far2SwitchY ? generalParams.far2ExitAng : generalParams.far1ExitAng;
-            launchVector = new double[] {ShootingMath.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, farExitAng), hoodParams.minExitAngRad};
+            launchVector = new double[] {ShootingMathOld.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, farExitAng), hoodParams.minExitAngRad};
             ballTargetExitSpeedMps = launchVector[0];
             idealBallExitAng = launchVector[1];
             ballExitAngleRad = idealBallExitAng;
 
             currentlyShootingWhileMoving = false;
             efficiencyCoef = calcEfficiencyCoef(launchVector[1]); // initial guess for efficiency coefficient
-            curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment(); // initial guess for current shooter speed
+            curExitSpeedMps = ShootingMathOld.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment(); // initial guess for current shooter speed
 
             // determining whether to use high arc or low arc
-            double highArcExitAng = ShootingMath.calculateBallExitAngleRad(true, relGoalHeightM, futureDist, curExitSpeedMps);
+            double highArcExitAng = ShootingMathOld.calculateBallExitAngleRad(true, relGoalHeightM, futureDist, curExitSpeedMps);
             if (highArcExitAng != -1) {
-                double lowArcExitAng = ShootingMath.calculateBallExitAngleRad(false, relGoalHeightM, futureDist, curExitSpeedMps);
-                double highArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, highArcExitAng);
-                double lowArcImpactAng = ShootingMath.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, lowArcExitAng);
+                double lowArcExitAng = ShootingMathOld.calculateBallExitAngleRad(false, relGoalHeightM, futureDist, curExitSpeedMps);
+                double highArcImpactAng = ShootingMathOld.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, highArcExitAng);
+                double lowArcImpactAng = ShootingMathOld.calculateImpactAngle(futureDist, relGoalHeightM, curExitSpeedMps, lowArcExitAng);
                 usingHighArc = Math.abs(highArcImpactAng - impactAngleRad) < Math.abs(lowArcImpactAng - impactAngleRad);
 
                 // estimating hood ang and current shooter speed
                 physicsExitAngleRads[0] = usingHighArc ? highArcExitAng : lowArcExitAng;
                 ballExitAngleRad = physicsExitAngleRads[0];
                 efficiencyCoef = calcEfficiencyCoef(ballExitAngleRad);
-                curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment();
+                curExitSpeedMps = ShootingMathOld.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment();
 
                 for (int i = 1; i < generalParams.numApproximations; i++) {
-                    physicsExitAngleRads[i] = ShootingMath.calculateBallExitAngleRad(usingHighArc, relGoalHeightM, futureDist, curExitSpeedMps);
+                    physicsExitAngleRads[i] = ShootingMathOld.calculateBallExitAngleRad(usingHighArc, relGoalHeightM, futureDist, curExitSpeedMps);
                     if (physicsExitAngleRads[i] == -1) {
                         for (int j = i + 1; j < generalParams.numApproximations; j++)
                             physicsExitAngleRads[j] = -1;
@@ -286,7 +326,7 @@ public class ShootingSystem {
                     }
                     ballExitAngleRad = physicsExitAngleRads[i];
                     efficiencyCoef = calcEfficiencyCoef(ballExitAngleRad);
-                    curExitSpeedMps = ShootingMath.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment();
+                    curExitSpeedMps = ShootingMathOld.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef) - robot.shooter.getCurVelocityAdjustment();
                 }
             } else
                 Arrays.fill(physicsExitAngleRads, -1);
@@ -301,9 +341,9 @@ public class ShootingSystem {
                 currentTurretTargetAngleRad = desiredBallDir;
             }
             else {
-                lookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, lookAheadRobotVelAtTurretMps);
+                lookAheadTargetExitVelMps = ShootingMathOld.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, lookAheadRobotVelAtTurretMps);
                 lookAheadTurretTargetAngleRad = Math.atan2(lookAheadTargetExitVelMps.z, lookAheadTargetExitVelMps.x);
-                Vector3d noLookAheadTargetExitVelMps = ShootingMath.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, noLookAheadRobotVelAtTurretMps);
+                Vector3dOld noLookAheadTargetExitVelMps = ShootingMathOld.calculateActualTargetExitVel(desiredBallDir, ballExitAngleRad, curExitSpeedMps, noLookAheadRobotVelAtTurretMps);
                 currentTurretTargetAngleRad = Math.atan2(noLookAheadTargetExitVelMps.z, noLookAheadTargetExitVelMps.x);
             }
             currentTargetExitSpeedMps = ballTargetExitSpeedMps;
@@ -341,12 +381,8 @@ public class ShootingSystem {
         turretMotor.updateInfo();
         robot.turret.currentEncoder = getTurretEncoder();
 
-        turretPose = ShootingMath.getTurretPose(robotPose, robot.turret.curRelAngleRad);
-        futureTurretPos = ShootingMath.getTurretPose(futureRobotPose, 0).position;
-
-//        double approxBallExitAng = distState == Dist.FAR ? generalParams.approxFarExitAngRad : generalParams.approxNearExitAngRad;
-//        ballExitPos = ShootingMath.getExitPositionInches(idealTurretPose, approxBallExitAng);
-//        futureBallExitPos = ShootingMath.getExitPositionInches(futureTurretPose, approxBallExitAng);
+        turretPose = ShootingMathOld.getTurretPose(robotPose, robot.turret.curRelAngleRad);
+        futureTurretPos = ShootingMathOld.getTurretPose(futureRobotPose, 0).position;
 
         robotVelCm = robot.drive.pinpoint().getVelocity();
         Vector2d robotVelCm = new Vector2d(this.robotVelCm.x, this.robotVelCm.y);
@@ -361,15 +397,11 @@ public class ShootingSystem {
         lookAheadRobotVelAtTurretIps = robotVelCm.plus(lookAheadRobotTanVel);
         lookAheadRobotSpeedAtTurretIps = Math.hypot(lookAheadRobotVelAtTurretIps.x, lookAheadRobotVelAtTurretIps.y);
 
-//        double deltaX = goalPosIn.x - ballExitPos.x;
-//        double deltaY = goalPosIn.z - ballExitPos.y;
-//        exitPosGoalDistIn = Math.hypot(deltaX, deltaY);
-
         futureTurretPosRelativeToGoal = new Vector2d(futureTurretPos.x - goalPosIn.x, futureTurretPos.y - goalPosIn.z);
         futureTurretPosGoalDistIn = Math.hypot(futureTurretPosRelativeToGoal.x, futureTurretPosRelativeToGoal.y);
         turretPosGoalDistIn = Math.hypot(turretPose.position.x - goalPosIn.x, turretPose.position.y - goalPosIn.z);
     }
-    private void updateGoalProperties(Vector2d robotPos) {
+    private void updateGoalPos(Vector2d robotPos) {
         double distToCorner = Math.hypot(corner.x - robotPos.x, corner.y - robotPos.y);
         if(robotPos.x > 24) {
             distState = Dist.FAR;

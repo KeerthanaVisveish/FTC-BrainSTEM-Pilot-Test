@@ -3,17 +3,15 @@ package org.firstinspires.ftc.teamcode.opmode.testing;
 import static org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils.createPose;
 
 import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Collection;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingMath;
+import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 //@TeleOp(name="Power Efficiency Finder", group="TestingParams")
@@ -70,20 +68,20 @@ public class EfficiencyCoefficientFinder extends OpMode {
         else {
             shooterVelTicksPerSec = robot.shootingSystem.getFilteredShooterSpeedTps();
             robot.shooter.setShooterVelocityPID(controls.targetShooterVelocityTicksPerSec, shooterVelTicksPerSec);
-            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(controls.ballExitAngleRad));
+            robot.shootingSystem.setHoodPosition(ShootingMathOld.getHoodServoPosition(controls.ballExitAngleRad));
 
             Pose2d start = createPose(experiment.startPose);
             // under the assumption that the turret is facing the robot's direction, only the x offset of the exit position matters
-            Pose2d turretPose = ShootingMath.getTurretPose(start, 0);
-            Vector2d exitPosition = ShootingMath.getExitPositionInches(turretPose, controls.ballExitAngleRad);
+            Pose2d turretPose = ShootingMathOld.getTurretPose(start, 0);
+            Vector2d exitPosition = ShootingMathOld.getExitPositionInches(turretPose, controls.ballExitAngleRad);
             avgDistMeters = calculateAvgDist(experiment.distanceInches, exitPosition) * 0.0254;
             if (avgDistMeters < 0)
                 telemetry.addLine("__INPUT DISTANCES ARE NOT VALID");
 
             // change in y = final y - initial y
-            changeInYMeters = ShootingMath.shooterSystemParams.ballRadiusMeters - ShootingMath.getExactExitHeightMeters(controls.ballExitAngleRad);
+            changeInYMeters = ShootingMathOld.shooterSystemParams.ballRadiusMeters - ShootingMathOld.getExactExitHeightMeters(controls.ballExitAngleRad);
 
-            shooterVelMetersPerSec = ShootingMath.ticksPerSecToExitSpeedMps(shooterVelTicksPerSec, 1);
+            shooterVelMetersPerSec = ShootingMathOld.ticksPerSecToExitSpeedMps(shooterVelTicksPerSec, 1);
             theoreticalDistMeters = calculateExpectedDistanceOfTravel(changeInYMeters, controls.ballExitAngleRad, shooterVelMetersPerSec);
 
             actualExitVelocityMetersPerSecUsingRealWorldData = calculateActualExitVelocity(avgDistMeters, changeInYMeters, controls.ballExitAngleRad);
@@ -94,7 +92,7 @@ public class EfficiencyCoefficientFinder extends OpMode {
             }
 
             powerEfficiencyCoefficient = actualExitVelocityMetersPerSecUsingRealWorldData / shooterVelMetersPerSec;
-            actualExitVelocityMetersPerSecUsingPowerLoss = ShootingMath.ticksPerSecToExitSpeedMps(shooterVelTicksPerSec, powerEfficiencyCoefficient); // this should equal actualExitVelocityMetersPerSecUsingRealWorldData
+            actualExitVelocityMetersPerSecUsingPowerLoss = ShootingMathOld.ticksPerSecToExitSpeedMps(shooterVelTicksPerSec, powerEfficiencyCoefficient); // this should equal actualExitVelocityMetersPerSecUsingRealWorldData
             expectedDistancesOfTravel = calculateExpectedDistanceOfTravel(changeInYMeters, controls.ballExitAngleRad, actualExitVelocityMetersPerSecUsingPowerLoss); // this should equal avgDistMeters
 
             robot.shootingSystem.sendHardwareInfo();
@@ -119,7 +117,7 @@ public class EfficiencyCoefficientFinder extends OpMode {
             telemetry.addData("q expected distance of travel 2 with power loss (meters)", MathUtils.format3(expectedDistancesOfTravel[1]));
             telemetry.addLine("r");
             telemetry.addData("s calculated power efficiency coefficient", MathUtils.format(powerEfficiencyCoefficient, 8));
-            telemetry.addData("t reverse engineered shooter vel (t/s)", MathUtils.format3(ShootingMath.exitMpsToMotorTicksPerSec(actualExitVelocityMetersPerSecUsingRealWorldData, powerEfficiencyCoefficient)));
+            telemetry.addData("t reverse engineered shooter vel (t/s)", MathUtils.format3(ShootingMathOld.exitMpsToMotorTicksPerSec(actualExitVelocityMetersPerSecUsingRealWorldData, powerEfficiencyCoefficient)));
 
             telemetry.update();
         }

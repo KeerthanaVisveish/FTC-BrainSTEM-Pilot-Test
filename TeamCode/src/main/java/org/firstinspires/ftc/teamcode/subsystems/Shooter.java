@@ -91,13 +91,13 @@ public class Shooter extends Component {
                 break;
         }
         if(testingParams.testing) {
-            robot.shootingSystem.setHoodPosition(ShootingMath.getHoodServoPosition(testingParams.testingExitAngleRad));
+            robot.shootingSystem.setHoodPosition(ShootingMathOld.getHoodServoPosition(testingParams.testingExitAngleRad));
         }
         else if((robot.shootingSystem.checkShootingWhileMoving
                 || robot.shootingSystem.physicsExitAngleRads[0] != -1
                 || robot.shootingSystem.robotSpeedAtTurretIps > ShootingSystem.hoodParams.robotVelThresholdToSetHood)
         && Math.abs(robot.shootingSystem.hoodExitAngleRad - lastUpdatedExitAng) > shooterParams.ignoreHoodUpdateError) {
-            double targetHoodPos = ShootingMath.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad);
+            double targetHoodPos = ShootingMathOld.getHoodServoPosition(robot.shootingSystem.hoodExitAngleRad);
             robot.shootingSystem.setHoodPosition(targetHoodPos);
             lastUpdatedExitAng = robot.shootingSystem.hoodExitAngleRad;
         }

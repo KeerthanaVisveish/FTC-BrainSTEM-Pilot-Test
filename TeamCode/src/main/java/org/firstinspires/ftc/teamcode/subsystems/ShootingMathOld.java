@@ -7,10 +7,10 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.teamcode.utils.math.Vector3d;
+import org.firstinspires.ftc.teamcode.utils.math.Vector3dOld;
 
 @Config
-public class ShootingMath {
+public class ShootingMathOld {
     public static double g = 9.81;
     // stores all parameters of the shooter/hood/turret system
     public static class ShooterSystemParams {
@@ -84,13 +84,13 @@ public class ShootingMath {
         double tanPhi = Math.tan(theta) - g * d / Math.pow(v * Math.cos(theta), 2);
         return Math.atan(tanPhi);
     }
-    public static Vector3d calculateActualTargetExitVel(double topViewBallDir, double ballExitAngleRad, double targetVelMps, Vector2d robotVelAtExitPosMps) {
-        Vector3d ballTravelDir = new Vector3d(Math.cos(topViewBallDir),0, Math.sin(topViewBallDir));
+    public static Vector3dOld calculateActualTargetExitVel(double topViewBallDir, double ballExitAngleRad, double targetVelMps, Vector2d robotVelAtExitPosMps) {
+        Vector3dOld ballTravelDir = new Vector3dOld(Math.cos(topViewBallDir),0, Math.sin(topViewBallDir));
         Vector2d shootingAngle = new Vector2d(Math.cos(ballExitAngleRad), Math.sin(ballExitAngleRad));
-        Vector3d absoluteTargetVelocity = ballTravelDir.times(shootingAngle.x).plus(Vector3d.j.times(shootingAngle.y));
+        Vector3dOld absoluteTargetVelocity = ballTravelDir.times(shootingAngle.x).plus(Vector3dOld.j.times(shootingAngle.y));
         absoluteTargetVelocity = absoluteTargetVelocity.times(targetVelMps);
 
-        return absoluteTargetVelocity.minus(new Vector3d(robotVelAtExitPosMps.x, 0, robotVelAtExitPosMps.y));
+        return absoluteTargetVelocity.minus(new Vector3dOld(robotVelAtExitPosMps.x, 0, robotVelAtExitPosMps.y));
     }
     public static double calculateBallExitAngleRad(boolean useHighArc, double y, double x, double v) {
         // Physics formula rearranged for angle: tan(θ) = (v² ± √(v⁴ - g(gx² + 2yv²))) / (gx)
