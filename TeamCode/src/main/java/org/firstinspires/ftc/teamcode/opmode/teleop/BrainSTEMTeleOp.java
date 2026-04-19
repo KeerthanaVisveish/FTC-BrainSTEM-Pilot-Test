@@ -63,17 +63,17 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         currentlyMoving = false;
         CommandScheduler.getInstance().reset();
 
-        Limelight.startingPipeline = inCompetition ? Limelight.APRIL_TAG_PIPELINE : Limelight.BALL_DETECTION_PIPELINE;
+        Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose); //take pose from auto
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);
         robot.setG1(gp1);
         telemetry.addData("Alliance", BrainSTEMRobot.alliance);
         telemetry.addData("starting pose", MathUtils.formatPose3(startPose));
-//        if (!robot.limelight.limelight.isConnected())
-//            telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
-//        if (!robot.limelight.limelight.isRunning())
-//            telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
+        if (!robot.limelight.limelight.isConnected())
+            telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
+        if (!robot.limelight.limelight.isRunning())
+            telemetry.addLine("WARNING - LIMELIGHT IS NOT RUNNING");
         telemetry.update();
 
         if (!inCompetition && streamCameraToFTCDashboard)
@@ -266,10 +266,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         else if(gp2.isFirstRightStickButton())
             robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
 
-//        if(gp2.isFirstRightBumper()) {
-//            robot.limelight.localization.manualPoseUpdate = true;
-//            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
-//        }
+        if(gp2.isFirstRightBumper()) {
+            robot.limelight.localization.manualPoseUpdate = true;
+            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
+        }
         if (gp2.isFirstRightTrigger()) {
             Pose2d resetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(resetPose);

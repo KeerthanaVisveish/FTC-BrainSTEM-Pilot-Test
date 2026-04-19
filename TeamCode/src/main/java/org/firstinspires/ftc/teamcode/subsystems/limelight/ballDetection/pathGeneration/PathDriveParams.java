@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGe
 public class PathDriveParams {
     public double isStuckMaxLinearVel = 15;
     public double isStuckMaxHeadingVel = 10;
-    public double isStuckConfirmationTime = 0.3;
+    public double isStuckConfirmationTime = 0.15;
     public double startCheckingIsStuckTime = 0.5;
 
     public double setHeadingTangentDistBetweenPoses = 44;

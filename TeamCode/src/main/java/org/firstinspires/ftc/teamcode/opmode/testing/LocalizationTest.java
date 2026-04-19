@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.teleop;
+package org.firstinspires.ftc.teamcode.opmode.testing;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -30,7 +30,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import java.util.ArrayList;
 
 @Config
-@TeleOp(name="A Localization Test", group="Competition")
+@TeleOp(name="Localization Test")
 public class LocalizationTest extends LinearOpMode {
     public static double startX = 0, startY = 0, startA = 0;
     public static double mt2HeadingOffset = 0;

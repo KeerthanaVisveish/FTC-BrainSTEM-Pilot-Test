@@ -24,7 +24,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
-import org.firstinspires.ftc.teamcode.opmode.teleop.LimelightResetTele;
+import org.firstinspires.ftc.teamcode.opmode.teleop.PreGameSetupTele;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
@@ -46,8 +46,8 @@ public abstract class AutoPidNew extends LinearOpMode {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
         public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gn gn gn 1n";
         public String farLoadingFirst = "f lf 3f af af", farLoadingLimelight = "f lf af af af";
-        public String custom = "n 1n 2n 3n";
-        public Alliance alliance = Alliance.RED;
+        public String farNoLimelight = "f lf 3f lcf lcf";
+        public Alliance alliance = Alliance.RED; // this is just the default it's re assigned later
         public String stringBuilder = "";
         public boolean smartPark = true;
     }
@@ -127,7 +127,7 @@ public abstract class AutoPidNew extends LinearOpMode {
             Limelight.startingPipeline = Limelight.BALL_DETECTION_PIPELINE;
 
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, start);
-        LimelightResetTele.cameraIsReset = false; // set to false for next run (tele does not care about this)
+        PreGameSetupTele.cameraIsReset = false; // set to false for next run (tele does not care about this)
         autoCommands = new AutoCommands(robot, telemetry);
 
         ArrayList<Action> actionOrder = new ArrayList<>();

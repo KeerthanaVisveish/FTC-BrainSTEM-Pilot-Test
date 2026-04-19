@@ -32,7 +32,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-@TeleOp(name="Loading Zone Ball Collection", group="TestingParams")
+@TeleOp(name="Loading Zone Ball Collection", group="Limelight")
 @Config
 public class LoadingZoneBallCollection extends OpMode {
     public static int streamFPS = 5;

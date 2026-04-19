@@ -27,7 +27,7 @@ public class Limelight extends Component {
         public double axialDistanceOffset = 5;
         public double hFOV = 54.5;
         public double vFOVYInt = 50, vFOVSlope = 0;
-        public double cameraHeight = 11.9685;
+        public double cameraHeight = 11.9685; // equal to .3039999 meters (this is what is set in limelight hardware for localization)
     }
     public static class DrawingParams {
         public double FOVDist = 24;
@@ -37,7 +37,7 @@ public class Limelight extends Component {
 
     // i should tune the camera so that it gives me the turret center position
     public final Limelight3A limelight;
-    public static int APRIL_TAG_PIPELINE = 0, CLASSIFIER_PIPELINE = 1, BALL_DETECTION_PIPELINE = 2;
+    public static int APRIL_TAG_PIPELINE = 3, CLASSIFIER_PIPELINE = 1, BALL_DETECTION_PIPELINE = 2;
     public static int startingPipeline = APRIL_TAG_PIPELINE;
     private int pipeline;
     public final LimelightLocalization localization; // april tag localization
@@ -67,7 +67,7 @@ public class Limelight extends Component {
         telemetry.addLine();
 
         switch (pipeline) {
-            case 0:
+            case 3:
                 localization.updateTelemetry(telemetry);
                 break;
             case 1:
@@ -81,7 +81,7 @@ public class Limelight extends Component {
     @Override
     public void update() {
         switch (pipeline) {
-            case 0:
+            case 3:
                 localization.update();
                 break;
             case 1:
@@ -100,7 +100,7 @@ public class Limelight extends Component {
 
     public void addLimelightInfo(Canvas fieldOverlay) {
         switch (pipeline) {
-            case 0:
+            case 3:
                 localization.addLocalizationInfo(fieldOverlay);
                 break;
             case 1:

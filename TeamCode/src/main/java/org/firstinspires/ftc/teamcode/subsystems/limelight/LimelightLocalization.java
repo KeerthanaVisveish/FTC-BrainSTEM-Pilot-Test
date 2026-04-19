@@ -184,8 +184,8 @@ public class LimelightLocalization extends LLParent {
         }
     }
     public void updateTelemetry(Telemetry telemetry) {
+        telemetry.addData("   localization state", state);
         if(aprilTagResult != null) {
-            telemetry.addData("   localization state", state);
             telemetry.addData("   isValid", aprilTagResult.isValid());
             telemetry.addData("   bot pose is null", aprilTagResult.getBotpose() == null);
             telemetry.addData("   camera pose", MathUtils.formatPose2(cameraPose));

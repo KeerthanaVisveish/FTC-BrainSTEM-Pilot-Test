@@ -57,16 +57,18 @@ public class LED extends Component {
             setLed(white);
             return;
         }
-//        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
-//            setLed(white);
-//            return;
-//        }
-//        if (robot.limelight.localization.getPrevState() == LimelightLocalization.LocalizationState.UPDATING_POSE &&
-//                robot.limelight.localization.successfullyFoundPose &&
-//                robot.limelight.localization.getStateTime() < confirmSuccessfulPoseUpdateTime) {
-//            setLed(blue);
-//            return;
-//        }
+        if(BrainSTEMRobot.enableLED) {
+            if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
+                setLed(white);
+                return;
+            }
+            if (robot.limelight.localization.getPrevState() == LimelightLocalization.LocalizationState.UPDATING_POSE &&
+                    robot.limelight.localization.successfullyFoundPose &&
+                    robot.limelight.localization.getStateTime() < confirmSuccessfulPoseUpdateTime) {
+                setLed(blue);
+                return;
+            }
+        }
         if (System.currentTimeMillis() - lastPinpointResetTimeMs < confirmSuccessfulPoseUpdateTime * 1000) {
             setLed(blue);
             return;

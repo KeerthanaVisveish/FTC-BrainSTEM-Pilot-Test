@@ -4,9 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.teamcode.opmode.autosBase.RedAutoPid;
 
-@Autonomous(name="RED custom")
-public class RedCustom extends RedAutoPid {
-    public RedCustom() {
-        customizable.stringBuilder = customizable.custom;
+@Autonomous(name="RED FAR no limelight")
+public class RedFarNoLimelight extends RedAutoPid {
+    public RedFarNoLimelight() {
+        customizable.stringBuilder = customizable.farNoLimelight;
     }
 }

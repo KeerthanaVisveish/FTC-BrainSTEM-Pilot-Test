@@ -1,476 +1,211 @@
-
 import cv2
 import numpy as np
 import math
 
-# classifier cropping params
-classifier_crop_left = 200
-classifier_crop_right = 200
-classifier_crop_tri_width = 400
-classifier_crop_tri_height = 300
+x_resolution = 640
+y_resolution = 480
 
-# classifier color mask bounds
-classifier_red_lb1 = (0, 200, 130)
-classifier_red_ub1 = (3, 255, 255)
-classifier_red_lb2 = (178, 200, 130)
-classifier_red_ub2 = (180, 255, 255)
-classifier_blue_lb1 = (90, 130, 50)
-classifier_blue_ub1 = (130, 255, 140)
-classifier_blue_lb2 = None
-classifier_blue_ub2 = None
+# cropping
+# min_y = 280
+min_y = 280
 
-# classifier color mask processing
-classifier_erode_size = 2
-classifier_dilate_size = 2
-min_valid_classifier_width = 200
-classifier_contour_approx_mult = 0.02
-classifier_min_edge_angle = 10
-classifier_max_edge_angle = 45
+# color masking
+gaussian_blur_kernel = (3, 3)
+green_lb = (60, 80, 20)
+# green_lb = (255, 255, 255)
+green_ub = (90, 255, 255)
+purple_lb = (130, 50, 20)
+purple_ub = (158, 255, 255)
 
-# specifying properties of classifier window mask
-classifier_window_length_buffer = 250
-classifier_window_extra_space_down = 15
-def get_classifier_window_height(camera_y):
-    return 0.0217014 * camera_y**2 + 0.770833 * camera_y + 62
+# color mask processing
+use_erode_dilate = True
+mask_erode1 = (6, 6)
+mask_dilate = (10, 10)
+mask_erode2 = (8, 8)
+def get_min_area(cy):
+    return 200
+def get_expected_area(cy):
+    #y=0.241477x^{2}-124.37356x+16918.1321
+    return 0.241477*cy**2-124.37356*cy+16918.1321
+def get_expected_radius(cy):
+    # area = pi * r^2
+    # r = sqrt(area / pi)
+    return math.sqrt(get_expected_area(cy) / math.pi)
 
-# ball color mask bounds
-green_lb = (50, 35, 125)
-green_ub = (70, 255, 230)
-purple_lb1 = (150, 70, 60)
-purple_ub1 = (180, 150, 230)
-purple_lb2 = (0, 70, 60)
-purple_ub2 = (10, 150, 230)
+giant_clump_area_ratio_threshold = 1.8
+giant_clump_height_ratio_threshold = 1.02
 
-# ball color mask processing
-ball_mask_erode_size = 10
-ball_mask_dilate_size = 10
-def get_min_ball_area(camera_y):
-    return 29.62963 * camera_y + 488.88889
-def get_single_ball_size(camera_y):
-    return 62.98024 * 1.02639**camera_y
-    #return camera_y * 2.53333 + 55.88333
-left_ball_buffer = 3 # min dist of x of ball from left side of image
-right_ball_buffer = 3 # min dist of right side of ball from right side of image
-# debugging
-sample_x = 1000
-sample_y = 350
-draw_info = True
-apply_classifier_mask = True
-show_classifier_mask = False
-show_ball_contours = False
-show_ball_rects = False
-min_hue = 255
-max_hue = 0
-min_sat = 255
-max_sat = 0
-min_bright = 255
-max_bright = 0
+occluded_ball_border_size = 40
+allow_segmentation_expected_area_percent = 0.8
+single_ball_major_minor_axis_ratio = 1.1
+# angle of major axis -> max error
+def get_segmenting_max_error(angle_rad):
+    angle = abs(math.degrees(normalize_angle(angle_rad)))
+    if angle > 90:
+        angle = 180 - angle
+    x = angle
+    y=0.00455405*x+0.2
+    max_error = y
+    # print(f"max error: {round(max_error, 3)} | angle: {round(angle, 3)}")
+    return max_error
+
+# debug info
+show_mask = True
+draw_debug = True
 
 def runPipeline(image, llrobot):
-    global draw_info
-    global apply_classifier_mask
-    global show_classifier_mask
-    global show_ball_contours
-    global show_ball_rects
-    global classifier_contour_approx_mult
-    global classifier_red_lb1
-    global classifier_red_ub1
-    global classifier_red_lb2
-    global classifier_red_ub2
-    global classifier_blue_lb1
-    global classifier_blue_ub1
-    global classifier_blue_lb2
-    global classifier_blue_ub2
-    global left_ball_buffer
-    global right_ball_buffer
-    global sample_x
-    global sample_y
-    global green_lb
-    global green_ub
-    global purple_lb1
-    global purple_ub1
-    global purple_lb2
-    global purple_ub2
-
-    # llrobot = [1, 12]
-    is_red = llrobot[0] > 0.
-    camera_y = llrobot[1]
-    if not is_red:
-        camera_y *= -1
-
-    image = cv2.GaussianBlur(image, (3, 3), 0)
+    # finding color contours===============================
+    image = cv2.GaussianBlur(image, gaussian_blur_kernel, 0)
+    cv2.rectangle(image, (0, 0), (640, min_y), (0, 0, 0), -1)
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    # mask image based on classifier========================
-    classifier_lb1 = classifier_red_lb1 if is_red else classifier_blue_lb1
-    classifier_ub1 = classifier_red_ub1 if is_red else classifier_blue_ub1
-    classifier_lb2 = classifier_red_lb2 if is_red else classifier_blue_lb2
-    classifier_ub2 = classifier_red_ub2 if is_red else classifier_blue_ub2
-    valid_region_mask, classifier_col_mask, valid_region_y_bounds, successful = get_classifier_info(
-        img_hsv,
-        camera_y,
-        classifier_lb1, classifier_ub1,
-        classifier_lb2, classifier_ub2,
-        classifier_contour_approx_mult,
-        show_debug=draw_info)
-    if not successful:
-        draw_left_text(image, "cannot find classifier", 3, 370)
-        return contour_at_point(0, 0), classifier_col_mask if show_classifier_mask else image, [-1, llrobot[0], llrobot[1]]
+    green_mask = get_color_mask(img_hsv, green_lb, green_ub)
+    purple_mask = get_color_mask(img_hsv, purple_lb, purple_ub)
 
-    if apply_classifier_mask:
-        img_hsv = cv2.bitwise_and(img_hsv, img_hsv, mask=valid_region_mask)
-    final_img = cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR)
-    # finding color contours=================================
-    y1, y2 = valid_region_y_bounds
-    cropped = img_hsv[y1:y2, :].copy()
+    final_img = image
+    if show_mask:
+        mask = cv2.bitwise_or(green_mask, purple_mask)
+        final_img = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-    green_contours = get_contours(cropped, camera_y, green_lb, green_ub, None, None, final_img, draw_info)
-    purple_contours = get_contours(cropped, camera_y, purple_lb1, purple_ub1, purple_lb2, purple_ub2, final_img, draw_info)
-    num_contours = len(green_contours) + len(purple_contours)
-    if num_contours == 0:
-        draw_left_text(final_img, "no balls found", 3, 300)
-        return contour_at_point(0, 0), classifier_col_mask if show_classifier_mask else final_img, [0, llrobot[0], llrobot[1]]
-
-    # combining, sorting, and segmenting color contours===========
-    sorted_contours = []
-    sorted_contours.extend(green_contours)
-    sorted_contours.extend(purple_contours)
-    sorted_contours.sort(key=centroid_x)
-    rects = segment_contours(sorted_contours, camera_y, draw_info, final_img)
-
-    # ignore result if balls are partially occluded
-    r1 = rects[0]
-    r2 = rects[len(rects)-1]
-    if r1[0] <= left_ball_buffer or r2[0] + r2[2] >= len(image[0]) - right_ball_buffer:
-        draw_left_text(final_img, "occluded balls", 3, 300)
-        return contour_at_point(sample_x, sample_y), classifier_col_mask if show_classifier_mask else final_img, [-2, llrobot[0], llrobot[1]]
-
-    num_balls = len(rects)
-    num_balls = min(9, num_balls)
-    if draw_info:
-        if show_ball_contours or show_ball_rects:
-            dy = valid_region_y_bounds[0]
-            for c in sorted_contours:
-                c[:, 0, 1] += dy
-            for i in range(len(rects)):
-                x, y, w, h = rects[i]
-                rects[i] = (x, y + dy, w, h)
-            if show_ball_contours:
-                draw_combined_contours(final_img, sorted_contours)
-            if show_ball_rects:
-                draw_rects(final_img, rects)
-        draw_left_text(final_img, f"num contours: {num_contours}", 1, 300)
-        draw_left_text(final_img, f"num balls: {num_balls}", 0, 250)
-
-    image = final_img
-    show_sample_pixel(final_img, final_img, sample_x, sample_y, show_debug=False)
-    return contour_at_point(sample_x, sample_y), classifier_col_mask if show_classifier_mask else final_img, [num_balls, llrobot[0], llrobot[1]]
-
-
-def get_classifier_info(img, camera_y,
-        lower_bounds1, upper_bounds1, lower_bounds2, upper_bounds2,
-        contour_simplification_mult, show_debug):
-    image = img.copy()
-    width = len(image[0])
-    height = len(image)
-
-    # crop out edges of image when finding classifier mask
-    global classifier_crop_left
-    global classifier_crop_right
-    global classifier_crop_tri_width
-    global classifier_crop_tri_height
-    crop_right = width - classifier_crop_right
-    cv2.rectangle(image, (0, 0), (classifier_crop_left, height), 0, -1)
-    cv2.rectangle(image, (crop_right, 0), (width, height), 0, -1)
-    middle = width / 2
-    pts = np.array(
-        [[middle - classifier_crop_tri_width * 0.5, height],
-         [middle, height - classifier_crop_tri_height],
-         [middle + classifier_crop_tri_width * 0.5, height]],
-        dtype=np.int32
-    ).reshape((-1, 1, 2))
-    cv2.fillPoly(image, [pts], color=0)
-
-    classifier_mask = cv2.inRange(image, lower_bounds1, upper_bounds1)
-    if lower_bounds2 is not None and upper_bounds2 is not None:
-        mask2 = cv2.inRange(image, lower_bounds2, upper_bounds2)
-        classifier_mask = cv2.bitwise_or(classifier_mask, mask2)
-
-    global classifier_erode_size
-    global classifier_dilate_size
-    if classifier_erode_size > 0:
-        erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (classifier_erode_size, classifier_erode_size))
-        classifier_mask = cv2.erode(classifier_mask, erode)
-    if classifier_dilate_size > 0:
-        dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (classifier_dilate_size, classifier_dilate_size))
-        classifier_mask = cv2.dilate(classifier_mask, dilate)
-
-    contours, _ = cv2.findContours(classifier_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if show_debug:
-        classifier_mask = cv2.cvtColor(classifier_mask, cv2.COLOR_GRAY2BGR)
-
-    mask = np.zeros((height, width), dtype=np.uint8)
-    if len(contours) > 0:
-        largest_contour = max(contours, key=cv2.contourArea)
-
-        perimeter = cv2.arcLength(largest_contour, True)
-        epsilon = contour_simplification_mult * perimeter
-        approx = cv2.approxPolyDP(largest_contour, epsilon, closed=True)
-
-        global classifier_min_edge_angle
-        global classifier_max_edge_angle
-        min_angle = classifier_min_edge_angle * math.pi / 180
-        max_angle = classifier_max_edge_angle * math.pi / 180
-        edge = longest_edge_from_approx(approx, min_angle, max_angle)
-        if edge is None:
-            return mask, classifier_mask, [0, 0], False
-        p1 = edge[0]
-        p2 = edge[1]
-        # generating rectangle above classifier
-        if p1[0] > p2[0]:
-            p1, p2 = p2, p1
-        r1x = p1[0]
-        r1y = p1[1]
-        r2x = p2[0]
-        r2y = p2[1]
-
-        global min_valid_classifier_width
-        if abs(r2x - r1x) < min_valid_classifier_width:
-            return mask, classifier_mask, [0, 0], False
-
-        global classifier_window_length_buffer
-        global classifier_window_extra_space_down
-        classifier_window_height = get_classifier_window_height(camera_y)
-        dx = r2x - r1x
-        dy = r2y - r1y
-        dist = math.sqrt(dx**2 + dy**2)
-        dx /= dist
-        dy /= dist
-        r1x -= dx * classifier_window_length_buffer
-        r1y -= dy * classifier_window_length_buffer
-        r2x += dx * classifier_window_length_buffer
-        r2y += dy * classifier_window_length_buffer
-
-        r1y += classifier_window_extra_space_down
-        r2y += classifier_window_extra_space_down
-
-        height_window = classifier_window_height
-        height_window += classifier_window_extra_space_down
-
-        r3x = r2x
-        r3y = r2y - height_window
-        r4x = r1x
-        r4y = r1y - height_window
-
-        if show_debug:
-            cv2.polylines(
-                classifier_mask,
-                [approx],
-                isClosed=True,
-                color=(0, 255, 0),
-                thickness=2
+    green_blob_info = get_blob_info(green_mask, final_img if draw_debug else None)
+    purple_blob_info = get_blob_info(purple_mask, final_img if draw_debug else None)
+    blob_info = green_blob_info + purple_blob_info
+    if draw_debug:
+        cv2.putText(
+                final_img,
+                f"num balls: {len(blob_info)}",
+                (int(20), int(20)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8, (255, 255, 255), 2,
+                cv2.LINE_AA
             )
-            cv2.circle(classifier_mask, (int(p1[0]), int(p1[1])), 20, (255, 0, 255), -1)
-            cv2.circle(classifier_mask, (int(p2[0]), int(p2[1])), 20, (255, 0, 255), -1)
-            cv2.circle(classifier_mask, (int(r1x), int(r1y)), 20, (0, 0, 255), -1)
-            cv2.circle(classifier_mask, (int(r2x), int(r2y)), 20, (0, 0, 255), -1)
-            cv2.circle(classifier_mask, (int(r3x), int(r3y)), 20, (0, 0, 255), -1)
-            cv2.circle(classifier_mask, (int(r4x), int(r4y)), 20, (0, 0, 255), -1)
+    python_outputs = np.array(blob_info).flatten()
+    coords = (0, 0) if len(python_outputs) == 0 else (python_outputs[0], python_outputs[1])
+    return contour_at_point(coords[0], coords[1]), final_img, python_outputs
 
-        pts = np.array(
-            [[r1x, r1y],
-             [r2x, r2y],
-             [r3x, r3y],
-             [r4x, r4y]],
-            dtype=np.int32
-        ).reshape((-1, 1, 2))
+def get_color_mask(hsv, lower_bounds, upper_bounds):
+    mask = cv2.inRange(hsv, lower_bounds, upper_bounds)
 
-        cv2.fillPoly(mask, [pts], color=255)
+    if use_erode_dilate:
+        if mask_erode1[0] > 0 and mask_erode1[1] > 0:
+            shrink = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_erode1)
+            mask = cv2.erode(mask, shrink)
 
-        y_bounds = [
-            max(0, int(min(r3y, r4y))),
-            min(height, math.ceil(max(r1y, r2y)))
-        ]
-        return mask, classifier_mask, y_bounds, True
-    return mask, classifier_mask, [0, 0], False
+        if mask_dilate[0] > 0 and mask_dilate[1] > 0:
+            grow = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_dilate)
+            mask = cv2.dilate(mask, grow)
 
+        if mask_erode2[0] > 0 and mask_erode2[1] > 0:
+            shrink2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, mask_erode2)
+            mask = cv2.erode(mask, shrink2)
+    return mask
 
-def get_contours(hsv, camera_y, lower_bounds, upper_bounds, lower_bounds2, upper_bounds2, final_img, show_debug):
-    img_threshold = cv2.inRange(hsv, lower_bounds, upper_bounds)
-    if lower_bounds2 is not None and upper_bounds2 is not None:
-        mask2 = cv2.inRange(hsv, lower_bounds2, upper_bounds2)
-        img_threshold = cv2.bitwise_or(img_threshold, mask2)
+# returns 2d list returning centroid x, y, and area of contour
+def get_blob_info(mask, draw_img=None):
+    contours, _ = cv2.findContours(mask,
+    cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    global ball_mask_erode_size
-    global ball_mask_dilate_size
-    if ball_mask_dilate_size > 0:
-        dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ball_mask_dilate_size, ball_mask_dilate_size))
-        img_threshold = cv2.dilate(img_threshold, dilate)
-    if ball_mask_erode_size > 0:
-        erode = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ball_mask_erode_size, ball_mask_erode_size))
-        img_threshold = cv2.erode(img_threshold, erode)
-
-    # find contours in the new binary image
-    contours, _ = cv2.findContours(img_threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # filter out specks
-    min_area = get_min_ball_area(camera_y)
-
-    min_accepted_area = -1
-    filtered_contours = []
-    avg_area = 0
-    num_accepted = 0
+    info = []
+    y_border = y_resolution - occluded_ball_border_size
+    left_border = occluded_ball_border_size
+    right_border = x_resolution - occluded_ball_border_size
     for c in contours:
         area = cv2.contourArea(c)
-        if area >= min_area:
-            avg_area += area
-            num_accepted += 1
-            filtered_contours.append(c)
-            if min_accepted_area < 0 or area < min_accepted_area:
-                min_accepted_area = area
-    contours = filtered_contours
-    if num_accepted > 0:
-        avg_area /= num_accepted
+        cx, cy = centroid_xy(c)
+        min_area =  get_min_area(cy)
+        if (area < min_area):
+            continue
+        successful = True
 
-    # filter out outliers by y value
-    if len(contours) > 0:
-        total_y = 0
-        centroid_ys = []
-        for c in contours:
-            cy = centroid_y(c)
-            centroid_ys.append(cy)
-            total_y += cy
-        mean_y = total_y / len(contours)
+        is_single = False
+        can_compute_ellipse = len(c) >= 5
+        is_giant_clump = False
+        bbox_left, bbox_top, bbox_width, bbox_height = cv2.boundingRect(c)
 
-        max_dist_from_mean = 230
-        filtered_contours = []
-        for i in range(len(contours)):
-            cy = centroid_ys[i]
-            diff = abs(cy - mean_y)
-            if diff <= max_dist_from_mean:
-                filtered_contours.append(contours[i])
-        contours = filtered_contours
+        if can_compute_ellipse:
+            (x, y), (width, height), angle = cv2.fitEllipse(c)
+            major_axis = max(width, height)
+            minor_axis = min(width, height)
 
-    if show_debug:
-        draw_right_text(final_img, f"min contour area: {min_area}", 3, 450)
-        draw_right_text(final_img, f"avg valid area: {avg_area}", 2, 450)
+            expected_single_area = get_expected_area(cy)
+            expected_single_radius = get_expected_radius(cy)
+            area_ratio = area / expected_single_area
+            height_ratio = bbox_height * 0.5 / expected_single_radius
+            is_giant_clump = area_ratio > giant_clump_area_ratio_threshold and height_ratio > giant_clump_height_ratio_threshold
+            out_of_bounds = cy > y_border or cx < left_border or cx > right_border
+            is_single = out_of_bounds or is_giant_clump
 
-    return contours
+            if not is_single:
+                if area_ratio < allow_segmentation_expected_area_percent:
+                    is_single = True
 
+            if not is_single:
+                if draw_img is not None:
+                    cv2.ellipse(
+                        draw_img,
+                        ((x, y), (width, height), angle),
+                        color=(0, 255, 0),
+                        thickness=2
+                    )
+                major_angle = math.radians(angle if width > height else angle + 90)
+                num_balls = major_axis / minor_axis
+                max_error = get_segmenting_max_error(major_angle)
+                # print(f"num balls: {num_balls}")
+                # print(f"num balls: {num_balls}")
+                if num_balls <= 2 - max_error:
+                    is_single = True
+                else:
+                    actual_num_balls = int(num_balls / single_ball_major_minor_axis_ratio + max_error)
+                    # print(f"actual num balls: {actual_num_balls}===============")
+                    singular_area = area / actual_num_balls
+                    major_radius = major_axis / 2
+                    cos = math.cos(major_angle)
+                    sin = math.sin(major_angle)
+                    start_x = x - cos * major_radius
+                    start_y = y - sin * major_radius
+                    increment_dist = major_axis / (actual_num_balls + 1)
+                    dx = increment_dist * cos
+                    dy = increment_dist * sin
+                    for i in range(actual_num_balls):
+                        cur_x = start_x + dx * (i + 1)
+                        cur_y = start_y + dy * (i + 1)
+                        info.append([cur_x, cur_y, singular_area, -1])
+        if is_single:
+            info.append([cx, cy, area, 1 if is_giant_clump else -1])
 
-def segment_contours(contours, camera_y, show_debug, image):
-    single_ball_size = get_single_ball_size(camera_y)
-    another_ball_threshold = 0.8
-    first_ball_size_mult = 1.1
+    # sort blob info by area (biggest first)
+    info.sort(key=lambda c: c[2], reverse=True)
 
-    segmented_rects = []
-    first_w = 0
-    other_w = 0
-    avg_w = 0
-    for i in range(len(contours)):
-        contour = contours[i]
-        x, y, w, h = cv2.boundingRect(contour)
-        if i > 0:
-            other_w += w
-        else:
-            first_w = w
+    if draw_img is not None:
+        for i in range(len(info)):
+            cx = info[i][0]
+            cy = info[i][1]
+            area = info[i][2]
+            is_giant_clump = info[i][3] == 1
+            circle_col = (255, 0, 0) if is_giant_clump else (0, 0, 0)
+            cv2.circle(draw_img, (int(cx), int(cy)), 10, circle_col, 3)
+            color = (255, 255, 0)
+            cv2.putText(
+                draw_img,
+                f"{i+1}",
+                (int(cx), int(cy)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8, color, 2,
+                cv2.LINE_AA
+            )
 
-        ball_size = single_ball_size
-        if i == 0:
-            ball_size *= first_ball_size_mult
-        ratio = w / ball_size
-
-        if ratio > 1 + another_ball_threshold:
-            split_amount = int(ratio)
-            if ratio % 1 > another_ball_threshold:
-                split_amount += 1
-            split_width = w / split_amount
-            for i in range(split_amount):
-                split_rect = x + i * split_width, y, split_width, h
-                segmented_rects.append(split_rect)
-        else:
-            rect = x, y, w, h
-            segmented_rects.append(rect)
-
-    if len(contours) > 1:
-        avg_w = (first_w + other_w) / len(contours)
-        other_w /= len(contours) - 1
-    elif len(contours) == 1:
-        avg_w = first_w
-
-    if show_debug:
-        draw_right_text(image, f"single ball w: {single_ball_size}", 1, 450)
-        draw_right_text(image, f"avg contour w: {avg_w}", 0, 450)
-
-    return segmented_rects
+    return info
 
 # drawing functions========================
-def show_sample_pixel(image, img_hsv, samplex, sampley, show_debug):
+def show_sample_pixel(image, img_hsv, samplex, sampley):
     h, s, b = img_hsv[sampley, samplex]
-
-    global min_hue
-    global max_hue
-    global min_sat
-    global max_sat
-    global min_bright
-    global max_bright
-    min_hue = min(h, min_hue)
-    max_hue = max(h, max_hue)
-    min_sat = min(s, min_sat)
-    max_sat = max(s, max_sat)
-    min_bright = min(b, min_bright)
-    max_bright = max(b, max_bright)
-
-    if show_debug:
-        draw_right_text(image, f"color: {h:3d} {s:3d} {b:3d}", 2, 400)
-        draw_right_text(image, f"min col: {min_hue:3d} {min_sat:3d} {min_bright:3d}", 1, 400)
-        draw_right_text(image, f"max col: {max_hue:3d} {max_sat:3d} {max_bright:3d}", 0, 400)
-
-
-def draw_left_text(image, text, row, width):
-    h = len(image)
-    y = h - 70 * (row + 1)
-    cv2.rectangle(image, (0, y), (width, y + 60), (0, 0, 0), -1)
+    cv2.rectangle(image, (0, 60), (360, 120), (0, 0, 0), -1)
     cv2.putText(
-        image, text, (10, y + 40),
+        image, f"color: {h} {s} {b}", (20, 100),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.0, (0, 255, 0), 2,
         cv2.LINE_AA
     )
-def draw_right_text(image, text, row, width):
-    x = len(image[0]) - width
-    y = len(image) - 70 * (row + 1)
-    cv2.rectangle(image, (x, y), (x + width, y + 60), (0, 0, 0), -1)
-    cv2.putText(
-        image, text, (x + 20, y + 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        1.0, (0, 255, 0), 2,
-        cv2.LINE_AA
-    )
-
-
-def draw_combined_contours(image, contours):
-    contours = [c for c in contours if c is not None and len(c) > 0 and c.shape[0] > 0]
-    if len(contours) <= 0:
-        return
-    cv2.drawContours(image, contours, -1, (255, 255, 255), 2)
-
-
-def draw_rects(image, rects):
-    for i in range(len(rects)):
-        x, y, w, h = rects[i]
-        x = int(x)
-        y = int(y)
-        w = int(w)
-        h = int(h)
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 0), 3)
-        cv2.rectangle(image, (x - 5, y - 50), (x + 20, y), (0, 0, 0), -1)
-        cv2.putText(image, f"{i}", (x, y - 20),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.0, (255, 255, 255), 2, cv2.LINE_AA)
-
-
 # utility functions=========================
 def centroid_x(contour):
     M = cv2.moments(contour)
@@ -478,13 +213,11 @@ def centroid_x(contour):
         return 0.0
     return M["m10"] / M["m00"]
 
-
 def centroid_y(contour):
     M = cv2.moments(contour)
     if M["m00"] == 0:
         return 0.0
     return M["m01"] / M["m00"]
-
 
 def centroid_xy(contour):
     M = cv2.moments(contour)
@@ -493,7 +226,6 @@ def centroid_xy(contour):
     cx = M["m10"] / M["m00"]
     cy = M["m01"] / M["m00"]
     return cx, cy
-
 
 def contour_at_point(x, y, size=6):
     # contour shape: (N, 1, 2) int32
@@ -506,152 +238,6 @@ def contour_at_point(x, y, size=6):
     ], dtype=np.int32).reshape((-1, 1, 2))
     return pts
 
-
-# finds the longest edge from a polygon that does not exceed the max angle taken from the horizontal
-def longest_edge_from_approx(approx, min_angle_rad, max_angle_rad):
-    pts = approx.reshape(-1, 2)  # (N, 2)
-    n = len(pts)
-    max_len = 0.0
-    best_edge = None
-
-    for i in range(n):
-        p1 = pts[i]
-        p2 = pts[(i + 1) % n]  # wrap around
-
-        length = np.linalg.norm(p2 - p1)
-        dy = p2[1] - p1[1]
-        dx = p2[0] - p1[0]
-        angle = abs(math.atan2(dy, dx))
-        if angle > math.pi * 0.5:
-            angle = math.pi - angle
-
-        if length > max_len and angle < max_angle_rad and angle > min_angle_rad:
-            max_len = length
-            best_edge = (tuple(p1), tuple(p2))
-    return best_edge
-
-# returns length, (point1, point2)
-def longest_2edges_from_approx(approx):
-    pts = approx.reshape(-1, 2)  # (N, 2)
-    n = len(pts)
-
-    max_len = 0.0
-    best_edge = None
-    max_len2 = 0
-    best_edge2 = None
-
-    for i in range(n):
-        p1 = pts[i]
-        p2 = pts[(i + 1) % n]  # wrap around
-
-        length = np.linalg.norm(p2 - p1)
-
-        if length > max_len:
-            max_len2 = length
-            best_edge2 = best_edge
-            max_len = length
-            best_edge = (tuple(p1), tuple(p2))
-        elif length > max_len2:
-            max_len2 = length
-            best_edge = (tuple(p1), tuple(p2))
-
-    return max_len, best_edge, max_len2, best_edge2
-
-# old rotation code in runPipeline() function
-# angle_rad = get_avg_angle_rad_between_sorted_contours(sorted_contours)
-# rounded_angle = int(100 * angle_rad * 180 / math.pi) / 100
-# cv2.putText(image, f"{rounded_angle}", (60, 60),
-#             cv2.FONT_HERSHEY_SIMPLEX,
-#             1.0, (255, 0, 255), 2, cv2.LINE_AA)
-# pivot = len(image[0]) * 0.5, len(image) * 0.5
-# rotated_contours = rotate_contours(pivot, angle_rad, sorted_contours)
-# rects = segment_contours(rotated_contours, camera_y)
-# rects = rotate_rects(pivot, angle_rad, rects)
-
-# old rotation code helpers
-def get_avg_angle_rad_between_sorted_contours(sorted_contours):
-    num_contours = len(sorted_contours)
-    if num_contours == 0:
-        return 0.
-
-    if num_contours == 1:
-        pts = sorted_contours[0].reshape(-1, 2).astype(np.float32)
-        mean = np.mean(pts, axis=0)
-        pts_centered = pts - mean  # center around (0, 0)
-        _, eigenvectors = cv2.PCACompute(pts_centered, mean=None)
-        vx, vy = eigenvectors[0]  # long direction
-        return math.atan2(vy, vx)
-
-    pairs = len(sorted_contours) // 2
-
-    total_angle = 0.0
-    n = len(sorted_contours)
-
-    for i in range(pairs):
-        fx, fy = centroid_xy(sorted_contours[i])
-        lx, ly = centroid_xy(sorted_contours[n - 1 - i])
-        total_angle += math.atan2(ly - fy, lx - fx)
-
-    return total_angle / pairs
-
-def rotate_contours(pivot, angle_rad, contours):
-    cx, cy = pivot
-    angle_deg = math.degrees(angle_rad)
-    M = cv2.getRotationMatrix2D((cx, cy), angle_deg, 1.0)
-
-    rotated = []
-    for c in contours:
-        if c is None or len(c) == 0:
-            continue
-
-        c_float = c.astype(np.float32)  # (N,1,2)
-        rc = cv2.transform(c_float, M)  # float32
-
-        # Limelight-safe: drawContours prefers int32 point contours
-        rc = np.round(rc).astype(np.int32)
-
-        if rc.shape[0] > 0:
-            rotated.append(rc)
-
-    return rotated
-    cx, cy = pivot
-    angle_deg = math.degrees(angle_rad)
-    M = cv2.getRotationMatrix2D((cx, cy), angle_deg, 1.0)
-
-    rotated = []
-    for c in contours:
-        if c is None or len(c) == 0:
-            continue
-        c_float = c.astype(np.float32)  # (N,1,2)
-        rc = cv2.transform(c_float, M)
-        if rc is not None and len(rc) > 0:
-            rotated.append(rc)
-    return rotated
-
-def rotate_rects(pivot, angle_rad, rects):
-    cx, cy = pivot
-    cos_a = math.cos(angle_rad)
-    sin_a = math.sin(angle_rad)
-
-    rotated_rects = []
-
-    for x, y, w, h in rects:
-        # center of the rect
-        rcx = x + w * 0.5
-        rcy = y + h * 0.5
-
-        # translate to pivot
-        dx = rcx - cx
-        dy = rcy - cy
-
-        # rotate
-        nx = dx * cos_a - dy * sin_a + cx
-        ny = dx * sin_a + dy * cos_a + cy
-
-        # convert back to top-left corner
-        new_x = int(round(nx - w * 0.5))
-        new_y = int(round(ny - h * 0.5))
-
-        rotated_rects.append((new_x, new_y, w, h))
-
-    return rotated_rects
+# Normalize angle to be between -pi and pi
+def normalize_angle(angle):
+    return (angle + math.pi) % (2 * math.pi) - math.pi
