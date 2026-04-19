@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.utils.shootingMath;
 
+import androidx.annotation.NonNull;
+
 public class LaunchData {
     public final boolean valid;
     public final double speed;
@@ -22,7 +24,8 @@ public class LaunchData {
         turretAng = -1;
     }
 
+    @NonNull
     public String toString() {
-        return "speed: " + speed + ", exit ang: " + exitAng + ", turret ang: " + turretAng;
+        return "v: " + speed + ", theta: " + exitAng + ", phi: " + turretAng;
     }
 }

@@ -8,7 +8,7 @@ public class ServoImplCacher {
     public ServoImplCacher(ServoImplEx servo) {
         this.servo = servo;
     }
-    public void updateProperties() {
+    public void updateInfo() {
         curPos = servo.getPosition();
     }
     public double getPosition() {

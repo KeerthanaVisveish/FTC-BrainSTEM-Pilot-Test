@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 public class ResetTurretEncoderTele extends LinearOpMode {
     @Override
     public void runOpMode() {
-        ShootingSystem shootingSystem = new ShootingSystem(hardwareMap, null);
+        ShootingSystem shootingSystem = new ShootingSystem(hardwareMap, telemetry, null);
         shootingSystem.resetTurretEncoder();
         telemetry.addData("turret encoder", shootingSystem.getTurretEncoderRaw());
         telemetry.update();

@@ -24,6 +24,6 @@ public class AnswerKeyPt1 {
     }
 
     public String toString() {
-        return "answer1 launch data: " + launchData;
+        return "" + launchData;
     }
 }

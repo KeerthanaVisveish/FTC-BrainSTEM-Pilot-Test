@@ -32,6 +32,7 @@ import java.util.function.ToDoubleFunction;
 @Config
 public class ShootingSystem {
     public static class TestingParams {
+        public boolean useNewShooting = false;
         public boolean powerTurret = true;
         public boolean powerLowShooter = true, powerHighShooter = true;
         public boolean drawShootingRings = false;
@@ -60,7 +61,7 @@ public class ShootingSystem {
         public double far2ExitAng = Math.toRadians(37);
         public double maxShootingDist = 175;
         public double maxDynamicHoodError = Math.toRadians(12), enableHoodCheckDist = 146;
-        public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3;
+        public double firstShootToleranceMps = 0.1, normShootToleranceMps = 0.3, farShotTolerance = .7;
         public double lookAheadTime = 0.15; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
         public int numApproximations = 4;
@@ -117,8 +118,12 @@ public class ShootingSystem {
     public double relGoalHeightM;
     public boolean checkShootingWhileMoving, currentlyShootingWhileMoving;
     private final ShootingMath shootingMathNew;
-    public ShootingSystem(HardwareMap hardwareMap, BrainSTEMRobot robot) {
+    private AnswerKeyPt1 lookAheadAnswerKeyPt1, currentAnswerKeyPt1;
+    private AnswerKeyPt2 lookAheadAnswerKeyPt2, currentAnswerKeyPt2;
+    private final Telemetry telemetry;
+    public ShootingSystem(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         this.hardwareMap = hardwareMap;
+        this.telemetry = telemetry;
         this.robot = robot;
 
         shootingMathNew = new ShootingMath();
@@ -187,8 +192,8 @@ public class ShootingSystem {
         curTimeMs = System.currentTimeMillis();
         dt = (curTimeMs - prevTimeMs) / 1000;
 
-        hoodLeftServo.updateProperties();
-        hoodRightServo.updateProperties();
+        hoodLeftServo.updateInfo();
+        hoodRightServo.updateInfo();
 
         Pose2d robotPose = robot.drive.localizer.getPose();
         futureRobotPose = robot.drive.pinpoint().getNextPoseSimple(generalParams.lookAheadTime);
@@ -216,23 +221,43 @@ public class ShootingSystem {
     }
 
     public void updatePropertiesNew() {
+        shooterLowMotor.updateInfo();
+        shooterHighMotor.updateInfo();
+
+        turretMotor.updateInfo();
+        robot.turret.currentEncoder = getTurretEncoder();
+        Pose2d robotPose = robot.drive.pinpoint().getPose();
+        turretPose = ShootingMathOld.getTurretPose(robotPose, robot.turret.curRelAngleRad);
+
+        hoodLeftServo.updateInfo();
+        hoodRightServo.updateInfo();
+
         Vector3d exitPosM = new Vector3d(turretPose.position.x, turretPose.position.y, ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR)).times(.0254);
-        Vector2d robotPos = robot.drive.pinpoint().getPose().position;
-        Vector3d robotPosM = new Vector3d(robotPos.x, robotPos.y, 0).times(.0254);
+        Vector3d robotPosM = new Vector3d(robotPose.position.x, robotPose.position.y, 0).times(.0254);
         OdoInfo robotVel = robot.drive.pinpoint().getVelocity();
-        Vector3d robotVelCm = new Vector3d(robotVel.x, robotVel.y, 0);
+        Vector3d robotVelCm = new Vector3d(robotVel.x, robotVel.y, 0).times(.0254);
         double robotAngularVel = robot.drive.pinpoint().getVelocity().headingRad;
-        Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z);
+        Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z).times(.0254);
         ToDoubleFunction<Double> shooterConversion = exitAngle -> {
             double e = calcEfficiencyCoef(exitAngle);
             return ShootingMathOld.ticksPerSecToExitSpeedMps(1, e);
         };
-        AnswerKeyPt1 lookAheadAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, generalParams.lookAheadTime);
-        AnswerKeyPt2 lookAheadAnswerKeyPt2 = shootingMathNew.godSolvePart2(lookAheadAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
 
-        AnswerKeyPt1 currentAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, 0);
-        AnswerKeyPt2 currentAnswerKeyPt2 = shootingMathNew.godSolvePart2(currentAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
+        telemetry.addData("exit pos m", exitPosM);
+        telemetry.addData("robot pos m", robotPosM);
+        telemetry.addData("robot vel cm", robotVelCm);
+        telemetry.addData("robot angular vel", robotAngularVel);
+        telemetry.addData("goal pos m", goalPosM);
 
+        lookAheadAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, generalParams.lookAheadTime);
+        lookAheadAnswerKeyPt2 = shootingMathNew.godSolvePart2(lookAheadAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
+
+        currentAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, 0);
+        currentAnswerKeyPt2 = shootingMathNew.godSolvePart2(currentAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
+
+        futureRobotPose = new Pose2d(
+                robotPose.position.plus(new Vector2d(robotVel.x, robotVel.y).times(generalParams.lookAheadTime)),
+                robotPose.heading.toDouble() + robotAngularVel * generalParams.lookAheadTime);
         if(lookAheadAnswerKeyPt1.solutionExists) {
             lookAheadTargetExitSpeedMps = lookAheadAnswerKeyPt1.launchData.speed;
             if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
@@ -423,31 +448,34 @@ public class ShootingSystem {
     public void printInfo(Telemetry telemetry) {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("robot vel center of mass", robotVelCm.toString(3));
-        telemetry.addData("future turret pos relative to goal", MathUtils.formatVec3(futureTurretPosRelativeToGoal));
-        telemetry.addData("robot vel at turret ips", MathUtils.formatVec3(robotVelAtTurretIps));
-
-        telemetry.addData("checking shooting while moving", checkShootingWhileMoving);
-        telemetry.addData("currently shooting while moving", currentlyShootingWhileMoving);
-        telemetry.addData("efficiency coef", efficiencyCoef);
-        telemetry.addData("absolute turret target rad", lookAheadTurretTargetAngleRad);
-        telemetry.addData("absolute turret target deg", Math.toDegrees(lookAheadTurretTargetAngleRad));
-        telemetry.addData("robot-relative target exit speed mps", lookAheadTargetExitSpeedMps);
-        telemetry.addData("ball exit angle deg", Math.toDegrees(ballExitAngleRad));
-        telemetry.addData("ideal ball exit angle deg", Math.toDegrees(idealBallExitAng));
-        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
-        telemetry.addData("physics exit angle rad", MathUtils.format3(physicsExitAngleRads));
+        telemetry.addData("lookahead pt1 exists", lookAheadAnswerKeyPt1.solutionExists);
+        if(lookAheadAnswerKeyPt1.solutionExists)
+            telemetry.addData("lookahead pt1 launch data", lookAheadAnswerKeyPt1.launchData);
+//        telemetry.addData("robot vel center of mass", robotVelCm.toString(3));
+//        telemetry.addData("future turret pos relative to goal", MathUtils.formatVec3(futureTurretPosRelativeToGoal));
+//        telemetry.addData("robot vel at turret ips", MathUtils.formatVec3(robotVelAtTurretIps));
+//
+//        telemetry.addData("checking shooting while moving", checkShootingWhileMoving);
+//        telemetry.addData("currently shooting while moving", currentlyShootingWhileMoving);
+//        telemetry.addData("efficiency coef", efficiencyCoef);
+//        telemetry.addData("absolute turret target rad", lookAheadTurretTargetAngleRad);
+//        telemetry.addData("absolute turret target deg", Math.toDegrees(lookAheadTurretTargetAngleRad));
+//        telemetry.addData("robot-relative target exit speed mps", lookAheadTargetExitSpeedMps);
+//        telemetry.addData("ball exit angle deg", Math.toDegrees(ballExitAngleRad));
+//        telemetry.addData("ideal ball exit angle deg", Math.toDegrees(idealBallExitAng));
+//        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
+//        telemetry.addData("physics exit angle rad", MathUtils.format3(physicsExitAngleRads));
 //        telemetry.addData("ball meters from goal", exitPosGoalDistIn * 0.0254);
 //        telemetry.addData("ball inches from goal", exitPosGoalDistIn);
-        telemetry.addData("future turret meters from goal", futureTurretPosGoalDistIn * 0.0254);
-        telemetry.addData("future turret inches from goal", futureTurretPosGoalDistIn);
-        telemetry.addData("absolute target exit speed mps", ballTargetExitSpeedMps);
-        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
-        telemetry.addData("lookahead robot speed at turret", lookAheadRobotSpeedAtTurretIps);
-        telemetry.addData("dt", dt);
+//        telemetry.addData("future turret meters from goal", futureTurretPosGoalDistIn * 0.0254);
+//        telemetry.addData("future turret inches from goal", futureTurretPosGoalDistIn);
+//        telemetry.addData("absolute target exit speed mps", ballTargetExitSpeedMps);
+//        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
+//        telemetry.addData("lookahead robot speed at turret", lookAheadRobotSpeedAtTurretIps);
+//        telemetry.addData("dt", dt);
         telemetry.addLine();
-        telemetry.addData("rel height to target meters", relGoalHeightM);
-        telemetry.addData("dist state", distState);
+//        telemetry.addData("rel height to target meters", relGoalHeightM);
+//        telemetry.addData("dist state", distState);
     }
 
     public int getTurretEncoder() {
@@ -487,11 +515,11 @@ public class ShootingSystem {
         return Range.clip(generalParams.minEfficiencyCoef, rawE, generalParams.maxEfficiencyCoef);
     }
     public boolean shooterNormGood() {
+        double shooterError = Math.abs(currentTargetExitSpeedMps - (curExitSpeedMps - robot.shooter.getCurVelocityAdjustment()));
         if(distState == Dist.FAR) {
             boolean hoodValid = turretPosGoalDistIn < generalParams.enableHoodCheckDist || Math.abs(hoodExitAngleRad - idealBallExitAng) < generalParams.maxDynamicHoodError;
-            return robot.shootingSystem.physicsExitAngleRads[0] != -1 && hoodValid;
+            return robot.shootingSystem.physicsExitAngleRads[0] != -1 && hoodValid && shooterError < generalParams.farShotTolerance;
         }
-        double shooterError = Math.abs(currentTargetExitSpeedMps - (curExitSpeedMps - robot.shooter.getCurVelocityAdjustment()));
         return shooterError < generalParams.normShootToleranceMps;
     }
     public boolean shooterFirstGood() {

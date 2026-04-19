@@ -212,7 +212,7 @@ public abstract class AutoPidNew extends LinearOpMode {
                 case "g":
                     boolean shouldGateTap = collectionData.length() > 1 && collectionData.charAt(1) == 't';
                     double waitTime = parseWaitTime(collectionData);
-                    actionOrder.add(getGateCollectAndShoot(shootPose, shotTime, fromNear, toNear, waitTime, shouldGateTap, initiallyExtake));
+                    actionOrder.add(getGateCollectAndShootNew(shootPose, shotTime, fromNear, toNear, waitTime, shouldGateTap, initiallyExtake));
                     telemetry.addData("   gate tap", shouldGateTap);
                     telemetry.addData("   wait time", waitTime);
                     break;
@@ -876,6 +876,115 @@ public abstract class AutoPidNew extends LinearOpMode {
         return buildCollectAndShoot(completeGateCollectDrive, new SleepAction(0), gateShootDrive, toNear, timeConstraints.postIntakeTime, false, true, shotTime, initiallyExtake);
 
     }
+
+    private Action getGateCollectAndShootNew(Pose2d shootPose, double shotTime, boolean fromNear, boolean toNear, double waitTime, boolean shouldGateTap, boolean initiallyExtake) {
+        DrivePath gateOpenDrive;
+        if (fromNear) {
+            BoxTolerance waypointTol = new BoxTolerance(collect.gateNearWaypointTol[0], collect.gateNearWaypointTol[1], Math.toRadians(collect.gateNearWaypointTol[2]));
+            BoxTolerance openTol = new BoxTolerance(collect.gateOpenTol);
+            gateOpenDrive = new DrivePath(robot.drive, telemetry,
+                    new Waypoint(gateCollectNearWaypoint, waypointTol)
+                            .setMaxTime(1)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateOpenDrive1MinPower),
+                    new Waypoint(gateCollectNearWaypoint2, waypointTol)
+                            .setMaxTime(.9)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateOpenDrive1MinPower),
+                    new Waypoint(shouldGateTap ? gateTap : gateCollectOpen, openTol)
+                            .setMaxTime(.8)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateOpenDrive2MinPower)
+            );
+        }
+        else {
+            gateOpenDrive = new DrivePath(robot.drive,
+                    new Waypoint(gateCollectOpen)
+                            .setMaxTime(2)
+                            .setPassPosition(true)
+                            .setMinLinearPower(collect.gateOpenDrive1MinPower)
+                            .setControlPoint(gateCollectFarControlPoint, collect.gateCollectOpenFarTStartError, collect.gateCollectOpenFarTFinishError)
+            );
+        }
+
+        CustomEndAction gateOpenCustomEndAction = new CustomEndAction(gateOpenDrive,
+                () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 45);
+        Action gateOpenAction = new ParallelAction(
+                new SequentialAction(
+                        new SleepAction(.3),
+                        autoCommands.runIntake()
+                ),
+                gateOpenCustomEndAction,
+                new SequentialAction(
+                        new CustomEndAction(() -> Math.abs(robot.drive.localizer.getPose().position.y) > 40),
+                        new InstantAction(() -> gateOpenDrive.getCurWaypoint()
+                                .setMinLinearPower(collect.gateOpenDrive2MinPower)
+                                .setMaxLinearPower(collect.gateOpenDrive2MaxPower))
+                )
+        );
+        DrivePath gateOpenHold = new DrivePath(robot.drive, new Waypoint(shouldGateTap ? gateTap : gateCollectOpenHold, new BoxTolerance(.1, .1, Math.toRadians(.1))).setMaxLinearPower(.2));
+
+        DrivePath postGateOpenDrive = new DrivePath(robot.drive, new Waypoint(gateCollect)
+                .setPassPosition(true)
+                .setMaxTime(1));
+
+        DrivePath gateTapDrive = new DrivePath(robot.drive,
+                new Waypoint(gateTapBackup)
+                        .setPassPosition(true)
+                        .setMinLinearPower(misc.gateMinPower)
+                        .setMaxTime(.9),
+                new Waypoint(gateTap)
+                        .setPassPosition(true)
+                        .setMinLinearPower(misc.gateMinPower)
+                        .setMaxTime(.9));
+        DrivePath gateTapHold = new DrivePath(robot.drive, new Waypoint(gateTap, new BoxTolerance(.1, .1, .1)).setMaxLinearPower(.2));
+
+        Action gateTapAction = new SequentialAction(
+                new ParallelAction(
+                        new SequentialAction(
+                                new TimedAction(new CustomEndAction(robot.collection::has3Balls), .5),
+                                autoCommands.stopIntake()
+                        ),
+                        new SequentialAction(
+                                new CustomEndAction(gateTapDrive,
+                                        () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold
+                                                && robot.drive.localizer.getPose().position.x < gateTapBackup.position.x),
+                                new TimedAction(gateTapHold, timeConstraints.gateTapWait)
+                        )
+                )
+        );
+
+
+        Action completeGateCollectDrive = new SequentialAction(
+                autoCommands.stopIntake(),
+                new SleepAction(waitTime),
+                gateOpenAction,
+                new CustomEndAction(new SequentialAction(
+                        new CustomEndAction(new TimedAction(gateOpenHold, timeConstraints.gateCollectOpenWait), robot.collection::jammed),
+                        new SleepAction(shouldGateTap ? timeConstraints.gateTapWait : 0),
+                        postGateOpenDrive,
+                        new SleepAction(timeConstraints.gateCollectMaxTime)
+                ), robot.collection::has3Balls)
+        );
+
+        DrivePath gateShootDrive;
+        if (toNear)
+            gateShootDrive = new DrivePath(robot.drive,
+                    new Waypoint(shootPose)
+                            .setMaxTime(2)
+                            .setPassPosition(true)
+                            .setControlPoint(shootGateNearControlPoint, shoot.gateNearShootTStartError, shoot.gateNearShootTFinishError));
+        else
+            gateShootDrive = new DrivePath(robot.drive,
+                    new Waypoint(shootPose)
+                            .setPassPosition(true)
+                            .setControlPoint(shootGateFarControlPoint, shoot.gateFarTStartError, shoot.gateFarTFinishError)
+            );
+
+        return buildCollectAndShoot(completeGateCollectDrive, new SleepAction(0), gateShootDrive, toNear, timeConstraints.postIntakeTime, false, true, shotTime, initiallyExtake);
+
+    }
+
 
     private double parseWaitTime(String data) {
         double waitTime = 0;
