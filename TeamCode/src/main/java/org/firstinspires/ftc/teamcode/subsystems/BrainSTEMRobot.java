@@ -25,10 +25,12 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.Limelig
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
+import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 
 
@@ -92,10 +94,7 @@ public class BrainSTEMRobot {
     public void updateInfo() {
         drive.updateVoltageFiltering();
         drive.updatePoseEstimate();
-        if(ShootingSystem.testingParams.useNewShooting)
-            shootingSystem.updatePropertiesNew();
-        else
-            shootingSystem.updatePropertiesOld();
+        shootingSystem.updateProperties();
     }
     public void update() {
         Pose2d pose = drive.localizer.getPose();
@@ -157,27 +156,6 @@ public class BrainSTEMRobot {
                 new InstantAction(() -> turret.setTurretState(Turret.TurretState.TRACKING))
         );
     }
-//    public Action scanForBalls(DoubleSupplier angleSup) {
-//        return new SequentialAction(
-//                limelight.ballDetection.clearAllScansAction(),
-//                // first scan
-//                new ParallelAction(
-//                        new SequentialAction(
-//                                new InstantAction(() -> {
-//                                    turret.setCustomTargetMinPower(LimelightBallDetection.params.scanTurretPower);
-//                                    turret.setCustomTargetMaxPower(LimelightBallDetection.params.scanTurretPower);
-//                                }),
-//                                turret.rotateToCustomTargetAction(angleSup)
-//                        ),
-//                        limelight.ballDetection.takeRepeatedBallScansAction()
-//                ),
-//                new InstantAction(() -> {
-//                    turret.setTurretState(Turret.TurretState.TRACKING);
-//                    turret.setCustomTargetMaxPower(0.99);
-//                    turret.setCustomTargetMinPower(0);
-//                })
-//        );
-//    }
     public Action lookAtClassifier(Turret.TurretState endingTurretState) {
         return new SequentialAction(
                 turret.rotateToCustomTargetAction(() -> {
@@ -218,7 +196,8 @@ public class BrainSTEMRobot {
                 ),
                 new InstantAction(() -> collection.setCollectionState(Collection.CollectionState.INTAKE)),
                 new ParallelAction(
-                        generateLimelightCollectDrive(maxLimelightWaitTime),
+                        new CustomEndAction(generateLimelightCollectDrive(maxLimelightWaitTime),
+                                collection::has3Balls),
                         new SequentialAction(
                                 new SleepAction(0.2),
                                 new InstantAction(() -> turret.setTurretState(Turret.TurretState.CENTER))
@@ -280,6 +259,21 @@ public class BrainSTEMRobot {
 
                         drivePath.addWaypoint(pathPose.waypoint);
                     }
+
+                    if(pathInfo.pathType == PathInfo.PathType.LANE && !drivePath.getWaypoints().isEmpty()) {
+                        Waypoint lastCollectWaypoint = drivePath.getWaypoints().get(drivePath.getWaypoints().size()-1);
+                        Waypoint backupWaypoint = new Waypoint(new Pose2d(
+                                lastCollectWaypoint.x(),
+                                lastCollectWaypoint.y() - (alliance == Alliance.RED ? 1 : -1) * PathGeneration.laneCollectParams.tryAgainBackupDist,
+                                lastCollectWaypoint.headingRad()));
+                        Waypoint tryAgainWaypoint = new Waypoint(new Pose2d(
+                                lastCollectWaypoint.x(),
+                                lastCollectWaypoint.y(),
+                                lastCollectWaypoint.headingRad()));
+                        drivePath.addWaypoint(backupWaypoint);
+                        drivePath.addWaypoint(tryAgainWaypoint);
+                    }
+
                     double maxTime = pathInfo.pathType == PathInfo.PathType.COMPLEX ? PathGeneration.generalParams.complexCollectMaxTime : PathGeneration.laneCollectParams.laneCollectMaxTime;
                     timedDrivePath = new TimedAction(drivePath, maxTime);
 

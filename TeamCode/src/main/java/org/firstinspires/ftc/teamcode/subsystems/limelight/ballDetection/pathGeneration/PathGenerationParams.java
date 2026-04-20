@@ -27,6 +27,7 @@ public class PathGenerationParams {
                 public double laneCollectControlMinYOffsetFromRobot = 6;
                 public double snapLaneToWallDistFromWall = 16;
                 public double laneCollectMaxTime = 3.5;
+                public double tryAgainBackupDist = 6;
         }
         public static class Regeneration {
                 public double shiftedLeftStartX = 35;

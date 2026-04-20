@@ -16,7 +16,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
-import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.math.Vector3dOld;
 import org.firstinspires.ftc.teamcode.utils.misc.MotorCacher;
 import org.firstinspires.ftc.teamcode.utils.misc.ServoImplCacher;
@@ -187,9 +186,7 @@ public class ShootingSystem {
         rawHoodRightServo.setPwmRange(new PwmControl.PwmRange(hoodParams.downPWM, hoodParams.upPWM));
         this.hoodRightServo = new ServoImplCacher(rawHoodRightServo);
     }
-    public void updatePropertiesOld() {
-        updateGoalPoses();
-
+    public void updateProperties() {
         double prevTimeMs = curTimeMs;
         curTimeMs = System.currentTimeMillis();
         dt = (curTimeMs - prevTimeMs) / 1000;
@@ -200,6 +197,7 @@ public class ShootingSystem {
         Pose2d robotPose = robot.drive.localizer.getPose();
         futureRobotPose = robot.drive.pinpoint().getNextPoseSimple(generalParams.lookAheadTime);
 
+        updateGoalPoses();
         updateGoalPos(robotPose.position);
 
         updateTurretProperties(robotPose);
@@ -219,27 +217,21 @@ public class ShootingSystem {
 
         Vector2d robotVelAtTurretMps = robotVelAtTurretIps.times(.0254);
         Vector2d lookAheadRobotVelAtTurretMps = lookAheadRobotVelAtTurretIps.times(.0254);
-        updatePhysicsProperties(desiredBallDir, robotVelAtTurretMps, lookAheadRobotVelAtTurretMps);
+        if(testingParams.useNewShooting)
+            updatePhysicsPropertiesNew();
+        else
+            updatePhysicsProperties(desiredBallDir, robotVelAtTurretMps, lookAheadRobotVelAtTurretMps);
     }
 
-    public void updatePropertiesNew() {
-        shooterLowMotor.updateInfo();
-        shooterHighMotor.updateInfo();
-
-        turretMotor.updateInfo();
-        robot.turret.currentEncoder = getTurretEncoder();
+    public void updatePhysicsPropertiesNew() {
         Pose2d robotPose = robot.drive.pinpoint().getPose();
-        turretPose = ShootingMathOld.getTurretPose(robotPose, robot.turret.curRelAngleRad);
-
-        hoodLeftServo.updateInfo();
-        hoodRightServo.updateInfo();
-
         Vector3d exitPosM = new Vector3d(turretPose.position.x, turretPose.position.y, ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR)).times(.0254);
         Vector3d robotPosM = new Vector3d(robotPose.position.x, robotPose.position.y, 0).times(.0254);
         OdoInfo robotVel = robot.drive.pinpoint().getVelocity();
         Vector3d robotVelCm = new Vector3d(robotVel.x, robotVel.y, 0).times(.0254);
         double robotAngularVel = robot.drive.pinpoint().getVelocity().headingRad;
         Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z).times(.0254);
+        relGoalHeightM = goalPosM.z - exitPosM.z;
         ToDoubleFunction<Double> shooterConversion = exitAngle -> {
             double e = calcEfficiencyCoef(exitAngle);
             return ShootingMathOld.ticksPerSecToExitSpeedMps(1, e);

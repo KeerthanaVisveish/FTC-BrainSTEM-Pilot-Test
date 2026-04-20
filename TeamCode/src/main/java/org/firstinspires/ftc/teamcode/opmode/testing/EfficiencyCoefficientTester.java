@@ -45,7 +45,7 @@ public class EfficiencyCoefficientTester extends OpMode {
     }
     @Override
     public void loop() {
-        robot.shootingSystem.updatePropertiesOld();
+        robot.shootingSystem.updateProperties();
         robot.shootingSystem.setHoodPosition(ShootingMathOld.getHoodServoPosition(controls.ballExitAngleRad));
 
         if (gamepad1.aWasPressed())

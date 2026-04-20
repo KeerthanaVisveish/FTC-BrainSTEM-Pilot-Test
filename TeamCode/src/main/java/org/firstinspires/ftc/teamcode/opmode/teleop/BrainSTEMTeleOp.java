@@ -83,7 +83,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (!inCompetition) {
                 if (gamepad1.start && gamepad1.backWasPressed())
                     robot.shootingSystem.resetTurretEncoder();
-                robot.shootingSystem.updatePropertiesOld();
+                robot.shootingSystem.updateProperties();
                 telemetry.addData("reset turret encoder", "hold START + BACK");
                 telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
             }
