@@ -80,6 +80,7 @@ public class AutoParamsPid {
 
         // shooting positions
         public double[] nearPreload = {-16, 19, 50};
+        public double[] nearPreloadMotif = { -16, 19, 90 };
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-35, 25, 45};
         public double[] near2 = {-7, 25.5, 55};
@@ -126,6 +127,7 @@ public class AutoParamsPid {
         // (62.043, 15.995, -179.94)
         // (61.841, 15.906, -179.922)
         //(61.965, 16.458, -179.724)
+        public double motifScanTurretRelAngle = Math.PI * .5;
         public double[] gate1 = { -5, 55, 90 };
         public double[] gate2 = { 4.5, 55.5, 90 };
         public double gate1BackupDist = 3;
@@ -135,8 +137,11 @@ public class AutoParamsPid {
         public double smartParkFarDist = 20;
         public double[] parkFar = { 52, 24, 90 };
         public double minParkFarPower = .5;
+        public double[] gatePark = { -3, 45, 90 };
     }
     public static class TimeConstraints {
+        public double maxMotifScanTime = 3;
+        public double missBallAdjustTime = .3;
         public double maxShootTime = 1.2;
         public double gateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = .3;
         public double gateCollectMaxTime = .5;

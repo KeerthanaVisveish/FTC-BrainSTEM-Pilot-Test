@@ -31,6 +31,7 @@ public class LimelightLocalization extends LLParent {
     }
     public enum LocalizationState {
         OFF,
+        SCANNING_MOTIF,
         PASSIVE_READING,
         UPDATING_POSE
     }
@@ -61,6 +62,10 @@ public class LimelightLocalization extends LLParent {
     public double maxTranslationalError, maxHeadingErrorDeg; // how much the limelight differs from pinpoint
     private boolean drivetrainGoodForUpdate, turretGoodForUpdate, inLocalizationZone;
     public boolean successfullyFoundPose;
+
+    private boolean foundMotif;
+    private int targetGreenPos;
+
     private LocalizationState state, prevState;
     private final ElapsedTime stateTimer;
     private int numSetPoses = 0;
@@ -154,6 +159,9 @@ public class LimelightLocalization extends LLParent {
         switch (state) {
             case OFF:
                 break;
+            case SCANNING_MOTIF:
+                updateMotifData();
+                break;
             case PASSIVE_READING:
                 updatePoseFromCamera();
                 if (robotPose == null || !aprilTagResult.isValid())
@@ -216,6 +224,30 @@ public class LimelightLocalization extends LLParent {
         }
         else
             telemetry.addLine("   result is null");
+    }
+    private void updateMotifData() {
+        aprilTagResult = limelight.getLatestResult();
+        visibleTagInfo.clear();
+
+        if(aprilTagResult == null || !aprilTagResult.isValid())
+            return;
+
+        visibleTagInfo = aprilTagResult.getFiducialResults();
+        foundMotif = false;
+        targetGreenPos = -1;
+        for(int i = 0; i < visibleTagInfo.size(); i++) {
+            int id = visibleTagInfo.get(i).getFiducialId();
+            if (id >= 21 && id <= 23) {
+                foundMotif = true;
+                targetGreenPos = id - 21;
+            }
+        }
+    }
+    public boolean foundMotif() {
+        return foundMotif;
+    }
+    public int getTargetGreenPos() {
+        return targetGreenPos;
     }
     private void updatePoseFromCamera() {
         if (cameraPose != null)

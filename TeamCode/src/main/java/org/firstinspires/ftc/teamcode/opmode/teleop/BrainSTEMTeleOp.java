@@ -63,6 +63,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         CommandScheduler.getInstance().reset();
 
         Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
+        LimelightLocalization.localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose); //take pose from auto
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);

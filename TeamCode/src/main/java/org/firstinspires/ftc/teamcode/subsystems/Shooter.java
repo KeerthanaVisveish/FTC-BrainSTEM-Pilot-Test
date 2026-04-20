@@ -34,6 +34,7 @@ public class Shooter extends Component {
     private ShooterState shooterState;
     private double nearVelocityAdjustment, farVelocityAdjustment;
     private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
+    private int numBallsShot;
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
     private double prevTargetVelMps;
@@ -121,12 +122,18 @@ public class Shooter extends Component {
         if(increasing && !wasPrevIncreasing) {  // means relative min detected
             lastMin = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
             double velDrop = lastMax - lastMin;
-            if(velDrop >= shooterParams.shotVelDropThreshold && Math.abs(targetVelMps - prevTargetVelMps) < shooterParams.targetVelStaticShotThreshold) {
-                if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE && !ballsCurrentlyExiting) {
-                    ballsCurrentlyExiting = true;
-                    ballsExitingTimer.reset();
+            if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
+                if (velDrop >= shooterParams.shotVelDropThreshold && Math.abs(targetVelMps - prevTargetVelMps) < shooterParams.targetVelStaticShotThreshold) {
+                    if (!ballsCurrentlyExiting) {
+                        ballsCurrentlyExiting = true;
+                        ballsExitingTimer.reset();
+                    }
+                    numBallsShot++;
                 }
             }
+            else
+                numBallsShot = 0;
+
         }
         if(wasPrevIncreasing && !increasing) { // means relative max detected
             lastMax = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
@@ -180,5 +187,8 @@ public class Shooter extends Component {
     }
     public boolean ballsDoneExiting() {
         return !ballsCurrentlyExiting && ballsPreviouslyExiting;
+    }
+    public int getNumBallsShot() {
+        return numBallsShot;
     }
 }

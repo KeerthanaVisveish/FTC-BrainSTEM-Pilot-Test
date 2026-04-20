@@ -51,6 +51,13 @@ public class AutoCommands {
             return false;
         };
     }
+    public Action enableCustomTurretTracking(double targetRelAngle) {
+        return telemetryPacket -> {
+            robot.turret.rotateToRelativeCustomTarget(targetRelAngle);
+            robot.turret.setCustomTargetPassPosition(true);
+            return false;
+        };
+    }
 
     public Action turretCenter() {
         return packet -> {
@@ -64,6 +71,12 @@ public class AutoCommands {
         return packet -> {
             robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
             return !robot.shootingSystem.shooterFirstGood();
+        };
+    }
+    public Action setShouldScore(boolean shouldScore) {
+        return telemetryPacket -> {
+            robot.shootingSystem.setShouldScore(shouldScore);
+            return false;
         };
     }
 

@@ -82,7 +82,8 @@ public class ShootingSystem {
     }
     public Dist distState;
     public boolean usingHighArc;
-    public Vector3dOld nearGoalPos, midGoalPos, farGoalPos;
+    public Vector3dOld nearGoalPos, midGoalPos, farGoalPos, missGoalPos;
+    private boolean shouldScore;
     public Vector2d corner;
     private final HardwareMap hardwareMap;
     private final BrainSTEMRobot robot;
@@ -128,6 +129,7 @@ public class ShootingSystem {
 
         shootingMathNew = new ShootingMath();
 
+        setShouldScore(true);
         initTurret();
         initShooter();
         initHood();
@@ -443,6 +445,11 @@ public class ShootingSystem {
             goalPosIn = nearGoalPos;
             impactAngleRad = goalParams.nearImpactAng;
         }
+        if(!shouldScore)
+            goalPosIn = missGoalPos;
+    }
+    public void setShouldScore(boolean shouldScore) {
+        this.shouldScore = shouldScore;
     }
 
     public void printInfo(Telemetry telemetry) {
