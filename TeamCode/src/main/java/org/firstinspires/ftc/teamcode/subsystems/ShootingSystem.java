@@ -472,6 +472,8 @@ public class ShootingSystem {
 //        telemetry.addData("robot speed at turret", robotSpeedAtTurretIps);
 //        telemetry.addData("lookahead robot speed at turret", lookAheadRobotSpeedAtTurretIps);
 //        telemetry.addData("dt", dt);
+        telemetry.addData("shooter low current", shooterLowMotor.getCurrent());
+        telemetry.addData("shooter high current", shooterHighMotor.getCurrent());
         telemetry.addLine();
 //        telemetry.addData("rel height to target meters", relGoalHeightM);
 //        telemetry.addData("dist state", distState);

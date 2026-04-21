@@ -183,7 +183,7 @@ public class Collection extends Component {
         telemetry.addData("br dist", backRightLaserDist);
         telemetry.addData("fl dist", frontLeftLaserDist);
         telemetry.addData("fr dist", frontRightLaserDist);
-        telemetry.addData("intake current", collectorMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("intake current", collectorMotor.getCurrent(CurrentUnit.AMPS));
         telemetry.addData("in auto", inAuto);
     }
 

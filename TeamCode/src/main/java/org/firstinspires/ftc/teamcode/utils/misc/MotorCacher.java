@@ -3,12 +3,15 @@ package org.firstinspires.ftc.teamcode.utils.misc;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 public class MotorCacher {
     private final DcMotorEx motor;
     private int encoder;
     private double vel, prevVel;
     private double power;
     private boolean updatedYet;
+    private double current;
     public MotorCacher(DcMotorEx motor) {
         this.motor = motor;
         updateInfo();
@@ -17,6 +20,7 @@ public class MotorCacher {
         prevVel = vel;
         encoder = motor.getCurrentPosition();
         vel = motor.getVelocity();
+        current = motor.getCurrent(CurrentUnit.AMPS);
         updatedYet = true;
     }
     public void sendInfo() {
@@ -49,5 +53,8 @@ public class MotorCacher {
     public void resetEncoders() {
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+    public double getCurrent() {
+        return current;
     }
 }
