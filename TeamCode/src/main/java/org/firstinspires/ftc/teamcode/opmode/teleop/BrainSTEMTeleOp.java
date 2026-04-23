@@ -30,7 +30,7 @@ import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = false, printPark = false;
+            printLimelight = false, printPark = false, printDrivetrain;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
     public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
@@ -135,6 +135,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.shootingSystem.printInfo(telemetry);
                 if (printPark)
                     robot.parking.printInfo();
+                if(printDrivetrain)
+                    robot.drive.printInfo(telemetry);
             }
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();

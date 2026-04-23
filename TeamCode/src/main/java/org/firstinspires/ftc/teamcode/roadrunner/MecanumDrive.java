@@ -52,7 +52,9 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
@@ -66,7 +68,6 @@ import java.util.List;
 @Config
 public class MecanumDrive {
     public static boolean betterPathCorrection = false;
-    public static double targetMaxVoltage = 14;
 
     public static class Params {
         // IMU orientation
@@ -571,5 +572,13 @@ public class MecanumDrive {
     }
     public String getDrivePowersString() {
         return leftFront.getPower() + " " + rightFront.getPower() + " " + leftBack.getPower() + " " + rightBack.getPower();
+    }
+
+    public void printInfo(Telemetry telemetry) {
+        telemetry.addData("bl current", leftBack.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("fl current", leftFront.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("br current", rightBack.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("fr current", rightFront.getCurrent(CurrentUnit.AMPS));
+
     }
 }

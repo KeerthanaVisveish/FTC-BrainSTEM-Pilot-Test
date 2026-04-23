@@ -11,11 +11,10 @@ import com.acmerobotics.roadrunner.ParallelAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 //import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
-import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPidNew;
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -40,7 +39,7 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
         FtcDashboard.getInstance().startCameraStream(robot.limelight.limelight, streamFPS);
         AutoCommands autoCommands = new AutoCommands(robot, telemetry);
 
-        Action autoAction = robot.getLimelightCollectSequence(createVec(AutoPidNew.collect.limelightScanPos1), createVec(AutoPidNew.collect.limelightScanPos2), 2);
+        Action autoAction = robot.getLimelightCollectSequence(createVec(AutoPid.collect.limelightScanPos1), createVec(AutoPid.collect.limelightScanPos2), 2);
         Action fullAutoAction = new ParallelAction(
                 autoCommands.updateRobotInfo(),
                 new TimedAction(autoAction, 100).setEndFunction(robot.drive::stop),

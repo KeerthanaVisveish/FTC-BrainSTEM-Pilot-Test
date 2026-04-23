@@ -38,7 +38,7 @@ public class Turret extends Component {
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public double maxTeleAngle = Math.toRadians(85), maxAutoAngle = Math.toRadians(90);
+        public double maxTeleAngle = Math.toRadians(88), maxAutoAngle = Math.toRadians(90);
         public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 8; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }

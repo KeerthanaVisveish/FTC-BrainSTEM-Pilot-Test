@@ -42,7 +42,7 @@ import java.util.ArrayList;
 import java.util.function.BooleanSupplier;
 
 @Config
-public abstract class AutoPidNew extends LinearOpMode {
+public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
         public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gn gn gn 1n";
@@ -92,6 +92,9 @@ public abstract class AutoPidNew extends LinearOpMode {
     protected boolean[] shouldStop = { false };
     protected boolean[] shouldPark = { false };
     protected boolean[] autoActionDone = { false };
+    public AutoPid() {
+        customizable.shouldColorSort = false;
+    }
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
@@ -123,6 +126,8 @@ public abstract class AutoPidNew extends LinearOpMode {
         declareMiscPoses();
 
         boolean preloadNear = stringBuilder.charAt(0) == 'n';
+        if(!PreGameSetupTele.cameraIsReset)
+            throw new RuntimeException("Run PreGameSetupTele");
         if (preloadNear)
             Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
         else
@@ -205,15 +210,15 @@ public abstract class AutoPidNew extends LinearOpMode {
             telemetry.addLine("Path " + numPaths + ": collect: " + collectionData + " from near: " + fromNear + " to near: " + toNear + ", last: " + last + ", shot time: " + shotTime);
             switch(collectionLetter) {
                 case "1" :
-                    actionOrder.add(getFirstCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, last, initiallyExtake, customizable.shouldColorSort && targetGreenPos != 2));
+                    actionOrder.add(getFirstCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, last, initiallyExtake, false));
                     telemetry.addData("   open gate", openGate);
                     break;
                 case "2" :
-                    actionOrder.add(getSecondCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, initiallyExtake, customizable.shouldColorSort && targetGreenPos != 1));
+                    actionOrder.add(getSecondCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, initiallyExtake, false));
                     telemetry.addData("   open gate", openGate);
                     break;
                 case "3" :
-                    actionOrder.add(getThirdCollectAndShoot(shootPose, shotTime, fromNear, toNear, last, initiallyExtake, customizable.shouldColorSort && targetGreenPos != 0));
+                    actionOrder.add(getThirdCollectAndShoot(shootPose, shotTime, fromNear, toNear, last, initiallyExtake, false));
                     break;
                 case "g":
                     boolean shouldGateTap = collectionData.length() > 1 && collectionData.charAt(1) == 't';
@@ -317,14 +322,17 @@ public abstract class AutoPidNew extends LinearOpMode {
         Action colorSortAutoAction = new Action() {
             private boolean isFirst = true;
             private Action preloadAction = null;
+            private boolean preloadRunning;
             private Action[] dynamicActions = null;
             @Override
             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                 if(isFirst) {
                     preloadAction = getPreloadDriveAndShoot(preloadShootPose, true, true);
                     isFirst = false;
+                    preloadRunning = true;
                 }
-                boolean preloadRunning = preloadAction.run(telemetryPacket);
+                if(preloadRunning)
+                    preloadRunning = preloadAction.run(telemetryPacket);
                 if(targetGreenPos != -1 || !preloadRunning && dynamicActions == null) {
                     dynamicActions = new Action[4];
                     switch(targetGreenPos) {

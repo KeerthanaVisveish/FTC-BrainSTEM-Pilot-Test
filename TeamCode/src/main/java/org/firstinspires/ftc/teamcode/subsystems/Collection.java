@@ -229,10 +229,6 @@ public class Collection extends Component {
             case OFF:
             case OUTTAKE:
                 break;
-//            case CLUTCH_ENGAGE_INTAKE:
-//                if (collectionStateTimer.seconds() >= params.clutchEngageRunIntakeTime)
-//                    setCollectionState(CollectionState.OFF);
-//                break;
             case INTAKE_SLOW:
             case INTAKE:
                 if (getClutchState() == ClutchState.ENGAGED) {

@@ -44,7 +44,7 @@ public class ShootingSystem {
         public double farRedX = -65, farRedY = 66;
         public double farBlueX = -65.75, farBlueY = -64;
         public double farHeight = 41;
-        public double nearImpactAng = Math.toRadians(-25), midImpactAng = Math.toRadians(-24), farImpactAng = Math.toRadians(-24);
+        public double nearImpactAng = Math.toRadians(-25), midImpactAng = Math.toRadians(-26), farImpactAng = Math.toRadians(-30);
         public double nearStateThreshold = 58;
     }
     public static class HoodParams {
@@ -447,9 +447,11 @@ public class ShootingSystem {
     public void printInfo(Telemetry telemetry) {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("lookahead pt1 exists", lookAheadAnswerKeyPt1.solutionExists);
-        if(lookAheadAnswerKeyPt1.solutionExists)
-            telemetry.addData("lookahead pt1 launch data", lookAheadAnswerKeyPt1.launchData);
+        if(lookAheadAnswerKeyPt1 != null) {
+            telemetry.addData("lookahead pt1 exists", lookAheadAnswerKeyPt1.solutionExists);
+            if (lookAheadAnswerKeyPt1.solutionExists)
+                telemetry.addData("lookahead pt1 launch data", lookAheadAnswerKeyPt1.launchData);
+        }
 //        telemetry.addData("robot vel center of mass", robotVelCm.toString(3));
 //        telemetry.addData("future turret pos relative to goal", MathUtils.formatVec3(futureTurretPosRelativeToGoal));
 //        telemetry.addData("robot vel at turret ips", MathUtils.formatVec3(robotVelAtTurretIps));
