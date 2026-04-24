@@ -18,6 +18,7 @@ public class Collection extends Component {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.5;
+        public double firstCurrentLimitedIntakePow = .6;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
@@ -59,7 +60,7 @@ public class Collection extends Component {
     private final AnalogInput backTopLaser;
     private final AnalogInput backBottomLaser;
 
-    private CollectionState collectionState;
+    private CollectionState collectionState, prevFrameCollectionState;
     private ElapsedTime jamTimer;
     private ClutchState clutchState;
     private FlickerState flickerState;
@@ -72,7 +73,8 @@ public class Collection extends Component {
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
     private int framesRunning;
     private boolean inAuto;
-    private boolean shooterInitiallyGood;
+    private boolean shooterInitiallyGood, shooting;
+
     public Collection(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
 
@@ -96,6 +98,7 @@ public class Collection extends Component {
         backBottomLaser = hardwareMap.get(AnalogInput.class, "BLLaser");
 
         setCollectionState(CollectionState.OFF);
+        prevFrameCollectionState = CollectionState.OFF;
         setClutchState(ClutchState.UNENGAGED);
         setFlickerState(FlickerState.DOWN);
 
@@ -225,7 +228,7 @@ public class Collection extends Component {
         }
 
 
-        switch (getCollectionState()) {
+        switch (collectionState) {
             case OFF:
             case OUTTAKE:
                 break;
@@ -238,17 +241,28 @@ public class Collection extends Component {
                         shooterInitiallyGood = true;
                     if (!shooterInitiallyGood)
                         meetsSafetyInterlocks = false;
-                    if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks)
+                    shooting = true;
+                    if (shouldUseSafetyInterlocks && !meetsSafetyInterlocks) {
                         collectorMotor.setPower(params.safetyInterlocksFailedPower);
+                        shooting = false;
+                    }
                     else if(getCollectionState() == CollectionState.INTAKE_SLOW)
                         collectorMotor.setPower(params.slowShootIntakePower);
-                    else
-                        collectorMotor.setPower(params.shootIntakePow);
+                    else {
+                        if(prevFrameCollectionState == CollectionState.OFF)
+                            collectorMotor.setPower(params.firstCurrentLimitedIntakePow);
+                        else
+                            collectorMotor.setPower(params.shootIntakePow);
+                    }
                 }
-                else if(inAuto)
-                    collectorMotor.setPower(params.autoIntakePow);
-                else
-                    collectorMotor.setPower(params.normIntakePow);
+                else {
+                    if(prevFrameCollectionState == CollectionState.OFF)
+                        collectorMotor.setPower(params.firstCurrentLimitedIntakePow);
+                    else if (inAuto)
+                        collectorMotor.setPower(params.autoIntakePow);
+                    else
+                        collectorMotor.setPower(params.normIntakePow);
+                }
                 break;
         }
 
@@ -267,6 +281,7 @@ public class Collection extends Component {
         }
 
         checkForIntakeBalls(intake3BallsTimer.seconds());
+        prevFrameCollectionState = collectionState;
     }
 
     private double voltageToDistance(double voltage) {
@@ -318,5 +333,8 @@ public class Collection extends Component {
     }
     public boolean jammed() {
         return jamTimer.seconds() > params.confirmJamTime;
+    }
+    public boolean isShooting() {
+        return shooting;
     }
 }

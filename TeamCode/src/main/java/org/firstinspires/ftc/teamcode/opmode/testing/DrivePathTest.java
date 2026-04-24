@@ -8,13 +8,14 @@ import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
-//@TeleOp(name="DrivePathTest")
-//@Config
+@TeleOp(name="DrivePathTest", group="Testing")
+@Config
 public class DrivePathTest extends LinearOpMode {
     public static double[] p0 = new double[] { 0, 0, 0};
     public static double[] p1 = new double[] { 24, 24, 90 };
@@ -23,7 +24,8 @@ public class DrivePathTest extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        MecanumDrive drive = new MecanumDrive(hardwareMap, createPose(p0));
+        MecanumDrive drive = new MecanumDrive(hardwareMap, createPose(AutoPid.misc.startNearRed));
+        p1 = AutoPid.shoot.nearPreloadMotif;
 
         telemetry.addLine("robot ready");
         telemetry.update();
@@ -39,7 +41,11 @@ public class DrivePathTest extends LinearOpMode {
                 Actions.runBlocking(
                         new ParallelAction(
                                 path,
-                                telemetryPacket -> {DrivePath.drawCurrentPath(telemetryPacket.fieldOverlay()); return true;}
+                                telemetryPacket -> {
+                                    DrivePath.drawCurrentPath(telemetryPacket.fieldOverlay());
+                                    drive.updatePoseEstimate();
+                                    return true;
+                                }
                         )
                 );
             }

@@ -10,7 +10,7 @@ public class AutoParamsPid {
         public double loadingSlowDrivePower = 0.3, loadingMinHeadingPower = .65;
         public double loadingNormDrivePower = .5;
 
-        public double[] first = {-11.5, 47.5, 90};
+        public double[] first = {-11.5, 49, 90};
         public double[] second = {12, 48, 90};
         public double[] secondIfOpenGate = {12, 45.5, 90};
         public double[] third = {36, 50, 90};
@@ -25,7 +25,7 @@ public class AutoParamsPid {
         public double[] secondNearWaypointTol = { 3, 3, 5 };
         public double[] secondNearControlPoint = { 12, 27, 70};
         public double secondNearT1 = 26, secondNearT2 = 18;
-        public double secondNearCloseHeadingKP = .008;
+        public double secondNearCloseHeadingKP = .003;
 
         public double[] thirdNearWaypoint = { 20, 26.5, 35 };
         public double[] thirdNearWaypointTol = { 6, 3, 5 };
@@ -141,6 +141,11 @@ public class AutoParamsPid {
     }
     public static class TimeConstraints {
         public double maxMotifScanTime = 3;
+
+        public double shoot1FirstTime = .25, shoot2FirstTime = .4;
+        public double shoot1SecondTime = .15;
+        public double shootThirdTime = .4;
+
         public double missBallAdjustTime = .3;
         public double maxShootTime = 1.2;
         public double gateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = .3;
@@ -148,8 +153,8 @@ public class AutoParamsPid {
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
-        public double maxLimelightWaitTime = 1;
-        public double shooterInterlockMaxWaitTime = .1;
+        public double maxLimelightWait = 1;
+        public double shooterInterlockMaxWait = .1, colorSortShooterInterlockMaxWait = 1;
         public double nearPostFlickerShootTime = .2, farPostFlickerShootTime = .2;
 
     }

@@ -32,6 +32,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
+import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.BoxTolerance;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.CircleTolerance;
@@ -46,6 +47,7 @@ public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
         public String nearSolo = "n 2n gn g.5n 1n 3n", nearPartner = "n 2n gn gn gn 1n";
+        public String nearPattern = "n";
         public String farLoadingFirst = "f lf 3f af af", farLoadingLimelight = "f lf af af af";
         public String farNoLimelight = "f lf 3f lcf lcf";
         public Alliance alliance = Alliance.RED; // this is just the default it's re assigned later
@@ -160,170 +162,201 @@ public abstract class AutoPid extends LinearOpMode {
 
         telemetry.addData("ALLIANCE", alliance);
         telemetry.addData("STRING BUILDER", stringBuilder);
-        int i = 0;
-        String prevCollectLetter = "";
-        while(true) {
-            numPaths++;
-            int shootI;
-            for(shootI = i + 1; shootI < stringBuilder.length(); shootI++)
-                if(stringBuilder.charAt(shootI) == 'n' || stringBuilder.charAt(shootI) == 'f')
-                    break;
-            boolean last = shootI == stringBuilder.length() - 1;
-            int nextShootI = -1;
-            if(!last)
-                for(nextShootI = shootI + 1; nextShootI < stringBuilder.length(); nextShootI++)
-                    if(stringBuilder.charAt(shootI) == 'n' || stringBuilder.charAt(shootI) == 'f')
+        Action bigBoyAutoAction;
+        if(!customizable.shouldColorSort) {
+            int i = 0;
+            String prevCollectLetter = "";
+            while (true) {
+                numPaths++;
+                int shootI;
+                for (shootI = i + 1; shootI < stringBuilder.length(); shootI++)
+                    if (stringBuilder.charAt(shootI) == 'n' || stringBuilder.charAt(shootI) == 'f')
                         break;
+                boolean last = shootI == stringBuilder.length() - 1;
+                int nextShootI = -1;
+                if (!last)
+                    for (nextShootI = shootI + 1; nextShootI < stringBuilder.length(); nextShootI++)
+                        if (stringBuilder.charAt(shootI) == 'n' || stringBuilder.charAt(shootI) == 'f')
+                            break;
 
-            boolean fromNear = stringBuilder.charAt(i) == 'n';
-            toNear = stringBuilder.charAt(shootI) == 'n';
+                boolean fromNear = stringBuilder.charAt(i) == 'n';
+                toNear = stringBuilder.charAt(shootI) == 'n';
 
-            String collectionData = stringBuilder.substring(i+1, shootI);
-            String collectionLetter = collectionData.substring(0, 1);
-            boolean openGate = collectionData.length() > 1 && collectionData.charAt(1) == 'o';
+                String collectionData = stringBuilder.substring(i + 1, shootI);
+                String collectionLetter = collectionData.substring(0, 1);
+                boolean openGate = collectionData.length() > 1 && collectionData.charAt(1) == 'o';
 
-            String nextCollectionData = last ? collectionData : stringBuilder.substring(shootI + 1, nextShootI+1);
-            String nextCollectionLetter = last ? collectionLetter : nextCollectionData.substring(0, 1);
+                String nextCollectionData = last ? collectionData : stringBuilder.substring(shootI + 1, nextShootI + 1);
+                String nextCollectionLetter = last ? collectionLetter : nextCollectionData.substring(0, 1);
 
-            Pose2d shootPose;
-            if(last)
-                shootPose = getFinalShootPose(toNear, collectionLetter);
-            else {
-                shootPose = getShootPose(toNear, toNear ? collectionLetter : nextCollectionLetter);
-            }
-
-            // 0,0,0
-            double shotTime = -1;
-            for(shotTimeEndI = shotTimeStartI + 1; shotTimeEndI <= shotTimes.length(); shotTimeEndI++) {
-                try {
-                    shotTime = Double.parseDouble(shotTimes.substring(shotTimeStartI, shotTimeEndI));
-                } catch(NumberFormatException e) {
-                    break;
+                Pose2d shootPose;
+                if (last)
+                    shootPose = getFinalShootPose(toNear, collectionLetter);
+                else {
+                    shootPose = getShootPose(toNear, toNear ? collectionLetter : nextCollectionLetter);
                 }
-            }
-            if(shotTime == -1)
-                throw new RuntimeException("shot time is negative 1; startI " + shotTimeStartI + ", endI: " + shotTimeEndI);
-            shotTimeStartI = shotTimeEndI;
 
-            boolean initiallyExtake = prevCollectLetter.equals("g") || prevCollectLetter.equals("3") || prevCollectLetter.equals("l") || prevCollectLetter.equals("a");
-
-            telemetry.addLine("Path " + numPaths + ": collect: " + collectionData + " from near: " + fromNear + " to near: " + toNear + ", last: " + last + ", shot time: " + shotTime);
-            switch(collectionLetter) {
-                case "1" :
-                    actionOrder.add(getFirstCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, last, initiallyExtake, false));
-                    telemetry.addData("   open gate", openGate);
-                    break;
-                case "2" :
-                    actionOrder.add(getSecondCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, initiallyExtake, false));
-                    telemetry.addData("   open gate", openGate);
-                    break;
-                case "3" :
-                    actionOrder.add(getThirdCollectAndShoot(shootPose, shotTime, fromNear, toNear, last, initiallyExtake, false));
-                    break;
-                case "g":
-                    boolean shouldGateTap = collectionData.length() > 1 && collectionData.charAt(1) == 't';
-                    double waitTime = parseWaitTime(collectionData);
-                    actionOrder.add(getGateCollectAndShootNew(shootPose, shotTime, fromNear, toNear, waitTime, shouldGateTap, initiallyExtake));
-                    telemetry.addData("   gate tap", shouldGateTap);
-                    telemetry.addData("   wait time", waitTime);
-                    break;
-                case "l" :
-                    Action loadingAction;
-                    String type = "normal";
-                    if(collectionData.length() > 1)
-                        switch(collectionData.substring(1, 2)) {
-                            case "g" :
-                                double gateWaitTime = parseWaitTime(collectionData);
-                                loadingAction = getLoadingGateWaitCollectAndShoot(shootPose, shotTime, gateWaitTime, initiallyExtake);
-                                type = "gate wait";
-                                telemetry.addData("  gate wait time", gateWaitTime);
-                                break;
-                            case "c":
-                            default:
-                                type = "corner";
-                                loadingAction = getLoadingCornerCollectAndShoot(shootPose, shotTime, initiallyExtake);
-                                break;
-                        }
-                    else
-                        loadingAction = getLoadingCollectAndShoot(shootPose, shotTime, initiallyExtake);
-                    telemetry.addData("  loading collect type", type);
-                    actionOrder.add(loadingAction);
-                    break;
-                case "a":
-                    waitTime = parseWaitTime(collectionData);
-                    actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, shotTime, initiallyExtake, waitTime));
-                    telemetry.addData("  wait time", waitTime);
-                    break;
-            }
-            if(last)
-                break;
-            i = shootI;
-            prevCollectLetter = collectionLetter;
-        }
-        final boolean finalToNear = toNear;
-        Action noColorSortAutoAction = new SequentialAction(
-                getPreloadDriveAndShoot(preloadShootPose, stringBuilder.charAt(0) == 'n', false),
-                actionOrder.get(0),
-                numPaths > 1 ? actionOrder.get(1) : new SleepAction(0),
-                numPaths > 2 ? actionOrder.get(2) : new SleepAction(0),
-                numPaths > 3 ? actionOrder.get(3) : new SleepAction(0),
-                numPaths > 4 ? actionOrder.get(4) : new SleepAction(0),
-                numPaths > 5 ? actionOrder.get(5) : new SleepAction(0),
-                numPaths > 6 ? actionOrder.get(6) : new SleepAction(0),
-                numPaths > 7 ? actionOrder.get(7) : new SleepAction(0),
-                numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
-        );
-
-        BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.nearParkStopTime
-                && (robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist
-                || autoState == AutoState.DRIVE_TO_COLLECT));
-        BooleanSupplier farShouldPark = () -> autoTimer.seconds() > timeConstraints.farParkTime && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) < misc.smartParkFarDist;
-        BooleanSupplier farShouldStop = () -> (autoState == AutoState.DRIVE_TO_COLLECT || autoState == AutoState.DRIVE_TO_SHOOT)
-                && autoTimer.seconds() > timeConstraints.farParkTime
-                && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) > misc.smartParkFarDist;
-
-        Action noColorSortSmartParkAction = new SequentialAction(
-                new ParallelAction(
-                        new CustomEndAction(noColorSortAutoAction, () -> shouldStop[0] || shouldPark[0])
-                                .setEndFunction(() -> autoActionDone[0] = true),
-                        new CustomEndAction(
-                                new ParallelAction(
-                                        new CustomEndAction(() -> (nearShouldStop.getAsBoolean() && finalToNear) || (farShouldStop.getAsBoolean() && !finalToNear))
-                                                .setEndFunction(() -> shouldStop[0] = true),
-                                        new CustomEndAction(() -> !finalToNear && farShouldPark.getAsBoolean())
-                                                .setEndFunction(() -> shouldPark[0] = true)
-                                ),
-                                () -> !customizable.smartPark || autoActionDone[0] || shouldStop[0] || shouldPark[0]
-                        )
-                ),
-                new ParallelAction(
-                        new CustomEndAction(() -> shouldStop[0] || shouldPark[0] || autoActionDone[0]),
-                        telemetryPacket -> { robot.drive.stop(); return false; }
-                ),
-                new Action() {
-                    boolean first = true;
-                    Action action;
-                    @Override
-                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
-                        if(first) {
-                            if(shouldPark[0] || (!shouldStop[0] && !finalToNear))
-                                action = getFarParkDrive();
-                            else
-                                action = telemetryPacket1 -> {robot.drive.stop(); return true; };
-                            first = false;
-                        }
-                        robot.led.setAutoDone();
-                        return action.run(telemetryPacket);
+                // 0,0,0
+                double shotTime = -1;
+                for (shotTimeEndI = shotTimeStartI + 1; shotTimeEndI <= shotTimes.length(); shotTimeEndI++) {
+                    try {
+                        shotTime = Double.parseDouble(shotTimes.substring(shotTimeStartI, shotTimeEndI));
+                    } catch (NumberFormatException e) {
+                        break;
                     }
                 }
-        );
+                if (shotTime == -1)
+                    throw new RuntimeException("shot time is negative 1; startI " + shotTimeStartI + ", endI: " + shotTimeEndI);
+                shotTimeStartI = shotTimeEndI;
 
+                boolean initiallyExtake = prevCollectLetter.equals("g") || prevCollectLetter.equals("3") || prevCollectLetter.equals("l") || prevCollectLetter.equals("a");
 
-        Action colorSortAutoAction = new Action() {
+                telemetry.addLine("Path " + numPaths + ": collect: " + collectionData + " from near: " + fromNear + " to near: " + toNear + ", last: " + last + ", shot time: " + shotTime);
+                switch (collectionLetter) {
+                    case "1":
+                        actionOrder.add(getFirstCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, last, initiallyExtake, false));
+                        telemetry.addData("   open gate", openGate);
+                        break;
+                    case "2":
+                        actionOrder.add(getSecondCollectAndShoot(shootPose, shotTime, fromNear, toNear, openGate, initiallyExtake, false));
+                        telemetry.addData("   open gate", openGate);
+                        break;
+                    case "3":
+                        actionOrder.add(getThirdCollectAndShoot(shootPose, shotTime, fromNear, toNear, last, initiallyExtake, false));
+                        break;
+                    case "g":
+                        boolean shouldGateTap = collectionData.length() > 1 && collectionData.charAt(1) == 't';
+                        double waitTime = parseWaitTime(collectionData);
+                        actionOrder.add(getGateCollectAndShootNew(shootPose, shotTime, fromNear, toNear, waitTime, shouldGateTap, initiallyExtake));
+                        telemetry.addData("   gate tap", shouldGateTap);
+                        telemetry.addData("   wait time", waitTime);
+                        break;
+                    case "l":
+                        Action loadingAction;
+                        String type = "normal";
+                        if (collectionData.length() > 1)
+                            switch (collectionData.substring(1, 2)) {
+                                case "g":
+                                    double gateWaitTime = parseWaitTime(collectionData);
+                                    loadingAction = getLoadingGateWaitCollectAndShoot(shootPose, shotTime, gateWaitTime, initiallyExtake);
+                                    type = "gate wait";
+                                    telemetry.addData("  gate wait time", gateWaitTime);
+                                    break;
+                                case "c":
+                                default:
+                                    type = "corner";
+                                    loadingAction = getLoadingCornerCollectAndShoot(shootPose, shotTime, initiallyExtake);
+                                    break;
+                            }
+                        else
+                            loadingAction = getLoadingCollectAndShoot(shootPose, shotTime, initiallyExtake);
+                        telemetry.addData("  loading collect type", type);
+                        actionOrder.add(loadingAction);
+                        break;
+                    case "a":
+                        waitTime = parseWaitTime(collectionData);
+                        actionOrder.add(getLimelightLoadingZoneCollectAndShoot(shootPose, shotTime, initiallyExtake, waitTime));
+                        telemetry.addData("  wait time", waitTime);
+                        break;
+                }
+                if (last)
+                    break;
+                i = shootI;
+                prevCollectLetter = collectionLetter;
+            }
+            final boolean finalToNear = toNear;
+            Action noColorSortAutoAction = new SequentialAction(
+                    getPreloadDriveAndShoot(preloadShootPose, stringBuilder.charAt(0) == 'n', false),
+                    actionOrder.get(0),
+                    numPaths > 1 ? actionOrder.get(1) : new SleepAction(0),
+                    numPaths > 2 ? actionOrder.get(2) : new SleepAction(0),
+                    numPaths > 3 ? actionOrder.get(3) : new SleepAction(0),
+                    numPaths > 4 ? actionOrder.get(4) : new SleepAction(0),
+                    numPaths > 5 ? actionOrder.get(5) : new SleepAction(0),
+                    numPaths > 6 ? actionOrder.get(6) : new SleepAction(0),
+                    numPaths > 7 ? actionOrder.get(7) : new SleepAction(0),
+                    numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
+            );
+
+            BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.nearParkStopTime
+                    && (robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist
+                    || autoState == AutoState.DRIVE_TO_COLLECT));
+            BooleanSupplier farShouldPark = () -> autoTimer.seconds() > timeConstraints.farParkTime && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) < misc.smartParkFarDist;
+            BooleanSupplier farShouldStop = () -> (autoState == AutoState.DRIVE_TO_COLLECT || autoState == AutoState.DRIVE_TO_SHOOT)
+                    && autoTimer.seconds() > timeConstraints.farParkTime
+                    && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) > misc.smartParkFarDist;
+
+            Action smartParkAutoAction = new SequentialAction(
+                    new ParallelAction(
+                            new CustomEndAction(noColorSortAutoAction, () -> shouldStop[0] || shouldPark[0])
+                                    .setEndFunction(() -> autoActionDone[0] = true),
+                            new CustomEndAction(
+                                    new ParallelAction(
+                                            new CustomEndAction(() -> (nearShouldStop.getAsBoolean() && finalToNear) || (farShouldStop.getAsBoolean() && !finalToNear))
+                                                    .setEndFunction(() -> shouldStop[0] = true),
+                                            new CustomEndAction(() -> !finalToNear && farShouldPark.getAsBoolean())
+                                                    .setEndFunction(() -> shouldPark[0] = true)
+                                    ),
+                                    () -> !customizable.smartPark || autoActionDone[0] || shouldStop[0] || shouldPark[0]
+                            )
+                    ),
+                    new ParallelAction(
+                            new CustomEndAction(() -> shouldStop[0] || shouldPark[0] || autoActionDone[0]),
+                            telemetryPacket -> {
+                                robot.drive.stop();
+                                return false;
+                            }
+                    ),
+                    new Action() {
+                        boolean first = true;
+                        Action action;
+
+                        @Override
+                        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                            if (first) {
+                                if (shouldPark[0] || (!shouldStop[0] && !finalToNear))
+                                    action = getFarParkDrive();
+                                else
+                                    action = telemetryPacket1 -> {
+                                        robot.drive.stop();
+                                        return true;
+                                    };
+                                first = false;
+                            }
+                            robot.led.setAutoDone();
+                            return action.run(telemetryPacket);
+                        }
+                    }
+            );
+            Action fullAutoAction = new ParallelAction(
+                    autoCommands.updateRobotInfo(),
+                    smartParkAutoAction,
+                    autoCommands.updateRobot(),
+                    autoCommands.savePoseContinuously(),
+                    packet -> {
+                        DrivePath.drawCurrentPath(packet.fieldOverlay());
+                        robot.drawRobotInfo(packet.fieldOverlay());
+                        telemetry.addData("auto state", autoState);
+                        telemetry.addData("auto timer", autoTimer.seconds());
+//                    telemetry.addData("SHOULD PARK", shouldPark[0]);
+//                    telemetry.addData("SHOULD STOP", shouldStop[0]);
+//                    telemetry.addData("AUTO ACTION DONE", autoActionDone[0]);
+//                    robot.limelight.printInfo();
+//                    robot.turret.printInfo();
+                        telemetry.update();
+                        return true;
+                    }
+            );
+            bigBoyAutoAction = new CustomEndAction(fullAutoAction, () -> autoTimer.seconds() > timeConstraints.stopAllTime);
+
+        }
+        else
+            bigBoyAutoAction = new Action() {
             private boolean isFirst = true;
             private Action preloadAction = null;
             private boolean preloadRunning;
             private Action[] dynamicActions = null;
+            private int dynamicActionI = 0;
             @Override
             public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                 if(isFirst) {
@@ -331,57 +364,64 @@ public abstract class AutoPid extends LinearOpMode {
                     isFirst = false;
                     preloadRunning = true;
                 }
-                if(preloadRunning)
+                if(preloadRunning) {
+                    robot.updateInfo();
                     preloadRunning = preloadAction.run(telemetryPacket);
-                if(targetGreenPos != -1 || !preloadRunning && dynamicActions == null) {
-                    dynamicActions = new Action[4];
-                    switch(targetGreenPos) {
-                        case 0:
-                            dynamicActions[0] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, false);
-                            dynamicActions[1] = getSecondCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, true);
-                            dynamicActions[2] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, true);
-                            break;
-                        case 1:
-                            dynamicActions[0] = getSecondCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false);
-                            dynamicActions[1] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, true);
-                            dynamicActions[2] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, true);
-                            break;
-                        case 2:
-                            dynamicActions[0] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, false);
-                            dynamicActions[1] = getSecondCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, true);
-                            dynamicActions[2] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, true);
-                            break;
-                    }
-                    dynamicActions[3] = new ParallelAction(
-                            getGateParkDrive(),
-                            new InstantAction(() -> robot.led.setAutoDone())
-                    );
+                    updateEverythingElse();
                 }
-                return false;
+                else {
+                    if(dynamicActions == null) {
+                        dynamicActions = new Action[4];
+                        switch(targetGreenPos) {
+                            case -1:
+                            case 0:
+                                dynamicActions[0] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, false);
+                                dynamicActions[1] = getSecondCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, true);
+                                dynamicActions[2] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, true);
+                                break;
+                            case 1:
+                                dynamicActions[0] = getSecondCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false);
+                                dynamicActions[1] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, true);
+                                dynamicActions[2] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, true);
+                                break;
+                            case 2:
+                                dynamicActions[0] = getFirstCollectAndShoot(getShootPose(true, "2"), -1, true, true, false, false, false, false);
+                                dynamicActions[1] = getSecondCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, true);
+                                dynamicActions[2] = getThirdCollectAndShoot(getShootPose(true, "3"), -1, true, true, false, false, true);
+                                break;
+                        }
+                        dynamicActions[3] = new ParallelAction(
+                                getGateParkDrive(),
+                                new InstantAction(() -> robot.led.setAutoDone())
+                        );
+                    }
+                    robot.updateInfo();
+                    boolean actionRunning = dynamicActions[dynamicActionI].run(telemetryPacket);
+                    if(!actionRunning) {
+                        dynamicActionI++;
+                        if(dynamicActionI >= dynamicActions.length)
+                            return false;
+                    }
+                    updateEverythingElse();
+                }
+                return true;
+            }
+            private void updateEverythingElse() {
+                robot.update();
+                PoseStorage.autoX = robot.drive.pinpoint().getPose().position.x;
+                PoseStorage.autoY = robot.drive.pinpoint().getPose().position.y;
+                PoseStorage.autoHeading = robot.drive.pinpoint().getPose().heading.toDouble();
+                TelemetryPacket packet = new TelemetryPacket();
+                DrivePath.drawCurrentPath(packet.fieldOverlay());
+                robot.drawRobotInfo(packet.fieldOverlay());
+                FtcDashboard.getInstance().sendTelemetryPacket(packet);
+                robot.limelight.printInfo();
+                telemetry.addData("auto state", autoState);
+                telemetry.addData("auto timer", autoTimer.seconds());
+                telemetry.addData("TARGET GREEN POS", targetGreenPos);
+                telemetry.update();
             }
         };
-
-
-        Action fullAutoAction = new ParallelAction(
-                autoCommands.updateRobotInfo(),
-                customizable.shouldColorSort ? colorSortAutoAction : noColorSortSmartParkAction,
-                autoCommands.updateRobot(),
-                autoCommands.savePoseContinuously(),
-                packet -> {
-                    DrivePath.drawCurrentPath(packet.fieldOverlay());
-                    robot.drawRobotInfo(packet.fieldOverlay());
-                    telemetry.addData("auto state", autoState);
-                    telemetry.addData("AUTO TIMER", autoTimer.seconds());
-//                    telemetry.addData("SHOULD PARK", shouldPark[0]);
-//                    telemetry.addData("SHOULD STOP", shouldStop[0]);
-//                    telemetry.addData("AUTO ACTION DONE", autoActionDone[0]);
-//                    robot.limelight.printInfo();
-                    robot.turret.printInfo();
-                    telemetry.update();
-                    return true;
-                }
-        );
-        Action fullFullAutoAction = new CustomEndAction(fullAutoAction, () -> autoTimer.seconds() > timeConstraints.stopAllTime);
 
         robot.shootingSystem.resetTurretEncoder();
         robot.turret.setSmoothWhenOutOfRange(false);
@@ -393,7 +433,7 @@ public abstract class AutoPid extends LinearOpMode {
         robot.startOpmode();
         autoTimer.reset();
 
-        Actions.runBlocking(fullFullAutoAction);
+        Actions.runBlocking(bigBoyAutoAction);
     }
     private Pose2d getShootPose(boolean shootClose, String letter) {
         switch (letter) {
@@ -443,7 +483,7 @@ public abstract class AutoPid extends LinearOpMode {
                     .setMinLinearPower(shoot.nearMinDrivePower1);
         else
             preloadShootWaypoint.setMaxTime(.9);
-        DrivePath preloadShootDrive = new DrivePath(robot.drive, preloadShootWaypoint);
+        DrivePath preloadShootDrive = new DrivePath(robot.drive, telemetry, preloadShootWaypoint);
 
         Action preloadDriveAction;
         if(shootingNear)
@@ -472,13 +512,13 @@ public abstract class AutoPid extends LinearOpMode {
                                 new TimedAction(telemetryPacket -> {
                                     if(robot.limelight.localization.foundMotif())
                                         targetGreenPos = robot.limelight.localization.getTargetGreenPos();
-                                    return targetGreenPos != -1;
+                                    return targetGreenPos == -1;
                                 }, timeConstraints.maxMotifScanTime),
                                 autoCommands.enableTurretTracking()
                         ),
                         preloadDriveAction
                 ),
-                getShootAction(0, timeConstraints.farPostFlickerShootTime)
+                getShootAction(colorSorting ? timeConstraints.colorSortShooterInterlockMaxWait : 0, timeConstraints.farPostFlickerShootTime)
         );
     }
     private Action buildCollectAndShoot(Action collectDrive, Action gateDrive, DrivePath shootDrive, boolean shootingNear, double postIntakeTime, boolean runIntake, boolean notLast, double shotTime, boolean initiallyExtake, boolean shootingPurple, int spikeMark) {
@@ -534,14 +574,14 @@ public abstract class AutoPid extends LinearOpMode {
                                             double dot = robot.drive.localizer.getPose().position.dot(perpNearParkLine);
                                             return dot < shoot.earlyEngageClutchDist;
                                         }),
-                                        shootingPurple ? getPurpleOnlyShootAction(timeConstraints.shooterInterlockMaxWaitTime, spikeMark) : getShootAction(timeConstraints.shooterInterlockMaxWaitTime, timeConstraints.nearPostFlickerShootTime)
+                                        shootingPurple ? getPurpleOnlyShootAction(timeConstraints.shooterInterlockMaxWait, spikeMark) : getShootAction(timeConstraints.shooterInterlockMaxWait, timeConstraints.nearPostFlickerShootTime)
                                 ) : new SleepAction(0)
                         )
                 ),
-                shootEarly ? new SleepAction(0) : shotTime == 0 ? getShootAction(timeConstraints.shooterInterlockMaxWaitTime, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime) :
+                shootEarly ? new SleepAction(0) : shotTime == 0 ? getShootAction(timeConstraints.shooterInterlockMaxWait, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime) :
                         new SequentialAction(
                                 new CustomEndAction(() -> autoTimer.seconds() >= shotTime),
-                                getShootAction(timeConstraints.shooterInterlockMaxWaitTime, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime)
+                                getShootAction(timeConstraints.shooterInterlockMaxWait, shootingNear ? timeConstraints.nearPostFlickerShootTime : timeConstraints.farPostFlickerShootTime)
                         )
         );
     }
@@ -580,7 +620,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new CustomEndAction(() -> robot.shooter.getNumBallsShot() == ballToMiss)
+                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == ballToMiss), ballToMiss == 1 ? timeConstraints.shoot1FirstTime : timeConstraints.shoot2FirstTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.stopIntake(),
@@ -589,7 +629,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 1)
+                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 1), timeConstraints.shoot1SecondTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.setShouldScore(true),
@@ -598,7 +638,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 2 - ballToMiss)
+                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 2 - ballToMiss), timeConstraints.shootThirdTime)
                                 )
 
                         )
@@ -866,7 +906,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         Action limelightCollectAction = new SequentialAction(
                 new SleepAction(waitTime),
-                robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWaitTime)
+                robot.getLimelightCollectSequence(scan1, scan2, timeConstraints.maxLimelightWait)
         );
 
         DrivePath loadingShootDrive = new DrivePath(robot.drive, new Waypoint(shootPose)

@@ -128,7 +128,7 @@ public class LimelightLocalization extends LLParent {
         if (!inLocalizationZone && state == LocalizationState.UPDATING_POSE)
             setState(params.offLocalizationState);
 
-        if (!drivetrainGoodForUpdate || !turretGoodForUpdate || !inLocalizationZone) {
+        if (state != LocalizationState.SCANNING_MOTIF && (!drivetrainGoodForUpdate || !turretGoodForUpdate || !inLocalizationZone)) {
             // want to update again immediately if current update is interrupted
             if (state == LocalizationState.UPDATING_POSE)
                 lastUpdatePoseTimeMs = -1;
@@ -145,7 +145,7 @@ public class LimelightLocalization extends LLParent {
         double curTimeMs = System.currentTimeMillis();
         double timeSinceUpdate = (curTimeMs - lastUpdatePoseTimeMs) * 0.001;
 
-        boolean canUpdate = drivetrainGoodForUpdate && turretGoodForUpdate && inLocalizationZone &&
+        boolean canUpdate = state != LocalizationState.SCANNING_MOTIF && drivetrainGoodForUpdate && turretGoodForUpdate && inLocalizationZone &&
                 ableToUpdateTimer.seconds() >= params.ableToUpdateConfirmationTime &&
                 !successfullyFoundPose && localizationType == LocalizationType.CONTINUOUS;
 
@@ -194,33 +194,40 @@ public class LimelightLocalization extends LLParent {
     public void updateTelemetry(Telemetry telemetry) {
         telemetry.addData("   localization state", state);
         if(aprilTagResult != null) {
-            telemetry.addData("   isValid", aprilTagResult.isValid());
-            telemetry.addData("   bot pose is null", aprilTagResult.getBotpose() == null);
-            telemetry.addData("   camera pose", MathUtils.formatPose2(cameraPose));
-            telemetry.addData("   robot pose", MathUtils.formatPose2(robotPose));
-            telemetry.addLine();
-            telemetry.addData("   max translational variance", MathUtils.format3(maxTranslationalVariance));
-            telemetry.addData("   max heading variance", MathUtils.format3(maxHeadingVarianceDeg));
-            telemetry.addData("   max translational error", MathUtils.format3(maxTranslationalError));
-            telemetry.addData("   max heading error", MathUtils.format3(maxHeadingErrorDeg));
-            telemetry.addLine();
-            telemetry.addData("   drivetrain good for update", drivetrainGoodForUpdate);
-            telemetry.addData("   turret good for update", turretGoodForUpdate);
-            telemetry.addData("   in localization zone", inLocalizationZone);
-            telemetry.addData("   time since last update", MathUtils.format3((System.currentTimeMillis() - lastUpdatePoseTimeMs) * 0.001));
-            telemetry.addData("   successfully found pose", successfullyFoundPose);
-            telemetry.addLine();
-            telemetry.addData("   num visible tags", visibleTagInfo.size());
-            StringBuilder tagIDs = new StringBuilder();
-            for (LLResultTypes.FiducialResult result : visibleTagInfo)
-                tagIDs.append(result.getFiducialId()).append(" ");
-            telemetry.addData("   tag IDs", tagIDs);
+            if(state == LocalizationState.SCANNING_MOTIF) {
+                telemetry.addData("motif data valid", aprilTagResult.isValid());
+                telemetry.addData("found motif", foundMotif);
+                telemetry.addData("target green pos", targetGreenPos);
+            }
+            else {
+                telemetry.addData("   isValid", aprilTagResult.isValid());
+                telemetry.addData("   bot pose is null", aprilTagResult.getBotpose() == null);
+                telemetry.addData("   camera pose", MathUtils.formatPose2(cameraPose));
+                telemetry.addData("   robot pose", MathUtils.formatPose2(robotPose));
+                telemetry.addLine();
+                telemetry.addData("   max translational variance", MathUtils.format3(maxTranslationalVariance));
+                telemetry.addData("   max heading variance", MathUtils.format3(maxHeadingVarianceDeg));
+                telemetry.addData("   max translational error", MathUtils.format3(maxTranslationalError));
+                telemetry.addData("   max heading error", MathUtils.format3(maxHeadingErrorDeg));
+                telemetry.addLine();
+                telemetry.addData("   drivetrain good for update", drivetrainGoodForUpdate);
+                telemetry.addData("   turret good for update", turretGoodForUpdate);
+                telemetry.addData("   in localization zone", inLocalizationZone);
+                telemetry.addData("   time since last update", MathUtils.format3((System.currentTimeMillis() - lastUpdatePoseTimeMs) * 0.001));
+                telemetry.addData("   successfully found pose", successfullyFoundPose);
+                telemetry.addLine();
+                telemetry.addData("   num visible tags", visibleTagInfo.size());
+                StringBuilder tagIDs = new StringBuilder();
+                for (LLResultTypes.FiducialResult result : visibleTagInfo)
+                    tagIDs.append(result.getFiducialId()).append(" ");
+                telemetry.addData("   tag IDs", tagIDs);
 
-            for (int i = 0; i<Math.min(params.numPrevPosesToPrint, lastCameraPoses.size()); i++)
-                telemetry.addData("   last pose " + (i + 1),
-                        MathUtils.format2(lastCameraPoses.get(i).getPosition().x) + " " +
-                                MathUtils.format2(lastCameraPoses.get(i).getPosition().y) + " " +
-                                MathUtils.format2(lastCameraPoses.get(i).getOrientation().getYaw(AngleUnit.DEGREES)));
+                for (int i = 0; i < Math.min(params.numPrevPosesToPrint, lastCameraPoses.size()); i++)
+                    telemetry.addData("   last pose " + (i + 1),
+                            MathUtils.format2(lastCameraPoses.get(i).getPosition().x) + " " +
+                                    MathUtils.format2(lastCameraPoses.get(i).getPosition().y) + " " +
+                                    MathUtils.format2(lastCameraPoses.get(i).getOrientation().getYaw(AngleUnit.DEGREES)));
+            }
         }
         else
             telemetry.addLine("   result is null");
@@ -229,8 +236,10 @@ public class LimelightLocalization extends LLParent {
         aprilTagResult = limelight.getLatestResult();
         visibleTagInfo.clear();
 
-        if(aprilTagResult == null || !aprilTagResult.isValid())
+        boolean motifDataNull = aprilTagResult == null || !aprilTagResult.isValid();
+        if(motifDataNull) {
             return;
+        }
 
         visibleTagInfo = aprilTagResult.getFiducialResults();
         foundMotif = false;

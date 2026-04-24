@@ -14,10 +14,11 @@ public class Shooter extends Component {
         public double ignoreHoodUpdateError = Math.toRadians(.5);
         public double A = 20, B = 6, k = -150, x0 = .06;
         public double kVYInt = 1.63, kVSlope = -0.02005;
-        public double shotVelDropThreshold = 30, targetVelStaticShotThreshold = .1;
+        public double shotVelDropThreshold = 40, targetVelStaticShotThreshold = .1;
         public double avg3BallShootTime = .55;
         public int startingShooterSpeedAdjustment = 0;
         public double minVoltage = -2.025, maxVoltage = 15;
+        public double firstCurrentLimitedVoltage = 7;
     }
     public static class TestingParams {
         public boolean testing = false;
@@ -31,9 +32,11 @@ public class Shooter extends Component {
     public enum ShooterState {
         OFF, UPDATE
     }
-    private ShooterState shooterState;
+    private ShooterState shooterState, prevFrameShooterState;
     private double nearVelocityAdjustment, farVelocityAdjustment;
+    private double curRawShooterSpeedTps;
     private boolean ballsCurrentlyExiting, ballsPreviouslyExiting;
+    private boolean a, shootingInterlockRecentlyActivated;
     private int numBallsShot;
     private final ElapsedTime ballsExitingTimer;
     private double lastMax, lastMin;
@@ -56,8 +59,13 @@ public class Shooter extends Component {
         farVelocityAdjustment = shooterParams.startingShooterSpeedAdjustment;
         ballsExitingTimer = new ElapsedTime();
         maxVoltage = shooterParams.maxVoltage;
+        a = true;
     }
     public void setShooterVelocityPID(double targetVelMps, double curVelMps) {
+        if(prevFrameShooterState == ShooterState.OFF) {
+            robot.shootingSystem.setShooterVoltage(shooterParams.firstCurrentLimitedVoltage);
+            return;
+        }
         double error = targetVelMps - curVelMps;
         kP =  shooterParams.A / (1 + Math.exp(shooterParams.k * (Math.abs(error) - shooterParams.x0))) + shooterParams.B;
         pidVoltage = kP * error;
@@ -104,13 +112,17 @@ public class Shooter extends Component {
         }
         updateBallShotTracking();
         prevTargetVelMps = targetVelMps;
+        prevFrameShooterState = shooterState;
     }
     public void updateBallShotTracking() {
         ballsPreviouslyExiting = ballsCurrentlyExiting;
         if(ballsCurrentlyExiting && ballsExitingTimer.seconds() > shooterParams.avg3BallShootTime)
             ballsCurrentlyExiting = false;
 
-        oneFrameVelDif = robot.shootingSystem.getFilteredShooterSpeedTps() - robot.shootingSystem.getPrevFilteredShooterSpeedTps();
+        double prevRawShooterSpeedTps = curRawShooterSpeedTps;
+        curRawShooterSpeedTps = robot.shootingSystem.getRawShooterSpeedTps();
+        oneFrameVelDif = curRawShooterSpeedTps - prevRawShooterSpeedTps;
+
         boolean increasing;
         if(oneFrameVelDif > 0)
             increasing = true;
@@ -119,22 +131,26 @@ public class Shooter extends Component {
         else
             increasing = false;
 
-        if(increasing && !wasPrevIncreasing) {  // means relative min detected
-            lastMin = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
-            double velDrop = lastMax - lastMin;
-            if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
-                if (velDrop >= shooterParams.shotVelDropThreshold && Math.abs(targetVelMps - prevTargetVelMps) < shooterParams.targetVelStaticShotThreshold) {
+        if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
+            if(!robot.collection.isShooting())
+                shootingInterlockRecentlyActivated = true;
+
+            if(increasing && !wasPrevIncreasing && numBallsShot < 3) {  // means relative min detected
+                lastMin = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
+                double velDrop = lastMax - lastMin;
+                if (((numBallsShot != 0 && !shootingInterlockRecentlyActivated) || velDrop >= shooterParams.shotVelDropThreshold) && Math.abs(targetVelMps - prevTargetVelMps) < shooterParams.targetVelStaticShotThreshold) {
                     if (!ballsCurrentlyExiting) {
                         ballsCurrentlyExiting = true;
                         ballsExitingTimer.reset();
                     }
                     numBallsShot++;
+                    shootingInterlockRecentlyActivated = false;
                 }
             }
-            else
-                numBallsShot = 0;
-
         }
+        else
+            numBallsShot = 0;
+
         if(wasPrevIncreasing && !increasing) { // means relative max detected
             lastMax = robot.shootingSystem.getPrevFilteredShooterSpeedTps();
         }
@@ -143,8 +159,7 @@ public class Shooter extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");
-        telemetry.addData("one frame vel dif", oneFrameVelDif);
-        telemetry.addData("extrema dif", lastMax - lastMin);
+        telemetry.addData("num balls shot", numBallsShot);
         telemetry.addData("balls currently exiting", ballsCurrentlyExiting ? 50 : 0);
         telemetry.addData("  shooter lookahead target vel", targetVelMps);
         telemetry.addData("  shooter no lookahead target vel mps", robot.shootingSystem.currentTargetExitSpeedMps);

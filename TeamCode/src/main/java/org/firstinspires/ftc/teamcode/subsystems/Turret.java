@@ -15,8 +15,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.opmode.testing.TurretLogger;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
@@ -38,7 +36,7 @@ public class Turret extends Component {
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
-        public double maxTeleAngle = Math.toRadians(88), maxAutoAngle = Math.toRadians(90);
+        public double maxTeleAngle = Math.toRadians(90), maxAutoAngle = Math.toRadians(90);
         public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 8; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
@@ -49,7 +47,7 @@ public class Turret extends Component {
         public double accelVoltageSign = -1;
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .004, BPos = 0.028, x0Pos = 130, kPos = .03;
+        public double APos = .0035, BPos = 0.035, x0Pos = 130, kPos = .03;
         public double kD = 0.0005, kDExponent = 1.1;
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
 //        public double AVel = .05, BVel = .003, x0Vel = 30, kVel = .04;
@@ -124,7 +122,6 @@ public class Turret extends Component {
     private double currentTestingTarget;
     private boolean smoothWhenOutOfRange;
     private boolean wasOscillating;
-    public boolean addOscillationData = false;
     private double inertialAngleOffset;
     private double trackCustomTargetMinPower;
     private double trackCustomTargetStartEncoder;
@@ -256,8 +253,6 @@ public class Turret extends Component {
     public double calculateTurretVoltage(double actualTargetEncoder, double positionError, double prevPositionError, double robotSpeedAtTurret) {
         updatePrevEncoderErrors(positionError);
         boolean isOscillating = errorIsOscillating(prevErrors);
-        if (addOscillationData)
-            TurretLogger.addInfo(prevErrors, isOscillating);
         boolean canStopIfOscillating = Math.abs(positionError) <= powerTuning.noPowerIfOscillatingThreshold && isOscillating;
         if(canStopIfOscillating)
             wasOscillating = true;
@@ -399,7 +394,6 @@ public class Turret extends Component {
 
 //        telemetry.addData("target rel angle deg lookahead", Math.toDegrees(lookAheadTargetRelAngleRad));
 //        telemetry.addData("target rel angle deg no lookahead", Math.toDegrees(noLookAheadTargetRelAngleRad));
-//        telemetry.addData("add oscillation data", addOscillationData);
 //        telemetry.addData("prev errors", Arrays.toString(prevErrors));
 //        telemetry.addData("error oscillating", errorIsOscillating(prevErrors));
 //        telemetry.addData("was oscillating", wasOscillating);

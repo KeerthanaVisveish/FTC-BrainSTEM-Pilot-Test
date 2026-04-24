@@ -17,6 +17,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoParamsPid;
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
@@ -45,6 +47,8 @@ public class BrainSTEMRobot {
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
+    public static boolean drawRobot, drawShooting, drawLimelight;
+
     public Turret turret;
     public Shooter shooter;
     public ShootingSystem shootingSystem;
@@ -110,12 +114,15 @@ public class BrainSTEMRobot {
         // draw robot, turret, exit position, and limelight pose
         Pose2d robotPose = drive.pinpoint().getPose();
 
-        fieldOverlay.setStroke("red");
-        Drawing.drawRobot(fieldOverlay, robotPose);
+        if(drawRobot) {
+            fieldOverlay.setStroke("red");
+            Drawing.drawRobot(fieldOverlay, robotPose);
+        }
+        if(drawShooting)
+            shootingSystem.drawShootingInfo(fieldOverlay);
 
-        shootingSystem.drawShootingInfo(fieldOverlay);
-
-        limelight.addLimelightInfo(fieldOverlay);
+        if(drawLimelight)
+            limelight.addLimelightInfo(fieldOverlay);
     }
     public double getFilteredVoltage() {
         return drive.getFilteredVoltage();
@@ -265,11 +272,17 @@ public class BrainSTEMRobot {
                         Waypoint backupWaypoint = new Waypoint(new Pose2d(
                                 lastCollectWaypoint.x(),
                                 lastCollectWaypoint.y() - (alliance == Alliance.RED ? 1 : -1) * PathGeneration.laneCollectParams.tryAgainBackupDist,
-                                lastCollectWaypoint.headingRad()));
+                                lastCollectWaypoint.headingRad()))
+                                .setMinLinearPower(AutoPid.collect.loadingNormDrivePower)
+                                .setPassPosition(true)
+                                .setMaxTime(.5);
                         Waypoint tryAgainWaypoint = new Waypoint(new Pose2d(
                                 lastCollectWaypoint.x(),
                                 lastCollectWaypoint.y(),
-                                lastCollectWaypoint.headingRad()));
+                                lastCollectWaypoint.headingRad()))
+                                .setMinLinearPower(AutoPid.collect.loadingNormDrivePower)
+                                .setPassPosition(true)
+                                .setMaxTime(.7);
                         drivePath.addWaypoint(backupWaypoint);
                         drivePath.addWaypoint(tryAgainWaypoint);
                     }

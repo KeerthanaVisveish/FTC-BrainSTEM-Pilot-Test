@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.RedAutoPid;
 public class RedNearPattern extends RedAutoPid {
     public RedNearPattern() {
         customizable.shouldColorSort = true;
+        customizable.stringBuilder = customizable.nearPattern;
     }
 }

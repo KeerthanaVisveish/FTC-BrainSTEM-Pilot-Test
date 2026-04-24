@@ -33,8 +33,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false, printPark = false, printDrivetrain;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
-    public static double[] blueCornerResetPose = { 62.0618, 63.1, -90 };
-    public static double[] redCornerResetPose = { 62.2, -62.8, 90 };
+    public static double[] blueCornerResetPose = { 64, 63.1, -90 };
+    public static double[] redCornerResetPose = { 64, -62.8, 90 };
+    public static boolean shouldScore = true;
     // RED:
     // (62.706, -62.288, 90.294)
     // (62.038, -62.863, 89.575)
@@ -60,7 +61,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         telemetry.setMsTransmissionInterval(20);
         Pose2d startPose = new Pose2d(PoseStorage.autoX, PoseStorage.autoY, PoseStorage.autoHeading);
         currentlyMoving = false;
-        CommandScheduler.getInstance().reset();
 
         Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
         LimelightLocalization.localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
@@ -106,16 +106,11 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             gp1.update();
             gp2.update();
 
-            //telemetry.addData("TRACKING SHOOTER DATA", robot.shooter.isTrackingData());
-            //telemetry.addLine();
-            //telemetry.addData("SHOOTER ADJUSTMENT", robot.shooter.adjustment);
-            //telemetry.addData("TURRET ADJUSTMENT", robot.turret.adjustment);
-            //telemetry.addLine();
-
             updateDrive();
             updateDriver2();
             updateDriver1();
-            CommandScheduler.getInstance().run();
+            if(!inCompetition)
+                robot.shootingSystem.setShouldScore(shouldScore);
             robot.updateInfo();
             robot.update();
 
@@ -187,8 +182,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDriver1() {
-        if(!inCompetition)
-            robot.turret.addOscillationData = gamepad1.dpad_up;
         if(robot.collection.getClutchState() == Collection.ClutchState.UNENGAGED) {
             if (gp1.gamepad.right_trigger > 0.2)
                 robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
