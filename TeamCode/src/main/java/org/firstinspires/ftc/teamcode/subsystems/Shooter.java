@@ -131,8 +131,8 @@ public class Shooter extends Component {
         else
             increasing = false;
 
-        if(robot.collection.getClutchState() == Collection.ClutchState.ENGAGED && robot.collection.getCollectionState() == Collection.CollectionState.INTAKE) {
-            if(!robot.collection.isShooting())
+        if(robot.collector.getClutchState() == Collector.ClutchState.ENGAGED && robot.collector.getCollectionState() == Collector.CollectionState.INTAKE) {
+            if(!robot.collector.isShooting())
                 shootingInterlockRecentlyActivated = true;
 
             if(increasing && !wasPrevIncreasing && numBallsShot < 3) {  // means relative min detected

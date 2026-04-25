@@ -17,7 +17,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
-import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoParamsPid;
 import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
@@ -52,7 +51,7 @@ public class BrainSTEMRobot {
     public Turret turret;
     public Shooter shooter;
     public ShootingSystem shootingSystem;
-    public Collection collection;
+    public Collector collector;
     public Parking parking;
     public MecanumDrive drive;
     public Limelight limelight;
@@ -72,7 +71,7 @@ public class BrainSTEMRobot {
         shootingSystem = new ShootingSystem(hardwareMap, telemetry, this);
         turret = new Turret(hardwareMap, telemetry, this);
         shooter = new Shooter(hardwareMap, telemetry, this);
-        collection = new Collection(hardwareMap, telemetry, this);
+        collector = new Collector(hardwareMap, telemetry, this);
         parking = new Parking(hardwareMap, telemetry, this);
         led = new LED(hardwareMap, telemetry, this);
 
@@ -81,7 +80,7 @@ public class BrainSTEMRobot {
         if (enableShooter)
             subsystems.add(shooter);
         if (enableCollection)
-            subsystems.add(collection);
+            subsystems.add(collector);
         if (enablePark)
             subsystems.add(parking);
         if (enableLimelight)
@@ -201,10 +200,10 @@ public class BrainSTEMRobot {
                         () -> MathUtils.vecAngle(lookPosition1.minus(drive.pinpoint().getPose().position)),
                         () -> MathUtils.vecAngle(lookPosition2.minus(drive.pinpoint().getPose().position))
                 ),
-                new InstantAction(() -> collection.setCollectionState(Collection.CollectionState.INTAKE)),
+                new InstantAction(() -> collector.setCollectionState(Collector.CollectionState.INTAKE)),
                 new ParallelAction(
                         new CustomEndAction(generateLimelightCollectDrive(maxLimelightWaitTime),
-                                collection::has3Balls),
+                                collector::has3Balls),
                         new SequentialAction(
                                 new SleepAction(0.2),
                                 new InstantAction(() -> turret.setTurretState(Turret.TurretState.CENTER))

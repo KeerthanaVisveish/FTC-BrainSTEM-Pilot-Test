@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
@@ -117,9 +117,9 @@ public class LoadingZoneBallCollection extends OpMode {
         }
         if (autoCollectAction == null && scanForBallsAction == null) {
             if (gamepad1.left_trigger > 0.2)
-                robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
+                robot.collector.setCollectionState(Collector.CollectionState.OUTTAKE);
             else
-                robot.collection.setCollectionState(Collection.CollectionState.OFF);
+                robot.collector.setCollectionState(Collector.CollectionState.OFF);
 
             if (gamepad1.dpad_up)
                 showType = ShowType.CURRENT;
@@ -141,7 +141,7 @@ public class LoadingZoneBallCollection extends OpMode {
                     autoCommands.runIntake(),
                     new CustomEndAction(
                             autoCollectDrive,
-                            () -> robot.collection.autoCollectHas3Balls()
+                            () -> robot.collector.autoCollectHas3Balls()
                     ),
                     autoCommands.stopIntake()
             );

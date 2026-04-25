@@ -1,13 +1,12 @@
 package org.firstinspires.ftc.teamcode.utils.autoHelpers;
 
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.SleepAction;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
@@ -74,58 +73,45 @@ public class AutoCommands {
         };
     }
     public Action setShouldScore(boolean shouldScore) {
-        return telemetryPacket -> {
-            robot.shootingSystem.setShouldScore(shouldScore);
-            return false;
-        };
+        return new InstantAction(() -> robot.shootingSystem.setShouldScore(shouldScore));
     }
-
-    public Action stopShooter() {
-        return packet -> {
-            robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-            return false;
-        };
+    public Action setMaxVoltage(double m) {
+        return new InstantAction(() -> robot.shooter.setMaxVoltage(m));
     }
 
     // COLLECTIONS
-    public Action engageClutchAndIntake() {
-        return new ParallelAction(
-                engageClutch(),
-                runIntake()
-        );
-    }
     public Action engageClutch() {
         return packet -> {
-            robot.collection.setClutchState(Collection.ClutchState.ENGAGED);
-            robot.collection.outtakeAfterClutchEngage = false;
-            robot.collection.clutchTimer.reset();
+            robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
+            robot.collector.outtakeAfterClutchEngage = false;
+            robot.collector.clutchTimer.reset();
             return false;
         };
     }
 
     public Action disengageClutch() {
         return packet -> {
-            robot.collection.setClutchState(Collection.ClutchState.UNENGAGED);
+            robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
             return false;
         };
     }
 
     public Action flickerUp() {
         return packet -> {
-            robot.collection.setFlickerState(Collection.FlickerState.FULL_UP_DOWN);
+            robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
             return false;
         };
     }
     public Action flickerHalfUp() {
         return packet -> {
-            robot.collection.setFlickerState(Collection.FlickerState.HALF_UP_DOWN);
+            robot.collector.setFlickerState(Collector.FlickerState.HALF_UP_DOWN);
             return false;
         };
     }
 
     public Action flickerDown() {
         return packet -> {
-            robot.collection.setFlickerState(Collection.FlickerState.DOWN);
+            robot.collector.setFlickerState(Collector.FlickerState.DOWN);
             return false;
         };
     }
@@ -133,21 +119,21 @@ public class AutoCommands {
 
     public Action runIntake() {
         return packet -> {
-            robot.collection.setCollectionState(Collection.CollectionState.INTAKE);
+            robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
             return false;
         };
     }
 
     public Action reverseIntake() {
         return packet -> {
-            robot.collection.setCollectionState(Collection.CollectionState.OUTTAKE);
+            robot.collector.setCollectionState(Collector.CollectionState.OUTTAKE);
             return false;
         };
     }
 
     public Action stopIntake() {
         return packet -> {
-            robot.collection.setCollectionState(Collection.CollectionState.OFF);
+            robot.collector.setCollectionState(Collector.CollectionState.OFF);
             return false;
         };
     }

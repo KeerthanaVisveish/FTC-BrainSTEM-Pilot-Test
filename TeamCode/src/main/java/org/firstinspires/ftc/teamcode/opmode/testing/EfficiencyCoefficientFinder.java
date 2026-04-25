@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collection;
+import org.firstinspires.ftc.teamcode.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
@@ -49,8 +49,8 @@ public class EfficiencyCoefficientFinder extends OpMode {
         telemetry.setMsTransmissionInterval(20);
         robot = new BrainSTEMRobot(Alliance.RED, telemetry, hardwareMap, createPose(experiment.startPose));
 
-        robot.collection.clutchRight.setPosition(Collection.params.engagedPos);
-        robot.collection.clutchLeft.setPosition(Collection.params.engagedPos);
+        robot.collector.clutchRight.setPosition(Collector.params.engagedPos);
+        robot.collector.clutchLeft.setPosition(Collector.params.engagedPos);
     }
     @Override
     public void loop() {
@@ -59,8 +59,8 @@ public class EfficiencyCoefficientFinder extends OpMode {
         if(gamepad1.rightBumperWasPressed())
             controls.powerIntake = !controls.powerIntake;
 
-        double collectPower = controls.powerIntake ? Collection.params.normIntakePow : 0;
-        robot.collection.collectorMotor.setPower(collectPower);
+        double collectPower = controls.powerIntake ? Collector.params.normIntakePow : 0;
+        robot.collector.collectorMotor.setPower(collectPower);
 
         if (controls.targetShooterVelocityTicksPerSec == 0 || !controls.powerShooter) {
 //            robot.shootingSystem.setShooterPower(0);

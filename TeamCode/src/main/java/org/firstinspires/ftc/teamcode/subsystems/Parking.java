@@ -11,14 +11,15 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class Parking extends Component {
     public static class Params {
         public double TESTING_INC = 0.001;
-        public double RETRACTED_POS = 0.15;
-        public double EXTENDED_POS = 0.7;
+        public double RETRACTED_POS = .2;
+        public double EXTENDED_POS = .715;
+        public double testingPos = .2, testingInc = .001;
         public int leftLowerBound = 500, rightLowerBound = 500;
     }
 
     public static Params PARK_PARAMS = new Params();
     public enum ParkState {
-        RETRACTED, EXTENDED, OFF
+        RETRACTED, EXTENDED, OFF, TESTING
     }
     public ServoImplEx parkLeftServo;
     public ServoImplEx parkRightServo;
@@ -65,6 +66,8 @@ public class Parking extends Component {
             case EXTENDED:
                 setParkServoPosition(PARK_PARAMS.EXTENDED_POS);
                 break;
+            case TESTING:
+                setParkServoPosition(PARK_PARAMS.testingPos);
         }
     }
     @Override

@@ -12,14 +12,14 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @Config
-public class Collection extends Component {
+public class Collector extends Component {
 
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.5;
         public double firstCurrentLimitedIntakePow = .6;
-        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .7, safetyInterlocksFailedPower = 0;
+        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .8, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
@@ -75,7 +75,7 @@ public class Collection extends Component {
     private boolean inAuto;
     private boolean shooterInitiallyGood, shooting;
 
-    public Collection(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
+    public Collector(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot){
         super(hardwareMap, telemetry, robot);
 
         collectorMotor = hardwareMap.get(DcMotorEx.class, "intake");

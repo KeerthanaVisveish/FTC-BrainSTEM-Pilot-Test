@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization
 
 @Config
 public class LED extends Component {
-    public static double white = 0.99, green = 0.45, yellow = 0.35, orange = .3, lightBlue = .55, blue = 0.6, purple = 0.666, red = 0.279;
+    public static double white = .75, green = .45, yellow = .35, orange = .3, lightBlue = .55, blue = 0.6, purple = .65, red = 0.279, pink = .723;
     public static double shooterFlashOnTime = 0.3, shooterFlashOffTime = 0.2;
     public static double turretFlashOnTime = 0.07, turretFlashOffTime = 0.07;
     public static double parkFlashTime = .4;
@@ -90,16 +90,20 @@ public class LED extends Component {
                 return;
             }
         }
-        if (robot.collection.getClutchState() == Collection.ClutchState.ENGAGED) {
-            if (robot.collection.getCollectionState() == Collection.CollectionState.INTAKE || robot.collection.getCollectionState() == Collection.CollectionState.INTAKE_SLOW)
-                if(robot.shooter.ballsCurrentlyExiting() && robot.collection.inAuto())
+        if(!robot.shootingSystem.inShootingZone()) {
+            setLed(pink);
+            return;
+        }
+        if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
+            if (robot.collector.getCollectionState() == Collector.CollectionState.INTAKE || robot.collector.getCollectionState() == Collector.CollectionState.INTAKE_SLOW)
+                if(robot.shooter.ballsCurrentlyExiting() && robot.collector.inAuto())
                     setLed(lightBlue);
                 else
                     setLed(green);
             else
                 setLed(yellow);
         }
-        else if (robot.collection.has3Balls())
+        else if (robot.collector.has3Balls())
             setLed(purple);
         else
             setLed(red);
