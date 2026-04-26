@@ -282,15 +282,15 @@ public class DrivePath implements Action {
         drivetrain.setDrivePowers(new PoseVelocity2d(voltageScaledTranslationalPower, voltageScaledHeadingPower));
 
         if (telemetry != null) {
-            telemetry.addData("DP WAYPOINT TIMER", waypointTimer.seconds());
-            telemetry.addData("DP CUR WAYPOINT INDEX", curWaypointIndex);
-            telemetry.addData("DP target pose", MathUtils.formatPose1(targetPose));
-            telemetry.addData("DP current position", MathUtils.format3(robotPose.position.x) + " ," + MathUtils.format3(robotPose.position.y) + ", " + MathUtils.format3(Math.toDegrees(robotPose.heading.toDouble())));
-            telemetry.addData("DP heading waypoint error", MathUtils.format3(Math.toDegrees(errorInfo.headingRadError)));
-            telemetry.addData("DP in position tolerance", inPositionTolerance);
-            telemetry.addData("DP in heading tolerance", inHeadingTolerance);
-            telemetry.addData("WAYPOINT DIR", MathUtils.format3(Math.toDegrees(angleRadToTargetWaypoint)));
-            telemetry.addLine();
+//            telemetry.addData("DP WAYPOINT TIMER", waypointTimer.seconds());
+//            telemetry.addData("DP CUR WAYPOINT INDEX", curWaypointIndex);
+//            telemetry.addData("DP target pose", MathUtils.formatPose1(targetPose));
+//            telemetry.addData("DP current position", MathUtils.format3(robotPose.position.x) + " ," + MathUtils.format3(robotPose.position.y) + ", " + MathUtils.format3(Math.toDegrees(robotPose.heading.toDouble())));
+//            telemetry.addData("DP heading waypoint error", MathUtils.format3(Math.toDegrees(errorInfo.headingRadError)));
+//            telemetry.addData("DP in position tolerance", inPositionTolerance);
+//            telemetry.addData("DP in heading tolerance", inHeadingTolerance);
+//            telemetry.addData("WAYPOINT DIR", MathUtils.format3(Math.toDegrees(angleRadToTargetWaypoint)));
+//            telemetry.addLine();
         }
         return true;
     }

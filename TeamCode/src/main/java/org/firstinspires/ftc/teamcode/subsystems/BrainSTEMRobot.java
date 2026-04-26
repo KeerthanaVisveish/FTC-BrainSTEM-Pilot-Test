@@ -46,7 +46,7 @@ public class BrainSTEMRobot {
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
-    public static boolean drawRobot, drawShooting, drawLimelight;
+    public static boolean drawRobot = true, drawShooting = true, drawLimelight = true;
 
     public Turret turret;
     public Shooter shooter;

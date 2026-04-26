@@ -39,24 +39,35 @@ public class ShootingSystem {
         public boolean dynamicHood = true;
     }
     public static class GoalParams {
-        public double nearRedX = -66, nearRedY = 63;
-        public double nearBlueX = -66, nearBlueY = -63;
-        public double nearHeight = 39;
+        // when shooting from really close
+        public double closeRedX = -65, closeRedY = 63;
+        public double closeBlueX = -65, closeBlueY = -62;
+        public double closeHeight = 38;
+        public double closeImpactAng = Math.toRadians(-20);
 
-        public double midRedX = -62, midRedY = 66;
-        public double midBlueX = -62, midBlueY = -66;
-        public double midHeight = 39;
+        // when cycling from gate
+        public double gateRedX = -66, gateRedY = 64.5;
+        public double gateBlueX = -66, gateBlueY = -63;
+        public double gateHeight = 39.5;
+        public double gateImpactAng = -.3;
 
+        // when shooting from opposing goal area
+        public double oppositeRedX = -61, oppositeRedY = 66;
+        public double oppositeBlueX = -62, oppositeBlueY = -66;
+        public double oppositeHeight = 41.5;
+        public double oppositeImpactAng = -.31;
+
+
+        // when shooting in far zone
         public double farRedX = -65, farRedY = 67;
         public double farBlueX = -66, farBlueY = -62;
         public double farHeight = 41;
+        public double farImpactAng = Math.toRadians(-30);
 
         public double missExitAngle = Math.toRadians(35);
 
-        public double nearImpactAng = Math.toRadians(-22),
-                midImpactAng = Math.toRadians(-26),
-                farImpactAng = Math.toRadians(-30);
-        public double nearStateThreshold = 12;
+        public double reallyCloseRadius = 45;
+        public double gateLocationYThreshold = -12, gateLocationXThreshold = -50;
     }
     public static class HoodParams {
         public double downPWM = 900, upPWM = 2065;
@@ -65,22 +76,23 @@ public class ShootingSystem {
         public double robotVelThresholdToSetHood = 2;
     }
     public static class GeneralParams {
-        public double estVoltage = 13.4;
-        public double shootingZoneRadius = 33;
-        public double firstShootToleranceMps = .2, closeShootToleranceMps = .5, farShootToleranceMps = .45;
+        public double estVoltage = 13.4, voltageSensorTrust = .65;
+        public double shootingZoneRadius = 31;
+        public double firstShootToleranceMps = .2, closeShootToleranceMps = .5, farShootToleranceMps = .43;
         public double lookAheadTime = .2; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
+        public double idkWhatToCallThis = .4;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
         public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
-        public double efficiencyCoefWeight = .5;
+        public double efficiencyCoefWeight = .4;
         public double maxShootWhileMovingSpeed = 1;
 
         // estimated accel thresholds: position: 20, heading: 5
     }
     public static class FarParams {
-        public double farVelOffset = .3;
+        public double farVelOffset = .33;
         public double far2SwitchY = 3;
 
         public double far1ExitAng = .715585;
@@ -100,12 +112,12 @@ public class ShootingSystem {
     public static GeneralParams generalParams = new GeneralParams();
     public static FarParams farParams = new FarParams();
 
-    public enum Dist {
-        NEAR, MID, FAR
+    public enum Location {
+        GATE_CYCLE, OPPOSITE_SIDE, REALLY_CLOSE, FAR
     }
-    public Dist distState;
+    public Location locationState;
     public boolean usingHighArc;
-    public Vector3dOld nearGoalPos, midGoalPos, farGoalPos;
+    public Vector3dOld closeGoalPos, gateGoalPos, oppositeGoalPos, farGoalPos;
     private boolean shouldScore;
     public Vector2d corner;
     private final HardwareMap hardwareMap;
@@ -162,7 +174,7 @@ public class ShootingSystem {
         efficiencyCoef = 0.39;
 
 
-        distState = Dist.NEAR;
+        locationState = Location.GATE_CYCLE;
 
         physicsExitAngleRads = new double[generalParams.numApproximations];
         updateGoalPoses();
@@ -170,14 +182,16 @@ public class ShootingSystem {
     public void updateGoalPoses() {
         if(BrainSTEMRobot.alliance == Alliance.BLUE) {
             corner = new Vector2d(-72, -72);
-            nearGoalPos = new Vector3dOld(goalParams.nearBlueX, goalParams.nearHeight, goalParams.nearBlueY);
-            midGoalPos = new Vector3dOld(goalParams.midBlueX, goalParams.midHeight, goalParams.midBlueY);
+            closeGoalPos = new Vector3dOld(goalParams.closeBlueX, goalParams.closeHeight, goalParams.closeBlueY);
+            gateGoalPos = new Vector3dOld(goalParams.gateBlueX, goalParams.gateHeight, goalParams.gateBlueY);
+            oppositeGoalPos = new Vector3dOld(goalParams.oppositeBlueX, goalParams.oppositeHeight, goalParams.oppositeBlueY);
             farGoalPos = new Vector3dOld(goalParams.farBlueX, goalParams.farHeight, goalParams.farBlueY);
         }
         else {
             corner = new Vector2d(-72, 72);
-            nearGoalPos = new Vector3dOld(goalParams.nearRedX, goalParams.nearHeight, goalParams.nearRedY);
-            midGoalPos = new Vector3dOld(goalParams.midRedX, goalParams.midHeight, goalParams.midRedY);
+            closeGoalPos = new Vector3dOld(goalParams.closeRedX, goalParams.closeHeight, goalParams.closeRedY);
+            gateGoalPos = new Vector3dOld(goalParams.gateRedX, goalParams.gateHeight, goalParams.gateRedY);
+            oppositeGoalPos = new Vector3dOld(goalParams.oppositeRedX, goalParams.oppositeHeight, goalParams.oppositeRedY);
             farGoalPos = new Vector3dOld(goalParams.farRedX, goalParams.farHeight, goalParams.farRedY);
         }
     }
@@ -250,7 +264,7 @@ public class ShootingSystem {
 
     public void updatePhysicsPropertiesNew() {
         Pose2d robotPose = robot.drive.pinpoint().getPose();
-        Vector3d exitPosM = new Vector3d(turretPose.position.x, turretPose.position.y, ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR)).times(.0254);
+        Vector3d exitPosM = new Vector3d(turretPose.position.x, turretPose.position.y, ShootingMathOld.approximateExitHeightM(locationState == Location.GATE_CYCLE)).times(.0254);
         Vector3d robotPosM = new Vector3d(robotPose.position.x, robotPose.position.y, 0).times(.0254);
         OdoInfo robotVel = robot.drive.pinpoint().getVelocity();
         Vector3d robotVelCm = new Vector3d(robotVel.x, robotVel.y, 0).times(.0254);
@@ -301,11 +315,11 @@ public class ShootingSystem {
     // con: math is weird
     private void updatePhysicsProperties(double desiredBallDir, Vector2d noLookAheadRobotVelAtTurretMps, Vector2d lookAheadRobotVelAtTurretMps) {
         if(testingParams.dynamicHood)
-            checkShootingWhileMoving = distState == Dist.NEAR || distState == Dist.MID;
+            checkShootingWhileMoving = locationState != Location.FAR;
         else
             checkShootingWhileMoving = true;
         // get delta y of projectory (need approximate exit height of the ball)
-        double exitHeightM = ShootingMathOld.approximateExitHeightM(distState == Dist.NEAR);
+        double exitHeightM = ShootingMathOld.approximateExitHeightM(locationState == Location.REALLY_CLOSE);
         relGoalHeightM = (goalPosIn.y * 0.0254 - exitHeightM);
         double futureDist = futureTurretPosGoalDistIn * 0.0254;
 
@@ -314,7 +328,7 @@ public class ShootingSystem {
         if(checkShootingWhileMoving) {
             double sign = BrainSTEMRobot.alliance == Alliance.RED ? -1 : 1;
             boolean inFar2 = robot.drive.pinpoint().getPose().position.y * sign > farParams.far2SwitchY;
-            if(distState == Dist.FAR) {
+            if(locationState == Location.FAR) {
                 double exitAng =  inFar2 ? farParams.far2ExitAng : farParams.far1ExitAng;
                 launchVector = new double[] {
                         ShootingMathOld.calculateLaunchVelocityWithExitAngle(futureDist, relGoalHeightM, exitAng),
@@ -337,7 +351,7 @@ public class ShootingSystem {
 
             // setting hood angle
             hoodExitAngleRad = Range.clip(Math.atan2(lookAheadTargetExitVelMps.y, baseLength), hoodParams.minExitAngRad, hoodParams.maxExitAngRad);
-            if(distState == Dist.FAR) {
+            if(locationState == Location.FAR) {
                 if(robot.shooter.getNumBallsShot() == 1)
                     hoodExitAngleRad += inFar2 ? farParams.far2SecondBallOffset : farParams.far1SecondBallOffset;
                 else if(robot.shooter.getNumBallsShot() == 2)
@@ -351,7 +365,7 @@ public class ShootingSystem {
             efficiencyCoef = calcEfficiencyCoef(hoodExitAngleRad);
             curExitSpeedMps = ShootingMathOld.ticksPerSecToExitSpeedMps(filteredShooterSpeedTps, efficiencyCoef);
             lookAheadTargetExitSpeedMps = Math.hypot( baseLength, lookAheadTargetExitVelMps.y );
-            if(checkShootingWhileMoving && distState == Dist.FAR)
+            if(checkShootingWhileMoving && locationState == Location.FAR)
                 lookAheadTargetExitSpeedMps += farParams.farVelOffset;
 
             // setting no lookahead values
@@ -405,7 +419,7 @@ public class ShootingSystem {
                 Arrays.fill(physicsExitAngleRads, -1);
 
 
-            lookAheadTargetExitSpeedMps = ballTargetExitSpeedMps;
+            lookAheadTargetExitSpeedMps = ballTargetExitSpeedMps + farParams.farVelOffset;
             hoodExitAngleRad = ballExitAngleRad;
 
             // basic estimation of turret angle to try account for shooting while moving
@@ -463,7 +477,7 @@ public class ShootingSystem {
         robotVelCm = robot.drive.pinpoint().getVelocity();
         Vector2d robotVelCm = new Vector2d(this.robotVelCm.x, this.robotVelCm.y);
 
-        Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position);
+        Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position).times(generalParams.idkWhatToCallThis);
         Vector2d robotTanVel = new Vector2d(-relativeTurretPos.y, relativeTurretPos.x*1).times(this.robotVelCm.headingRad); // v = r * w
         robotVelAtTurretIps = robotVelCm.plus(robotTanVel);
         robotSpeedAtTurretIps = Math.hypot(robotVelAtTurretIps.x, robotVelAtTurretIps.y);
@@ -479,20 +493,26 @@ public class ShootingSystem {
     }
     private void updateGoalPos(Vector2d robotPos) {
         double sign = BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1;
+        double distFromCorner = Math.hypot(corner.x - robotPos.x, corner.y - robotPos.y);
         if(robotPos.x > 24) {
-            distState = Dist.FAR;
+            locationState = Location.FAR;
             goalPosIn = farGoalPos;
             impactAngleRad = goalParams.farImpactAng;
         }
-        else if(robotPos.y > goalParams.nearStateThreshold * sign) {
-            distState = Dist.MID;
-            goalPosIn = midGoalPos;
-            impactAngleRad = goalParams.midImpactAng;
+        else if(distFromCorner < goalParams.reallyCloseRadius) {
+            locationState = Location.REALLY_CLOSE;
+            goalPosIn = closeGoalPos;
+            impactAngleRad = goalParams.closeImpactAng;
+        }
+        else if(robotPos.y * sign < goalParams.gateLocationYThreshold || robotPos.x < goalParams.gateLocationXThreshold) {
+            locationState = Location.OPPOSITE_SIDE;
+            goalPosIn = oppositeGoalPos;
+            impactAngleRad = goalParams.oppositeImpactAng;
         }
         else {
-            distState = Dist.NEAR;
-            goalPosIn = nearGoalPos;
-            impactAngleRad = goalParams.nearImpactAng;
+            locationState = Location.GATE_CYCLE;
+            goalPosIn = gateGoalPos;
+            impactAngleRad = goalParams.gateImpactAng;
         }
     }
     public void setShouldScore(boolean shouldScore) {
@@ -502,7 +522,7 @@ public class ShootingSystem {
     public void printInfo(Telemetry telemetry) {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("dist state", distState);
+        telemetry.addData("dist state", locationState);
         telemetry.addData("efficiency coef", efficiencyCoef);
         telemetry.addData("turret absolute target deg", Math.toDegrees(lookAheadTurretTargetAngleRad));
         telemetry.addData("shooter target speed mps", lookAheadTargetExitSpeedMps);
@@ -551,7 +571,7 @@ public class ShootingSystem {
             shooterLowMotor.setPower(p);
     }
     public void setShooterVoltage(double voltage) {
-        double estVoltage = (robot.getFilteredVoltage() + generalParams.estVoltage) * .5;
+        double estVoltage = robot.getFilteredVoltage() * generalParams.voltageSensorTrust + generalParams.estVoltage * (1 - generalParams.voltageSensorTrust);
         double power = voltage / estVoltage;
         setShooterPower(power);
     }
@@ -565,7 +585,7 @@ public class ShootingSystem {
 //            boolean hoodValid = turretPosGoalDistIn < generalParams.enableHoodCheckDist || Math.abs(hoodExitAngleRad - idealBallExitAng) < generalParams.maxDynamicHoodError;
 //            return robot.shootingSystem.physicsExitAngleRads[0] != -1 && hoodValid && shooterError < generalParams.farShotTolerance;
 //        }
-        return shooterError < (distState == Dist.FAR ? generalParams.farShootToleranceMps : generalParams.closeShootToleranceMps);
+        return shooterError < (locationState == Location.FAR ? generalParams.farShootToleranceMps : generalParams.closeShootToleranceMps);
     }
     public boolean inShootingZone() {
         Vector2d robotPos = robot.drive.pinpoint().getPose().position;
@@ -616,7 +636,7 @@ public class ShootingSystem {
         fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, 3);
         if (testingParams.drawShootingRings) {
             fieldOverlay.setAlpha(0.4);
-            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, goalParams.nearStateThreshold); // end of near range, start of far range
+            fieldOverlay.strokeCircle(goalPosIn.x, goalPosIn.z, goalParams.gateLocationYThreshold); // end of near range, start of far range
             fieldOverlay.setAlpha(1);
         }
 

@@ -33,9 +33,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
 
+    public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
     // TODO: check these during driver practice
     public static double[] redCornerResetPose = { 64, -62, 90 };
-    public static double[] blueCornerResetPose = { 61.3, 64.9, -90 };
+    public static double[] blueCornerResetPose = { 63.5, 61.9, -90 }; // checked
     public static double[] redGateResetPose = { 11.8, 63.5, 180 };
     public static double[] blueGateResetPose = { 9.2, -62.4, 180 };
     public static boolean shouldScore = true;
@@ -44,7 +45,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     // (62.706, -62.288, 90.294)
     // (62.038, -62.863, 89.575)
     // (62.251, -62.892, 89.948)
-    public static double noMoveJoystickThreshold = 0.1;
+
     public static double parkDriveAxialAmp = .3, parkDriveLateralAmp = .5, slowTurnAmp = .25;
     public static double currentDriveAxialAmp = 1, currentDriveLateralAmp = 1, currentTurnAmp = 1;
 
@@ -65,7 +66,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         Pose2d startPose = new Pose2d(PoseStorage.autoX, PoseStorage.autoY, PoseStorage.autoHeading);
 
         Limelight.startingPipeline = Limelight.APRIL_TAG_PIPELINE;
-        LimelightLocalization.localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
+        LimelightLocalization.localizationType = localizationType;
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose); //take pose from auto
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);
@@ -171,10 +172,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 currentTurnAmp = 1;
             }
 
-        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE && robot.limelight.localization.manualPoseUpdate) {
-            robot.drive.stop();
-            return;
-        }
         double shootWhileMovingAmp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
 
         robot.drive.setDrivePowers(new PoseVelocity2d(
@@ -209,13 +206,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.shooter.setShooterState(Shooter.ShooterState.OFF);
                 else
                     robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
-
-            if (gp1.isFirstBack()) {
-                robot.limelight.localization.maxTranslationalVariance = 0;
-                robot.limelight.localization.maxHeadingVarianceDeg = 0;
-                robot.limelight.localization.maxTranslationalError = 0;
-                robot.limelight.localization.maxHeadingErrorDeg = 0;
-            }
         }
         if(!inCompetition || allowD1Shoot) {
             if(gp1.isFirstY()) {
@@ -266,11 +256,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         else if(gp2.isFirstRightStickButton())
             robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
 
-        if(gp2.isFirstRightBumper()) {
-            robot.limelight.localization.manualPoseUpdate = true;
-            robot.limelight.localization.setState(LimelightLocalization.LocalizationState.UPDATING_POSE);
-        }
-        if (gp2.isFirstRightTrigger()) {
+        if (gamepad2.right_trigger > .5) {
             double curHeading = robot.drive.pinpoint().getPose().heading.toDouble();
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             Pose2d gateResetPose = createPose(alliance == Alliance.RED ? redGateResetPose : blueGateResetPose);
@@ -278,7 +264,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             double gateHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - gateResetPose.heading.toDouble()));
             robot.drive.pinpoint().setPose(cornerHeadingError < gateHeadingError ? cornerResetPose : gateResetPose);
             robot.turret.resetAllEncoderAdjustments();
-            robot.led.lastPinpointResetTimeMs = System.currentTimeMillis();
+            robot.led.lastManualRelocalizationTimeMs = System.currentTimeMillis();
         }
 
         if (gp2.isFirstY()) {

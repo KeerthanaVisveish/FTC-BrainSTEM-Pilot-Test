@@ -10,6 +10,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 @Config
 public class Shooter extends Component {
     public static class ShooterParams {
+        public double parkVoltage = -13;
         public double fineAdjust = .05;
         public double ignoreHoodUpdateError = Math.toRadians(.5);
         public double A = 20, B = 6, k = -150, x0 = .06;
@@ -82,6 +83,10 @@ public class Shooter extends Component {
 
     @Override
     public void update(){
+        if(robot.parking.getParkState() == Parking.ParkState.EXTENDED) {
+            robot.shootingSystem.setShooterVoltage(shooterParams.parkVoltage);
+            return;
+        }
         switch (shooterState) {
             case OFF:
                 robot.shootingSystem.setShooterVoltage(0);
@@ -91,7 +96,7 @@ public class Shooter extends Component {
                 if(testingParams.testing)
                     setShooterVelocityPID(testingParams.testingVel, robot.shootingSystem.curExitSpeedMps);
                 else {
-                    if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
+                    if (robot.shootingSystem.locationState != ShootingSystem.Location.FAR)
                         targetVelMps = robot.shootingSystem.lookAheadTargetExitSpeedMps + nearVelocityAdjustment;
                     else
                         targetVelMps = robot.shootingSystem.lookAheadTargetExitSpeedMps + farVelocityAdjustment;
@@ -183,13 +188,13 @@ public class Shooter extends Component {
     }
 
     public void changeVelocityAdjustment(double amount) {
-        if (robot.shootingSystem.distState != ShootingSystem.Dist.FAR)
+        if (robot.shootingSystem.locationState != ShootingSystem.Location.FAR)
             nearVelocityAdjustment += amount;
         else
             farVelocityAdjustment += amount;
     }
     public double getCurVelocityAdjustment() {
-        return robot.shootingSystem.distState == ShootingSystem.Dist.FAR ? farVelocityAdjustment : nearVelocityAdjustment;
+        return robot.shootingSystem.locationState == ShootingSystem.Location.FAR ? farVelocityAdjustment : nearVelocityAdjustment;
     }
     public ShooterState getShooterState() {
         return shooterState;

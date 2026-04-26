@@ -12,14 +12,14 @@ import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization
 @Config
 public class LED extends Component {
     public static double white = .75, green = .45, yellow = .35, orange = .3, lightBlue = .55, blue = 0.6, purple = .65, red = 0.279, pink = .723;
-    public static double shooterFlashOnTime = 0.3, shooterFlashOffTime = 0.2;
+    public static double shooterFlashOnTime = 0.07, shooterFlashOffTime = 0.07;
     public static double turretFlashOnTime = 0.07, turretFlashOffTime = 0.07;
     public static double parkFlashTime = .4;
-    public static double confirmSuccessfulPoseUpdateTime = 0.3;
+    public static double confirmSuccessfulPoseUpdateTime = .2;
     private final ServoImplEx left_led;
     private final ServoImplEx right_led;
     private final ElapsedTime shooterFlashTimer, turretFlashTimer, parkFlashTimer;
-    public double lastPinpointResetTimeMs;
+    public double lastManualRelocalizationTimeMs;
     private boolean autoDone;
     public LED(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         super(hardwareMap, telemetry, robot);
@@ -32,7 +32,7 @@ public class LED extends Component {
         turretFlashTimer.reset();
         parkFlashTimer = new ElapsedTime();
         parkFlashTimer.reset();
-        lastPinpointResetTimeMs = -1000000;
+        lastManualRelocalizationTimeMs = -1000000;
     }
 
     @Override
@@ -62,14 +62,14 @@ public class LED extends Component {
                 setLed(white);
                 return;
             }
-            if (robot.limelight.localization.getPrevState() == LimelightLocalization.LocalizationState.UPDATING_POSE &&
-                    robot.limelight.localization.successfullyFoundPose &&
-                    robot.limelight.localization.getStateTime() < confirmSuccessfulPoseUpdateTime) {
-                setLed(blue);
+            if (robot.limelight.localization.getPrevState() == LimelightLocalization.LocalizationState.UPDATING_POSE
+                    && robot.limelight.localization.poseUpdateSuccessful()
+                    && robot.limelight.localization.getStateTime() < confirmSuccessfulPoseUpdateTime) {
+                setLed(pink);
                 return;
             }
         }
-        if (System.currentTimeMillis() - lastPinpointResetTimeMs < confirmSuccessfulPoseUpdateTime * 1000) {
+        if (System.currentTimeMillis() - lastManualRelocalizationTimeMs < confirmSuccessfulPoseUpdateTime * 1000) {
             setLed(blue);
             return;
         }
@@ -82,7 +82,7 @@ public class LED extends Component {
                 return;
             }
         }
-        if((!robot.turret.inRange() || !robot.turret.onTarget()) && robot.turret.getTurretState() == Turret.TurretState.TRACKING) {
+        if(!robot.turret.onTarget() && robot.turret.getTurretState() == Turret.TurretState.TRACKING) {
             if(turretFlashTimer.seconds() > turretFlashOnTime + turretFlashOffTime)
                 turretFlashTimer.reset();
             else if(turretFlashTimer.seconds() > turretFlashOnTime) {

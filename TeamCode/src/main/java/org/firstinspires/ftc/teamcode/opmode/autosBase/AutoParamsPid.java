@@ -7,7 +7,7 @@ public class AutoParamsPid {
         public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .2, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
-        public double loadingSlowDrivePower = .3, loadingMinHeadingPower = .45;
+        public double loadingSlowDrivePower = .35, loadingMinHeadingPower = .45;
         public double loadingNormDrivePower = .5;
 
         public double[] first = {-11.5, 48, 90};
@@ -39,23 +39,23 @@ public class AutoParamsPid {
         public double thirdFarT1 = 23, thirdFarT2 = 18;
 
         public double[] gateNearWaypoint = { 2, 26, 75 };
+        public double gateTapNearWaypointX = 1.5;
         public double[] gateNearWaypointTol = { 2, 4, 5 };
-        public double[] gateNearWaypoint2 = { 10, 41, 88 };
-        public double gateTapNearWaypoint2X = 3;
+        public double[] gateNearWaypoint2 = { 9, 41, 88 };
+        public double gateTapNearWaypoint2X = 5.5;
         public double[] gateFarControlPoint = { 13, 35, 135 };
         public double gateCollectOpenFarTStartError = 25, gateCollectOpenFarTFinishError = 15;
-        public double[] gateCollectOpen = { 13, 58, 110 };
-        public double postGateTapSetupGateLinearPower = .3, postGateTapSetupGateHeadingPower = .3;
-        public double[] postGateTapSetupGateCollect = { 15, 58, 120 };
+        public double[] gateCollectOpen = { 10, 58, 110 };
+        public double postGateTapSetupGateLinearPower = .5, postGateTapSetupGateHeadingPower = .3;
         public double gatePropertiesRedXOffset = 0;
         public double[] gateOpenTol = { 1, 1, 1 };
-        public double[] gateCollect = { 16, 63, 130 };
+        public double[] gateCollect = { 16.5, 63, 130 };
         public double[] gateTapBackup = { 8, 56, 120 };
-        public double[] gateTap = { 5.5, 58, 80 };
+        public double[] gateTap = { 6.5, 58, 80 };
 
-        public double[] preLoadingWaypoint = { 52.5, 48, 95 };
+        public double[] preLoadingWaypoint = { 52, 48, 90 };
         public double[] preLoadingWaypointTol = { 3, 5 };
-        public double[] preLoading = { 51.5, 59.5, 55 }; // (53.024, 59.406, 60.84)
+        public double[] preLoading = { 50, 59.5, 55 }; // (53.024, 59.406, 60.84)
         public double[] loadingWaypoint = { 62, 61, 60 };
         public double[] postLoading = { 63.5, 61, 95 }; //  (61.434, 61.613, 11.484)
         public double[] postLoading2 = { 63, 64, 90 };
@@ -82,16 +82,18 @@ public class AutoParamsPid {
         public double[] nearPreloadMotif = { -16, 19, 90 };
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-32, 28, 45};
-        public double[] near2 = {-7, 25.5, 55};
-        public double[] nearGate = { -5.5, 23, 55 };
+        public double[] near2 = {-6, 26.5, 55};
+        public double[] nearGate = { -5, 24, 55 };
         public double[] near3 = {-7, 25.5, 50};
         public double[] near3Last = {-20, 23, 38};
 
-        public double[] farSpike = {52, 16, 145};
+        public double[] farSpike = {52, 17, 145};
         public double[] farPreloadLoading = { 52, 16, 100 };
-        public double[] farLoading = { 52, 16, 90 };
+        public double[] farLoading = { 52, 18, 90 };
+        public double[] farLoadingOptimized = { 56.5, 28, 90 };
         public double[] farLoadingControlPoint = { 55, 40, 90 };
         public double farLoadingT1 = 35, farLoadingT2 = 20;
+        public double loadingShootCloseHeadingKP = .005;
 
         // shooting path waypoints to not hit other balls
         public double[] gateNearControlPoint = { 11, 36, 50 };
@@ -147,7 +149,7 @@ public class AutoParamsPid {
 
         public double missBallAdjustTime = .3;
         public double maxShootTime = 1.2;
-        public double spikeGateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = .6;
+        public double spikeGateOpeningWait = .5, gateCollectOpenWait = .12, gateTapWait = 1.2;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
