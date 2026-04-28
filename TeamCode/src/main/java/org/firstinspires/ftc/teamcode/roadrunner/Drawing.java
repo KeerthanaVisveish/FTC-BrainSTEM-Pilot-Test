@@ -37,7 +37,7 @@ public final class Drawing {
         c.strokeLine(x, y, x + cos * halfL, y + sin * halfW);
     }
 
-    public static void drawRobotSimple(Canvas c, Pose2d t, double radius) {
+    public static void drawCirclePose(Canvas c, Pose2d t, double radius) {
 
         c.setStrokeWidth(1);
         c.strokeCircle(t.position.x, t.position.y, radius);

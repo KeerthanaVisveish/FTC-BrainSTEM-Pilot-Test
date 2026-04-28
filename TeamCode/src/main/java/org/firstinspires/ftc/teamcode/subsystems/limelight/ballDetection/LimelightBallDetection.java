@@ -184,13 +184,13 @@ public class LimelightBallDetection extends LLParent {
             fieldOverlay.strokeLine(start.x, start.y, end.x, end.y);
             if (i > 0) {
                 fieldOverlay.setStroke("gray");
-                Drawing.drawRobotSimple(fieldOverlay, posesToDraw.get(i), 3);
+                Drawing.drawCirclePose(fieldOverlay, posesToDraw.get(i), 3);
             }
         }
         if (!posesToDraw.isEmpty()) {
             fieldOverlay.setStroke("gray");
             Pose2d last = autoCollectPathPoses.get(autoCollectPathPoses.size() - 1);
-            Drawing.drawRobotSimple(fieldOverlay, last, 3);
+            Drawing.drawCirclePose(fieldOverlay, last, 3);
         }
     }
     public Vector2d getGiantClumpPosition(ArrayList<Blob> blobs) {

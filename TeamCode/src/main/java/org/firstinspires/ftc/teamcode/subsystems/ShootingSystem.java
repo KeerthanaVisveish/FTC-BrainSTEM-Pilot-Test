@@ -49,7 +49,7 @@ public class ShootingSystem {
         public double gateRedX = -66, gateRedY = 64.5;
         public double gateBlueX = -66, gateBlueY = -63;
         public double gateHeight = 39.5;
-        public double gateImpactAng = -.3;
+        public double gateImpactAng = -.31;
 
         // when shooting from opposing goal area
         public double oppositeRedX = -61, oppositeRedY = 66;
@@ -640,8 +640,8 @@ public class ShootingSystem {
             fieldOverlay.setAlpha(1);
         }
 
-        fieldOverlay.setStroke("green");
-        Drawing.drawRobotSimple(fieldOverlay, turretPose, 5);
+        fieldOverlay.setStroke("red");
+        Drawing.drawCirclePose(fieldOverlay, turretPose, 5);
 
         fieldOverlay.setStroke("purple");
         double dist = 300;
@@ -659,11 +659,12 @@ public class ShootingSystem {
                 turretPose.position.y + dist * Math.sin(lookAheadTurretTargetAngleRad)
         );
         fieldOverlay.setStroke("red");
+        double a = robot.drive.pinpoint().getPose().heading.toDouble() + robot.turret.targetEncoder / Turret.turretParams.ticksPerRad;
         fieldOverlay.strokeLine(
                 turretPose.position.x,
                 turretPose.position.y,
-                turretPose.position.x + dist * Math.cos(desiredBallDir),
-                turretPose.position.y + dist * Math.sin(desiredBallDir)
+                turretPose.position.x + dist * Math.cos(a),
+                turretPose.position.y + dist * Math.sin(a)
         );
 
         if(robot.turret.perpVelVec != null) {

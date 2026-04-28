@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.subsystems.ShootingMathOld;
@@ -37,14 +38,19 @@ public class LimelightLocalization extends LLParent {
     }
 
     public static class Params {
+        public double redGoalId = 24, blueGoalId = 20;
         public double limelightTrust = .5;
         public boolean showValidLocalizationZones = true;
         public double[] validLocalizeZone = { -24, 0, 96 };
-        public double maxUpdateTranslationalVel = 2, maxUpdateHeadingDegVel = 2; // inches and degrees
+        public double validLocalizeZoneY = 48;
+        public double maxUpdateTranslationalVel = 1, maxUpdateHeadingDegVel = 1; // inches and degrees
         public int maxUpdateTurretVelTicksPerSec = 1;
+        public double successfulInterlocksBeforeLocalizationTime = .1;
         public int nearNumPrevFramesToAvg = 5, farNumPrevFramesToAvg = 10;
         public double minTimeBetweenUpdates = 5;
         public boolean useMT2 = true;
+        public double maxLocalizeHeadingError = Math.toRadians(2);
+        public double maxLocalizeTranslationalError = 12;
         public double jankPerpOffset = 0, jankParallelOffset = 0;
         public int numPrevPosesToPrint = 0;
     }
@@ -57,9 +63,11 @@ public class LimelightLocalization extends LLParent {
     private final ArrayList<Pose3D> prevCameraPoses;
     private double maxTranslationalVariance, maxHeadingVarianceDeg; // how much the limelight jitters
     private double maxTranslationalError, maxHeadingErrorDeg; // how much the limelight differs from pinpoint
+    private double curTranslationalError,curHeadingErrorDeg;
     private boolean drivetrainGoodForUpdate, turretGoodForUpdate, inLocalizationZone;
     private boolean localizeInterlocksMet;
-    private final ElapsedTime timeSinceLastLocalizeTimer;
+    private boolean drivetrainMovedSinceLastUpdate;
+    private final ElapsedTime localizeInterlocksTimer, timeSinceLastLocalizeTimer;
     private boolean poseUpdateSuccessful;
 
     private boolean foundMotif;
@@ -83,6 +91,8 @@ public class LimelightLocalization extends LLParent {
         turretGoodForUpdate = false;
         resetMaxErrors();
         visibleTagInfo = new ArrayList<>();
+        localizeInterlocksTimer = new ElapsedTime();
+        localizeInterlocksTimer.reset();
         timeSinceLastLocalizeTimer = new ElapsedTime();
         timeSinceLastLocalizeTimer.reset();
     }
@@ -117,8 +127,14 @@ public class LimelightLocalization extends LLParent {
             case UPDATING_POSE:
                 Pose3D rawCameraPose3 = getRawCameraPoseFromLimelight();
                 localizeInterlocksMet = updateInterlocks();
+                if(!drivetrainGoodForUpdate)
+                    drivetrainMovedSinceLastUpdate = true;
 
-                if(rawCameraPose3 == null || !localizeInterlocksMet) {
+                double turretHeading = ShootingMathOld.getTurretPose(robot.drive.pinpoint().getPose(), robot.turret.curRelAngleRad).heading.toDouble();
+                if(rawCameraPose3 == null
+                        || !localizeInterlocksMet
+                        || (params.useMT2 && Math.abs(rawCameraPose3.getOrientation().getYaw(AngleUnit.RADIANS) - turretHeading) > params.maxLocalizeHeadingError)) {
+                    localizeInterlocksTimer.reset();
                     setAllPosesToNull();
                     resetMaxErrors();
                     prevCameraPoses.clear();
@@ -129,8 +145,12 @@ public class LimelightLocalization extends LLParent {
                     break;
                 }
                 if (state == LocalizationState.PASSIVE_READING
-                        && localizationType == LocalizationType.CONTINUOUS
-                        && (timeSinceLastLocalizeTimer.seconds() > params.minTimeBetweenUpdates || !poseUpdateSuccessful)) {
+                    && localizationType == LocalizationType.CONTINUOUS
+                    && drivetrainMovedSinceLastUpdate
+                    && localizeInterlocksTimer.seconds() > params.successfulInterlocksBeforeLocalizationTime
+                    && (timeSinceLastLocalizeTimer.seconds() > params.minTimeBetweenUpdates || !poseUpdateSuccessful)
+                    && maxTranslationalError < params.maxLocalizeTranslationalError
+                    && maxHeadingErrorDeg < params.maxLocalizeHeadingError) {
                     setState(LocalizationState.UPDATING_POSE);
                 }
 
@@ -147,12 +167,12 @@ public class LimelightLocalization extends LLParent {
                 if(state == LocalizationState.UPDATING_POSE && prevCameraPoses.size() >= desiredNumToAvg) {
                     Pose2d pinpointPose = robot.drive.localizer.getPose();
                     Vector2d avgPos = pinpointPose.position.times(1 - params.limelightTrust).plus(avgRobotPose.position.times(params.limelightTrust));
-                    double avgHeading = pinpointPose.heading.toDouble() * (1 - params.limelightTrust) + avgRobotPose.heading.toDouble() * params.limelightTrust;
 
-                    robot.drive.localizer.setPose(new Pose2d(avgPos, avgHeading));
+                    robot.drive.localizer.setPose(new Pose2d(avgPos, pinpointPose.heading.toDouble()));
                     timeSinceLastLocalizeTimer.reset();
                     setState(LocalizationState.PASSIVE_READING);
                     poseUpdateSuccessful = true;
+                    drivetrainMovedSinceLastUpdate = false;
                 }
                 break;
         }
@@ -176,11 +196,14 @@ public class LimelightLocalization extends LLParent {
                 telemetry.addData("   max heading variance", MathUtils.format3(maxHeadingVarianceDeg));
                 telemetry.addData("   max translational error", MathUtils.format3(maxTranslationalError));
                 telemetry.addData("   max heading error", MathUtils.format3(maxHeadingErrorDeg));
+                telemetry.addData("   cur translational error", MathUtils.format3(curTranslationalError));
+                telemetry.addData("   cur heading error", MathUtils.format3(curHeadingErrorDeg));
                 telemetry.addLine();
                 telemetry.addData("   drivetrain good for update", drivetrainGoodForUpdate);
                 telemetry.addData("   turret good for update", turretGoodForUpdate);
                 telemetry.addData("   in localization zone", inLocalizationZone);
                 telemetry.addData("   localize interlocks met", localizeInterlocksMet);
+                telemetry.addData("   drivetrain moved since last update", drivetrainMovedSinceLastUpdate);
                 telemetry.addData("   time since last update", timeSinceLastLocalizeTimer.seconds());
                 telemetry.addData("   pose update successful", poseUpdateSuccessful);
                 telemetry.addLine();
@@ -254,6 +277,12 @@ public class LimelightLocalization extends LLParent {
             return null;
 
         visibleTagInfo = aprilTagResult.getFiducialResults();
+
+        for(LLResultTypes.FiducialResult tag : visibleTagInfo)
+            if((BrainSTEMRobot.alliance == Alliance.RED && tag.getFiducialId() == params.blueGoalId)
+            || (BrainSTEMRobot.alliance == Alliance.BLUE && tag.getFiducialId() == params.redGoalId))
+                return null;
+
         Pose3D curFrameCameraPose = params.useMT2 ? aprilTagResult.getBotpose_MT2() : aprilTagResult.getBotpose();
         if (curFrameCameraPose == null)
             return null;
@@ -280,15 +309,15 @@ public class LimelightLocalization extends LLParent {
         if (lastAvgPose == null || curAvgPose == null)
             return;
         double translationalVariance = Math.hypot(curAvgPose.position.x - lastAvgPose.position.x, curAvgPose.position.y - lastAvgPose.position.y);
-        double headingVarianceDeg = Math.abs(Math.toDegrees(curAvgPose.heading.toDouble() - lastAvgPose.heading.toDouble()));
+        double headingVarianceDeg = Math.abs(Math.toDegrees(MathUtils.angleNormDeltaRad(curAvgPose.heading.toDouble() - lastAvgPose.heading.toDouble())));
         maxTranslationalVariance = Math.max(maxTranslationalVariance, translationalVariance);
         maxHeadingVarianceDeg = Math.max(maxHeadingVarianceDeg, headingVarianceDeg);
 
         Pose2d odoPose = robot.drive.localizer.getPose();
-        double translationalError = Math.hypot(curAvgPose.position.x - odoPose.position.x, curAvgPose.position.y - odoPose.position.y);
-        double headingErrorDeg = Math.abs(Math.toDegrees(curAvgPose.heading.toDouble() - odoPose.heading.toDouble()));
-        maxTranslationalError = Math.max(maxTranslationalError, translationalError);
-        maxHeadingErrorDeg = Math.max(maxHeadingErrorDeg, headingErrorDeg);
+        curTranslationalError = Math.hypot(curAvgPose.position.x - odoPose.position.x, curAvgPose.position.y - odoPose.position.y);
+        curHeadingErrorDeg = Math.abs(Math.toDegrees(MathUtils.angleNormDeltaRad(curAvgPose.heading.toDouble() - odoPose.heading.toDouble())));
+        maxTranslationalError = Math.max(maxTranslationalError, curTranslationalError);
+        maxHeadingErrorDeg = Math.max(maxHeadingErrorDeg, curHeadingErrorDeg);
     }
     private Pose2d getAvgPose(ArrayList<Pose3D> poses) {
         double x = 0, y = 0, hRad = 0;
@@ -309,13 +338,10 @@ public class LimelightLocalization extends LLParent {
     }
     private boolean isInLocalizationZone() {
         Pose2d odoPose = robot.drive.localizer.getPose();
-        return Math.hypot(odoPose.position.x - params.validLocalizeZone[0], odoPose.position.y -  params.validLocalizeZone[1]) < params.validLocalizeZone[2];
+        return Math.abs(odoPose.position.y) < params.validLocalizeZoneY && Math.hypot(odoPose.position.x - params.validLocalizeZone[0], odoPose.position.y -  params.validLocalizeZone[1]) < params.validLocalizeZone[2];
     }
     public boolean poseUpdateSuccessful() {
         return poseUpdateSuccessful;
-    }
-    public void attemptManualPoseUpdate() {
-        setState(LocalizationState.UPDATING_POSE);
     }
 
     public void addLocalizationInfo(Canvas fieldOverlay) {
@@ -330,9 +356,9 @@ public class LimelightLocalization extends LLParent {
         Drawing.drawRobot(fieldOverlay, robotPoseToDraw);
 
         Pose2d turretPose = ShootingMathOld.getTurretPose(robotPoseToDraw, robot.turret.curRelAngleRad);
-        Drawing.drawRobotSimple(fieldOverlay, turretPose, 3);
+        Drawing.drawCirclePose(fieldOverlay, turretPose, 3);
 
         Pose2d limelightPose = Limelight.getLimelightPose(turretPose);
-        Drawing.drawRobotSimple(fieldOverlay, limelightPose, 2);
+        Drawing.drawCirclePose(fieldOverlay, limelightPose, 2);
     }
 }

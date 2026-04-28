@@ -190,19 +190,19 @@ public class LocalizationTest extends LinearOpMode {
                 }
                 if (drawTurretPoses) {
                     packet.fieldOverlay().setStroke("green");
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), pinpointTurretPose, 3);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), pinpointTurretPose, 3);
                     packet.fieldOverlay().setStroke("gray");
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), llTurretPose, 3);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), llTurretPose, 3);
                 }
                 if (drawCameraPose) {
                     packet.fieldOverlay().setStroke("black");
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), pinpointCameraPose, 2);
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), llCameraPose, 2);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), pinpointCameraPose, 2);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), llCameraPose, 2);
                 }
                 if (drawFilteredPoses) {
                     packet.fieldOverlay().setStroke("blue");
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), filteredLlCameraPose, 2);
-                    Drawing.drawRobotSimple(packet.fieldOverlay(), filteredLlTurretPose, 3);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), filteredLlCameraPose, 2);
+                    Drawing.drawCirclePose(packet.fieldOverlay(), filteredLlTurretPose, 3);
                     Drawing.drawRobot(packet.fieldOverlay(), filteredLlRobotPose);
                 }
                 if (drawRobotVelocity) {

@@ -21,9 +21,9 @@ public class AutoParamsPid {
         public double[] firstControlPointFar = {-6, 31, 150};
         public double firstFarT1 = 30, firstFarT2 = 20;
 
-        public double[] secondNearWaypoint = { 5.5, 25.5, 55 };
+        public double[] secondNearWaypoint = { 5.5, 25.5, 60 };
         public double[] secondNearWaypointTol = { 3, 3, 5 };
-        public double[] secondNearControlPoint = { 12, 27, 70};
+        public double[] secondNearControlPoint = { 12, 27, 75};
         public double secondNearT1 = 26, secondNearT2 = 18;
         public double secondNearCloseHeadingKP = .003;
 
@@ -31,6 +31,7 @@ public class AutoParamsPid {
         public double[] thirdNearWaypointTol = { 6, 3, 5 };
         public double[] thirdNearControlPoint = { 34, 29, 60};
         public double thirdNearT1 = 23, thirdNearT2 = 18;
+        public double[] thirdNearCleanup = { 24, 63, 130 };
         public double thirdCloseHeadingKp = .008;
 
         public double[] thirdFarWaypoint = { 40, 25, 110 };
@@ -75,22 +76,22 @@ public class AutoParamsPid {
         public double earlyEngageClutchDist = 10;
         public double nearMinDrivePower2Dist = 20;
         public double nearMinDrivePower1 = .99, minDrivePower2 = .5;
-        public double farMinDrivePower = .2;
+        public double farMinDrivePower = .4;
 
         // shooting positions
         public double[] nearPreload = {-16, 19, 50};
         public double[] nearPreloadMotif = { -16, 19, 90 };
         public double[] near1 = {-9, 23, 80};
         public double[] near1Last = {-32, 28, 45};
-        public double[] near2 = {-6, 26.5, 55};
-        public double[] nearGate = { -5, 24, 55 };
-        public double[] near3 = {-7, 25.5, 50};
+        public double[] near2 = {-6, 26.5, 60};
+        public double[] nearGate = { -5, 24, 60 };
+        public double[] near3 = {-7, 25.5, 53};
         public double[] near3Last = {-20, 23, 38};
 
         public double[] farSpike = {52, 17, 145};
         public double[] farPreloadLoading = { 52, 16, 100 };
         public double[] farLoading = { 52, 18, 90 };
-        public double[] farLoadingOptimized = { 56.5, 28, 90 };
+        public double[] farLoadingOptimized = { 56.5, 29, 90 };
         public double[] farLoadingControlPoint = { 55, 40, 90 };
         public double farLoadingT1 = 35, farLoadingT2 = 20;
         public double loadingShootCloseHeadingKP = .005;
@@ -136,7 +137,8 @@ public class AutoParamsPid {
 
         public double smartParkNearDist = 25;
         public double smartParkFarDist = 20;
-        public double[] parkFar = { 52, 24, 90 };
+        public double[] parkFar = { 56, 24, 90 };
+        public double[] hpParkFar = { 56.5, 61, 90 };
         public double minParkFarPower = .5;
         public double[] gatePark = { -3, 45, 90 };
     }
@@ -157,6 +159,7 @@ public class AutoParamsPid {
         public double maxLimelightWait = 1;
         public double shooterInterlockMaxWait = .1, colorSortShooterInterlockMaxWait = 1;
         public double nearPostFlickerShootTime = .2, farPostFlickerShootTime = .2;
+        public double nearLastShootExtraTime = 2;
 
     }
 }

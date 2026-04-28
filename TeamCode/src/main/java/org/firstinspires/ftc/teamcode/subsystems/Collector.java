@@ -19,7 +19,7 @@ public class Collector extends Component {
         public double disengagedPos = 0.65;
         public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.5;
         public double firstCurrentLimitedIntakePow = .6;
-        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .8, safetyInterlocksFailedPower = 0;
+        public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .85, safetyInterlocksFailedPower = 0;
         public double outtakeSpeed = -0.5;
         public double laserBallThreshold = 2.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
