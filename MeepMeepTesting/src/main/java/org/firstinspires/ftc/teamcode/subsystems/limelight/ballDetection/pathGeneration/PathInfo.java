@@ -50,6 +50,31 @@ public class PathInfo {
     public int numGoodBalls() {
         return ballPath.size() - problemBalls.size();
     }
+
+    public double getTotalCost(double changeInAngleDegCost) {
+        double totalCost = 0;
+        for (int i=0; i<pathPoses.size()-1; i++) {
+            PathPose cur = pathPoses.get(i);
+            PathPose next = pathPoses.get(i+1);
+            double dist = next.waypoint.pose.position.minus(cur.waypoint.pose.position).norm();
+            double headingChange = next.waypoint.pose.heading.minus(cur.waypoint.pose.heading);
+            double combinedCost = dist + Math.abs(Math.toDegrees(headingChange)) * changeInAngleDegCost;
+            totalCost += combinedCost;
+        }
+        return totalCost;
+    }
+
+    public boolean isUndesirable(double angleChangeDeg) {
+        for (int i=0; i<pathPoses.size()-1; i++) {
+            PathPose cur = pathPoses.get(i);
+            PathPose next = pathPoses.get(i+1);
+            double headingChange = next.waypoint.pose.heading.minus(cur.waypoint.pose.heading);
+            if (Math.abs(headingChange) > Math.toRadians(angleChangeDeg))
+                    return true;
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return pathPoses.toString();

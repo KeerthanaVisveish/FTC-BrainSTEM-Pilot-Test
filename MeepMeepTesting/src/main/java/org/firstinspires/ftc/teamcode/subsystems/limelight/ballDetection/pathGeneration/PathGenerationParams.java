@@ -10,6 +10,7 @@ public class PathGenerationParams {
                 public double collectPoseOffsetDistance = 7;
                 public double preCollectOffset = 5;
                 public double lastCollectPoseExtraDriveThrough = 4;
+                public boolean enableShiftedLeftGen = true;
         }
         public static class LaneCollect {
                 public int defaultAlwaysUseLaneCollectNumBalls = 3;
@@ -24,17 +25,22 @@ public class PathGenerationParams {
                 public double laneCollectControlXOffsetPercent = 0.8;
                 public double laneCollectControlMinYOffsetFromRobot = 6;
                 public double snapLaneToWallDistFromWall = 16;
+                public double laneCollectMaxTime = 3.5;
+                public double tryAgainBackupDist = 12;
         }
         public static class Regeneration {
+                public double bruteForceMaxBalls = 5;
+                public boolean enableBruteForce = true;
                 public double shiftedLeftStartX = 35;
-                public double maxPathRegenerationAttempts = 5;
+                public double maxPathRegenerationAttempts = 3;
         }
         public static class ClusterStrafe {
                 public double clusterMergeDist = 5.5;
                 public double clusterStrafingDist = 24;
                 public double clusterStrafeCollectMaxAngleOffset = 15;
                 public double clusterStrafeCollectMaxPerpendicularDistance = 2;
-
+                public double maxAngleDiffDeg = 135;
+                public double forceClusterLeftToRightX = 56;
         }
         public static class WallStrafe {
                 public double classifierWallDistance = 7;
@@ -73,5 +79,7 @@ public class PathGenerationParams {
                 public double changeInAngleDegCost = 10 / 90.; // 90 degrees -> 10 extra inches
                 public double wallPoseBuffer = 0; // the pose can be outside the field walls by this much
                 public double rejectEdgeCaseBallsHorizontalDist = 28;
+                public double rejectBallsTooBackwardsDist = 4;
+                public double undesirablePathAngleDiffDeg = 100;
         }
 }

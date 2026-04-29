@@ -99,7 +99,7 @@ public class PathGenPreview extends JPanel
             }
         }
 
-        new Thread(() -> {
+        Thread thread = new Thread(() -> {
             double loopTime = 20;
             double lastUpdateTime = System.currentTimeMillis();
             while (isRunning) {
@@ -130,7 +130,8 @@ public class PathGenPreview extends JPanel
                 }
                 SwingUtilities.invokeLater(this::repaint);
             }
-        }).start();
+        });
+//        thread.start();
     }
     private void loadFromFile() {
         try {
@@ -225,14 +226,17 @@ public class PathGenPreview extends JPanel
             ArrayList<Vector2d> ballPositions = new ArrayList<>();
             for (int i=0; i<balls.size(); i++)
                 ballPositions.add(balls.get(i).position);
+            double start = System.currentTimeMillis();
             path = PathGeneration.generateSimplifiedAutoCollectPath(robot, ballPositions);
+            double end = System.currentTimeMillis();
+            System.out.println("total dt (ms): " + (end - start));
         }
         drawRobotAndBalls(g2);
         if (path != null)
             drawGeneratedPath(g2, path);
         drawBallsUsed(g2);
 
-        if (drawInfo) {
+        if (drawInfo && path != null) {
             g2.setColor(Color.BLACK);
             int numPiecesOfInfoPerPathPose = 3;
             ArrayList<PathPose> pathPoses = drawSimplifiedPath ? path.optimizedPathPoses : path.pathPoses;
