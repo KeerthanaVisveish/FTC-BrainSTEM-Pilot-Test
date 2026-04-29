@@ -65,9 +65,9 @@ public class PathInfo {
     }
 
     public boolean isUndesirable(double angleChangeDeg) {
-        for (int i=0; i<pathPoses.size()-1; i++) {
-            PathPose cur = pathPoses.get(i);
-            PathPose next = pathPoses.get(i+1);
+        for (int i=0; i<optimizedPathPoses.size()-1; i++) {
+            PathPose cur = optimizedPathPoses.get(i);
+            PathPose next = optimizedPathPoses.get(i+1);
             double headingChange = next.waypoint.pose.heading.minus(cur.waypoint.pose.heading);
             if (Math.abs(headingChange) > Math.toRadians(angleChangeDeg))
                     return true;

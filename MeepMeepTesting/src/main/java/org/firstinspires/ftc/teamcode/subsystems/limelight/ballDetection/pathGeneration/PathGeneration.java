@@ -30,44 +30,60 @@ public class PathGeneration {
     public static PathDriveParams driveParams = new PathDriveParams();
     public static Pose2d pathfinderStartPose = null;
     public static PathInfo generateSimplifiedAutoCollectPath(Pose2d robotPose, ArrayList<Vector2d> ballsArray) {
-        PathInfo path = generateAutoCollectPath(robotPose, ballsArray);
-        if (path == null)
+        if (ballsArray.isEmpty())
             return null;
+        ArrayList<Ball> allBalls = Ball.toBallList(new ArrayList<>(ballsArray));
+        PathInfo complexPath = generateFinishedComplexPath(robotPose, allBalls);
+        ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
+        Lane bestLane = getBestLane(robotPose.position, densestLanes);
+        PathInfo lanePath = generateLanePath(robotPose, bestLane);
+        lanePath.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, lanePath.pathPoses));
 
-        if (path.pathType != PathInfo.PathType.LANE && ballsArray.size() > 2 && ballsArray.size() <= regenerationParams.bruteForceMaxBalls && regenerationParams.enableBruteForce) {
+        if (generalParams.allowLaneCollect && (
+                complexPath == null ||
+                bestLane.numBalls() >= laneCollectParams.alwaysUseLaneCollectNumBalls ||
+                allBalls.size() == 2 && bestLane.numBalls() == 2))
+            return lanePath;
+
+        if (ballsArray.size() > 2 && ballsArray.size() <= regenerationParams.bruteForceMaxBalls &&
+                regenerationParams.enableBruteForce) {
             ArrayList<PathInfo> allPaths = new ArrayList<>();
-            allPaths.add(path);
+            if (complexPath != null)
+                allPaths.add(complexPath);
             for (int i=0; i<ballsArray.size(); i++) {
-                ArrayList<Vector2d> modifiedBallsArray = new ArrayList<>(ballsArray);
+                ArrayList<Ball> modifiedBallsArray = new ArrayList<>(allBalls);
                 modifiedBallsArray.remove(i);
-                PathInfo modifiedPath = generateAutoCollectPath(robotPose, modifiedBallsArray);
+                PathInfo modifiedPath = generateFinishedComplexPath(robotPose, modifiedBallsArray);
                 if (modifiedPath != null)
                     allPaths.add(modifiedPath);
             }
-            for (PathInfo potentialPath : allPaths)
-                if (potentialPath.numGoodBalls() > path.numGoodBalls() ||
-                    potentialPath.numGoodBalls() == path.numGoodBalls() && potentialPath.getTotalCost(miscParams.changeInAngleDegCost) < path.numGoodBalls() ||
-                    path.isUndesirable(miscParams.undesirablePathAngleDiffDeg) && !potentialPath.isUndesirable(miscParams.undesirablePathAngleDiffDeg))
-                    path = potentialPath;
+            if (complexPath != null)
+                complexPath.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, complexPath.pathPoses));
+            for (PathInfo potentialPath : allPaths) {
+                potentialPath.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, potentialPath.pathPoses));
+                if (complexPath == null ||
+                        potentialPath.numGoodBalls() > complexPath.numGoodBalls() ||
+                        potentialPath.numGoodBalls() == complexPath.numGoodBalls() && potentialPath.getTotalCost(miscParams.changeInAngleDegCost) < complexPath.numGoodBalls() ||
+                        complexPath.isUndesirable(miscParams.undesirablePathAngleDiffDeg) && !potentialPath.isUndesirable(miscParams.undesirablePathAngleDiffDeg))
+                    complexPath = potentialPath;
+            }
         }
-        path.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, path.pathPoses));
-        return path;
-    }
-    private static PathInfo generateAutoCollectPath(Pose2d robotPose, ArrayList<Vector2d> ballPositionsArray) {
-        pathfinderStartPose = robotPose;
-        if (ballPositionsArray.isEmpty())
-            return null;
+        else if (complexPath != null)
+            complexPath.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, complexPath.pathPoses));
 
-        ArrayList<Ball> allBalls = Ball.toBallList(new ArrayList<>(ballPositionsArray));
-
-        ArrayList<Lane> densestLanes = getDensestLanes(allBalls);
-        Lane bestLane = getBestLane(robotPose.position, densestLanes);
         if (generalParams.allowLaneCollect) {
-            if (bestLane.numBalls() >= laneCollectParams.alwaysUseLaneCollectNumBalls)
-                return generateLanePath(robotPose, bestLane);
-            if (allBalls.size() == 2 && bestLane.numBalls() == 2)
-                return generateLanePath(robotPose, bestLane);
+            int complexNumBalls = complexPath == null ? 0 : complexPath.numGoodBalls();
+            int laneNumBalls = bestLane.numBalls();
+            if (complexNumBalls > 1 && complexNumBalls <= laneNumBalls)
+                return lanePath;
         }
+
+        return complexPath;
+    }
+    private static PathInfo generateFinishedComplexPath(Pose2d robotPose, ArrayList<Ball> allBalls) {
+        pathfinderStartPose = robotPose;
+        if (allBalls.isEmpty())
+            return null;
 
         int numAttempts = 0;
         PathInfo optimalPathInfo = null;
@@ -127,13 +143,6 @@ public class PathGeneration {
 
         if (optimalPathInfo == null) {
             return null;
-        }
-
-        if (generalParams.allowLaneCollect) {
-            int complexNumBalls = optimalPathInfo.numGoodBalls();
-            int laneNumBalls = bestLane.numBalls();
-            if (complexNumBalls > 1 && complexNumBalls <= laneNumBalls)
-                optimalPathInfo = generateLanePath(robotPose, bestLane);
         }
         return optimalPathInfo;
     }
