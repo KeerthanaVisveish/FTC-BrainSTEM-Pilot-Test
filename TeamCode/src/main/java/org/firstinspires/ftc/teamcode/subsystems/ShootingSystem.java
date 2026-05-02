@@ -39,6 +39,11 @@ public class ShootingSystem {
         public boolean dynamicHood = true;
     }
     public static class GoalParams {
+        public Vector2d redNearPerpLaunchLine = new Vector2d(1, 1).div(Math.sqrt(2));
+        public Vector2d blueNearPerpLaunchLine = new Vector2d(1, -1).div(Math.sqrt(2));
+        public Vector2d redFarPerpLaunchLine = new Vector2d(0, 1);
+        public Vector2d blueFarPerpLaunchLine = new Vector2d(0, -1);
+        public double startShootingWhileMovingNearDist = 6, startShootingWhileMovingFarDist = 26;
         // when shooting from really close
         public double closeRedX = -65, closeRedY = 63;
         public double closeBlueX = -65, closeBlueY = -62;
@@ -78,10 +83,10 @@ public class ShootingSystem {
     public static class GeneralParams {
         public double estVoltage = 13.4, voltageSensorTrust = .65;
         public double shootingZoneRadius = 31;
-        public double firstShootToleranceMps = .2, closeShootToleranceMps = .5, farShootToleranceMps = .43;
+        public double firstShootToleranceMps = .3, closeShootToleranceMps = .5, farShootToleranceMps = .43;
         public double lookAheadTime = .2; // time to look ahead for pose prediction
         public double shooterTau = 0.1;
-        public double idkWhatToCallThis = .4;
+        public double axisOfRotationTrust = .25;
         public int numApproximations = 4;
         // efficiency coef regression: y=-0.0766393x+0.446492
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
@@ -92,6 +97,7 @@ public class ShootingSystem {
         // estimated accel thresholds: position: 20, heading: 5
     }
     public static class FarParams {
+        public double autoFarVelOffset = .25;
         public double farVelOffset = .33;
         public double far2SwitchY = 3;
 
@@ -258,8 +264,18 @@ public class ShootingSystem {
         Vector2d lookAheadRobotVelAtTurretMps = lookAheadRobotVelAtTurretIps.times(.0254);
         if(testingParams.useNewShooting)
             updatePhysicsPropertiesNew();
-        else
+        else {
+            Vector2d perpLaunchLine;
+            if(locationState == Location.FAR)
+                perpLaunchLine = BrainSTEMRobot.alliance == Alliance.RED ? goalParams.redFarPerpLaunchLine : goalParams.blueFarPerpLaunchLine;
+            else
+                perpLaunchLine = BrainSTEMRobot.alliance == Alliance.RED ? goalParams.redNearPerpLaunchLine : goalParams.blueNearPerpLaunchLine;
+
+            double threshold = locationState == Location.FAR ? goalParams.startShootingWhileMovingFarDist : goalParams.startShootingWhileMovingNearDist;
+            if(robot.drive.pinpoint().getPose().position.dot(perpLaunchLine) > threshold)
+                lookAheadRobotVelAtTurretMps = new Vector2d(0, 0);
             updatePhysicsProperties(desiredBallDir, robotVelAtTurretMps, lookAheadRobotVelAtTurretMps);
+        }
     }
 
     public void updatePhysicsPropertiesNew() {
@@ -419,7 +435,7 @@ public class ShootingSystem {
                 Arrays.fill(physicsExitAngleRads, -1);
 
 
-            lookAheadTargetExitSpeedMps = ballTargetExitSpeedMps + farParams.farVelOffset;
+            lookAheadTargetExitSpeedMps = ballTargetExitSpeedMps + (robot.collector.inAuto() ? farParams.autoFarVelOffset : farParams.farVelOffset);
             hoodExitAngleRad = ballExitAngleRad;
 
             // basic estimation of turret angle to try account for shooting while moving
@@ -477,7 +493,7 @@ public class ShootingSystem {
         robotVelCm = robot.drive.pinpoint().getVelocity();
         Vector2d robotVelCm = new Vector2d(this.robotVelCm.x, this.robotVelCm.y);
 
-        Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position).times(generalParams.idkWhatToCallThis);
+        Vector2d relativeTurretPos = turretPose.position.minus(robotPose.position).times(generalParams.axisOfRotationTrust);
         Vector2d robotTanVel = new Vector2d(-relativeTurretPos.y, relativeTurretPos.x*1).times(this.robotVelCm.headingRad); // v = r * w
         robotVelAtTurretIps = robotVelCm.plus(robotTanVel);
         robotSpeedAtTurretIps = Math.hypot(robotVelAtTurretIps.x, robotVelAtTurretIps.y);

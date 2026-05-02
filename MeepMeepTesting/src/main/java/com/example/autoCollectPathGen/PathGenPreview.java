@@ -131,7 +131,7 @@ public class PathGenPreview extends JPanel
                 SwingUtilities.invokeLater(this::repaint);
             }
         });
-//        thread.start();
+        thread.start();
     }
     private void loadFromFile() {
         try {

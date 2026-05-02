@@ -235,6 +235,8 @@ public class BrainSTEMRobot {
                     ArrayList<Blob> ballBlobs = limelight.ballDetection.getBlobsFromBestScan();
                     Vector2d giantClump = limelight.ballDetection.getGiantClumpPosition(ballBlobs);
                     ArrayList<Vector2d> ballPositions = limelight.ballDetection.getBlobPositions(ballBlobs);
+                    if(ballPositions.isEmpty())
+                       ballPositions.add(new Vector2d(LimelightBallDetection.params.defaultX, (BrainSTEMRobot.alliance == Alliance.RED ? 1 : -1) * LimelightBallDetection.params.defaultY));
 
                     PathGeneration.laneCollectParams.alwaysUseLaneCollectNumBalls = PathGeneration.laneCollectParams.defaultAlwaysUseLaneCollectNumBalls;
                     pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);

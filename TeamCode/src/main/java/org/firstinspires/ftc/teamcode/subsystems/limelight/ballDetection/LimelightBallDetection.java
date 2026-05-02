@@ -30,6 +30,7 @@ public class LimelightBallDetection extends LLParent {
         COMBINED
     }
     public static class Params {
+        public double defaultX = 62, defaultY = 62;
         public int maxBlobs = 50;
         public int numPiecesOfInfoPerBlob = 4;
         public boolean projectBallsInsideField = true;

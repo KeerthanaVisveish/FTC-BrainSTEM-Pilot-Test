@@ -17,7 +17,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.function.DoubleSupplier;
@@ -45,8 +44,9 @@ public class Turret extends Component {
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double maxTeleAngle = Math.toRadians(90), maxAutoAngle = Math.toRadians(90);
-        public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 10; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
-        public double maxFarClutchEngageVelocityError = ticksPerRad * Math.toRadians(30);
+        public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 15; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
+        public double maxFarTeleClutchEngageVelocityError = ticksPerRad * Math.toRadians(25);
+        public double maxFarAutoClutchEngageVelocityError = ticksPerRad * Math.toRadians(10);
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
     public static class PowerTuning {
@@ -55,14 +55,14 @@ public class Turret extends Component {
         public double maxAngularVelocity = Math.toRadians(240);
         public double ignoreAngularVelocityNoiseThreshold = .05;
         public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .02, BPos = 0.025, x0Pos = 30, kPos = .05;
+        public double APos = .018, BPos = 0.025, x0Pos = 60, kPos = .03;
         public double kD = 0.0002, kDExponent = 1;
         public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
         public double AVel = .01, BVel = 0, x0Vel = 140, kVel = .05;
         public double kA = 0;
         public double AInertia = 0, highAccelTime = .1;
         public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
-        public double maxVoltageInRange = 7, maxVoltageOutOfRange = 4;
+        public double maxVoltageInRange = 7, maxVoltageOutOfRange = 5;
         public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
         // x = (v1^2 - v0^2) / (2a)
@@ -95,6 +95,8 @@ public class Turret extends Component {
                 170, -.85,
                 350, -.85
         };
+        public double staticKPAmp = 1.1;
+        public double maxStaticVelocity = 3;
     }
     public static TestingParams testingParams = new TestingParams();
     //    public static GoalParams goalParams = new GoalParams();
@@ -177,11 +179,6 @@ public class Turret extends Component {
             targetEncoder = currentTestingTarget;
             targetVelocity = testingParams.testingTargetVel * errorSign;
             robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(currentTestingTarget, positionError, prevPositionError, 0));
-            return;
-        }
-
-        if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
-            robot.shootingSystem.setTurretVoltage(0);
             return;
         }
 
@@ -273,7 +270,8 @@ public class Turret extends Component {
             return 0;
         }
         double maxError = robot.shootingSystem.locationState == FAR ? turretParams.maxFarClutchEngageError : turretParams.maxNearClutchEngageError;
-        onTarget = Math.abs(actualTargetEncoder - currentEncoder) <= maxError && (robot.shootingSystem.locationState != FAR || Math.abs(targetVelocity - currentVelocity) < turretParams.maxFarClutchEngageVelocityError);
+        onTarget = Math.abs(actualTargetEncoder - currentEncoder) <= maxError
+                && (robot.shootingSystem.locationState != FAR || Math.abs(targetVelocity - currentVelocity) < (robot.collector.inAuto() ? turretParams.maxFarAutoClutchEngageVelocityError : turretParams.maxFarTeleClutchEngageVelocityError));
 
         if(testingParams.enableKF) {
             double dir = targetVelocity == 0 ? Math.signum(positionError) : Math.signum(targetVelocity);

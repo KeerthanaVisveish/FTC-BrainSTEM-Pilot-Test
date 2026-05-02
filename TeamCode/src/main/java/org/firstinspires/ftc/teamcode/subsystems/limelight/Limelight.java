@@ -56,6 +56,9 @@ public class Limelight extends Component {
         switchPipeline(startingPipeline);
         limelight.start();
     }
+    public void takeSnapshot(String fileName) {
+        limelight.captureSnapshot(fileName);
+    }
 
     @Override
     public void printInfo() {

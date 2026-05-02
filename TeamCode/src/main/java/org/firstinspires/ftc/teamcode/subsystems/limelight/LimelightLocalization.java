@@ -46,11 +46,11 @@ public class LimelightLocalization extends LLParent {
         public double maxUpdateTranslationalVel = 1, maxUpdateHeadingDegVel = 1; // inches and degrees
         public int maxUpdateTurretVelTicksPerSec = 1;
         public double successfulInterlocksBeforeLocalizationTime = .1;
-        public int nearNumPrevFramesToAvg = 5, farNumPrevFramesToAvg = 10;
+        public int nearNumPrevFramesToAvg = 5, farNumPrevFramesToAvg = 8;
         public double minTimeBetweenUpdates = 5;
         public boolean useMT2 = true;
-        public double maxLocalizeHeadingError = Math.toRadians(2);
-        public double maxLocalizeTranslationalError = 12;
+        public double maxLocalizeHeadingError = .3;
+        public double maxLocalizeTranslationalError = 8;
         public double jankPerpOffset = 0, jankParallelOffset = 0;
         public int numPrevPosesToPrint = 0;
     }

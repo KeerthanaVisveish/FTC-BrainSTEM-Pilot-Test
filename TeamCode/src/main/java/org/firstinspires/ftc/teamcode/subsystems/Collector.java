@@ -17,11 +17,11 @@ public class Collector extends Component {
     public static class Params{
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
-        public double has3BallsDelayPeriod = 0.3, autoCollectHasThreeBallsDelayPeriod = 0.5;
+        public double has3BallsConfirmFrames = 2, has3BallsAutoConfirmFrames = 5;
         public double firstCurrentLimitedIntakePow = .6;
         public double normIntakePow = 0.95, autoIntakePow = .99, shootIntakePow = .99, slowShootIntakePower = .85, safetyInterlocksFailedPower = 0;
-        public double outtakeSpeed = -0.5;
-        public double laserBallThreshold = 2.5;
+        public double outtakeSpeed = -0.75;
+        public double laserBallThreshold = 1.5;
         public double flickerLeftMinPwm = 1643, flickerLeftMaxPwm = 1493;
         public double flickerRightMinPwm = 1491, flickerRightMaxPwm = 1641;
         public double flickerFullUpPos = 0.8;
@@ -65,11 +65,12 @@ public class Collector extends Component {
     private ClutchState clutchState;
     private FlickerState flickerState;
     public boolean outtakeAfterClutchEngage;
-    private double timerStart = 0;
+    private int framesSaw3;
     private boolean timerRunning = false;
     private boolean has3Balls = false, prevHas3Balls, autoCollectHas3Balls = false;
     private final ElapsedTime intake3BallsTimer = new ElapsedTime();
     public final ElapsedTime clutchTimer = new ElapsedTime();
+    // TODO: FRONT LEFT LASER IS BROKEN; discovered at worlds
     public double backLeftLaserDist, backRightLaserDist, frontLeftLaserDist, frontRightLaserDist;
     private int framesRunning;
     private boolean inAuto;
@@ -280,7 +281,7 @@ public class Collector extends Component {
                 break;
         }
 
-        checkForIntakeBalls(intake3BallsTimer.seconds());
+        checkForIntakeBalls();
         prevFrameCollectionState = collectionState;
     }
 
@@ -293,8 +294,8 @@ public class Collector extends Component {
     }
 
     private boolean isFrontBallDetected() {
-        return frontRightLaserDist < params.laserBallThreshold ||
-                frontLeftLaserDist < params.laserBallThreshold;
+        return frontRightLaserDist < params.laserBallThreshold;
+//                frontLeftLaserDist < params.laserBallThreshold;
 
 //        return frontRightLaserDist < params.LASER_BALL_THRESHOLD;
     }
@@ -311,22 +312,17 @@ public class Collector extends Component {
     public boolean autoCollectHas3Balls() {
         return autoCollectHas3Balls;
     }
-    public void checkForIntakeBalls(double currentTime) {
+    public void checkForIntakeBalls() {
         prevHas3Balls = has3Balls;
         if (isBackBallDetected() && isFrontBallDetected()) {
-            if (!timerRunning) {
-                timerStart = currentTime;
-                timerRunning = true;
-            } else {
-                double dt = currentTime - timerStart;
-                if (dt > params.has3BallsDelayPeriod)
-                    has3Balls = true;
-                if (dt > params.autoCollectHasThreeBallsDelayPeriod)
-                    autoCollectHas3Balls = true;
-            }
+            framesSaw3++;
+            if (framesSaw3 > params.has3BallsConfirmFrames)
+                has3Balls = true;
+            if (framesSaw3 > params.has3BallsAutoConfirmFrames)
+                autoCollectHas3Balls = true;
         } else {
+            framesSaw3 = 0;
             timerRunning = false;
-            timerStart = 0;
             has3Balls = false;
             autoCollectHas3Balls = false;
         }

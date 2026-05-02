@@ -35,10 +35,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
     public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
     // TODO: check these during driver practice
-    public static double[] redCornerResetPose = { 64, -62, 90 };
-    public static double[] blueCornerResetPose = { 63.5, 61.9, -90 }; // checked
-    public static double[] redGateResetPose = { 11.8, 63.5, 180 };
-    public static double[] blueGateResetPose = { 9.2, -62.4, 180 };
+    public static double[] redCornerResetPose = { 64, -61.1, 90 };
+    public static double[] blueCornerResetPose = { 64, 61.1, -90 }; // old: { 63.5, 61.9, -90 }
+//    public static double[] redGateResetPose = { 10.5, 62.4, 180 }; // i didn't trust the old one
+//    public static double[] blueGateResetPose = { 10.5, -62.4, 180 };
     public static boolean shouldScore = true;
     public static boolean testingPark = false;
     // RED:
@@ -46,7 +46,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     // (62.038, -62.863, 89.575)
     // (62.251, -62.892, 89.948)
 
-    public static double parkDriveAxialAmp = .3, parkDriveLateralAmp = .5, slowTurnAmp = .25;
+    public static double parkDriveAxialAmp = .3, parkDriveLateralAmp = .5, slowTurnAmp = .4;
     public static double currentDriveAxialAmp = 1, currentDriveLateralAmp = 1, currentTurnAmp = 1;
 
     BrainSTEMRobot robot;
@@ -200,6 +200,16 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.turret.turretState = Turret.TurretState.CENTER;
         }
 
+        if(gp1.isFirstB()) {
+            if(robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE) {
+                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
+                robot.turret.setTurretState(Turret.TurretState.CENTER);
+            }
+            else {
+                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+                robot.turret.setTurretState(Turret.TurretState.TRACKING);
+            }
+        }
         if(!inCompetition) {
             if (gp1.isFirstRightBumper())
                 if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
@@ -259,10 +269,11 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gamepad2.right_trigger > .5) {
             double curHeading = robot.drive.pinpoint().getPose().heading.toDouble();
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
-            Pose2d gateResetPose = createPose(alliance == Alliance.RED ? redGateResetPose : blueGateResetPose);
+//            Pose2d gateResetPose = createPose(alliance == Alliance.RED ? redGateResetPose : blueGateResetPose);
             double cornerHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - cornerResetPose.heading.toDouble()));
-            double gateHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - gateResetPose.heading.toDouble()));
-            robot.drive.pinpoint().setPose(cornerHeadingError < gateHeadingError ? cornerResetPose : gateResetPose);
+//            double gateHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - gateResetPose.heading.toDouble()));
+//            robot.drive.pinpoint().setPose(cornerHeadingError < gateHeadingError ? cornerResetPose : gateResetPose);
+            robot.drive.pinpoint().setPose(cornerResetPose);
             robot.turret.resetAllEncoderAdjustments();
             robot.led.lastManualRelocalizationTimeMs = System.currentTimeMillis();
         }
@@ -271,6 +282,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
                 robot.turret.setTurretState(Turret.TurretState.CENTER);
+                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
             }
             else if (robot.turret.getTurretState() != Turret.TurretState.TRACK_CUSTOM_TARGET) {
                 robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxTeleAngle);

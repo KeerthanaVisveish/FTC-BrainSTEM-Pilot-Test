@@ -12,7 +12,7 @@ public class Parking extends Component {
     public static class Params {
         public double TESTING_INC = 0.001;
         public double RETRACTED_POS = .2;
-        public double EXTENDED_POS = .715;
+        public double EXTENDED_POS = .71;
         public double testingPos = .2, testingInc = .001;
         public int leftLowerBound = 500, rightLowerBound = 500;
     }

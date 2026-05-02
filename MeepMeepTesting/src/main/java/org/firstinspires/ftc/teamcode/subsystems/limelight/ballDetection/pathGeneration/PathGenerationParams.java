@@ -4,6 +4,7 @@ import java.util.function.DoubleUnaryOperator;
 
 public class PathGenerationParams {
         public static class General {
+                public double complexCollectMaxTime = 6; // this is used in brainSTEMRobot class
                 public double robotWidth = 13 + 2 * 0.9382;
                 public double robotLength = 17.4;
                 public boolean allowLaneCollect = true;
@@ -41,6 +42,7 @@ public class PathGenerationParams {
                 public double clusterStrafeCollectMaxPerpendicularDistance = 2;
                 public double maxAngleDiffDeg = 135;
                 public double forceClusterLeftToRightX = 56;
+                public double allowStrafeIntoClassifierAngleDegDiff = 50;
         }
         public static class WallStrafe {
                 public double classifierWallDistance = 7;

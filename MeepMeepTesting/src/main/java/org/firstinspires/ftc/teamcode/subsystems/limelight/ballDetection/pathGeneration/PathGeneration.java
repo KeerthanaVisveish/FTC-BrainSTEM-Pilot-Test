@@ -360,12 +360,24 @@ public class PathGeneration {
                 Vector2d curToNextBall = next.pos.minus(cur.pos);
                 double curToNextBallDist = Math.hypot(curToNextBall.x, curToNextBall.y);
                 if (curToNextBallDist < clusterStrafeParams.clusterStrafingDist) {
-                    if (cur.type == Ball.BallType.NORMAL && (ballPath.size() == 2 || next.type == Ball.BallType.NORMAL)) {
-                        if (!allBallsInCluster.contains(cur)) {
-                            allBallsInCluster.add(cur);
+                    if (cur.type == Ball.BallType.NORMAL) {
+                        boolean nextGood = next.type == Ball.BallType.NORMAL || ballPath.size() <= 2;
+                        if (!nextGood) {
+                            Ball nextNext = i + 2 < ballPath.size() ? ballPath.get(i + 2) : null;
+                            if (nextNext!= null && next.type == Ball.BallType.CLASSIFIER_WALL) {
+                                Vector2d dir = new Vector2d(Math.signum(nextNext.pos.x - next.pos.x), 0);
+                                double angleDiff = curToNextBall.angleCast().minus(dir.angleCast());
+                                if (Math.abs(angleDiff) < Math.toRadians(clusterStrafeParams.allowStrafeIntoClassifierAngleDegDiff)) {
+                                    nextGood = true;
+                                }
+                            }
                         }
-                        allBallsInCluster.add(next);
-                        continue;
+                        if (nextGood) {
+                            if (!allBallsInCluster.contains(cur))
+                                allBallsInCluster.add(cur);
+                            allBallsInCluster.add(next);
+                            continue;
+                        }
                     }
                 }
             }

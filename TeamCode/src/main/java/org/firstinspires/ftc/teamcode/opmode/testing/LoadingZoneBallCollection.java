@@ -31,6 +31,7 @@ import java.util.ArrayList;
 @TeleOp(name="Loading Zone Ball Collection", group="Limelight")
 @Config
 public class LoadingZoneBallCollection extends OpMode {
+    public static String fileName = "test";
     public static int streamFPS = 5;
     public static double[] start = { 48 + 6.5, 8, 90 };
     public static boolean usePoseStorageStartPose = false;
@@ -45,6 +46,7 @@ public class LoadingZoneBallCollection extends OpMode {
 
     private Action autoCollectAction = null;
     private ArrayList<Vector2d> mostRecentNodes;
+
     private PathInfo pathInfo;
     private Action scanForBallsAction = null;
     @Override
@@ -87,6 +89,9 @@ public class LoadingZoneBallCollection extends OpMode {
             robot.limelight.limelight.pipelineSwitch(2);
 
         Pose2d robotPose = robot.drive.localizer.getPose();
+
+        if(gamepad1.leftBumperWasPressed())
+            robot.limelight.takeSnapshot(fileName);
 
 //        if (autoCollectAction == null && scanForBallsAction == null) {
 //            Vector2d giantClump = robot.limelight.ballDetection.getCurrentGiantClumpPosition();
@@ -190,7 +195,7 @@ public class LoadingZoneBallCollection extends OpMode {
         TelemetryPacket packet = new TelemetryPacket();
         Canvas fieldOverlay = packet.fieldOverlay();
         robot.drawRobotInfo(fieldOverlay);
-//        robot.limelight.ballDetection.drawBalls(fieldOverlay, mostRecentNodes);
+        robot.limelight.ballDetection.drawBalls(fieldOverlay, robot.limelight.ballDetection.getCurrentBlobs());
         if (pathInfo != null)
             robot.limelight.ballDetection.drawPath(fieldOverlay, robotPose, pathInfo.getOptimizedPoses());
         FtcDashboard.getInstance().sendTelemetryPacket(packet);
