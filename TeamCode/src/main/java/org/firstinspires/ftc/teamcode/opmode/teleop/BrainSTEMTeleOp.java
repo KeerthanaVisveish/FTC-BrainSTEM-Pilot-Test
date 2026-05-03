@@ -11,7 +11,9 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.opmode.testing.PoseUpdateLogger;
 import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.subsystems.Collector;
@@ -21,12 +23,14 @@ import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.utils.misc.PoseUpdatePacket;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
 @Config
 public class BrainSTEMTeleOp extends LinearOpMode {
+    public static double odoPoseStoreFrequency = 2; // in Hertz
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
             printLimelight = false, printPark = false, printDrivetrain;
@@ -35,8 +39,13 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
     public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
     // TODO: check these during driver practice
-    public static double[] redCornerResetPose = { 64, -61.1, 90 };
-    public static double[] blueCornerResetPose = { 64, 61.1, -90 }; // old: { 63.5, 61.9, -90 }
+    public static double[] redCornerResetPose = { 62.7, -61.7, 90 };
+    // 62.5, -61.6, 90
+    // 62.8, -61.7, 90
+
+    public static double[] blueCornerResetPose = { 62.9, 61.6, -90 }; // old: { 63.5, 61.9, -90 }
+    // 62.8, 62.5, -90
+    // 63.3, 61.7, -90
 //    public static double[] redGateResetPose = { 10.5, 62.4, 180 }; // i didn't trust the old one
 //    public static double[] blueGateResetPose = { 10.5, -62.4, 180 };
     public static boolean shouldScore = true;
@@ -71,6 +80,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         gp1 = new GamepadTracker(gamepad1);
         gp2 = new GamepadTracker(gamepad2);
         robot.setG1(gp1);
+
+        ElapsedTime teleopTimer = new ElapsedTime();
+
         telemetry.addData("Alliance", BrainSTEMRobot.alliance);
         telemetry.addData("starting pose", MathUtils.formatPose3(startPose));
         if (!robot.limelight.limelight.isConnected())
@@ -96,6 +108,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         waitForStart();
+        teleopTimer.reset();
+
+        PoseUpdatePacket.poseUpdatePackets.clear();
         robot.startOpmode();
         robot.turret.update();
         if (inCompetition) {
@@ -105,7 +120,19 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             ShootingSystem.testingParams.powerHighShooter = true;
             ShootingSystem.testingParams.powerLowShooter = true;
         }
+
+        double lastOdoPoseStoreTime = -10;
         while (opModeIsActive()) {
+            // pose storage debugging
+            if(teleopTimer.seconds() - lastOdoPoseStoreTime > 1 / odoPoseStoreFrequency) {
+                lastOdoPoseStoreTime = teleopTimer.seconds();
+                PoseUpdatePacket.poseUpdatePackets.add(new PoseUpdatePacket(
+                        PoseUpdatePacket.UpdateType.ODOMETRY,
+                        robot.drive.pinpoint().getPose(),
+                        teleopTimer.seconds()
+                ));
+            }
+
             gp1.update();
             gp2.update();
 

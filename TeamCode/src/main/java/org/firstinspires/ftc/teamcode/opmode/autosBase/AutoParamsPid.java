@@ -4,7 +4,7 @@ public class AutoParamsPid {
     public static class Collect {
         public double hitGateVelThreshold = 15;
         public double hitBallVelThreshold = 15;
-        public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .5, thirdCollectDrivePower = .5;
+        public double collectDrivePower = 0.85, firstCollectDrivePower = .6, secondCollectDrivePower = .45, thirdCollectDrivePower = .5;
         public double gateOpenDrive1MinPower = .8, gateOpenDrive2MinPower = .2, gateOpenDrive2MaxPower = .4;
         public double firstCorrectiveStrength = .3;
         public double loadingSlowDrivePower = .35, loadingMinHeadingPower = .45;
@@ -13,7 +13,7 @@ public class AutoParamsPid {
         public double[] first = {-12, 48, 90};
         public double[] firstIfOpenGate = { -12, 47, 90 };
         public double[] second = {12, 48, 90};
-        public double[] secondIfOpenGate = {12, 45, 90};
+        public double[] secondIfOpenGate = {12, 46, 90};
         public double[] third = {36, 50, 90};
 
         public double[] firstControlPointNear = { -10, 31, 90 };
@@ -87,7 +87,7 @@ public class AutoParamsPid {
         public double[] near1 = {-13, 27, 70};
         public double[] near1Last = {-22, 36, 60}; // old that parks: -32, 28, 45
         public double[] near2 = {-5, 25.5, 60};
-        public double[] nearGate = { -7, 26, 60 };
+        public double[] nearGate = { -7, 26.5, 60 };
         public double[] near3 = {-7, 25.5, 53};
         public double[] near3Last = {-21, 22, 38};
 
@@ -153,11 +153,11 @@ public class AutoParamsPid {
         public double shootThirdTime = .4;
 
         public double missBallAdjustTime = .3;
-        public double maxShootTime = 1;
+        public double maxShootTime = 1.2;
         public double spikeGateOpeningWait = .4, gateCollectFirstOpenWait = .1, gateCollectOpenWait = .11, gateTapWait = 1;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
-        public double postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
+        public double postIntakeTimeIfGateOpen = 1.1, postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWait = 1;
         public double shooterInterlockMaxWait = .1, colorSortShooterInterlockMaxWait = 1;

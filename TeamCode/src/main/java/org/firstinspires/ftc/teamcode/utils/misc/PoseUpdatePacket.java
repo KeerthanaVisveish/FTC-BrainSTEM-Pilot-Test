@@ -13,8 +13,10 @@ public class PoseUpdatePacket {
     }
     public final UpdateType updateType;
     public final Pose2d pose;
-    public PoseUpdatePacket(UpdateType updateType, Pose2d pose) {
+    public final double timeStamp;
+    public PoseUpdatePacket(UpdateType updateType, Pose2d pose, double timeStamp) {
         this.updateType = updateType;
         this.pose = pose;
+        this.timeStamp = timeStamp;
     }
 }

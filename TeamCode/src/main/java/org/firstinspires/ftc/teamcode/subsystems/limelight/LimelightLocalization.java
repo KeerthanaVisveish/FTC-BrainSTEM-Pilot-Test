@@ -168,6 +168,7 @@ public class LimelightLocalization extends LLParent {
                     Pose2d pinpointPose = robot.drive.localizer.getPose();
                     Vector2d avgPos = pinpointPose.position.times(1 - params.limelightTrust).plus(avgRobotPose.position.times(params.limelightTrust));
 
+                    prevCameraPoses.clear();
                     robot.drive.localizer.setPose(new Pose2d(avgPos, pinpointPose.heading.toDouble()));
                     timeSinceLastLocalizeTimer.reset();
                     setState(LocalizationState.PASSIVE_READING);

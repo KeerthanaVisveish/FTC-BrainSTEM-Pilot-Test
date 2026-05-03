@@ -772,7 +772,7 @@ public abstract class AutoPid extends LinearOpMode {
 
         Action gateOpen = new SequentialAction(
                 new DrivePath(robot.drive, telemetry,
-                        new Waypoint(preGate2).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true).setMaxTime(.4),
+                        new Waypoint(preGate2).setMinLinearPower(misc.gatePrepMinPower).setPassPosition(true).setMaxTime(.5),
                         new Waypoint(gate2, new BoxTolerance(3, .2, Math.toRadians(5))).setMinLinearPower(misc.gateMinPower).setPassPosition(true).setMaxTime(.5)),
                 new InstantAction(robot.drive::stop)
         );
@@ -796,7 +796,8 @@ public abstract class AutoPid extends LinearOpMode {
                     .setPassPosition(true)
                     .setControlPoint(shoot2FarControlPoint, shoot.secondShootFarT1, shoot.secondShootFarT2));
 
-        return buildCollectAndShoot(secondCollectDrive, secondGateDrive, secondShootDrive, toNear, timeConstraints.postIntakeTime, true, true, shotTime, initiallyExtake, shootingPurple, 2);
+        double postIntakeTime = openGate ? timeConstraints.postIntakeTimeIfGateOpen : timeConstraints.postIntakeTime;
+        return buildCollectAndShoot(secondCollectDrive, secondGateDrive, secondShootDrive, toNear, postIntakeTime, true, true, shotTime, initiallyExtake, shootingPurple, 2);
     }
     private Action getThirdCollectAndShoot(Pose2d shootPose, double shotTime, boolean fromNear, boolean toNear, boolean last, boolean initiallyExtake, boolean shootingPurple) {
         Waypoint w = new Waypoint(collect3)

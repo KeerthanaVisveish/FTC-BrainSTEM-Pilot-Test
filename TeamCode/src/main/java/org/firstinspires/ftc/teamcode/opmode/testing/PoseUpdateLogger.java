@@ -16,10 +16,14 @@ public class PoseUpdateLogger extends LinearOpMode {
         waitForStart();
         int startI = 0;
         while(opModeIsActive()) {
+            telemetry.addLine("press RT to clear pose data");
+            if(gamepad1.right_trigger > .3)
+                PoseUpdatePacket.poseUpdatePackets.clear();
+
             int listLength = PoseUpdatePacket.poseUpdatePackets.size();
             for(int i = startI; i < Math.min(listLength, startI + logLength); i++) {
                 PoseUpdatePacket packet = PoseUpdatePacket.poseUpdatePackets.get(i);
-                telemetry.addData("i: " + startI, "updateType: " + packet.updateType + "pose: " + MathUtils.formatPose3(packet.pose));
+                telemetry.addData(MathUtils.format3(packet.timeStamp), "updateType: " + packet.updateType + "pose: " + MathUtils.formatPose3(packet.pose));
             }
             telemetry.update();
             if(gamepad1.dpadDownWasPressed())
