@@ -44,6 +44,7 @@ import java.util.function.DoubleSupplier;
 public class BrainSTEMRobot {
     public static double rampWidth = .9382;
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
+    public static double turretToCenterOfMassDist = 3; // inches
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
     public static boolean drawRobot = true, drawShooting = true, drawLimelight = true;

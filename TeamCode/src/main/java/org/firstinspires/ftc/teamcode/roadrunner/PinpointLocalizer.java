@@ -35,7 +35,7 @@ public final class PinpointLocalizer implements Localizer {
     private Pose2d txPinpointRobotPose = new Pose2d(0, 0, 0); // raw pose data from pinpoint
     private OdoInfo velocity = new OdoInfo();
     public Pose2d lastPose;
-    public OdoInfo filteredAccel;
+    public OdoInfo rawAccel;
     private final ElapsedTime dtTimer;
     private boolean successfulHardwareRead = false;
     public PinpointLocalizer(HardwareMap hardwareMap, Pose2d initialPose) {
@@ -61,7 +61,6 @@ public final class PinpointLocalizer implements Localizer {
         txWorldPinpointPose = initialPose;
         lastPose = initialPose;
 
-        filteredAccel = new OdoInfo(0, 0, 0);
         dtTimer = new ElapsedTime();
         dtTimer.reset();
     }
@@ -83,6 +82,10 @@ public final class PinpointLocalizer implements Localizer {
     public OdoInfo getVelocity() {
         return velocity;
     }
+    public OdoInfo getRawAccel() {
+        return rawAccel;
+    }
+
     @Override
     public PoseVelocity2d update() {
         double dt = dtTimer.seconds();
@@ -112,7 +115,12 @@ public final class PinpointLocalizer implements Localizer {
 
             // custom velocity calculation
             Vector2d worldTranslationalVelocity = GeometryUtils.rotateVector(pinpointTranslationalVelocity, txWorldPinpointPose.heading.toDouble());
+
+            OdoInfo prevVelocity = velocity;
             velocity = new OdoInfo(worldTranslationalVelocity.x, worldTranslationalVelocity.y, angularVelocity);
+
+            rawAccel = new OdoInfo(velocity.x - prevVelocity.x, velocity.y - prevVelocity.y, velocity.headingRad - prevVelocity.headingRad);
+            rawAccel = new OdoInfo(rawAccel.x / dt, rawAccel.y / dt, rawAccel.headingRad / dt);
 
             return new PoseVelocity2d(robotTranslationalVelocity, angularVelocity);
         }

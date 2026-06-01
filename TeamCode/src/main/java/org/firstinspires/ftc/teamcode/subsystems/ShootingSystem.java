@@ -24,7 +24,6 @@ import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt1;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt2;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMath;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
-//import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMath;
 
 import java.util.Arrays;
 import java.util.function.ToDoubleFunction;
