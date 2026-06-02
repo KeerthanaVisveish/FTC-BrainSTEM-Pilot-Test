@@ -297,6 +297,7 @@ public class ShootingSystem {
         telemetry.addData("robot angular vel", robotAngularVel);
         telemetry.addData("goal pos m", goalPosM);
 
+        // TODO: change robot pos argument to center of rotation of robot instead of odometry readings
         lookAheadAnswerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelCm, robotAngularVel, goalPosM, impactAngleRad, generalParams.lookAheadTime);
         lookAheadAnswerKeyPt2 = shootingMathNew.godSolvePart2(lookAheadAnswerKeyPt1, goalPosM, impactAngleRad, filteredShooterSpeedTps, shooterConversion);
 

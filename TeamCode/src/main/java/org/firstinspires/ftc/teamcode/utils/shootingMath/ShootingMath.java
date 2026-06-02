@@ -17,7 +17,7 @@ public class ShootingMath {
   /**
    * computes lookahead and the ideal launch data assuming no velocity drop
    * @param exitPos
-   * @param robotPos
+   * @param centerOfRotation
    * @param robotVelCm
    * @param robotAngularVel
    * @param goalPos
@@ -25,11 +25,11 @@ public class ShootingMath {
    * @param lookAheadTime
    * @return ideal launch data and lookahead exit pos
    */
-  public AnswerKeyPt1 godSolvePart1(Vector3d exitPos, Vector3d robotPos, Vector3d robotVelCm, double robotAngularVel, Vector3d goalPos, double targetImpactAngleRad, double lookAheadTime) {
+  public AnswerKeyPt1 godSolvePart1(Vector3d exitPos, Vector3d centerOfRotation, Vector3d robotVelCm, double robotAngularVel, Vector3d goalPos, double targetImpactAngleRad, double lookAheadTime) {
     // step 1: account for lookahead
-    Vector3d currentRadius = exitPos.sub(robotPos).to2D();
+    Vector3d currentRadius = exitPos.sub(centerOfRotation).to2D();
     Vector3d futureRelativeExitPos = rotateInXY(currentRadius, robotAngularVel * lookAheadTime);
-    Vector3d lookAheadExitPos = robotPos.add(robotVelCm.times(lookAheadTime)).add(futureRelativeExitPos).add(new Vector3d(0, 0, exitPos.z - robotPos.z));
+    Vector3d lookAheadExitPos = centerOfRotation.add(robotVelCm.times(lookAheadTime)).add(futureRelativeExitPos).add(new Vector3d(0, 0, exitPos.z - centerOfRotation.z));
 
     Vector3d lookAheadTangentialVel = futureRelativeExitPos.perpInXY().times(robotAngularVel);
     Vector3d lookAheadVelAtExitPos = robotVelCm.add(lookAheadTangentialVel);
@@ -86,6 +86,7 @@ public class ShootingMath {
 
   /**
    * solves for velocity vectory constrained by shooter speed that includes both a velocity responsive hood and the ability to shoot on the move
+   * Z AXIS IS UP
    * @param exitPosMeters
    * @param robotVelAtExitPosMps
    * @param goalPosMeters
@@ -113,7 +114,7 @@ public class ShootingMath {
 
     ArrayList<Double> timeOfFlights = approxZeroes(timeOfFlight, timeOfFlightInterval);
 
-    if(timeOfFlights.size() == 0) {
+    if(timeOfFlights.isEmpty()) {
       // System.out.println("NO SOLUTION FOUND; a: " + a + ", b: " + b + ", c: " + c + ", d: " + d + ", e: " + e);
       return new LaunchData();
     }
@@ -133,7 +134,7 @@ public class ShootingMath {
       
       double launchVelX = ballVelX - v.x;
       double launchVelY = ballVelY - v.y;
-      double launchVelZ = ballVelZ;
+      double launchVelZ = ballVelZ - v.z;
 
       launchVectors.add(new Vector3d(launchVelX, launchVelY, launchVelZ));
     }
@@ -149,16 +150,6 @@ public class ShootingMath {
     }
     if (desiredI == -1)
       return new LaunchData();
-    // String string = "time of flights: ";
-    // for(Double t : timeOfFlights)
-    //   string += Math.floor(t * 100) / 100 + ", ";
-    // string += "desired I: " + desiredI;
-    // System.out.println(string);
-    // String impactString = "impact angles: ";
-    // for(Double phi : impactAngles)
-    //   impactString += Math.floor(Math.toDegrees(phi) * 100) / 100 + ", ";
-    // System.out.println(impactString + "desiredI: " + desiredI + ", target impact ang: " + Math.toDegrees(targetImpactAngleRad));
-
     Vector3d launchVector = launchVectors.get(desiredI);
     double exitAngle = Math.atan2(launchVector.z, Math.hypot(launchVector.x, launchVector.y));
     double turretAngle = Math.atan2(launchVector.y, launchVector.x);

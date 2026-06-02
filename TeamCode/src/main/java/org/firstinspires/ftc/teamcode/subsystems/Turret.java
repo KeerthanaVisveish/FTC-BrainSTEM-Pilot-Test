@@ -131,7 +131,7 @@ public class Turret extends Component {
 
     private double currentTestingTarget;
     private boolean smoothWhenOutOfRange;
-    private boolean wasOscillating;
+//    private boolean wasOscillating;
     private double trackCustomTargetMinPower;
     private double trackCustomTargetStartEncoder;
     private boolean trackCustomTargetPassPosition, trackCustomTargetPassPositionDone;
@@ -214,55 +214,10 @@ public class Turret extends Component {
             prevErrors[i] = prevErrors[i-1];
         prevErrors[0] = error;
     }
-    private static boolean errorIsOscillating(double[] prevErrors) {
-        boolean oscillating = true;
-        boolean prevInBound = false;
-        boolean inBoundEveryTime = true;
-        for (int i = 0; i < powerTuning.prevEncoderOscillatingSize; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noVoltageThreshold;
-            if(!curInBound)
-                inBoundEveryTime = false;
-            if(i == 0) {
-                prevInBound = curInBound;
-                continue;
-            }
-            if(prevInBound == curInBound) {
-                oscillating = false;
-                break;
-            }
-            prevInBound = curInBound;
-        }
-        if(oscillating)
-            return true;
-        if(inBoundEveryTime)
-            return false;
-        boolean ranAtLeastOnce = false;
-        for(int i = 0; i < prevErrors.length; i++) {
-            boolean curInBound = Math.abs(prevErrors[i]) <= powerTuning.noVoltageThreshold;
-            if(i == 0) {
-                prevInBound = curInBound;
-                continue;
-            }
-            if (prevErrors[i] == powerTuning.noVoltageThreshold)
-                continue;
-
-            ranAtLeastOnce = true;
-            if(prevInBound == curInBound)
-                return false;
-            prevInBound = curInBound;
-        }
-        return ranAtLeastOnce;
-    }
 
     public double calculateTurretVoltage(double actualTargetEncoder, double positionError, double prevPositionError, double robotSpeedAtTurret) {
         updatePrevEncoderErrors(positionError);
-        boolean isOscillating = errorIsOscillating(prevErrors);
-        boolean canStopIfOscillating = Math.abs(positionError) <= powerTuning.noPowerIfOscillatingThreshold && isOscillating;
-        if(canStopIfOscillating)
-            wasOscillating = true;
-        if(wasOscillating && Math.abs(positionError) > powerTuning.noPowerIfOscillatingThreshold)
-            wasOscillating = false;
-        if((Math.abs(positionError) <= powerTuning.noVoltageThreshold || wasOscillating) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
+        if((Math.abs(positionError) <= powerTuning.noVoltageThreshold) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
             onTarget = true;
             return 0;
         }
@@ -352,7 +307,7 @@ public class Turret extends Component {
         return turretPosition / turretTicksPerRadian;
     }
     private void updateTargetToGoal() {
-//        // calculating target angular velocity
+//        // old motion profiling code
 //        perpVelVec = new Vector2d(-robot.shootingSystem.futureTurretPosRelativeToGoal.y, robot.shootingSystem.futureTurretPosRelativeToGoal.x *1);
 //        perpVelVec = perpVelVec.div(robot.shootingSystem.futureTurretPosGoalDistIn);
 //
@@ -370,13 +325,16 @@ public class Turret extends Component {
 //            targetAngularVelocity += motionProfileVel;
 //        }
 
+        // calculating target angular velocity
+        double targetAngularVelocity = 0;
+
         Vector2d robotPos = robot.drive.pinpoint().getPose().position;
         OdoInfo robotVelocity = robot.drive.pinpoint().getVelocity();
         double deltaX = robotPos.x - robot.shootingSystem.goalPosIn.x;
         double deltaY = robotPos.y - robot.shootingSystem.goalPosIn.z;
         double num = robotVelocity.y * deltaX - robotVelocity.x * deltaY;
         double denom = deltaX * deltaX + deltaY * deltaY;
-        double targetAngularVelocity = num / denom - robotVelocity.headingRad;
+        targetAngularVelocity = num / denom - robotVelocity.headingRad;
         targetAngularVelocity = Range.clip(targetAngularVelocity, -powerTuning.maxAngularVelocity, powerTuning.maxAngularVelocity);
 
         // updating target angular acceleration
