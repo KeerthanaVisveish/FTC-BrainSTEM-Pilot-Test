@@ -36,6 +36,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false, printPark = false, printDrivetrain;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
+    public static boolean turretToggleRequested = false;
 
     public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
     // TODO: check these during driver practice
@@ -144,6 +145,14 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 if(testingPark)
                     robot.parking.setParkState(Parking.ParkState.TESTING);
                 Parking.PARK_PARAMS.testingPos += gamepad1.left_stick_y * Parking.PARK_PARAMS.testingInc;
+
+                if(turretToggleRequested) {
+                    if(robot.turret.getTurretState() == Turret.TurretState.TRACKING)
+                        robot.turret.setTurretState(Turret.TurretState.CENTER);
+                    else
+                        robot.turret.setTurretState(Turret.TurretState.TRACKING);
+                }
+
             }
             robot.updateInfo();
             robot.update();
@@ -221,11 +230,16 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstLeftBumper()) {
-            if (robot.turret.turretState == Turret.TurretState.CENTER)
+            if (robot.turret.turretState == Turret.TurretState.CENTER) {
                 robot.turret.turretState = Turret.TurretState.TRACKING;
-            else
+                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            }
+            else {
                 robot.turret.turretState = Turret.TurretState.CENTER;
+                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
+            }
         }
+
 
         if(gp1.isFirstB()) {
             if(robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE) {
@@ -237,12 +251,15 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.turret.setTurretState(Turret.TurretState.TRACKING);
             }
         }
-        if(!inCompetition) {
-            if (gp1.isFirstRightBumper())
-                if (robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE)
-                    robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-                else
-                    robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+        if(gp1.isFirstRightBumper()) {
+            if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
+                robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
+                robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+            }
+            else {
+                robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
+                robot.collector.setCollectionState(Collector.CollectionState.OFF);
+            }
         }
         if(!inCompetition || allowD1Shoot) {
             if(gp1.isFirstY()) {

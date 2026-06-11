@@ -44,10 +44,10 @@ import java.util.function.DoubleSupplier;
 public class BrainSTEMRobot {
     public static double rampWidth = .9382;
     public static double width = 13 + rampWidth * 2, length = 17.4; // inches
-    public static double turretToCenterOfMassDist = 3; // inches
+    public static double turretToCenterOfMassDist = 0; // inches
     public static boolean enableSubsystems = true;
     public static boolean enableTurret = true, enableShooter = true, enableCollection = true, enableLimelight = true, enablePark = true, enableLED = true;
-    public static boolean drawRobot = true, drawShooting = true, drawLimelight = true;
+    public static boolean drawRobot = true, drawRobotDerivatives = true, drawShooting = true, drawLimelight = false;
 
     public Turret turret;
     public Shooter shooter;
@@ -113,10 +113,18 @@ public class BrainSTEMRobot {
     public void drawRobotInfo(Canvas fieldOverlay) {
         // draw robot, turret, exit position, and limelight pose
         Pose2d robotPose = drive.pinpoint().getPose();
+        OdoInfo robotVelocity = drive.pinpoint().getVelocity();
+        OdoInfo robotAcceleration = drive.pinpoint().getRawAccel();
 
         if(drawRobot) {
             fieldOverlay.setStroke("red");
             Drawing.drawRobot(fieldOverlay, robotPose);
+        }
+        if(drawRobotDerivatives) {
+            fieldOverlay.setStroke("red");
+            fieldOverlay.strokeLine(0, 0, robotVelocity.x, robotVelocity.y);
+            fieldOverlay.setStroke("blue");
+            fieldOverlay.strokeLine(0, 0, robotAcceleration.x, robotAcceleration.y);
         }
         if(drawShooting)
             shootingSystem.drawShootingInfo(fieldOverlay);

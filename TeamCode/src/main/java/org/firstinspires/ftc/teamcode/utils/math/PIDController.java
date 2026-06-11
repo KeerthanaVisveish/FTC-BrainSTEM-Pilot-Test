@@ -1,17 +1,18 @@
 package org.firstinspires.ftc.teamcode.utils.math;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 public class PIDController {
 
     private double target;
     private double kP, kI, kD;
-    private boolean permanentKDSign;
-    private int kDMult;
     private double proportional;
     private double integral;
+    private double maxIntegral = Double.MAX_VALUE;
     private double derivative;
     private boolean shouldReset;
 
-    private double previousTime, previousError;
+    private double previousError;
+    private final ElapsedTime timer;
 
     private double lowerInputBound = Double.NEGATIVE_INFINITY, higherInputBound = Double.POSITIVE_INFINITY;
     private double lowerOutputBound = Double.NEGATIVE_INFINITY, higherOutputBound = Double.POSITIVE_INFINITY;
@@ -20,26 +21,18 @@ public class PIDController {
         this.kI = kI;
         this.kD = kD;
 
+        timer = new ElapsedTime();
+        timer.reset();
+
         shouldReset = true;
     }
-
-    public double getProportional() {
-        return proportional;
-    }
-    public double getIntegral() {
-        return integral;
-    }
-    public double getDerivative() {
-        return derivative;
+    public void setMaxIntegral(double maxIntegral) {
+        this.maxIntegral = maxIntegral;
     }
     public void setPIDValues(double kP, double kI, double kD){
         this.kP = kP;
         this.kI = kI;
         this.kD = kD;
-    }
-    public void setPermanentKdSign(int kDMult) {
-        permanentKDSign = true;
-        this.kDMult = kDMult;
     }
     public void setKp(double kP) {
         this.kP = kP;
@@ -96,29 +89,27 @@ public class PIDController {
 
         proportional = kP * error;
 
-        double currentTime = System.currentTimeMillis() / 1000.0;
 
         if (shouldReset) {
             shouldReset = false;
             integral = 0;
             derivative = 0;
-            previousError = error;
         } else {
-            double dT = currentTime - previousTime;
+
+            double dT = timer.seconds();
 
             integral += kI * error * dT;
+            integral = Range.clip(integral, -maxIntegral, maxIntegral);
 
-            derivative = kD * (error - previousError) / dT;
-            if(permanentKDSign)
-                derivative = Math.abs(derivative) * kDMult;
+            if(dT > .00001)
+                derivative = kD * (error - previousError) / dT;
         }
-
-        previousTime = currentTime;
+        timer.reset();
         previousError = error;
 
         double correction = proportional + integral + derivative;
 
-        return Math.signum(correction) * Range.clip(Math.abs(correction),
+        return Range.clip(correction,
                 lowerOutputBound, higherOutputBound);
     }
 }

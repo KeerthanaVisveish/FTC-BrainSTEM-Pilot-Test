@@ -121,9 +121,9 @@ public final class PinpointLocalizer implements Localizer {
 
             rawAccel = new OdoInfo(velocity.x - prevVelocity.x, velocity.y - prevVelocity.y, velocity.headingRad - prevVelocity.headingRad);
             rawAccel = new OdoInfo(rawAccel.x / dt, rawAccel.y / dt, rawAccel.headingRad / dt);
-
             return new PoseVelocity2d(robotTranslationalVelocity, angularVelocity);
         }
+        rawAccel = new OdoInfo(0, 0, 0);
         return new PoseVelocity2d(new Vector2d(0, 0), 0);
     }
 

@@ -532,10 +532,6 @@ public abstract class AutoPid extends LinearOpMode {
         boolean shootingEarly = shootingNear && !colorSorting;
         return new SequentialAction(
                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_SHOOT),
-                new InstantAction(() -> {
-                    Turret.powerTuning.AVel = .0;
-                    Turret.powerTuning.BPos = .03;
-                }),
                 new ParallelAction(
                         autoCommands.flickerHalfUp(),
                         autoCommands.speedUpShooter(),
@@ -555,11 +551,7 @@ public abstract class AutoPid extends LinearOpMode {
                         shootingEarly ? getShootAction(3, timeConstraints.nearPostFlickerShootTime) : new SleepAction(0)
                 ),
                 !shootingEarly ? getShootAction(colorSorting ? timeConstraints.colorSortShooterInterlockMaxWait : 0, timeConstraints.farPostFlickerShootTime)
-                        : new SleepAction(0),
-                new InstantAction(() -> {
-                    Turret.powerTuning.AVel = .01;
-                    Turret.powerTuning.APos = .025;
-                })
+                        : new SleepAction(0)
         );
     }
     private Action buildCollectAndShoot(Action collectDrive, Action gateDrive, DrivePath shootDrive, boolean shootingNear, double postIntakeTime, boolean runIntake, boolean notLast, double shotTime, boolean initiallyExtake, boolean shootingPurple, int spikeMark) {

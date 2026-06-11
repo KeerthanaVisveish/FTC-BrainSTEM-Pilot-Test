@@ -18,6 +18,7 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
+import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 import java.util.function.DoubleSupplier;
@@ -27,15 +28,12 @@ public class Turret extends Component {
     public static class TestingParams {
         public boolean enableKF = true;
         public boolean enableKV = true;
+        public boolean enableMotionProfiling = false;
         public boolean enableKA = false;
-        public boolean enableKP = true;
-        public boolean enableKD = true;
+        public boolean enablePID = true;
         public boolean enableTorqueMitigation = true;
         public boolean enablePower = true;
-        public boolean usingMotionProfiling = false;
-        public boolean enableTestingControl = false;
-        public double testingTargetPos = 300;
-        public double testingTargetVel = 0;
+//        public boolean usingMotionProfiling = false;
     }
     public static class TurretParams {
         public double minParkRotateVoltage = 9;
@@ -44,6 +42,7 @@ public class Turret extends Component {
 
         public int fineAdjust = 5;
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
+        public double accelFilterConcavity = 2, accelFilterMax = 200;
         public double maxTeleAngle = Math.toRadians(90), maxAutoAngle = Math.toRadians(90);
         public double maxNearClutchEngageError = 25, maxFarClutchEngageError = 15; // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double maxFarTeleClutchEngageVelocityError = ticksPerRad * Math.toRadians(25);
@@ -51,52 +50,50 @@ public class Turret extends Component {
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
     public static class PowerTuning {
-        public double ignoreGoalAngularVelThreshold = .0001, ignoreGoalAngularAccelThreshold = 0;
-        public double motionProfileAccel = Math.toRadians(45), motionProfileDeadZone = 10;
+        public double kP = .028, kI = 0, kD = 0;
+        public double maxPid = 3.5;
+        public double maxIntegral = 5;
+        public double motionProfileAccel = .01, motionProfileMaxVel = 1, motionProfileDeadZone = 5;
         public double maxAngularVelocity = Math.toRadians(240);
-        public double ignoreAngularVelocityNoiseThreshold = .05;
-        public double ignoreKPScalingErrorThreshold = 40;
-        public double APos = .018, BPos = 0.025, x0Pos = 60, kPos = .03;
-        public double kD = 0.0002, kDExponent = 1;
-        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
-        public double AVel = .01, BVel = 0, x0Vel = 140, kVel = .05;
-        public double kA = 0;
-        public double noVoltageThreshold = 1, noPowerIfOscillatingThreshold = 3, robotNotMovingThreshold = .5;
+        public double ignoreTargetVelocityNoiseThreshold = .5, ignoreTargetAccelNoiseThreshold = 1;
+//        public double APos = .018, BPos = 0.025, x0Pos = 60, kPos = .03;
+//        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
+//        public double AVel = 0, BVel = 0.007, x0Vel = 140, kVel = .05;
+//        public double kA = 0;
+        public double dampeningRadius = 1, dampeningFactor = .5;
         public double maxVoltageInRange = 7, maxVoltageOutOfRange = 5;
-        public int prevEncoderStorageSize = 5, prevEncoderOscillatingSize = 3;
 
-        public double kT = .015;
+        public double kT = -.015;
+        public double kV = 0;
 
         public double[] kfPosLookupData = new double[] {
-                -350, .65,
-                -300, .65,
-                -130, .65,
-                0, .55,
-                30, .65,
-                100, .75,
-                120, .8,
-                160, .8,
-                170, .9,
-                190, .95,
-                230, .95,
-                300, 1.15,
-                350, 1.15
+                -350, .4,
+                -300, .4,
+                -130, .4,
+                0, .4,
+                30, .45,
+                100, .5,
+                120, .6,
+                160, .6,
+                170, .7,
+                190, .8,
+                230, .85,
+                300, 1.05,
+                350, 1.05
         };
         public double[] kfNegLookupData = new double[] {
                 -350, -1,
                 -300, -1,
                 -156, -.9,
-                -130, -.9,
-                -75, -.9,
-                -25, -.9,
-                0, -.85,
-                5, -.8,
-                110, -.8,
-                170, -.85,
-                350, -.85
+                -130, -.8,
+                -75, -.7,
+                -25, -.6,
+                0, -.5,
+                5, -.5,
+                110, -.4,
+                170, -.4,
+                350, -.4
         };
-        public double staticKPAmp = 1.1;
-        public double maxStaticVelocity = 3;
     }
     public static TestingParams testingParams = new TestingParams();
     //    public static GoalParams goalParams = new GoalParams();
@@ -116,11 +113,12 @@ public class Turret extends Component {
     private double goalAngularVel;
     private double kP, fVoltage;
     private double kV, kA;
-    private final double[] prevErrors;
-    private double pVoltage, dVoltage, totalVoltage;
+    private final PIDController pidController;
+    private double pidVoltage, totalVoltage;
     private double vVoltage;
     private double aVoltage;
     private double tVoltage;
+    private double accelMagAtTurret;
     private final InterpLUT kFPosLookup, kfNegLookup;
 
     public double lookAheadTargetRelAngleRad, noLookAheadTargetRelAngleRad;
@@ -149,14 +147,14 @@ public class Turret extends Component {
 
         turretState = TurretState.CENTER;
 
-        currentTestingTarget = testingParams.testingTargetPos;
+        pidController = new PIDController(powerTuning.kP, powerTuning.kI, powerTuning.kD);
+        pidController.setMaxIntegral(powerTuning.maxIntegral);
+
         smoothWhenOutOfRange = true;
-        prevErrors = new double[powerTuning.prevEncoderStorageSize];
     }
 
     @Override
     public void update() {
-        double prevPositionError = positionError;
         double prevVelocity = currentVelocity;
         currentVelocity = robot.shootingSystem.getTurretVelTps();
         currentAcceleration = (currentVelocity - prevVelocity) / robot.shootingSystem.dt;
@@ -164,33 +162,18 @@ public class Turret extends Component {
         curRelAngleRad = currentEncoder / turretParams.ticksPerRad;
         currentAbsoluteAngleRad = curRelAngleRad + robot.drive.localizer.getPose().heading.toDouble();
 
-        if(testingParams.enableTestingControl) {
-            currentTestingTarget = testingParams.testingTargetPos * Math.signum(currentTestingTarget);
-            positionError = currentTestingTarget - currentEncoder;
-            double errorSign = Math.signum(positionError);
-            if(Math.signum(currentTestingTarget) != errorSign) {
-                currentTestingTarget *= -1;
-                positionError = currentTestingTarget - currentEncoder;
-                errorSign = Math.signum(positionError);
-            }
-            targetEncoder = currentTestingTarget;
-            targetVelocity = testingParams.testingTargetVel * errorSign;
-            robot.shootingSystem.setTurretVoltage(calculateTurretVoltage(currentTestingTarget, positionError, prevPositionError, 0));
-            return;
-        }
-
         double motorVoltage;
+        updateTargetToGoal();
         switch (turretState) {
             case TRACKING:
-                updateTargetToGoal();
-                motorVoltage = calculateTurretVoltage(noLookAheadTargetRelAngleRad * turretParams.ticksPerRad, positionError, prevPositionError, robot.shootingSystem.robotSpeedAtTurretIps);
+                motorVoltage = calculateTurretVoltage(noLookAheadTargetRelAngleRad * turretParams.ticksPerRad, positionError);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case CENTER:
                 inRange = true;
                 targetEncoder = 0;
                 positionError = -currentEncoder;
-                motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0);
+                motorVoltage = calculateTurretVoltage(targetEncoder, positionError);
                 robot.shootingSystem.setTurretVoltage(motorVoltage);
                 break;
             case TRACK_CUSTOM_TARGET:
@@ -202,25 +185,15 @@ public class Turret extends Component {
                     trackCustomTargetPassPositionDone = true;
                 }
                 else {
-                    motorVoltage = calculateTurretVoltage(targetEncoder, positionError, prevPositionError, 0);
+                    motorVoltage = calculateTurretVoltage(targetEncoder, positionError);
                     motorVoltage = Math.max(trackCustomTargetMinPower, Math.abs(motorVoltage)) * Math.signum(motorVoltage);
                     robot.shootingSystem.setTurretVoltage(motorVoltage);
                 }
                 break;
         }
     }
-    private void updatePrevEncoderErrors(double error) {
-        for(int i = prevErrors.length - 1; i > 0; i--)
-            prevErrors[i] = prevErrors[i-1];
-        prevErrors[0] = error;
-    }
 
-    public double calculateTurretVoltage(double actualTargetEncoder, double positionError, double prevPositionError, double robotSpeedAtTurret) {
-        updatePrevEncoderErrors(positionError);
-        if((Math.abs(positionError) <= powerTuning.noVoltageThreshold) && robotSpeedAtTurret < powerTuning.robotNotMovingThreshold) {
-            onTarget = true;
-            return 0;
-        }
+    public double calculateTurretVoltage(double actualTargetEncoder, double positionError) {
         double maxError = robot.shootingSystem.locationState == FAR ? turretParams.maxFarClutchEngageError : turretParams.maxNearClutchEngageError;
         onTarget = Math.abs(actualTargetEncoder - currentEncoder) <= maxError
                 && (robot.shootingSystem.locationState != FAR || Math.abs(targetVelocity - currentVelocity) < (robot.collector.inAuto() ? turretParams.maxFarAutoClutchEngageVelocityError : turretParams.maxFarTeleClutchEngageVelocityError));
@@ -235,39 +208,34 @@ public class Turret extends Component {
         else
             fVoltage = 0;
 
-        if(testingParams.enableKP) {
-            kP = getLogisticErrorKP(Math.abs(positionError));
-            kP = getLogisticErrorKP(Math.abs(positionError));
-            if (Math.abs(positionError) < powerTuning.ignoreKPScalingErrorThreshold)
-                kP *= getLogisticKPScaler(Math.abs(targetVelocity));
-            pVoltage = kP * positionError;
+        if(testingParams.enablePID) {
+            pidController.setPIDValues(powerTuning.kP, powerTuning.kI, powerTuning.kD);
+            pidVoltage = Range.clip(pidController.updateWithError(positionError), -powerTuning.maxPid, powerTuning.maxPid);
         }
         else
-            pVoltage = 0;
-
-        if(testingParams.enableKD) {
-            double errorVel = (positionError - prevPositionError) / robot.shootingSystem.dt;
-            dVoltage = powerTuning.kD * Math.pow(errorVel, powerTuning.kDExponent);
-        }
-        else
-            dVoltage = 0;
+            pidVoltage = 0;
 
         if(testingParams.enableKV) {
-            kV = getLogisticKV(Math.abs(targetVelocity));
+            kV = powerTuning.kV;
             vVoltage = kV * targetVelocity;
         }
         else
             vVoltage = 0;
 
         if(testingParams.enableKA) {
-            kA = powerTuning.kA;
+//            kA = powerTuning.kA;
             aVoltage = kA * targetAccel;
         }
-        if(testingParams.enableTorqueMitigation) {
-            OdoInfo robotAccel = robot.drive.pinpoint().getRawAccel();
+        else
+            aVoltage = 0;
+
+        OdoInfo robotAccel = robot.drive.pinpoint().getRawAccel();
+        if(testingParams.enableTorqueMitigation && robotAccel != null) {
+            telemetry.addData("robot accel", robotAccel.x + ", " + robotAccel.y + ", " + robotAccel.headingRad);
             double robotHeading = robot.drive.pinpoint().getPose().heading.toDouble();
 
             Vector2d linearRobotAccel = new Vector2d(robotAccel.x, robotAccel.y);
+
 
             // a = r * alpha
             Vector2d tangentialAccel = new Vector2d(-Math.sin(robotHeading), Math.cos(robotHeading))
@@ -276,13 +244,20 @@ public class Turret extends Component {
 
             Vector2d linearAccelAtTurret = linearRobotAccel.plus(tangentialAccel);
 
-            double accelMagAtTurret = Math.hypot(linearAccelAtTurret.x, linearAccelAtTurret.y);
+            accelMagAtTurret = Math.hypot(linearAccelAtTurret.x, linearAccelAtTurret.y);
+            // filtering accel mag at turret
+            accelMagAtTurret = Math.pow(Math.min(Math.abs(accelMagAtTurret) / turretParams.accelFilterMax, 1), turretParams.accelFilterConcavity) * Math.signum(accelMagAtTurret) * 250;
+
             double angleDif = currentEncoder / turretParams.ticksPerRad - Math.atan2(robotAccel.y, robotAccel.x);
             tVoltage = -powerTuning.kT * accelMagAtTurret * Math.sin(angleDif);
         }
 
-        if(testingParams.enablePower)
-            totalVoltage = fVoltage + pVoltage + dVoltage + vVoltage + aVoltage + tVoltage;
+        if(testingParams.enablePower) {
+            if(Math.abs(positionError) < powerTuning.dampeningRadius)
+                fVoltage *= powerTuning.dampeningFactor;
+
+            totalVoltage = fVoltage + pidVoltage + vVoltage + aVoltage + tVoltage;
+        }
         else
             totalVoltage = 0;
 
@@ -290,15 +265,15 @@ public class Turret extends Component {
         totalVoltage = Range.clip(totalVoltage, -maxVolts, maxVolts);
         return totalVoltage;
     }
-    private double getLogisticErrorKP(double errorMag) {
-        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
-    }
-    private double getLogisticKPScaler(double targetVelMag) {
-        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
-    }
-    private double getLogisticKV(double targetRotVelMag) {
-        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
-    }
+//    private double getLogisticErrorKP(double errorMag) {
+//        return powerTuning.APos / (1 + Math.exp(powerTuning.kPos * (errorMag - powerTuning.x0Pos)) ) + powerTuning.BPos;
+//    }
+//    private double getLogisticKPScaler(double targetVelMag) {
+//        return (1 - powerTuning.BKPScaler) / (1 + Math.exp(powerTuning.kKPScaler * (targetVelMag - powerTuning.x0kPScaler))) + powerTuning.BKPScaler ;
+//    }
+//    private double getLogisticKV(double targetRotVelMag) {
+//        return powerTuning.AVel / (1 + Math.exp(powerTuning.kVel * (targetRotVelMag - powerTuning.x0Vel))) + powerTuning.BVel;
+//    }
     public void setSmoothWhenOutOfRange(boolean smoothWhenOutOfRange) {
         this.smoothWhenOutOfRange = smoothWhenOutOfRange;
     }
@@ -307,47 +282,51 @@ public class Turret extends Component {
         return turretPosition / turretTicksPerRadian;
     }
     private void updateTargetToGoal() {
-//        // old motion profiling code
-//        perpVelVec = new Vector2d(-robot.shootingSystem.futureTurretPosRelativeToGoal.y, robot.shootingSystem.futureTurretPosRelativeToGoal.x *1);
-//        perpVelVec = perpVelVec.div(robot.shootingSystem.futureTurretPosGoalDistIn);
-//
-//        goalAngularVel = robot.shootingSystem.robotVelAtTurretIps.dot(perpVelVec) / robot.shootingSystem.futureTurretPosGoalDistIn;
-//        if(Math.abs(goalAngularVel) < powerTuning.ignoreGoalAngularVelThreshold)
-//            goalAngularVel = 0;
-//
-//        double targetAngularVelocity = goalAngularVel - robot.drive.pinpoint().getVelocity().headingRad;
-//        if(Math.abs(targetAngularVelocity) < powerTuning.ignoreAngularVelocityNoiseThreshold) // to eliminate random pinpoint noise
-//            targetAngularVelocity = 0;
-//        if(testingParams.usingMotionProfiling) {
-//            // x = (v1^2 - v0^2) / (2a)
-//            // v0^2 = v1^2 - 2ax
-//            motionProfileVel = Math.signum(positionError) * Math.sqrt(Math.abs(2 * powerTuning.motionProfileAccel * Math.abs(positionError - powerTuning.motionProfileDeadZone)));
-//            targetAngularVelocity += motionProfileVel;
-//        }
-
         // calculating target angular velocity
         double targetAngularVelocity = 0;
 
-        Vector2d robotPos = robot.drive.pinpoint().getPose().position;
-        OdoInfo robotVelocity = robot.drive.pinpoint().getVelocity();
-        double deltaX = robotPos.x - robot.shootingSystem.goalPosIn.x;
-        double deltaY = robotPos.y - robot.shootingSystem.goalPosIn.z;
-        double num = robotVelocity.y * deltaX - robotVelocity.x * deltaY;
-        double denom = deltaX * deltaX + deltaY * deltaY;
-        targetAngularVelocity = num / denom - robotVelocity.headingRad;
-        targetAngularVelocity = Range.clip(targetAngularVelocity, -powerTuning.maxAngularVelocity, powerTuning.maxAngularVelocity);
+        if(turretState == TurretState.TRACKING) {
+            Vector2d robotPos = robot.drive.pinpoint().getPose().position;
+            OdoInfo robotVelocity = robot.drive.pinpoint().getVelocity();
+            double deltaX = robotPos.x - robot.shootingSystem.goalPosIn.x;
+            double deltaY = robotPos.y - robot.shootingSystem.goalPosIn.z;
+            double num = robotVelocity.y * deltaX - robotVelocity.x * deltaY;
+            double denom = deltaX * deltaX + deltaY * deltaY;
+            targetAngularVelocity = num / denom - robotVelocity.headingRad;
+            targetAngularVelocity = Range.clip(targetAngularVelocity, -powerTuning.maxAngularVelocity, powerTuning.maxAngularVelocity);
+        }
+
+        // motion profiling code
+        if(testingParams.enableMotionProfiling) {
+            // x = (v1^2 - v0^2) / (2a)
+            // v0^2 = v1^2 - 2ax
+            motionProfileVel = Math.signum(positionError) * Math.min(powerTuning.motionProfileMaxVel, Math.sqrt(2 * powerTuning.motionProfileAccel * Math.max(0, Math.abs(positionError) - powerTuning.motionProfileDeadZone)));
+            targetAngularVelocity += motionProfileVel;
+        }
+
 
         // updating target angular acceleration
         double prevTargetVel = targetVelocity;
         targetVelocity = targetAngularVelocity * turretParams.ticksPerRad;
+        if(Math.abs(targetVelocity) < powerTuning.ignoreTargetVelocityNoiseThreshold)
+            targetVelocity = 0;
         targetAccel = (targetVelocity - prevTargetVel) / robot.shootingSystem.dt;
-        if(Math.abs(targetAccel) < powerTuning.ignoreAngularVelocityNoiseThreshold)
+        if(Math.abs(targetAccel) < powerTuning.ignoreTargetAccelNoiseThreshold)
             targetAccel = 0;
 
         // updating target angle
-        noLookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad - robot.drive.localizer.getPose().heading.toDouble());
-        lookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
-
+        if(turretState == TurretState.TRACKING) {
+            noLookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.currentTurretTargetAngleRad - robot.drive.localizer.getPose().heading.toDouble());
+            lookAheadTargetRelAngleRad = MathUtils.angleNormDeltaRad(robot.shootingSystem.lookAheadTurretTargetAngleRad - robot.shootingSystem.futureRobotPose.heading.toDouble());
+        }
+        else if(turretState == TurretState.CENTER) {
+            noLookAheadTargetRelAngleRad = 0;
+            lookAheadTargetRelAngleRad = 0;
+        }
+        else {
+            noLookAheadTargetRelAngleRad = targetEncoder;
+            lookAheadTargetRelAngleRad = targetEncoder;
+        }
         double absoluteMaxAngle = robot.collector.inAuto() ? turretParams.maxAutoAngle : turretParams.maxTeleAngle;
         Pose2d pose = robot.drive.localizer.getPose();
         boolean useSmallerRange = pose.position.x > 0 && pose.position.x < 20 && Math.abs(pose.position.y) > turretParams.gateCollectYThreshold;
@@ -390,13 +369,13 @@ public class Turret extends Component {
         telemetry.addLine("TURRET------");
         telemetry.addData("turret state", turretState);
         telemetry.addLine("-----");
+        telemetry.addData("turret raw accel at turret", accelMagAtTurret);
         telemetry.addData("turret power", robot.shootingSystem.getTurretPower());
         telemetry.addData("turret is pass position", trackCustomTargetPassPosition);
         telemetry.addData("voltage kF", fVoltage);
-        telemetry.addData("voltage kP", pVoltage);
+        telemetry.addData("voltage pid", pidVoltage);
         telemetry.addData("voltage kV", vVoltage);
         telemetry.addData("voltage kA", aVoltage);
-        telemetry.addData("voltage kD", dVoltage);
         telemetry.addData("voltage kT", tVoltage);
         telemetry.addData("total voltage", totalVoltage);
         telemetry.addData("goal angular vel", goalAngularVel);
@@ -490,6 +469,6 @@ public class Turret extends Component {
         );
     }
     public boolean isAccurate() {
-        return Math.abs(positionError) < powerTuning.noVoltageThreshold;
+        return Math.abs(positionError) < powerTuning.dampeningRadius;
     }
 }
