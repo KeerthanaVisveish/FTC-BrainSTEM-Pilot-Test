@@ -16,11 +16,11 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collector;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
@@ -64,11 +64,11 @@ public class LoadingZoneBallCollection extends OpMode {
     @Override
     public void init_loop() {
         if (gamepad1.start && gamepad1.backWasPressed())
-            robot.shootingSystem.resetTurretEncoder();
-        robot.shootingSystem.updateProperties();
-        telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+            robot.shootingSystem.turret.resetEncoders();
+        robot.shootingSystem.turret.updateProperties(.01);
+        telemetry.addData("turret encoder", robot.shootingSystem.turret.getEncoder());
 
-        robot.limelight.printInfo();
+        robot.limelight.printInfo(telemetry);
 
         telemetry.update();
     }
@@ -122,9 +122,9 @@ public class LoadingZoneBallCollection extends OpMode {
         }
         if (autoCollectAction == null && scanForBallsAction == null) {
             if (gamepad1.left_trigger > 0.2)
-                robot.collector.setCollectionState(Collector.CollectionState.OUTTAKE);
+                robot.collector.setIntakeState(Collector.IntakeState.OUTTAKE);
             else
-                robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                robot.collector.setIntakeState(Collector.IntakeState.OFF);
 
             if (gamepad1.dpad_up)
                 showType = ShowType.CURRENT;
@@ -189,7 +189,7 @@ public class LoadingZoneBallCollection extends OpMode {
             telemetry.addData("drive path", "null");
         else
             telemetry.addData("drive path", pathInfo.getOptimizedPoses());
-        robot.limelight.printInfo();
+        robot.limelight.printInfo(telemetry);
         telemetry.update();
 
         TelemetryPacket packet = new TelemetryPacket();

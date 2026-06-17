@@ -13,16 +13,15 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.opmode.testing.PoseUpdateLogger;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
-import org.firstinspires.ftc.teamcode.subsystems.Collector;
-import org.firstinspires.ftc.teamcode.subsystems.Parking;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.ShootingSystem;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Parking;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseUpdatePacket;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.teleHelpers.GamepadTracker;
@@ -36,7 +35,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false, printPark = false, printDrivetrain;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
-    public static boolean turretToggleRequested = false;
 
     public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
     // TODO: check these during driver practice
@@ -84,7 +82,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
         ElapsedTime teleopTimer = new ElapsedTime();
 
-        telemetry.addData("Alliance", BrainSTEMRobot.alliance);
+        telemetry.addData("Alliance", alliance);
         telemetry.addData("starting pose", MathUtils.formatPose3(startPose));
         if (!robot.limelight.limelight.isConnected())
             telemetry.addLine("WARNING - LIMELIGHT IS NOT CONNECTED");
@@ -98,10 +96,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         while (opModeInInit()) {
             if (!inCompetition) {
                 if (gamepad1.start && gamepad1.backWasPressed())
-                    robot.shootingSystem.resetTurretEncoder();
-                robot.shootingSystem.updateProperties();
+                    robot.shootingSystem.turret.resetEncoders();
+                robot.shootingSystem.turret.updateProperties(.01);
                 telemetry.addData("reset turret encoder", "hold START + BACK");
-                telemetry.addData("turret encoder", robot.shootingSystem.getTurretEncoder());
+                telemetry.addData("turret encoder", robot.shootingSystem.turret.getEncoder());
             }
             else
                 telemetry.addLine("turret encoder reset disabled");
@@ -113,13 +111,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
 
         PoseUpdatePacket.poseUpdatePackets.clear();
         robot.startOpmode();
-        robot.turret.update();
         if (inCompetition) {
-            robot.turret.turretState = Turret.TurretState.TRACKING;
-            robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
-            ShootingSystem.testingParams.powerTurret = true;
-            ShootingSystem.testingParams.powerHighShooter = true;
-            ShootingSystem.testingParams.powerLowShooter = true;
+            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
+            robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
         }
 
         double lastOdoPoseStoreTime = -10;
@@ -141,18 +135,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             updateDriver2();
             updateDriver1();
             if(!inCompetition) {
-                robot.shootingSystem.setShouldScore(shouldScore);
                 if(testingPark)
                     robot.parking.setParkState(Parking.ParkState.TESTING);
                 Parking.PARK_PARAMS.testingPos += gamepad1.left_stick_y * Parking.PARK_PARAMS.testingInc;
-
-                if(turretToggleRequested) {
-                    if(robot.turret.getTurretState() == Turret.TurretState.TRACKING)
-                        robot.turret.setTurretState(Turret.TurretState.CENTER);
-                    else
-                        robot.turret.setTurretState(Turret.TurretState.TRACKING);
-                }
-
             }
             robot.updateInfo();
             robot.update();
@@ -164,13 +149,13 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 if (printCollector)
                     robot.collector.printInfo();
                 if (printLimelight)
-                    robot.limelight.printInfo();
+                    robot.limelight.printInfo(telemetry);
                 if (printTurret)
-                    robot.turret.printInfo();
+                    robot.shootingSystem.turret.printInfo();
                 if (printShooter)
-                    robot.shooter.printInfo();
+                    robot.shootingSystem.shooter.printInfo();
                 if (printShootingSystem)
-                    robot.shootingSystem.printInfo(telemetry);
+                    robot.shootingSystem.printInfo();
                 if (printPark)
                     robot.parking.printInfo();
                 if(printDrivetrain)
@@ -182,7 +167,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.drawRobotInfo(fieldOverlay);
             FtcDashboard.getInstance().sendTelemetryPacket(packet);
 
-            telemetry.addData("dt", robot.shootingSystem.dt);
+            telemetry.addData("dt", robot.getDt());
 
             telemetry.update();
 
@@ -208,68 +193,54 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 currentTurnAmp = 1;
             }
 
-        double shootWhileMovingAmp = robot.shootingSystem.currentlyShootingWhileMoving ? ShootingSystem.generalParams.maxShootWhileMovingSpeed : 1;
-
         robot.drive.setDrivePowers(new PoseVelocity2d(
                 new Vector2d(
                         -gamepad1.left_stick_y * currentDriveAxialAmp,
                         -gamepad1.left_stick_x * currentDriveLateralAmp
-                ).times(shootWhileMovingAmp),
-                -gamepad1.right_stick_x * shootWhileMovingAmp * currentTurnAmp
+                ),
+                -gamepad1.right_stick_x * currentTurnAmp
         ));
     }
 
     private void updateDriver1() {
         if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
             if (gp1.gamepad.right_trigger > 0.2)
-                robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+                robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             else if (gp1.gamepad.left_trigger > 0.2)
-                robot.collector.setCollectionState(Collector.CollectionState.OUTTAKE);
+                robot.collector.setIntakeState(Collector.IntakeState.OUTTAKE);
             else
-                robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                robot.collector.setIntakeState(Collector.IntakeState.OFF);
         }
 
         if (gp1.isFirstLeftBumper()) {
-            if (robot.turret.turretState == Turret.TurretState.CENTER) {
-                robot.turret.turretState = Turret.TurretState.TRACKING;
-                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretState.CENTER) {
+                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
+                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
             }
             else {
-                robot.turret.turretState = Turret.TurretState.CENTER;
-                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-            }
-        }
-
-
-        if(gp1.isFirstB()) {
-            if(robot.shooter.getShooterState() == Shooter.ShooterState.UPDATE) {
-                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
-                robot.turret.setTurretState(Turret.TurretState.CENTER);
-            }
-            else {
-                robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
-                robot.turret.setTurretState(Turret.TurretState.TRACKING);
+                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
             }
         }
         if(gp1.isFirstRightBumper()) {
             if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
-                robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+                robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             }
             else {
                 robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
-                robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                robot.collector.setIntakeState(Collector.IntakeState.OFF);
             }
         }
         if(!inCompetition || allowD1Shoot) {
             if(gp1.isFirstY()) {
                 if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
                     robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
-                    robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
                 }
                 else {
                     robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
-                    robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
                 }
             }
         }
@@ -280,21 +251,21 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED)
                 robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
             else {
-                robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                robot.collector.setIntakeState(Collector.IntakeState.OFF);
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
             }
         }
         if(robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
             if (gp2.isFirstA())
-                if (robot.collector.getCollectionState() != Collector.CollectionState.INTAKE)
-                    robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+                if (robot.collector.getIntakeState() != Collector.IntakeState.INTAKE)
+                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
                 else
-                    robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
             else if(gp2.isFirstX())
-                if(robot.collector.getCollectionState() != Collector.CollectionState.INTAKE_SLOW)
-                    robot.collector.setCollectionState(Collector.CollectionState.INTAKE_SLOW);
+                if(robot.collector.getIntakeState() != Collector.IntakeState.INTAKE_SLOW)
+                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE_SLOW);
                 else
-                    robot.collector.setCollectionState(Collector.CollectionState.OFF);
+                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
         }
         if (gp2.isFirstLeftBumper())
             robot.collector.setFlickerState(Collector.FlickerState.HALF_UP_DOWN);
@@ -302,42 +273,34 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
 
         if (gp2.isFirstDpadLeft())
-            robot.turret.changeEncoderAdjustment(Turret.turretParams.fineAdjust);
+            robot.shootingSystem.changeTurretAngleAdjustment(Turret.turretParams.angleAdjustment);
         else if (gp2.isFirstDpadRight())
-            robot.turret.changeEncoderAdjustment(-Turret.turretParams.fineAdjust);
+            robot.shootingSystem.changeTurretAngleAdjustment(-Turret.turretParams.angleAdjustment);
         if(gp2.isFirstLeftStickButton())
-            robot.shooter.changeVelocityAdjustment(-Shooter.shooterParams.fineAdjust);
+            robot.shootingSystem.changeShooterSpeedAdjustment(-Shooter.shooterParams.speedAdjustment);
         else if(gp2.isFirstRightStickButton())
-            robot.shooter.changeVelocityAdjustment(Shooter.shooterParams.fineAdjust);
+            robot.shootingSystem.changeShooterSpeedAdjustment(Shooter.shooterParams.speedAdjustment);
 
         if (gamepad2.right_trigger > .5) {
             double curHeading = robot.drive.pinpoint().getPose().heading.toDouble();
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
-//            Pose2d gateResetPose = createPose(alliance == Alliance.RED ? redGateResetPose : blueGateResetPose);
-            double cornerHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - cornerResetPose.heading.toDouble()));
-//            double gateHeadingError = Math.abs(MathUtils.angleNormDeltaRad(curHeading - gateResetPose.heading.toDouble()));
-//            robot.drive.pinpoint().setPose(cornerHeadingError < gateHeadingError ? cornerResetPose : gateResetPose);
             robot.drive.pinpoint().setPose(cornerResetPose);
-            robot.turret.resetAllEncoderAdjustments();
+            robot.shootingSystem.resetAdjustments();
             robot.led.lastManualRelocalizationTimeMs = System.currentTimeMillis();
         }
 
         if (gp2.isFirstY()) {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
-                robot.turret.setTurretState(Turret.TurretState.CENTER);
-                robot.shooter.setShooterState(Shooter.ShooterState.OFF);
+                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
             }
-            else if (robot.turret.getTurretState() != Turret.TurretState.TRACK_CUSTOM_TARGET) {
-                robot.turret.rotateToRelativeCustomTarget(Turret.turretParams.maxTeleAngle);
-                robot.turret.setCustomTargetMinPower(Turret.turretParams.minParkRotateVoltage);
-                robot.turret.setCustomTargetPassPosition(true);
+            else if (robot.shootingSystem.getTurretState() != ShootingSystem.TurretState.TRACK_CUSTOM_TARGET) {
+                robot.shootingSystem.trackCustomTarget(Turret.turretParams.maxAngle);
             }
             else {
                 robot.parking.setParkState(Parking.ParkState.RETRACTED);
-                robot.turret.setTurretState(Turret.TurretState.CENTER);
-                robot.turret.setCustomTargetMinPower(0);
-                robot.turret.setCustomTargetPassPosition(false);
+                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
             }
         }
         if (!inCompetition) {
@@ -350,7 +313,5 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.parking.setRightParkPosition(robot.parking.parkRightServo.getPosition() + Parking.PARK_PARAMS.TESTING_INC * Math.signum(gamepad2.right_stick_y));
             }
         }
-//        if (gp2.isFirstBack())
-//            robot.limelight.ballDetection.takeBallScan();
     }
 }

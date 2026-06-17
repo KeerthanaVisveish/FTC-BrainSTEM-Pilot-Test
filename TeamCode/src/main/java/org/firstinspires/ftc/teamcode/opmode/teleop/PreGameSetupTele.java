@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
-import org.firstinspires.ftc.teamcode.subsystems.LED;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.subsystems.LED;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 
 @TeleOp(name="A Pre-Game Setup Tele", group="Competition")

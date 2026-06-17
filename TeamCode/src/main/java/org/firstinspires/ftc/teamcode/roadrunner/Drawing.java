@@ -4,7 +4,7 @@ import com.acmerobotics.dashboard.canvas.Canvas;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 
 public final class Drawing {
     private Drawing() {}

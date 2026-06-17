@@ -15,8 +15,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 //import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
@@ -47,7 +47,7 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
                 autoCommands.savePoseContinuously(),
                 packet -> {
                     robot.drawRobotInfo(packet.fieldOverlay());
-                    robot.limelight.printInfo();
+                    robot.limelight.printInfo(telemetry);
                     telemetry.update();
                     return true;
                 }

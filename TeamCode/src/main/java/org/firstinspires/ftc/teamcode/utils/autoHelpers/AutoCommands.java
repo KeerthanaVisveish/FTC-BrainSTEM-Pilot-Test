@@ -3,12 +3,14 @@ package org.firstinspires.ftc.teamcode.utils.autoHelpers;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SleepAction;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Collector;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
 public class AutoCommands {
@@ -46,21 +48,20 @@ public class AutoCommands {
     // TURRET
     public Action enableTurretTracking() {
         return packet -> {
-            robot.turret.setTurretState(Turret.TurretState.TRACKING);
+            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
             return false;
         };
     }
     public Action enableCustomTurretTracking(double targetRelAngle) {
         return telemetryPacket -> {
-            robot.turret.rotateToRelativeCustomTarget(targetRelAngle);
-            robot.turret.setCustomTargetPassPosition(true);
+            robot.shootingSystem.trackCustomTarget(targetRelAngle);
             return false;
         };
     }
 
     public Action turretCenter() {
         return packet -> {
-            robot.turret.setTurretState(Turret.TurretState.CENTER);
+            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
             return false;
         };
     }
@@ -68,22 +69,18 @@ public class AutoCommands {
     // SHOOTER
     public Action speedUpShooter() {
         return packet -> {
-            robot.shooter.setShooterState(Shooter.ShooterState.UPDATE);
+            robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
             return !robot.shootingSystem.shooterFirstGood();
         };
     }
     public Action setShouldScore(boolean shouldScore) {
-        return new InstantAction(() -> robot.shootingSystem.setShouldScore(shouldScore));
-    }
-    public Action setMaxVoltage(double m) {
-        return new InstantAction(() -> robot.shooter.setMaxVoltage(m));
+        return new SleepAction(0); // TODO: actually implement this
     }
 
     // COLLECTIONS
     public Action engageClutch() {
         return packet -> {
             robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
-            robot.collector.outtakeAfterClutchEngage = false;
             robot.collector.clutchTimer.reset();
             return false;
         };
@@ -119,21 +116,21 @@ public class AutoCommands {
 
     public Action runIntake() {
         return packet -> {
-            robot.collector.setCollectionState(Collector.CollectionState.INTAKE);
+            robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             return false;
         };
     }
 
     public Action reverseIntake() {
         return packet -> {
-            robot.collector.setCollectionState(Collector.CollectionState.OUTTAKE);
+            robot.collector.setIntakeState(Collector.IntakeState.OUTTAKE);
             return false;
         };
     }
 
     public Action stopIntake() {
         return packet -> {
-            robot.collector.setCollectionState(Collector.CollectionState.OFF);
+            robot.collector.setIntakeState(Collector.IntakeState.OFF);
             return false;
         };
     }

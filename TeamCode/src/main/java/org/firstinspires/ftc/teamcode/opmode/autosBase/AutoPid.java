@@ -25,11 +25,10 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.opmode.teleop.PreGameSetupTele;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
@@ -346,11 +345,11 @@ public abstract class AutoPid extends LinearOpMode {
                         telemetry.addData("auto state", autoState);
                         telemetry.addData("auto timer", autoTimer.seconds());
                         if(BrainSTEMTeleOp.printShooter)
-                            robot.shooter.printInfo();
+                            robot.shootingSystem.shooter.printInfo();
                         if(BrainSTEMTeleOp.printShootingSystem)
-                            robot.shootingSystem.printInfo(telemetry);
+                            robot.shootingSystem.printInfo();
                         if(BrainSTEMTeleOp.printTurret)
-                            robot.turret.printInfo();
+                            robot.shootingSystem.turret.printInfo();
                         if(BrainSTEMTeleOp.printCollector)
                             robot.collector.printInfo();
 //                    telemetry.addData("SHOULD PARK", shouldPark[0]);
@@ -430,7 +429,7 @@ public abstract class AutoPid extends LinearOpMode {
                 DrivePath.drawCurrentPath(packet.fieldOverlay());
                 robot.drawRobotInfo(packet.fieldOverlay());
                 FtcDashboard.getInstance().sendTelemetryPacket(packet);
-                robot.limelight.printInfo();
+                robot.limelight.printInfo(telemetry);
                 telemetry.addData("auto state", autoState);
                 telemetry.addData("auto timer", autoTimer.seconds());
                 telemetry.addData("TARGET GREEN POS", targetGreenPos);
@@ -438,9 +437,8 @@ public abstract class AutoPid extends LinearOpMode {
             }
         };
 
-        robot.shootingSystem.resetTurretEncoder();
-        robot.turret.setSmoothWhenOutOfRange(false);
-        robot.collector.setInAuto(true);
+        robot.shootingSystem.turret.resetEncoders();
+        robot.shootingSystem.turret.setSmoothWhenOutOfRange(false);
         telemetry.addLine("READY TO RUN");
         telemetry.update();
 
@@ -572,7 +570,6 @@ public abstract class AutoPid extends LinearOpMode {
         }
         boolean shootEarly = (shootingNear && notLast && shotTime == 0) || shootingPurple;
         return new SequentialAction(
-                autoCommands.setMaxVoltage(shootingNear ? shoot.maxNearShooterVoltageDuringCollect : shoot.maxFarShooterVoltageDuringCollect),
                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_COLLECT),
                 new ParallelAction(
                         new CustomEndAction(collectDrive, robot.collector::has3Balls),
@@ -591,8 +588,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 new ParallelAction(
                                         new InstantAction(() -> autoState = AutoState.DRIVE_TO_SHOOT),
                                         new CustomEndAction(shootDriveAction, () -> autoState == AutoState.SHOOT)
-                                                .setEndFunction(robot.drive::stop),
-                                        autoCommands.setMaxVoltage(Shooter.shooterParams.maxVoltage)
+                                                .setEndFunction(robot.drive::stop)
                                 ),
                                 new ParallelAction(
                                         new InstantAction(() -> autoState = AutoState.SHOOT),
@@ -626,10 +622,10 @@ public abstract class AutoPid extends LinearOpMode {
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
+                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.shootingSystem.turretOnTarget()),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new CustomEndAction(new SleepAction(timeConstraints.maxShootTime), () -> robot.shooter.ballsDoneExiting() || robot.shooter.getNumBallsShot() == 3)
+                                        new SleepAction(timeConstraints.maxShootTime)
                                 )
                         )
                 ),
@@ -651,10 +647,10 @@ public abstract class AutoPid extends LinearOpMode {
                                 ballToMiss == 0 ? autoCommands.setShouldScore(false) : new SleepAction(0)
                         ),
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.turret.onTarget()),
+                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.shootingSystem.turretOnTarget()),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == ballToMiss), ballToMiss == 1 ? timeConstraints.shoot1FirstTime : timeConstraints.shoot2FirstTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == ballToMiss), ballToMiss == 1 ? timeConstraints.shoot1FirstTime : timeConstraints.shoot2FirstTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.stopIntake(),
@@ -663,7 +659,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 1), timeConstraints.shoot1SecondTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == 1), timeConstraints.shoot1SecondTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.setShouldScore(true),
@@ -672,7 +668,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shooter.getNumBallsShot() == 2 - ballToMiss), timeConstraints.shootThirdTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == 2 - ballToMiss), timeConstraints.shootThirdTime)
                                 )
 
                         )
@@ -873,7 +869,7 @@ public abstract class AutoPid extends LinearOpMode {
     }
     private Action getLoadingLaneCollectAndShoot(Pose2d shootPose, Pose2d collectPose, double shotTime, boolean initiallyExtake) {
         double backupOffset = collect.loadingCornerBackup * (isRed ? 1 : -1);
-        BooleanSupplier hitBall = () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitBallVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 43;
+        BooleanSupplier hitBall = () -> Math.hypot(robot.drive.pinpoint().getVelocity().x, robot.drive.pinpoint().getVelocity().y) < collect.hitBallVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 43;
         Pose2d controlPoint = new Pose2d(Math.min(collectPose.position.x + 2, loadingCornerControlPoint.position.x), loadingCornerControlPoint.position.y, loadingCornerControlPoint.heading.toDouble());
         DrivePath collectDrive = new DrivePath(robot.drive, telemetry,
                 new Waypoint(collectPose)
@@ -1103,7 +1099,7 @@ public abstract class AutoPid extends LinearOpMode {
         }
 
         CustomEndAction gateOpenCustomEndAction = new CustomEndAction(gateOpenDrive,
-                () -> Math.hypot(robot.shootingSystem.robotVelCm.x, robot.shootingSystem.robotVelCm.y) < collect.hitGateVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 45);
+                () -> Math.hypot(robot.drive.pinpoint().getVelocity().x, robot.drive.pinpoint().getVelocity().y) < collect.hitGateVelThreshold && Math.abs(robot.drive.localizer.getPose().position.y) > 45);
         Action gateOpenAction = new ParallelAction(
                 new SequentialAction(
                         new SleepAction(.3),

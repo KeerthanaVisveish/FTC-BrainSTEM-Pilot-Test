@@ -11,9 +11,10 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
-import org.firstinspires.ftc.teamcode.subsystems.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.subsystems.Turret;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.Limelight;
+import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
+import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.DrivePath;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.Waypoint;
 
@@ -39,14 +40,14 @@ public class ClassifierAutoTest extends LinearOpMode {
                 new ParallelAction(
                         new SequentialAction(
                                 new SleepAction(0.5),
-                                robot.lookAtClassifier(Turret.TurretState.TRACKING),
+                                robot.lookAtClassifier(ShootingSystem.TurretState.TRACKING),
                                 robot.waitXSecondsIf2BallsInClassifier(2),
                                 drivePath
                         ),
                         packet -> {
                             robot.updateInfo();
                             robot.update();
-                            robot.limelight.printInfo();
+                            robot.limelight.printInfo(telemetry);
                             telemetry.update();
                             return true;
                         }

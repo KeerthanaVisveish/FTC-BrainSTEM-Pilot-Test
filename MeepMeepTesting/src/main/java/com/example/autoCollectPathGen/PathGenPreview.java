@@ -3,11 +3,11 @@ package com.example.autoCollectPathGen;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.Ball;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathGeneration;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathInfo;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.PathPose;
-import org.firstinspires.ftc.teamcode.subsystems.limelight.ballDetection.pathGeneration.ProblemBall;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.Ball;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathGeneration;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathInfo;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathPose;
+import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.ProblemBall;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.pathParams.PathParams;
