@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.utils.autoHelpers;
 
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SleepAction;
 
@@ -9,8 +8,6 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
 import org.firstinspires.ftc.teamcode.utils.misc.PoseStorage;
 
 public class AutoCommands {
@@ -22,12 +19,6 @@ public class AutoCommands {
         this.telemetry = telemetry;
     }
 
-    public Action updateRobotInfo() {
-        return packet -> {
-            robot.updateInfo();
-            return true;
-        };
-    }
     public Action updateRobot(){
         return packet -> {
             robot.update();
@@ -48,20 +39,20 @@ public class AutoCommands {
     // TURRET
     public Action enableTurretTracking() {
         return packet -> {
-            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
+            robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.TRACKING);
             return false;
         };
     }
     public Action enableCustomTurretTracking(double targetRelAngle) {
         return telemetryPacket -> {
-            robot.shootingSystem.trackCustomTarget(targetRelAngle);
+            robot.shootingSystem.setTurretToAngleTargeting(targetRelAngle);
             return false;
         };
     }
 
     public Action turretCenter() {
         return packet -> {
-            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+            robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.CENTER);
             return false;
         };
     }

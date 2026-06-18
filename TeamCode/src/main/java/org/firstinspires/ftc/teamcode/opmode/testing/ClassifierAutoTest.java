@@ -40,12 +40,11 @@ public class ClassifierAutoTest extends LinearOpMode {
                 new ParallelAction(
                         new SequentialAction(
                                 new SleepAction(0.5),
-                                robot.lookAtClassifier(ShootingSystem.TurretState.TRACKING),
+                                robot.lookAtClassifier(),
                                 robot.waitXSecondsIf2BallsInClassifier(2),
                                 drivePath
                         ),
                         packet -> {
-                            robot.updateInfo();
                             robot.update();
                             robot.limelight.printInfo(telemetry);
                             telemetry.update();

@@ -335,7 +335,6 @@ public abstract class AutoPid extends LinearOpMode {
                     }
             );
             Action fullAutoAction = new ParallelAction(
-                    autoCommands.updateRobotInfo(),
                     smartParkAutoAction,
                     autoCommands.updateRobot(),
                     autoCommands.savePoseContinuously(),
@@ -379,7 +378,6 @@ public abstract class AutoPid extends LinearOpMode {
                     preloadRunning = true;
                 }
                 if(preloadRunning) {
-                    robot.updateInfo();
                     preloadRunning = preloadAction.run(telemetryPacket);
                     updateEverythingElse();
                 }
@@ -409,7 +407,6 @@ public abstract class AutoPid extends LinearOpMode {
                                 new InstantAction(() -> robot.led.setAutoDone())
                         );
                     }
-                    robot.updateInfo();
                     boolean actionRunning = dynamicActions[dynamicActionI].run(telemetryPacket);
                     if(!actionRunning) {
                         dynamicActionI++;

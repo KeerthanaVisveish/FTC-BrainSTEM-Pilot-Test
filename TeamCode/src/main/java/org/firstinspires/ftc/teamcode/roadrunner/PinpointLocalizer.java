@@ -127,17 +127,6 @@ public final class PinpointLocalizer implements Localizer {
         return new PoseVelocity2d(new Vector2d(0, 0), 0);
     }
 
-    // predicts on most recent velocity
-    public Pose2d getNextPoseSimple(double time) {
-        Pose2d pose = getPose();
-        OdoInfo velocity = getVelocity();
-        return new Pose2d(
-                pose.position.x + velocity.x * time,
-                pose.position.y + velocity.y * time,
-                pose.heading.toDouble() + velocity.headingRad * time
-        );
-    }
-
     public void printInfo(Telemetry telemetry) {
         if (!successfulHardwareRead)
             telemetry.addLine("PINPOINT LAST READ WAS NOT SUCCESSFUL=================");

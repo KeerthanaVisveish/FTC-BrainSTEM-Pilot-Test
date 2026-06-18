@@ -41,7 +41,6 @@ public class SimpleLoadingZoneBallCollection extends LinearOpMode {
 
         Action autoAction = robot.getLimelightCollectSequence(createVec(AutoPid.collect.limelightScanPos1), createVec(AutoPid.collect.limelightScanPos2), 2);
         Action fullAutoAction = new ParallelAction(
-                autoCommands.updateRobotInfo(),
                 new TimedAction(autoAction, 100).setEndFunction(robot.drive::stop),
                 autoCommands.updateRobot(),
                 autoCommands.savePoseContinuously(),

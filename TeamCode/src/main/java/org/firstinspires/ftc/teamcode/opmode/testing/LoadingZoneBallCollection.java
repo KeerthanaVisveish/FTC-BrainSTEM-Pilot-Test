@@ -176,7 +176,6 @@ public class LoadingZoneBallCollection extends OpMode {
                 scanForBallsAction = null;
         }
 
-        robot.updateInfo();
         robot.update();
 
         Pose2d p = robot.drive.localizer.getPose();

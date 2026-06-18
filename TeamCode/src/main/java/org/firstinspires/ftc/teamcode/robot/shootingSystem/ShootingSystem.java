@@ -65,7 +65,6 @@ public class ShootingSystem extends Component {
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
         public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
-        public double maxShootWhileMovingSpeed = 1;
         public double shooterLookAhead = 0;
     }
     public static TestingParams testingParams = new TestingParams();
@@ -80,17 +79,26 @@ public class ShootingSystem extends Component {
 
     private double turretAngleAdjustment, shooterSpeedAdjustment;
 
-    private double turretTargetAngle, turretGoalTargetAngle, turretGoalLockOnVelocity;
+    private double turretTargetAngle, turretFieldTargetAngle, turretGoalLockOnVelocity;
     private double lookAheadTargetExitSpeedTps, currentTargetExitSpeedTps;
+
 
     private double hoodExitAngleRad;
     private Pose2d turretPoseIn;
     private final ShootingMath shootingMathNew;
 
-    public enum TurretState {
-        TRACKING, CENTER, TRACK_CUSTOM_TARGET
+    public enum TurretControl {
+        FIELD_TARGETING, ANGLE_TARGETING;
+
+        // data for field targeting mode
+        public boolean trackingGoal;
+        public double fieldTargetX, fieldTargetY;
+
+        // data for angle targeting mode
+        public double angleTarget;
+        public double angleTargetingMinVoltage;
     }
-    private TurretState turretState;
+    private TurretControl turretControl;
 
 
     public enum ShooterState {
@@ -108,7 +116,10 @@ public class ShootingSystem extends Component {
         hood = new Hood(hardwareMap, telemetry);
         turret = new Turret(hardwareMap, telemetry);
 
-        turretState = TurretState.CENTER;
+        turretControl = TurretControl.ANGLE_TARGETING;
+        turretControl.angleTarget = 0;
+        turretControl.angleTargetingMinVoltage = 0;
+
         shooterState = ShooterState.OFF;
 
         shootingMathNew = new ShootingMath();
@@ -123,7 +134,7 @@ public class ShootingSystem extends Component {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
         telemetry.addData("dist state", locationState);
-        telemetry.addData("turret absolute target deg", Math.toDegrees(turretGoalTargetAngle));
+        telemetry.addData("turret absolute target deg", Math.toDegrees(turretFieldTargetAngle));
         telemetry.addData("shooter target speed mps", lookAheadTargetExitSpeedTps);
         telemetry.addData("hood exit angle deg", MathUtils.format(Math.toDegrees(hoodExitAngleRad), 3));
         telemetry.addData("shooter norm good", shooterNormGood());
@@ -186,22 +197,20 @@ public class ShootingSystem extends Component {
 
         shooter.updateProperties();
 
-        calculateLaunchTrajectory(robotPoseIn, turretPoseIn, goalPosIn, new Vector2d(robotVelIn.x, robotVelIn.y));
-
         double turretTargetVel = 0;
-        switch(turretState) {
-            case CENTER:
-                turretTargetAngle = 0;
-                turretTargetVel = turretGoalLockOnVelocity;
-                break;
-            case TRACKING:
-                turretTargetAngle = turretGoalTargetAngle + turretAngleAdjustment;
+        double minVoltageMag = 0;
+        switch(turretControl) {
+            case FIELD_TARGETING:
+                calculateLaunchTrajectory(robotPoseIn, turretPoseIn, goalPosIn, new Vector2d(robotVelIn.x, robotVelIn.y));
+                turretTargetAngle = turretFieldTargetAngle + turretAngleAdjustment;
                 turretTargetVel = turretGoalLockOnVelocity + turret.calculateMotionProfile(turretTargetAngle);
                 break;
-            case TRACK_CUSTOM_TARGET:
+            case ANGLE_TARGETING:
+                turretTargetVel = turretGoalLockOnVelocity + turret.calculateMotionProfile(turretTargetAngle);
+                minVoltageMag = turretControl.angleTargetingMinVoltage;
                 break;
         }
-        turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, 0, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
+        turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, 0, minVoltageMag, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
 
 
         switch (shooterState) {
@@ -235,11 +244,11 @@ public class ShootingSystem extends Component {
             lookAheadTargetExitSpeedTps = currentTargetExitSpeedTps + robotVelocityIps.dot(robotPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y))) * generalParams.shooterLookAhead;
 
             if(answerKeyPt2.solutionExists) {
-                turretGoalTargetAngle = answerKeyPt2.launchData.turretAng;
+                turretFieldTargetAngle = answerKeyPt2.launchData.turretAng;
                 hoodExitAngleRad = answerKeyPt2.launchData.exitAng;
             }
             else {
-                turretGoalTargetAngle = answerKeyPt1.launchData.turretAng;
+                turretFieldTargetAngle = answerKeyPt1.launchData.turretAng;
                 hoodExitAngleRad = answerKeyPt1.launchData.exitAng;
             }
         }
@@ -374,11 +383,8 @@ public class ShootingSystem extends Component {
 //            hoodExitAngleRad = goalParams.missExitAngle;
 //    }
 
-    public void setTurretState(TurretState turretState) {
-        this.turretState = turretState;
-    }
-    public TurretState getTurretState() {
-        return turretState;
+    public TurretControl getTurretState() {
+        return turretControl;
     }
     public void setShooterState(ShooterState shooterState) {
         this.shooterState = shooterState;
@@ -422,15 +428,33 @@ public class ShootingSystem extends Component {
     public Location getLocationState() {
         return locationState;
     }
-    public void trackCustomTarget(double targetRelAngle) {
-        setTurretState(TurretState.TRACK_CUSTOM_TARGET);
-        turretTargetAngle = Range.clip(targetRelAngle, -Turret.turretParams.maxAngle, Turret.turretParams.maxAngle);
+    public void setTurretToGoalTargeting() {
+        setTurretToFieldTargeting(goalPosIn.x, goalPosIn.y);
     }
-    public Action rotateTurretToCustomTarget(DoubleSupplier relativeTargetAngleSup) {
+    public void setTurretToCustomPointTargeting(double x, double y) {
+        setTurretToFieldTargeting(x, y);
+    }
+    private void setTurretToFieldTargeting(double targetX, double targetY) {
+        turretControl.fieldTargetX = targetX;
+        turretControl.fieldTargetY = targetY;
+        turretControl = TurretControl.FIELD_TARGETING;
+    }
+    public void setTurretToCenter() {
+        setTurretToAngleTargeting(0, 0);
+    }
+    public void setTurretToCustomAngle(double targetRelAngle, double minVoltage) {
+        setTurretToAngleTargeting(targetRelAngle, minVoltage);
+    }
+    private void setTurretToAngleTargeting(double targetRelAngle, double minVoltage) {
+        turretControl.angleTarget = Range.clip(targetRelAngle, -Turret.turretParams.maxAngle, Turret.turretParams.maxAngle);
+        turretControl.angleTargetingMinVoltage = minVoltage;
+        turretControl = TurretControl.ANGLE_TARGETING;
+    }
+    public Action rotateTurretToCustomAngle(DoubleSupplier relativeTargetAngleSup) {
         return new SequentialAction(
                 new InstantAction(() -> {
                     double targetRelAngle = relativeTargetAngleSup.getAsDouble();
-                    trackCustomTarget(targetRelAngle);
+                    setTurretToAngleTargeting(targetRelAngle, 0);
                 }),
                 new TimedAction(new CustomEndAction(this::turretOnTarget), 1)
         );
@@ -461,8 +485,8 @@ public class ShootingSystem extends Component {
         fieldOverlay.strokeLine(
                 turretPoseIn.position.x,
                 turretPoseIn.position.y,
-                turretPoseIn.position.x + dist * Math.cos(turretGoalTargetAngle),
-                turretPoseIn.position.y + dist * Math.sin(turretGoalTargetAngle)
+                turretPoseIn.position.x + dist * Math.cos(turretFieldTargetAngle),
+                turretPoseIn.position.y + dist * Math.sin(turretFieldTargetAngle)
         );
     }
 }

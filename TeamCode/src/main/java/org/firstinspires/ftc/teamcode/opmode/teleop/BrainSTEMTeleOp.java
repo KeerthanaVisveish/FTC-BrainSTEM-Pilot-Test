@@ -112,7 +112,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         PoseUpdatePacket.poseUpdatePackets.clear();
         robot.startOpmode();
         if (inCompetition) {
-            robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
+            robot.shootingSystem.setTurretToGoalTargeting();
             robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
         }
 
@@ -139,7 +139,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.parking.setParkState(Parking.ParkState.TESTING);
                 Parking.PARK_PARAMS.testingPos += gamepad1.left_stick_y * Parking.PARK_PARAMS.testingInc;
             }
-            robot.updateInfo();
             robot.update();
 
 
@@ -213,12 +212,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstLeftBumper()) {
-            if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretState.CENTER) {
-                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.TRACKING);
+            if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.ANGLE_TARGETING) {
+                robot.shootingSystem.setTurretToGoalTargeting();
                 robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
             }
             else {
-                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+                robot.shootingSystem.setTurretToCenter();
                 robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
             }
         }
@@ -292,15 +291,15 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         if (gp2.isFirstY()) {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
-                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+                robot.shootingSystem.setTurretToCenter();
                 robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
             }
-            else if (robot.shootingSystem.getTurretState() != ShootingSystem.TurretState.TRACK_CUSTOM_TARGET) {
-                robot.shootingSystem.trackCustomTarget(Turret.turretParams.maxAngle);
+            else if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.ANGLE_TARGETING && robot.shootingSystem.getTurretState().) {
+                robot.shootingSystem.setTurretToAngleTargeting(Turret.turretParams.maxAngle);
             }
             else {
                 robot.parking.setParkState(Parking.ParkState.RETRACTED);
-                robot.shootingSystem.setTurretState(ShootingSystem.TurretState.CENTER);
+                robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.CENTER);
             }
         }
         if (!inCompetition) {
