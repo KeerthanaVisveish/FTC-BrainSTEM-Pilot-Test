@@ -46,10 +46,7 @@ import java.util.function.DoubleSupplier;
 
 @Config
 public class BrainSTEMRobot {
-    public static double rampWidth = .9382;
-    public static double width = 13 + rampWidth * 2, length = 17.4; // inches
-    public static double turretToCenterOfMassDist = 0; // inches
-    public static boolean drawRobot = true, drawRobotDerivatives = true, drawShooting = true, drawLimelight = false;
+    public static boolean drawRobot = true, drawRobotDerivatives = false, drawPoseClipping = true, drawShooting = true, drawLimelight = false;
 
     public ShootingSystem shootingSystem;
     public Collector collector;
@@ -105,27 +102,26 @@ public class BrainSTEMRobot {
         OdoInfo robotVelocity = drive.pinpoint().getVelocity();
         OdoInfo robotAcceleration = drive.pinpoint().getRawAccel();
 
+        if(drawPoseClipping)
+            shootingSystem.drawClippedPoses(fieldOverlay);
+
         if(drawRobot) {
             fieldOverlay.setStroke("red");
             Drawing.drawRobot(fieldOverlay, robotPose);
         }
+
+        if(drawShooting)
+            shootingSystem.drawShootingInfo(fieldOverlay);
+
         if(drawRobotDerivatives) {
             fieldOverlay.setStroke("red");
             fieldOverlay.strokeLine(0, 0, robotVelocity.x, robotVelocity.y);
             fieldOverlay.setStroke("blue");
             fieldOverlay.strokeLine(0, 0, robotAcceleration.x, robotAcceleration.y);
         }
-        if(drawShooting)
-            shootingSystem.drawShootingInfo(fieldOverlay);
 
         if(drawLimelight)
             limelight.addLimelightInfo(fieldOverlay);
-    }
-    public double getFilteredVoltage() {
-        return drive.getFilteredVoltage();
-    }
-    public double getRawVoltage() {
-        return drive.getRawVoltage();
     }
 
     public Action scanForBalls(DoubleSupplier angle1Sup, DoubleSupplier angle2Sup) {

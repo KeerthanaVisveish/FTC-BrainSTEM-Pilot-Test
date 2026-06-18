@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode.utils.autoHelpers;
 
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SleepAction;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.opmode.autosBase.AutoPid;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
@@ -39,33 +41,38 @@ public class AutoCommands {
     // TURRET
     public Action enableTurretTracking() {
         return packet -> {
-            robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.TRACKING);
+            robot.shootingSystem.setTurretToGoalTargeting();
             return false;
         };
     }
     public Action enableCustomTurretTracking(double targetRelAngle) {
         return telemetryPacket -> {
-            robot.shootingSystem.setTurretToAngleTargeting(targetRelAngle);
+            robot.shootingSystem.setTurretToCustomAngle(targetRelAngle, 0, false);
             return false;
         };
     }
 
-    public Action turretCenter() {
-        return packet -> {
-            robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.CENTER);
-            return false;
-        };
-    }
 
     // SHOOTER
     public Action speedUpShooter() {
         return packet -> {
-            robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
+            robot.shootingSystem.setShooterToGoalTargeting();
             return !robot.shootingSystem.shooterFirstGood();
         };
     }
     public Action setShouldScore(boolean shouldScore) {
-        return new SleepAction(0); // TODO: actually implement this
+        if(shouldScore) {
+            return new InstantAction(() -> {
+                robot.shootingSystem.setShooterToGoalTargeting();
+                robot.shootingSystem.setHoodToGoalTargeting();
+            });
+        }
+        else {
+            return new InstantAction(() -> {
+                robot.shootingSystem.setShooterToCustomVoltage(AutoPid.shoot.shooterMissVoltage);
+                robot.shootingSystem.setHoodToCustomExitAngle(AutoPid.shoot.hoodMissExitAngle);
+            });
+        }
     }
 
     // COLLECTIONS

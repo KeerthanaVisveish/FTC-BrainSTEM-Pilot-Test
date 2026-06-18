@@ -21,23 +21,19 @@ public class Turret extends Component {
     public static class TestingParams {
         public boolean enableKF = true;
         public boolean enableFeedForwardVelocity = true;
-        public boolean enableMotionProfiling = false;
         public boolean enableKA = false;
         public boolean enablePID = true;
         public boolean enableTorqueMitigation = true;
         public boolean enablePower = true;
-//        public boolean usingMotionProfiling = false;
     }
     public static class TurretParams {
         public double minParkRotateVoltage = 9;
-        public double gateCollectYThreshold = 58, gateCollectMaxAngle = Math.toRadians(30);
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
         public double angleAdjustment = Math.toRadians(3);
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double accelFilterConcavity = 2, accelFilterMax = 200;
         public double maxAngle = Math.toRadians(90);
-        public double maxNearClutchEngageError = Math.toRadians(10), maxFarClutchEngageError = Math.toRadians(5); // if the turret error is greater than this, do not allow the intake to spin while the clutch is engaged
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
     public static class PowerTuning {
@@ -45,14 +41,8 @@ public class Turret extends Component {
         public double maxPid = 3.5;
         public double maxIntegral = 5;
         public double motionProfileAccel = .01, motionProfileMaxVel = 1, motionProfileDeadZone = 5;
-        public double maxAngularVelocity = Math.toRadians(240);
-        public double ignoreTargetVelocityNoiseThreshold = .5, ignoreTargetAccelNoiseThreshold = 1;
-//        public double APos = .018, BPos = 0.025, x0Pos = 60, kPos = .03;
-//        public double x0kPScaler = 20, kKPScaler = .2, BKPScaler = 1;
-//        public double AVel = 0, BVel = 0.007, x0Vel = 140, kVel = .05;
-//        public double kA = 0;
         public double dampeningRadius = Math.toRadians(1), dampeningFactor = .5;
-        public double maxVoltage = 7;
+        public double maxVoltage = 7, outOfRangeMaxVoltage = 5;
 
         public double kT = -.015;
         public double kV = 0;
@@ -88,7 +78,6 @@ public class Turret extends Component {
         };
     }
     public static TestingParams testingParams = new TestingParams();
-    //    public static GoalParams goalParams = new GoalParams();
     public static TurretParams turretParams = new TurretParams();
     public static PowerTuning powerTuning = new PowerTuning();
     private double currentAngleRad, currentVelocityRad, currentAccelerationRad;
@@ -104,10 +93,6 @@ public class Turret extends Component {
     private double totalVoltage;
     private double torqueAtTurretAxisOfRotation;
     private final InterpLUT kFPosLookup, kfNegLookup;
-
-    private double trackCustomTargetMinPower;
-    private double trackCustomTargetStartAngle;
-    private boolean trackCustomTargetPassPosition, trackCustomTargetPassPositionDone;
 
     private boolean smoothWhenOutOfRange;
 
@@ -131,7 +116,7 @@ public class Turret extends Component {
         pidController = new PIDController(powerTuning.kP, powerTuning.kI, powerTuning.kD);
         pidController.setMaxIntegral(powerTuning.maxIntegral);
 
-        smoothWhenOutOfRange = true;
+        smoothWhenOutOfRange = false;
     }
 
     public void setTurretPower(double power) {
@@ -143,8 +128,7 @@ public class Turret extends Component {
     private double wrapTargetAngle(double targetAngleRad, double maxAngle, boolean smoothWhenOutOfRange) {
         boolean inRange = Math.abs(targetAngleRad) <= maxAngle;
         if (!inRange) {
-            double sign = Math.signum(targetAngleRad);
-            double max = sign * maxAngle;
+            double max = Range.clip(targetAngleRad, -turretParams.maxAngle, turretParams.maxAngle);
             // mirrors the angle if the turret cannot reach it (visual cue)
             if (smoothWhenOutOfRange) {
                 if (Math.abs(targetAngleRad) <= turretParams.outOfRangeAngleLerpStart)
@@ -168,7 +152,7 @@ public class Turret extends Component {
         Vector2d linearRobotAccel = new Vector2d(robotAccel.x, robotAccel.y);
         // a = r * alpha
         Vector2d tangentialAccel = new Vector2d(-Math.sin(robotHeading), Math.cos(robotHeading))
-                .times(BrainSTEMRobot.turretToCenterOfMassDist)
+                .times(RobotProperties.turretToCenterOfMassDist)
                 .times(robotAccel.headingRad);
         Vector2d linearAccelAtTurret = linearRobotAccel.plus(tangentialAccel);
         double accelMagAtTurret = Math.hypot(linearAccelAtTurret.x, linearAccelAtTurret.y);
@@ -185,7 +169,7 @@ public class Turret extends Component {
         currentVelocityRad = turretMotor.getVelocity() / turretParams.ticksPerRad;
         currentAccelerationRad = (currentVelocityRad - prevVelocityRad) / dt;
     }
-    public void controlTurretToTarget(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double robotHeading, OdoInfo robotAccel, double robotBattery) {
+    public void controlTurretToTarget(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double robotHeading, OdoInfo robotAccel, double robotBattery) {
         torqueAtTurretAxisOfRotation = calculateExternalTorque(robotHeading, robotAccel);
         double wrappedTargetAngle = wrapTargetAngle(targetAngle, turretParams.maxAngle, smoothWhenOutOfRange);
         setTurretVoltage(calculateTurretVoltage(wrappedTargetAngle, targetVelocity, targetAcceleration, minVoltageMag, torqueAtTurretAxisOfRotation), robotBattery);
@@ -237,6 +221,7 @@ public class Turret extends Component {
             totalVoltage = 0;
 
         totalVoltage = (Math.abs(totalVoltage) + Math.abs(minVoltageMag)) * Math.signum(totalVoltage);
+
         totalVoltage = Range.clip(totalVoltage, -powerTuning.maxVoltage, powerTuning.maxVoltage);
 
         if(currentAngleRad > turretParams.maxAngle)
@@ -268,7 +253,6 @@ public class Turret extends Component {
         telemetry.addLine("TURRET------");
         telemetry.addLine("-----");
 
-        telemetry.addData("turret is pass position", trackCustomTargetPassPosition);
         telemetry.addData("voltage kF", fVoltage);
         telemetry.addData("voltage pid", pidVoltage);
         telemetry.addData("voltage kV", vVoltage);

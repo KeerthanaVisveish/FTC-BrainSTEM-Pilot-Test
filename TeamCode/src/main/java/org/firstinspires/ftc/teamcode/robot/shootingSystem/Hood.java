@@ -29,15 +29,6 @@ public class Hood extends Component {
     private static final HoodSystemParams hoodSystemParams = new HoodSystemParams();
 
 
-    public static double getHoodServoPosition(double ballExitAngleRadians) {
-        double hoodAngleFromXAxisRadians = Math.PI * 0.5 - ballExitAngleRadians;
-        double hoodExitAngleDeg = Range.clip(Math.toDegrees(hoodAngleFromXAxisRadians), hoodSystemParams.minAngleDeg, hoodSystemParams.maxAngleDeg);
-        double hoodPivotAngleDeg = hoodExitAngleDeg + hoodSystemParams.hoodPivotAngleOffsetFromHoodExitAngleDeg;
-        double totalLinearDistanceMm = -0.00125315 * Math.pow(hoodPivotAngleDeg, 2) + 0.858968 * hoodPivotAngleDeg + 63.03978;
-        double linearDistanceToExtendMm = totalLinearDistanceMm - hoodSystemParams.restingDistanceMm;
-        return linearDistanceToExtendMm / hoodSystemParams.servoRangeMm;
-    }
-
     private final ServoImplEx hoodLeft, hoodRight;
     public Hood(HardwareMap hardwareMap, Telemetry telemetry) {
         super(hardwareMap, telemetry);
@@ -50,6 +41,18 @@ public class Hood extends Component {
     public void setPosition(double position) {
         hoodLeft.setPosition(position);
         hoodRight.setPosition(position);
+    }
+    public void setExitAngle(double exitAngle) {
+        setPosition(getServoPosFromExitAngle(exitAngle));
+    }
+
+    public double getServoPosFromExitAngle(double ballExitAngleRadians) {
+        double hoodAngleFromXAxisRadians = Math.PI * 0.5 - ballExitAngleRadians;
+        double hoodExitAngleDeg = Range.clip(Math.toDegrees(hoodAngleFromXAxisRadians), hoodSystemParams.minAngleDeg, hoodSystemParams.maxAngleDeg);
+        double hoodPivotAngleDeg = hoodExitAngleDeg + hoodSystemParams.hoodPivotAngleOffsetFromHoodExitAngleDeg;
+        double totalLinearDistanceMm = -0.00125315 * Math.pow(hoodPivotAngleDeg, 2) + 0.858968 * hoodPivotAngleDeg + 63.03978;
+        double linearDistanceToExtendMm = totalLinearDistanceMm - hoodSystemParams.restingDistanceMm;
+        return linearDistanceToExtendMm / hoodSystemParams.servoRangeMm;
     }
 
     @Override

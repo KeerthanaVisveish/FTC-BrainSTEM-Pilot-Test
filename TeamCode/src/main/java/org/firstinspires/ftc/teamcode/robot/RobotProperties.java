@@ -1,13 +1,9 @@
 package org.firstinspires.ftc.teamcode.robot;
 
 public class RobotProperties {
-    // drivetrain
-    public static String flWheelName = "";
-    public static String frWheelName = "";
-    public static String blWheelName = "";
-    public static String brWheelName = "";
-    public static String pinpointName = "";
-
+    public static double rampWidth = .9382;
+    public static double width = 13 + rampWidth * 2, length = 17.4; // inches
+    public static double turretToCenterOfMassDist = 0; // inches
 
     // collection
     public static String intakeName = "intake";

@@ -55,10 +55,6 @@ public class LED extends Component {
             setLed(orange);
             return;
         }
-        if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.CUSTOM) {
-            setLed(white);
-            return;
-        }
         if (robot.limelight.localization.getState() == LimelightLocalization.LocalizationState.UPDATING_POSE) {
             setLed(white);
             return;
@@ -75,7 +71,7 @@ public class LED extends Component {
             return;
         }
 
-        if (robot.shootingSystem.getShooterState() == ShootingSystem.ShooterState.ON && !robot.shootingSystem.shooterNormGood()) {
+        if (robot.shootingSystem.shooterTargetingGoal() && !robot.shootingSystem.shooterNormGood()) {
             if (shooterFlashTimer.seconds() > shooterFlashOnTime + shooterFlashOffTime)
                 shooterFlashTimer.reset();
             else if (shooterFlashTimer.seconds() > shooterFlashOnTime) {
@@ -83,7 +79,7 @@ public class LED extends Component {
                 return;
             }
         }
-        if(!robot.shootingSystem.turretOnTarget() && robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.TRACKING) {
+        if(!robot.shootingSystem.turretOnTarget() && robot.shootingSystem.turretTargetingGoal()) {
             if(turretFlashTimer.seconds() > turretFlashOnTime + turretFlashOffTime)
                 turretFlashTimer.reset();
             else if(turretFlashTimer.seconds() > turretFlashOnTime) {

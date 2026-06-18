@@ -5,13 +5,14 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 
 public final class Drawing {
     private Drawing() {}
 
     public static void drawRobot(Canvas c, Pose2d t) {
-        double halfW = BrainSTEMRobot.width * 0.5;
-        double halfL = BrainSTEMRobot.length * 0.5;
+        double halfW = RobotProperties.width * 0.5;
+        double halfL = RobotProperties.length * 0.5;
 
         double x = t.position.x;
         double y = t.position.y;

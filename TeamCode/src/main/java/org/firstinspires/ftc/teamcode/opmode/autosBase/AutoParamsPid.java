@@ -74,8 +74,7 @@ public class AutoParamsPid {
         public double[] limelightScanPos2 = { 12, 60 };
     }
     public static class Shoot {
-        public double maxNearShooterVoltageDuringCollect = 8.5;
-        public double maxFarShooterVoltageDuringCollect = 9;
+        public double shooterMissVoltage = 6, hoodMissExitAngle = Math.toRadians(35);
         public double earlyEngageClutchDist = 8;
         public double nearMinDrivePower2Dist = 20;
         public double nearMinDrivePower1 = .99, minDrivePower2 = .5;

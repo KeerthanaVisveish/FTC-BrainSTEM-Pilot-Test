@@ -113,7 +113,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         robot.startOpmode();
         if (inCompetition) {
             robot.shootingSystem.setTurretToGoalTargeting();
-            robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
+            robot.shootingSystem.setShooterToGoalTargeting();
+            robot.shootingSystem.setHoodToGoalTargeting();
         }
 
         double lastOdoPoseStoreTime = -10;
@@ -212,13 +213,13 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstLeftBumper()) {
-            if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.ANGLE_TARGETING) {
+            if (robot.shootingSystem.turretCentered()) {
                 robot.shootingSystem.setTurretToGoalTargeting();
-                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.ON);
+                robot.shootingSystem.setShooterToGoalTargeting();
             }
             else {
                 robot.shootingSystem.setTurretToCenter();
-                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
+                robot.shootingSystem.setShooterOff();
             }
         }
         if(gp1.isFirstRightBumper()) {
@@ -292,14 +293,14 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
                 robot.shootingSystem.setTurretToCenter();
-                robot.shootingSystem.setShooterState(ShootingSystem.ShooterState.OFF);
+                robot.shootingSystem.setShooterOff();
             }
-            else if (robot.shootingSystem.getTurretState() == ShootingSystem.TurretControl.ANGLE_TARGETING && robot.shootingSystem.getTurretState().) {
-                robot.shootingSystem.setTurretToAngleTargeting(Turret.turretParams.maxAngle);
+            else if (robot.shootingSystem.turretCentered()) {
+                robot.shootingSystem.setTurretToCustomAngle(Turret.turretParams.maxAngle, Turret.turretParams.minParkRotateVoltage, true);
             }
             else {
                 robot.parking.setParkState(Parking.ParkState.RETRACTED);
-                robot.shootingSystem.setTurretState(ShootingSystem.TurretControl.CENTER);
+                robot.shootingSystem.setTurretToCenter();
             }
         }
         if (!inCompetition) {
