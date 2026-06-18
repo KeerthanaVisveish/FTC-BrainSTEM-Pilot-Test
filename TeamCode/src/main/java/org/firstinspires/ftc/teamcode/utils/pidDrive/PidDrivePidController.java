@@ -104,7 +104,6 @@ public class PidDrivePidController {
             integral += kI * error * dT;
 
             derivative = kD * (error - previousError) / dT;
-            derivative = -Math.abs(derivative);
         }
 
         previousTime = currentTime;

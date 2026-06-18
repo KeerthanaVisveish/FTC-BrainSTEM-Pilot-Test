@@ -43,7 +43,7 @@ public class Hood extends Component {
         hoodRight.setPosition(position);
     }
     public void setExitAngle(double exitAngle) {
-        setPosition(getServoPosFromExitAngle(exitAngle));
+        setPosition(getServoPosFromExitAngle(Range.clip(exitAngle, params.minExitAngRad, params.maxExitAngRad)));
     }
 
     public double getServoPosFromExitAngle(double ballExitAngleRadians) {

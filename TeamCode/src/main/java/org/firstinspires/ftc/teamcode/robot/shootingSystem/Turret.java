@@ -172,10 +172,10 @@ public class Turret extends Component {
     public void controlTurretToTarget(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double robotHeading, OdoInfo robotAccel, double robotBattery) {
         torqueAtTurretAxisOfRotation = calculateExternalTorque(robotHeading, robotAccel);
         double wrappedTargetAngle = wrapTargetAngle(targetAngle, turretParams.maxAngle, smoothWhenOutOfRange);
-        setTurretVoltage(calculateTurretVoltage(wrappedTargetAngle, targetVelocity, targetAcceleration, minVoltageMag, torqueAtTurretAxisOfRotation), robotBattery);
+        setTurretVoltage(calculateTurretVoltage(wrappedTargetAngle, targetVelocity, targetAcceleration, minVoltageMag, maxVoltageMag, torqueAtTurretAxisOfRotation), robotBattery);
     }
 
-    public double calculateTurretVoltage(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double torqueAtTurretAxisOfRotation) {
+    public double calculateTurretVoltage(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double torqueAtTurretAxisOfRotation) {
         double positionError = targetAngle - currentAngleRad;
 
         if(testingParams.enableKF) {
@@ -220,9 +220,7 @@ public class Turret extends Component {
         else
             totalVoltage = 0;
 
-        totalVoltage = (Math.abs(totalVoltage) + Math.abs(minVoltageMag)) * Math.signum(totalVoltage);
-
-        totalVoltage = Range.clip(totalVoltage, -powerTuning.maxVoltage, powerTuning.maxVoltage);
+        totalVoltage = Range.clip(Math.abs(totalVoltage), minVoltageMag, maxVoltageMag) * Math.signum(totalVoltage);
 
         if(currentAngleRad > turretParams.maxAngle)
             totalVoltage = Math.min(0, totalVoltage);

@@ -27,7 +27,10 @@ public class TimedAction implements Action {
 
         boolean keepGoing = action.run(telemetryPacket);
         boolean outOfTime = timer.seconds() > maxTime;
-        return keepGoing && !outOfTime;
+        boolean done = !keepGoing || outOfTime;
+        if(done)
+            onEnd.run();
+        return !done;
     }
 
     public TimedAction setEndFunction(Runnable onEnd) {

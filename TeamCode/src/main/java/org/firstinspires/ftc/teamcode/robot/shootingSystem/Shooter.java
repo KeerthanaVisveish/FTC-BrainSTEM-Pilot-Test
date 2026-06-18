@@ -15,17 +15,10 @@ import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 public class Shooter extends Component {
     public static class ShooterParams {
         public double speedAdjustment = 20;
-        public double ignoreHoodUpdateError = Math.toRadians(.5);
         public double A = 20, B = 6, k = -150, x0 = .06;
         public double kVYInt = 1.63, kVSlope = -0.02005;
         public double shotVelDropThreshold = 40, targetVelStaticShotThreshold = .1;
         public double avg3BallShootTime = .55;
-        public int startingShooterSpeedAdjustment = 0;
-        public double minVoltage = -2.025, maxVoltage = 15;
-        public double firstCurrentLimitedVoltage = 7;
-    }
-    public static class TestingParams {
-        public boolean testing = false;
     }
 
     public static ShooterParams shooterParams = new ShooterParams();

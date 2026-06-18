@@ -325,7 +325,7 @@ public class LimelightLocalization extends LLParent {
         for (Pose3D pose : poses) {
             x += pose.getPosition().x;
             y += pose.getPosition().y;
-            hRad += pose.getOrientation().getYaw(AngleUnit.RADIANS);
+            hRad += MathUtils.angleNormRad(pose.getOrientation().getYaw(AngleUnit.RADIANS)); // angle norm rad normalizes angle within [0, 2pi)
         }
         int num = poses.size();
         return new Pose2d(x / num, y / num, hRad / num);

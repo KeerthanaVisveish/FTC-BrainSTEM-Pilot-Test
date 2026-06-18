@@ -27,7 +27,7 @@ public class Collector extends Component {
         public double flickerFullUpPos = 0.8;
         public double flickerHalfUpPos = 0.4;
         public double flickerDownPos = 0.05;
-        public int offDistanceSensorUpdatePeriod = 3; // when collector is off, waits this number of frames before updating distances sensors
+        public int offDistanceSensorUpdatePeriod = 2; // when collector is off, waits this number of frames before updating distances sensors
         public double jammedCurrentThreshold = 8000;
         public double confirmJamTime = .2;
     }
@@ -121,6 +121,7 @@ public class Collector extends Component {
                 break;
             case INTAKE_SLOW:
                 collectorMotor.setPower(params.slowIntakePower);
+                break;
             case INTAKE:
                 collectorMotor.setPower(params.fullIntakePower);
                 break;
@@ -169,8 +170,8 @@ public class Collector extends Component {
                 break;
         }
     }
-
-    public void manageState(boolean shootingInterlocksMet) {
+    public void updateState(boolean shootingInterlocksMet) {
+        // checking safety interlocks for shooting
         if (collectionSystemState == CollectionSystemState.SHOOTING) {
             if(!shootingInterlocksMet && (intakeState == IntakeState.INTAKE || intakeState == IntakeState.INTAKE_SLOW)) {
                 cachedIntakeState = intakeState;
@@ -179,9 +180,8 @@ public class Collector extends Component {
             else if(shootingInterlocksMet && intakeState == IntakeState.OFF)
                 setIntakeState(cachedIntakeState);
         }
-    }
 
-    public void updateState() {
+        // updating sensors
         if (getIntakeState() != IntakeState.OFF || framesRunning % params.offDistanceSensorUpdatePeriod == 0) {
             backLeftLaserDist = voltageToDistance(backBottomLaser.getVoltage());
             backRightLaserDist = voltageToDistance(backTopLaser.getVoltage());

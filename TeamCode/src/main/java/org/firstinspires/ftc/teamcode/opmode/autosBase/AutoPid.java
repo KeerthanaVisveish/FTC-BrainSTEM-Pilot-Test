@@ -291,7 +291,7 @@ public abstract class AutoPid extends LinearOpMode {
                     && (robot.drive.localizer.getPose().position.dot(perpNearParkLine) > misc.smartParkNearDist
                     || autoState == AutoState.DRIVE_TO_COLLECT));
             BooleanSupplier farShouldPark = () -> autoTimer.seconds() > timeConstraints.farParkTime;
-            BooleanSupplier farShouldStop = () -> (autoState == AutoState.DRIVE_TO_COLLECT || autoState == AutoState.DRIVE_TO_SHOOT) && autoTimer.seconds() < timeConstraints.farParkTime
+            BooleanSupplier farShouldStop = () -> (autoState == AutoState.DRIVE_TO_COLLECT || autoState == AutoState.DRIVE_TO_SHOOT)
                     && autoTimer.seconds() > timeConstraints.farParkTime
                     && (robot.drive.localizer.getPose().position.minus(farParkLineOrigin)).dot(perpFarParkLine) > misc.smartParkFarDist;
 

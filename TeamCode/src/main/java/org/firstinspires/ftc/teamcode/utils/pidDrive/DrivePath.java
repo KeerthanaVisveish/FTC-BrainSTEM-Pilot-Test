@@ -139,7 +139,10 @@ public class DrivePath implements Action {
         double yFromRobot = Math.sin(angleRadToTargetWaypoint);
         Vector2d targetDir = GeometryUtils.rotateVector(new Vector2d(xFromRobot, yFromRobot), -headingRad);
         double targetDirMag = Math.hypot(targetDir.x, targetDir.y);
-        return targetDir.div(targetDirMag);
+        if(targetDirMag < 1e-6)
+            return new Vector2d(0, 0);
+        else
+            return targetDir.div(targetDirMag);
     }
     // gets the corrective drive powers in the robot's coordinate plane
     // x: axial

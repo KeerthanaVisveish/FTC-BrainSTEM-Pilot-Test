@@ -88,8 +88,8 @@ public class BrainSTEMRobot {
         drive.updatePoseEstimate();
 
         limelight.update();
-        collector.updateState();
         shootingSystem.updateSubsystems(drive.pinpoint().getPose(), drive.pinpoint().getVelocity(), drive.pinpoint().getRawAccel(), drive.getFilteredVoltage(), dt, alliance);
+        collector.updateState(shootingSystem.meetsSafetyInterlocks());
         led.update(this);
     }
 

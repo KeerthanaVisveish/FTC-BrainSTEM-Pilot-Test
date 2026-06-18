@@ -73,7 +73,6 @@ public class LimelightBallDetection extends LLParent {
     public void update() {
         LLResult result = limelight.getLatestResult();
         pythonOutputs = result.getPythonOutput();
-        robot.telemetry.addLine("UPDATING PYTHON OUTPUTS IN LIMELIGHT");
 
         int numNonZeroEntries = 0;
         while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
