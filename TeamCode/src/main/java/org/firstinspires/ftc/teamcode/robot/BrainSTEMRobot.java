@@ -53,7 +53,7 @@ public class BrainSTEMRobot {
     public Parking parking;
     public MecanumDrive drive;
     public Limelight limelight;
-    public LED led;
+//    public LED led;
     private final Alliance alliance;
     public final Telemetry telemetry;
     public GamepadTracker g1;
@@ -69,7 +69,7 @@ public class BrainSTEMRobot {
         shootingSystem = new ShootingSystem(hardwareMap, telemetry, initialPose, alliance);
         collector = new Collector(hardwareMap, telemetry);
         parking = new Parking(hardwareMap, telemetry);
-        led = new LED(hardwareMap, telemetry);
+//        led = new LED(hardwareMap, telemetry);
         dtTimer = new ElapsedTime();
         dtTimer.reset();
     }
@@ -90,7 +90,7 @@ public class BrainSTEMRobot {
         limelight.update();
         shootingSystem.updateSubsystems(drive.pinpoint().getPose(), drive.pinpoint().getVelocity(), drive.pinpoint().getRawAccel(), drive.getFilteredVoltage(), dt, alliance);
         collector.updateState(shootingSystem.meetsSafetyInterlocks());
-        led.update(this);
+//        led.update(this);
     }
 
     public double getDt() {

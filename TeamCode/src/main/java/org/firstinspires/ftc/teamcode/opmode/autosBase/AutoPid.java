@@ -329,7 +329,7 @@ public abstract class AutoPid extends LinearOpMode {
                                     };
                                 first = false;
                             }
-                            robot.led.setAutoDone();
+//                            robot.led.setAutoDone();
                             return action.run(telemetryPacket);
                         }
                     }
@@ -403,8 +403,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 break;
                         }
                         dynamicActions[3] = new ParallelAction(
-                                getGateParkDrive(),
-                                new InstantAction(() -> robot.led.setAutoDone())
+                                getGateParkDrive()
                         );
                     }
                     boolean actionRunning = dynamicActions[dynamicActionI].run(telemetryPacket);

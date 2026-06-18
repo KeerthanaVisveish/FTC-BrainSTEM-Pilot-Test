@@ -24,6 +24,7 @@ public class RobotProperties {
     public static String turretName = "turret";
 
     // misc
+    public static String srsHubName = "srsHub";
     public static String limelightName = "limelight";
     public static String ledLeftName = "leftLED";
     public static String ledRightName = "rightLED";

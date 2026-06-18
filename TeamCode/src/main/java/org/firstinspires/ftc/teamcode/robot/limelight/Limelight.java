@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
+import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.LimelightBallDetection;
 import org.firstinspires.ftc.teamcode.robot.limelight.classifier.LimelightClassifier;
@@ -47,7 +48,7 @@ public class Limelight {
     // classifier detection data
     public Limelight(HardwareMap hardwareMap, Telemetry telemetry, BrainSTEMRobot robot) {
         this.robot = robot;
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight = hardwareMap.get(Limelight3A.class, RobotProperties.limelightName);
 
         localization = new LimelightLocalization(robot, limelight);
         classifier = new LimelightClassifier(robot, limelight);

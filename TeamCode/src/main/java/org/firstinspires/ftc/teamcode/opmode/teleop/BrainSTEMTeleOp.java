@@ -282,11 +282,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.shootingSystem.changeShooterSpeedAdjustment(Shooter.shooterParams.speedAdjustment);
 
         if (gamepad2.right_trigger > .5) {
-            double curHeading = robot.drive.pinpoint().getPose().heading.toDouble();
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(cornerResetPose);
             robot.shootingSystem.resetAdjustments();
-            robot.led.lastManualRelocalizationTimeMs = System.currentTimeMillis();
         }
 
         if (gp2.isFirstY()) {

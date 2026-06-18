@@ -118,7 +118,7 @@ public class ShootingSystem extends Component {
         super(hardwareMap, telemetry);
 
         shooter = new Shooter(hardwareMap, telemetry);
-        hood = new Hood(hardwareMap, telemetry);
+        hood = new HoodV1(hardwareMap, telemetry);
         turret = new Turret(hardwareMap, telemetry);
 
         setTurretToCenter();
@@ -265,13 +265,13 @@ public class ShootingSystem extends Component {
 
         switch (hoodState) {
             case GOAL_TARGETING:
-                hood.setExitAngle(hoodExitAngleRad);
+                hood.setTargetExitAngle(hoodExitAngleRad);
                 break;
             case CUSTOM_ANGLE:
-                hood.setExitAngle(customHoodAngle);
+                hood.setTargetExitAngle(customHoodAngle);
                 break;
-
         }
+        hood.update();
     }
 
     private double[] calculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps) {
@@ -463,7 +463,7 @@ public class ShootingSystem extends Component {
         return Math.abs(turretTargetAngle) < Turret.turretParams.maxAngle;
     }
     public boolean meetsSafetyInterlocks() {
-        return turretOnTarget() && shooterNormGood();
+        return turretOnTarget() && shooterNormGood() && hood.onTarget();
     }
     public Location getLocationState() {
         return locationState;
