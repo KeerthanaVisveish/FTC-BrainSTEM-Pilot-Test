@@ -236,7 +236,7 @@ public class BrainSTEMRobot {
                     pathInfo = PathGeneration.generateSimplifiedAutoCollectPath(startPose, ballPositions);
                     if (pathInfo == null) {
                         telemetry.addLine("path is null");
-                        return true;
+                        return false;
                     }
 
                     if (pathInfo.pathType != PathInfo.PathType.LANE && giantClump != null) {

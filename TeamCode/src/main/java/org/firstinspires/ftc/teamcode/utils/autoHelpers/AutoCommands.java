@@ -80,6 +80,7 @@ public class AutoCommands {
         return packet -> {
             robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
             robot.collector.clutchTimer.reset();
+            robot.shootingSystem.shooter.resetNumBallsShot();
             return false;
         };
     }

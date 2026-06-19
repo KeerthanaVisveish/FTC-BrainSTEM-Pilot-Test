@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.shootingSystem;
+package org.firstinspires.ftc.teamcode.robot.shootingSystem.hood;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 

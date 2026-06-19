@@ -96,6 +96,7 @@ public class Collector extends Component {
         backBottomLaser = hardwareMap.get(AnalogInput.class, RobotProperties.blLaserName);
 
         setIntakeState(IntakeState.OFF);
+        cachedIntakeState = IntakeState.INTAKE;
         setClutchState(ClutchState.UNENGAGED);
         setFlickerState(FlickerState.DOWN);
 
@@ -177,7 +178,7 @@ public class Collector extends Component {
                 cachedIntakeState = intakeState;
                 setIntakeState(IntakeState.OFF);
             }
-            else if(shootingInterlocksMet && intakeState == IntakeState.OFF)
+            else if(shootingInterlocksMet && intakeState == IntakeState.OFF && cachedIntakeState != null)
                 setIntakeState(cachedIntakeState);
         }
 
@@ -222,8 +223,10 @@ public class Collector extends Component {
                 break;
             case INTAKE_SLOW:
                 collectorMotor.setPower(params.slowIntakePower);
+                break;
             case INTAKE:
                 collectorMotor.setPower(params.fullIntakePower);
+                break;
         }
 
         checkForIntakeBalls();
@@ -274,17 +277,17 @@ public class Collector extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
-        telemetry.addData("clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
-        telemetry.addData("collection state", intakeState);
-        telemetry.addData("power", collectorMotor.getPower());
-        telemetry.addData("flicker state", getFlickerState());
-        telemetry.addData("flicker left pos", flickerLeft.getPosition());
-        telemetry.addData("flicker timer", flickerTimer.seconds());
-        telemetry.addData("bl dist", backLeftLaserDist);
-        telemetry.addData("br dist", backRightLaserDist);
-        telemetry.addData("fl dist", frontLeftLaserDist);
-        telemetry.addData("fr dist", frontRightLaserDist);
-        telemetry.addData("intake current", collectorMotor.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("jammed", jammed() ? 1 : 0);
+        telemetry.addData("CO clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
+        telemetry.addData("CO collection state", intakeState);
+        telemetry.addData("CO power", collectorMotor.getPower());
+        telemetry.addData("CO flicker state", getFlickerState());
+        telemetry.addData("CO flicker left pos", flickerLeft.getPosition());
+        telemetry.addData("CO flicker timer", flickerTimer.seconds());
+        telemetry.addData("CO bl dist", backLeftLaserDist);
+        telemetry.addData("CO br dist", backRightLaserDist);
+        telemetry.addData("CO fl dist", frontLeftLaserDist);
+        telemetry.addData("CO fr dist", frontRightLaserDist);
+        telemetry.addData("CO intake current", collectorMotor.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("CO jammed", jammed() ? 1 : 0);
     }
 }

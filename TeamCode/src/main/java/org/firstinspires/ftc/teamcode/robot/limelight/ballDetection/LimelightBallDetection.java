@@ -72,7 +72,11 @@ public class LimelightBallDetection extends LLParent {
     @Override
     public void update() {
         LLResult result = limelight.getLatestResult();
+        if (result == null)
+            return;
         pythonOutputs = result.getPythonOutput();
+        if (pythonOutputs == null)
+            return;
 
         int numNonZeroEntries = 0;
         while (numNonZeroEntries < pythonOutputs.length && pythonOutputs[numNonZeroEntries] != 0)
@@ -194,7 +198,9 @@ public class LimelightBallDetection extends LLParent {
         }
     }
     public Vector2d getGiantClumpPosition(ArrayList<Blob> blobs) {
-        for (Blob blob : currentBlobs)
+        if (blobs == null)
+            return null;
+        for (Blob blob : blobs)
             if (blob.isGiantClump)
                 return blob.pos();
         return null;
@@ -244,10 +250,12 @@ public class LimelightBallDetection extends LLParent {
         for (ArrayList<Blob> scan : previousScans)
             if (bestScan == null || scan.size() > bestScan.size())
                 bestScan = scan;
-        return bestScan;
+        return bestScan == null ? new ArrayList<>() : bestScan;
     }
     public ArrayList<Vector2d> getBlobPositions(ArrayList<Blob> blobs) {
         ArrayList<Vector2d> combinedPositions = new ArrayList<>();
+        if (blobs == null)
+            return combinedPositions;
         for (Blob blob : blobs)
             combinedPositions.add(blob.pos());
         return combinedPositions;

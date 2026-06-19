@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.shootingSystem;
+package org.firstinspires.ftc.teamcode.robot.shootingSystem.hood;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -55,7 +55,7 @@ public class HoodV1 extends Hood {
         double hoodPivotAngleDeg = hoodExitAngleDeg + params.hoodPivotAngleOffsetFromHoodExitAngleDeg;
         double totalLinearDistanceMm = -0.00125315 * Math.pow(hoodPivotAngleDeg, 2) + 0.858968 * hoodPivotAngleDeg + 63.03978;
         double linearDistanceToExtendMm = totalLinearDistanceMm - params.restingDistanceMm;
-        return linearDistanceToExtendMm / params.servoRangeMm;
+        return Range.clip(linearDistanceToExtendMm / params.servoRangeMm, 0, 1);
     }
 
     @Override

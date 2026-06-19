@@ -63,7 +63,7 @@ public class PathGeneration {
                 potentialPath.setOptimizedPathPoses(PathGeneration.optimizePathPoses(robotPose, potentialPath.pathPoses));
                 if (complexPath == null ||
                         potentialPath.numGoodBalls() > complexPath.numGoodBalls() ||
-                        potentialPath.numGoodBalls() == complexPath.numGoodBalls() && potentialPath.getTotalCost(miscParams.changeInAngleDegCost) < complexPath.numGoodBalls() ||
+                        potentialPath.numGoodBalls() == complexPath.numGoodBalls() && potentialPath.getTotalCost(miscParams.changeInAngleDegCost) < complexPath.getTotalCost(miscParams.changeInAngleDegCost) ||
                         complexPath.isUndesirable(miscParams.undesirablePathAngleDiffDeg) && !potentialPath.isUndesirable(miscParams.undesirablePathAngleDiffDeg))
                     complexPath = potentialPath;
             }
@@ -364,7 +364,7 @@ public class PathGeneration {
                         boolean nextGood = next.type == Ball.BallType.NORMAL || ballPath.size() <= 2;
                         if (!nextGood) {
                             Ball nextNext = i + 2 < ballPath.size() ? ballPath.get(i + 2) : null;
-                            if (nextNext!= null && next.type == Ball.BallType.CLASSIFIER_WALL) {
+                            if (nextNext!= null && nextNext.type == Ball.BallType.CLASSIFIER_WALL) {
                                 Vector2d dir = new Vector2d(Math.signum(nextNext.pos.x - next.pos.x), 0);
                                 double angleDiff = curToNextBall.angleCast().minus(dir.angleCast());
                                 if (Math.abs(angleDiff) < Math.toRadians(clusterStrafeParams.allowStrafeIntoClassifierAngleDegDiff)) {

@@ -52,7 +52,7 @@ public class LimelightClassifier extends LLParent {
         classifierDetectionOutput = new double[0];
         numBalls = new int[10];
         numFramesReading = 0;
-        pythonInputs = new double[2];
+        pythonInputs = new double[3];
         receiveState = ReceiveState.NO_DATA;
         readState = ReadState.OFF;
     }
@@ -92,7 +92,7 @@ public class LimelightClassifier extends LLParent {
                     break;
                 }
 
-                pythonInputs = new double[2];
+                pythonInputs = new double[3];
                 pythonInputs[0] = robot.getAlliance() == Alliance.RED ? 1 : -1; // red or blue alliance
                 pythonInputs[1] = getCameraY();
                 pythonInputs[2] = params.classifierWidthFromRight;
@@ -100,7 +100,11 @@ public class LimelightClassifier extends LLParent {
                 limelight.updatePythonInputs(pythonInputs);
 
                 LLResult result = limelight.getLatestResult();
+                if (result == null)
+                    break;
                 classifierDetectionOutput = result.getPythonOutput();
+                if (classifierDetectionOutput == null || classifierDetectionOutput.length < 2)
+                    break;
 
                 curFrameNumBalls = (int) classifierDetectionOutput[0];
                 int receiveNumber = (int) classifierDetectionOutput[1];

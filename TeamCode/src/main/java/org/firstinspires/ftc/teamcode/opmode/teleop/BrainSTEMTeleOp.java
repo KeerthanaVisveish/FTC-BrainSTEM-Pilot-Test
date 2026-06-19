@@ -15,10 +15,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.Shooter;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Parking;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
 import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
@@ -32,7 +31,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     public static double odoPoseStoreFrequency = 2; // in Hertz
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = false, printPark = false, printDrivetrain;
+            printLimelight = false, printPark = false, printDrivetrain = false, printHood = false;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
 
@@ -160,6 +159,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.parking.printInfo();
                 if(printDrivetrain)
                     robot.drive.printInfo(telemetry);
+                if(printHood)
+                    robot.shootingSystem.hood.printInfo();
             }
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();
@@ -273,13 +274,13 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
 
         if (gp2.isFirstDpadLeft())
-            robot.shootingSystem.changeTurretAngleAdjustment(Turret.turretParams.angleAdjustment);
+            robot.shootingSystem.decTurretAngleAdjustment();
         else if (gp2.isFirstDpadRight())
-            robot.shootingSystem.changeTurretAngleAdjustment(-Turret.turretParams.angleAdjustment);
+            robot.shootingSystem.incTurretAngleAdjustment();
         if(gp2.isFirstLeftStickButton())
-            robot.shootingSystem.changeShooterSpeedAdjustment(-Shooter.shooterParams.speedAdjustment);
+            robot.shootingSystem.decShooterSpeedAdjustment();
         else if(gp2.isFirstRightStickButton())
-            robot.shootingSystem.changeShooterSpeedAdjustment(Shooter.shooterParams.speedAdjustment);
+            robot.shootingSystem.incShooterSpeedAdjustment();
 
         if (gamepad2.right_trigger > .5) {
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);

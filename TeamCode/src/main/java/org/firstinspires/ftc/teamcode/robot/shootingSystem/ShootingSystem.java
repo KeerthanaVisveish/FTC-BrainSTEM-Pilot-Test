@@ -24,6 +24,9 @@ import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt2;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMath;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
 
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.*;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.hood.*;
+
 import java.util.function.DoubleSupplier;
 import java.util.function.ToDoubleFunction;
 
@@ -117,7 +120,7 @@ public class ShootingSystem extends Component {
     public ShootingSystem(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry);
 
-        shooter = new Shooter(hardwareMap, telemetry);
+        shooter = new ShooterV1(hardwareMap, telemetry);
         hood = new HoodV1(hardwareMap, telemetry);
         turret = new Turret(hardwareMap, telemetry);
 
@@ -230,8 +233,6 @@ public class ShootingSystem extends Component {
             turretGoalTargetAngle = launchData[2];
             hoodExitAngleRad = launchData[3];
         }
-        else
-            throw new RuntimeException("launch data is null for some reason");
 
         double turretTargetVel;
         switch(turretState) {
@@ -432,11 +433,17 @@ public class ShootingSystem extends Component {
     public Pose2d getTurretPose() {
         return turretPoseIn;
     }
-    public void changeTurretAngleAdjustment(double adjustment) {
-        turretAngleAdjustment += adjustment;
+    public void incTurretAngleAdjustment() {
+        turretAngleAdjustment += Turret.turretParams.angleAdjustment;
     }
-    public void changeShooterSpeedAdjustment(double adjustment) {
-        shooterSpeedAdjustment += adjustment;
+    public void decTurretAngleAdjustment() {
+        turretAngleAdjustment -= Turret.turretParams.angleAdjustment;
+    }
+    public void incShooterSpeedAdjustment() {
+        shooterSpeedAdjustment += shooter.getSpeedAdjustment();
+    }
+    public void decShooterSpeedAdjustment() {
+        shooterSpeedAdjustment -= shooter.getSpeedAdjustment();
     }
     public void resetAdjustments() {
         turretAngleAdjustment = 0;
@@ -556,20 +563,20 @@ public class ShootingSystem extends Component {
     public void printInfo() {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
-        telemetry.addData("dist state", locationState);
-        telemetry.addData("shooter norm good", shooterNormGood());
-        telemetry.addData("safety interlocks met", meetsSafetyInterlocks());
-        telemetry.addData("shooter norm good num", shooterNormGood() ? 1 : 0);
-        telemetry.addData("turret on target num", turretOnTarget() ? 2: 0);
-        telemetry.addData("meets safety interlocks num", meetsSafetyInterlocks() ? 3 : 0);
+        telemetry.addData("SS dist state", locationState);
+        telemetry.addData("SS shooter norm good", shooterNormGood());
+        telemetry.addData("SS safety interlocks met", meetsSafetyInterlocks());
+        telemetry.addData("SS shooter norm good num", shooterNormGood() ? 1 : 0);
+        telemetry.addData("SS turret on target num", turretOnTarget() ? 2: 0);
+        telemetry.addData("SS meets safety interlocks num", meetsSafetyInterlocks() ? 3 : 0);
         telemetry.addLine("");
-        telemetry.addData("turret relative target deg", Math.toDegrees(turretGoalTargetAngle));
-        telemetry.addData("turret lock on velocity", turretGoalLockOnVelocity);
+        telemetry.addData("SS turret relative target deg", Math.toDegrees(turretGoalTargetAngle));
+        telemetry.addData("SS turret lock on velocity", turretGoalLockOnVelocity);
         telemetry.addLine("");
-        telemetry.addData("shooter lookahead target speed tps", lookAheadTargetExitSpeedTps);
-        telemetry.addData("shooter current target speed tps", currentTargetExitSpeedTps);
+        telemetry.addData("SS shooter lookahead target speed tps", lookAheadTargetExitSpeedTps);
+        telemetry.addData("SS shooter current target speed tps", currentTargetExitSpeedTps);
         telemetry.addLine("");
-        telemetry.addData("hood exit angle deg", MathUtils.format(Math.toDegrees(hoodExitAngleRad), 3));
+        telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(hoodExitAngleRad), 3));
         telemetry.addLine("");
     }
 }

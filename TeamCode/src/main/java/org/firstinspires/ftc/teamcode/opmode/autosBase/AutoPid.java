@@ -26,7 +26,6 @@ import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.opmode.teleop.PreGameSetupTele;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.Shooter;
 import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
@@ -179,7 +178,7 @@ public abstract class AutoPid extends LinearOpMode {
                 int nextShootI = -1;
                 if (!last)
                     for (nextShootI = shootI + 1; nextShootI < stringBuilder.length(); nextShootI++)
-                        if (stringBuilder.charAt(shootI) == 'n' || stringBuilder.charAt(shootI) == 'f')
+                        if (stringBuilder.charAt(nextShootI) == 'n' || stringBuilder.charAt(nextShootI) == 'f')
                             break;
 
                 boolean fromNear = stringBuilder.charAt(i) == 'n';

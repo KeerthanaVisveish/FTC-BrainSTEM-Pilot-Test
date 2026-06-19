@@ -52,8 +52,8 @@ public class Parking extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("===PARKING===");
-        telemetry.addData("state", getParkState());
-        telemetry.addData("servo pos (L|R)", parkLeftServo.getPosition() + " | " + parkRightServo.getPosition());
+        telemetry.addData("PK state", getParkState());
+        telemetry.addData("PK servo pos (L|R)", parkLeftServo.getPosition() + " | " + parkRightServo.getPosition());
     }
 
 

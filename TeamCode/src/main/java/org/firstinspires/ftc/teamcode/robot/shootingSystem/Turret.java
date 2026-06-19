@@ -167,7 +167,8 @@ public class Turret extends Component {
         currentAngleRad = currentEncoder / turretParams.ticksPerRad;
         double prevVelocityRad = currentVelocityRad;
         currentVelocityRad = turretMotor.getVelocity() / turretParams.ticksPerRad;
-        currentAccelerationRad = (currentVelocityRad - prevVelocityRad) / dt;
+        if (dt > 1e-6)
+            currentAccelerationRad = (currentVelocityRad - prevVelocityRad) / dt;
     }
     public void controlTurretToTarget(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double robotHeading, OdoInfo robotAccel, double robotBattery) {
         torqueAtTurretAxisOfRotation = calculateExternalTorque(robotHeading, robotAccel);
@@ -251,19 +252,19 @@ public class Turret extends Component {
         telemetry.addLine("TURRET------");
         telemetry.addLine("-----");
 
-        telemetry.addData("voltage kF", fVoltage);
-        telemetry.addData("voltage pid", pidVoltage);
-        telemetry.addData("voltage kV", vVoltage);
-        telemetry.addData("voltage kA", aVoltage);
-        telemetry.addData("voltage kT", tVoltage);
-        telemetry.addData("total voltage", totalVoltage);
+        telemetry.addData("TU voltage kF", fVoltage);
+        telemetry.addData("TU voltage pid", pidVoltage);
+        telemetry.addData("TU voltage kV", vVoltage);
+        telemetry.addData("TU voltage kA", aVoltage);
+        telemetry.addData("TU voltage kT", tVoltage);
+        telemetry.addData("TU total voltage", totalVoltage);
         telemetry.addLine("-----");
-        telemetry.addData("current encoder", currentEncoder);
-        telemetry.addData("current angle", currentAngleRad);
-        telemetry.addData("current vel", currentVelocityRad);
-        telemetry.addData("current accel", currentAccelerationRad);
+        telemetry.addData("TU current encoder", currentEncoder);
+        telemetry.addData("TU current angle", currentAngleRad);
+        telemetry.addData("TU current vel", currentVelocityRad);
+        telemetry.addData("TU current accel", currentAccelerationRad);
         telemetry.addLine("-----");
-        telemetry.addData("external torque", torqueAtTurretAxisOfRotation);
+        telemetry.addData("TU external torque", torqueAtTurretAxisOfRotation);
     }
 
     public void setSmoothWhenOutOfRange(boolean s) {
