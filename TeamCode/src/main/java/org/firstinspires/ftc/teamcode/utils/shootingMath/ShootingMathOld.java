@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.shootingSystem;
+package org.firstinspires.ftc.teamcode.utils.shootingMath;
 
 import static org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret.turretParams;
 

@@ -64,9 +64,9 @@ public class LoadingZoneBallCollection extends OpMode {
     @Override
     public void init_loop() {
         if (gamepad1.start && gamepad1.backWasPressed())
-            robot.shootingSystem.turret.resetEncoders();
-        robot.shootingSystem.turret.updateProperties(.01);
-        telemetry.addData("turret encoder", robot.shootingSystem.turret.getEncoder());
+            robot.shootingSystemV1.turret.resetEncoders();
+        robot.shootingSystemV1.turret.updateProperties(.01);
+        telemetry.addData("turret encoder", robot.shootingSystemV1.turret.getEncoder());
 
         robot.limelight.printInfo(telemetry);
 

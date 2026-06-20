@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
-import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.LimelightBallDetection;
 import org.firstinspires.ftc.teamcode.robot.limelight.classifier.LimelightClassifier;
 import org.firstinspires.ftc.teamcode.utils.pidDrive.GeometryUtils;
@@ -114,7 +113,7 @@ public class Limelight {
         }
 
         if (drawingParams.FOVDist > 0) {
-            Pose2d cameraPose = getLimelightPose(robot.shootingSystem.getTurretPose());
+            Pose2d cameraPose = getLimelightPose(robot.shootingSystemV1.getTurretPose());
             Vector2d cameraPos = cameraPose.position;
             double maxAngleRad = cameraPose.heading.toDouble() + Math.toRadians(hardwareParams.hFOV * 0.5);
             double minAngleRad = cameraPose.heading.toDouble() - Math.toRadians(hardwareParams.hFOV * 0.5);

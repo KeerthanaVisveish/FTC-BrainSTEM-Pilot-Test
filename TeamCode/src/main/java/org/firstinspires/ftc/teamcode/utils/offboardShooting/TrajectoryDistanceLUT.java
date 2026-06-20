@@ -13,10 +13,10 @@ public class TrajectoryDistanceLUT {
         this.trajectoryLUTs = new ArrayList<>();
     }
 
-    public TrajectoryDistanceLUT(String baseDirectory, ArrayList<String> filepaths) {
+    public TrajectoryDistanceLUT(String baseDirectory, ArrayList<String> filePaths) {
         this.trajectoryLUTs = new ArrayList<>();
 
-        for (String filepath : filepaths) {
+        for (String filepath : filePaths) {
             String fullFilepath = new File(new File(baseDirectory, "trajectoryDataBase"), filepath).getAbsolutePath();
             JSONObject json = TrajectoryLoader.getJsonObject(fullFilepath);
             if (json == null)

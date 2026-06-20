@@ -10,7 +10,6 @@ import org.firstinspires.ftc.teamcode.opmode.teleop.BrainSTEMTeleOp;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
-import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingSystem;
 
 @Config
 public class LED extends Component {
@@ -71,7 +70,7 @@ public class LED extends Component {
             return;
         }
 
-        if (robot.shootingSystem.shooterTargetingGoal() && !robot.shootingSystem.shooterNormGood()) {
+        if (robot.shootingSystemV1.shooterTargetingGoal() && !robot.shootingSystemV1.shooterNormGood()) {
             if (shooterFlashTimer.seconds() > shooterFlashOnTime + shooterFlashOffTime)
                 shooterFlashTimer.reset();
             else if (shooterFlashTimer.seconds() > shooterFlashOnTime) {
@@ -79,7 +78,7 @@ public class LED extends Component {
                 return;
             }
         }
-        if(!robot.shootingSystem.turretOnTarget() && robot.shootingSystem.turretTargetingGoal()) {
+        if(!robot.shootingSystemV1.turretOnTarget() && robot.shootingSystemV1.turretTargetingGoal()) {
             if(turretFlashTimer.seconds() > turretFlashOnTime + turretFlashOffTime)
                 turretFlashTimer.reset();
             else if(turretFlashTimer.seconds() > turretFlashOnTime) {

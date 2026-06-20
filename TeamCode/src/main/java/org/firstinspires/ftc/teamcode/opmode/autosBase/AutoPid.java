@@ -343,11 +343,11 @@ public abstract class AutoPid extends LinearOpMode {
                         telemetry.addData("auto state", autoState);
                         telemetry.addData("auto timer", autoTimer.seconds());
                         if(BrainSTEMTeleOp.printShooter)
-                            robot.shootingSystem.shooter.printInfo();
+                            robot.shootingSystemV1.shooter.printInfo();
                         if(BrainSTEMTeleOp.printShootingSystem)
-                            robot.shootingSystem.printInfo();
+                            robot.shootingSystemV1.printInfo();
                         if(BrainSTEMTeleOp.printTurret)
-                            robot.shootingSystem.turret.printInfo();
+                            robot.shootingSystemV1.turret.printInfo();
                         if(BrainSTEMTeleOp.printCollector)
                             robot.collector.printInfo();
 //                    telemetry.addData("SHOULD PARK", shouldPark[0]);
@@ -432,8 +432,8 @@ public abstract class AutoPid extends LinearOpMode {
             }
         };
 
-        robot.shootingSystem.turret.resetEncoders();
-        robot.shootingSystem.turret.setSmoothWhenOutOfRange(false);
+        robot.shootingSystemV1.turret.resetEncoders();
+        robot.shootingSystemV1.turret.setSmoothWhenOutOfRange(false);
         telemetry.addLine("READY TO RUN");
         telemetry.update();
 
@@ -617,7 +617,7 @@ public abstract class AutoPid extends LinearOpMode {
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.shootingSystem.turretOnTarget()),
+                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystemV1.shooterFirstGood() && robot.shootingSystemV1.turretOnTarget()),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
                                         new SleepAction(timeConstraints.maxShootTime)
@@ -642,10 +642,10 @@ public abstract class AutoPid extends LinearOpMode {
                                 ballToMiss == 0 ? autoCommands.setShouldScore(false) : new SleepAction(0)
                         ),
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystem.shooterFirstGood() && robot.shootingSystem.turretOnTarget()),
+                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystemV1.shooterFirstGood() && robot.shootingSystemV1.turretOnTarget()),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == ballToMiss), ballToMiss == 1 ? timeConstraints.shoot1FirstTime : timeConstraints.shoot2FirstTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystemV1.shooter.getNumBallsShot() == ballToMiss), ballToMiss == 1 ? timeConstraints.shoot1FirstTime : timeConstraints.shoot2FirstTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.stopIntake(),
@@ -654,7 +654,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == 1), timeConstraints.shoot1SecondTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystemV1.shooter.getNumBallsShot() == 1), timeConstraints.shoot1SecondTime)
                                 ),
                                 new ParallelAction(
                                         autoCommands.setShouldScore(true),
@@ -663,7 +663,7 @@ public abstract class AutoPid extends LinearOpMode {
                                 ),
                                 new ParallelAction(
                                         autoCommands.runIntake(),
-                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystem.shooter.getNumBallsShot() == 2 - ballToMiss), timeConstraints.shootThirdTime)
+                                        new TimedAction(new CustomEndAction(() -> robot.shootingSystemV1.shooter.getNumBallsShot() == 2 - ballToMiss), timeConstraints.shootThirdTime)
                                 )
 
                         )

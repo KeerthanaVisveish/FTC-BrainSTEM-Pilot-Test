@@ -2,23 +2,23 @@ package org.firstinspires.ftc.teamcode.utils.shootingMath;
 
 public class AnswerKeyPt2 {
     public final boolean solutionExists;
-    public final LaunchData launchData;
+    public final LaunchVector launchVector;
 
     public AnswerKeyPt2() {
         solutionExists = false;
-        launchData = null;
+        launchVector = null;
     }
     
     public AnswerKeyPt2(double curExitSpeedMps) {
         solutionExists = false;
-        launchData = new LaunchData(curExitSpeedMps, -1, -1);
+        launchVector = new LaunchVector(curExitSpeedMps, -1, -1);
     }
-    public AnswerKeyPt2(LaunchData launchData) {
+    public AnswerKeyPt2(LaunchVector launchVector) {
         solutionExists = true;
-        this.launchData = launchData;
+        this.launchVector = launchVector;
     }
 
     public String toString() {
-        return "solution: " + solutionExists + ", launch data: " + launchData;
+        return "solution: " + solutionExists + ", launch data: " + launchVector;
     }
 }

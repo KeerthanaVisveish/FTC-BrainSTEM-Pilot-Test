@@ -11,7 +11,7 @@
 //import org.firstinspires.ftc.teamcode.opmode.Alliance;
 //import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 //import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
-//import org.firstinspires.ftc.teamcode.robot.shootingSystem.ShootingMathOld;
+//import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathOld;
 //import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 //
 ////@TeleOp(name="Power Efficiency Finder", group="TestingParams")

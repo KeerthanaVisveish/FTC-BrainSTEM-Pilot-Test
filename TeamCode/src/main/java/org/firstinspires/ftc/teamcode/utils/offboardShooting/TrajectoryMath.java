@@ -17,8 +17,57 @@ public class TrajectoryMath {
         Trajectory idealTargetTrajectory,
         Trajectory actualTargetTrajectory,
         Vector2d displacedGoal,
-        double turretFieldAngleRad
+        double idealTurretFieldAngleRad,
+        Double actualTurretFieldAngleRad
     ) {}
+
+    /**
+     * Computes the displaced goal and the last trajectory after several iterations,
+     * updating based on the provided function for next trajectory lookup.
+     */
+    private static TrajectoryGoalInfo computeDisplacedGoal(
+        TrajectoryDistanceLUT trajectoryLUT,
+        Vector2d goalPos,
+        Vector2d turretPos,
+        Vector2d turretVel,
+        double startDistFromGoal,
+        double angleOrSpeed,
+        int tofEstimationIterations,
+        boolean useImpactAngle // true = lookup by impact angle, false = lookup by exit speed
+    ) {
+        Vector2d displacedGoal = goalPos;
+        Vector2d turretToGoal;
+        double distFromGoal = startDistFromGoal;
+        Trajectory trajectory = useImpactAngle
+            ? trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, angleOrSpeed)
+            : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, angleOrSpeed);
+
+        if (trajectory == null) return new TrajectoryGoalInfo(null, null, 0.0);
+
+        for (int i = 0; i < tofEstimationIterations; i++) {
+            displacedGoal = goalPos.minus(turretVel.times(trajectory.timeOfFlight * 0.85));
+            turretToGoal = displacedGoal.minus(turretPos);
+            distFromGoal = turretToGoal.norm();
+
+            trajectory = useImpactAngle
+                ? trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, angleOrSpeed)
+                : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, angleOrSpeed);
+
+            if (trajectory == null) return new TrajectoryGoalInfo(null, null, 0.0);
+        }
+        return new TrajectoryGoalInfo(trajectory, displacedGoal, distFromGoal);
+    }
+
+    private static class TrajectoryGoalInfo {
+        final Trajectory trajectory;
+        final Vector2d displacedGoal;
+        final double distFromGoal;
+        TrajectoryGoalInfo(Trajectory t, Vector2d g, double d) {
+            this.trajectory = t;
+            this.displacedGoal = g;
+            this.distFromGoal = d;
+        }
+    }
 
     public static TargetingInfo calculateTargetingInfo(
         TrajectoryDistanceLUT trajectoryLUT,
@@ -33,38 +82,58 @@ public class TrajectoryMath {
         Vector2d robotVelocity = new Vector2d(robotVel.x, robotVel.y);
 
         Vector2d robotToTurret = turretPos.minus(centerOfRotation);
-        Vector2d robotToTurretPerp = new Vector2d(-robotToTurret.y, robotToTurret.x *1);
+        Vector2d robotToTurretPerp = new Vector2d(-robotToTurret.y, robotToTurret.x*1);
 
         Vector2d turretVel = robotToTurretPerp.times(robotVel.headingRad).plus(robotVelocity);
 
-        Vector2d displacedGoal = goalPos;
-        Vector2d turretToGoal = displacedGoal.minus(turretPos);
-        double distFromGoal = Math.hypot(turretToGoal.x, turretToGoal.y);
+        Vector2d turretToGoal = goalPos.minus(turretPos);
+        double startDistFromGoal = Math.hypot(turretToGoal.x, turretToGoal.y);
 
-        Trajectory idealTargetTrajectory = trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, targetImpactAngleRad);
-        if (idealTargetTrajectory == null)
-            return null;
+        // Calculate ideal trajectory (by impact angle)
+        TrajectoryGoalInfo idealInfo = computeDisplacedGoal(
+            trajectoryLUT,
+            goalPos,
+            turretPos,
+            turretVel,
+            startDistFromGoal,
+            targetImpactAngleRad,
+            tofEstimationIterations,
+            true);
 
-        for (int i = 0; i < tofEstimationIterations; i++) {
-            displacedGoal = goalPos.minus(turretVel.times(idealTargetTrajectory.timeOfFlight * 0.85));
+        if (idealInfo.trajectory == null) return null;
 
-            turretToGoal = displacedGoal.minus(turretPos);
-            distFromGoal = Math.hypot(turretToGoal.x, turretToGoal.y);
+        double idealTurretFieldAngleRad = Math.atan2(
+            idealInfo.displacedGoal.minus(turretPos).y, 
+            idealInfo.displacedGoal.minus(turretPos).x
+        );
 
-            idealTargetTrajectory = trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, targetImpactAngleRad);
-            if (idealTargetTrajectory == null)
-                return null;
-        }
+        // Calculate actual trajectory (by exit speed)
+        TrajectoryGoalInfo actualInfo = computeDisplacedGoal(
+            trajectoryLUT,
+            goalPos,
+            turretPos,
+            turretVel,
+            idealInfo.distFromGoal,
+            currentExitSpeed,
+            tofEstimationIterations,
+            false
+        );
 
-        double turretFieldAngleRad = Math.atan2(turretToGoal.y, turretToGoal.x);
-
-        Trajectory actualTargetTrajectory = trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, currentExitSpeed);
+        Double actualTurretFieldAngleRad;
+        if (actualInfo.trajectory == null)
+            actualTurretFieldAngleRad = null;
+        else
+            actualTurretFieldAngleRad = Math.atan2(
+                actualInfo.displacedGoal.minus(turretPos).y,
+                actualInfo.displacedGoal.minus(turretPos).x
+            );
 
         return new TargetingInfo(
-            idealTargetTrajectory,
-            actualTargetTrajectory,
-            displacedGoal,
-            turretFieldAngleRad
+            idealInfo.trajectory,
+            actualInfo.trajectory,
+            actualInfo.displacedGoal, // return displacedGoal from actual/exitSpeed
+            idealTurretFieldAngleRad,
+            actualTurretFieldAngleRad
         );
     }
 }
