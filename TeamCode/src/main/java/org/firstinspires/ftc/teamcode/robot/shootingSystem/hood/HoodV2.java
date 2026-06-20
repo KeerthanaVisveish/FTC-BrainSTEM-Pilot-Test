@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
@@ -18,9 +19,8 @@ public class HoodV2 extends Hood {
         public double kI = 0;
         public double kD = 0;
         public double kF = 0;
-
+        public double maxPower = .5;
         public double radiansPerEncoder = 0;
-
         public double errorThreshold = Math.toRadians(.5);
     }
     public static Params params = new Params();
@@ -29,7 +29,7 @@ public class HoodV2 extends Hood {
 
     private final PIDController pid;
     private double currentAngle;
-    private double pidPower, totalPower;
+    private double pidPower, frictionPower, totalPower;
     private final SRSHub srsHub;
 
     // assuming srshub has already been initialized
@@ -48,16 +48,18 @@ public class HoodV2 extends Hood {
 
     @Override
     public void update() {
-        pid.setPIDValues(params.kP, params.kI, params.kD);
-        currentAngle = getExitAngleFromPosition(srsHub.getHoodAbsEncoder());
-        double error = pid.getTarget() - currentAngle;
-        pidPower = pid.updateWithError(error);
-        totalPower = pidPower + Math.signum(error) * params.kF;
-        setHoodPower(totalPower);
     }
     @Override
     public void setTargetExitAngle(double exitAngle) {
         pid.setTarget(exitAngle);
+        pid.setPIDValues(params.kP, params.kI, params.kD);
+        currentAngle = getExitAngleFromPosition(srsHub.getHoodAbsEncoder());
+        double error = pid.getTarget() - currentAngle;
+        pidPower = pid.updateWithError(error);
+        frictionPower = Math.signum(error) * params.kF;
+        totalPower = pidPower + frictionPower;
+        totalPower = Range.clip(totalPower, -params.maxPower, params.maxPower);
+        setHoodPower(totalPower);
     }
     @Override
     public boolean onTarget() {
@@ -78,6 +80,7 @@ public class HoodV2 extends Hood {
         telemetry.addData("HO current angle deg", Math.toDegrees(currentAngle));
         telemetry.addData("HO on target", onTarget());
         telemetry.addData("HO pid power", pidPower);
+        telemetry.addData("HO friction power", frictionPower);
         telemetry.addData("HO total power", totalPower);
         telemetry.addData("HO raw encoder", srsHub.getHoodAbsEncoder());
     }

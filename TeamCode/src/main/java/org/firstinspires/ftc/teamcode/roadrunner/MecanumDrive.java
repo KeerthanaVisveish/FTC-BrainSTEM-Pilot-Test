@@ -60,6 +60,7 @@ import org.firstinspires.ftc.teamcode.roadrunner.messages.DriveCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumLocalizerInputsMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.PoseMessage;
+import org.firstinspires.ftc.teamcode.utils.misc.BatteryVoltageFilter;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -128,7 +129,6 @@ public class MecanumDrive {
 
     public final DcMotorEx leftFront, leftBack, rightBack, rightFront;
 
-    public final VoltageSensor voltageSensor;
 
     public final LazyImu lazyImu;
 
@@ -140,10 +140,7 @@ public class MecanumDrive {
     private final DownsampledWriter driveCommandWriter = new DownsampledWriter("DRIVE_COMMAND", 50_000_000);
     private final DownsampledWriter mecanumCommandWriter = new DownsampledWriter("MECANUM_COMMAND", 50_000_000);
 
-    public static double voltageAlpha = .99, voltageDataBuildupTime = 1;
-    private double rawVoltage, filteredVoltage;
-
-    private final ElapsedTime voltageTimer;
+    private final BatteryVoltageFilter batteryVoltageFilter;
     public class DriveLocalizer implements Localizer {
         public final Encoder leftFront, leftBack, rightBack, rightFront;
         public final IMU imu;
@@ -262,17 +259,11 @@ public class MecanumDrive {
         lazyImu = new LazyHardwareMapImu(hardwareMap, "imu", new RevHubOrientationOnRobot(
                 PARAMS.logoFacingDirection, PARAMS.usbFacingDirection));
 
-        voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        voltageTimer = new ElapsedTime();
-        filteredVoltage = 13.5;
+        batteryVoltageFilter = BatteryVoltageFilter.getInstance(hardwareMap);
 
 //        localizer = new DriveLocalizer(pose);
         localizer = new PinpointLocalizer(hardwareMap, pose);
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
-    }
-
-    public void resetVoltageTimer() {
-        voltageTimer.reset();
     }
     public PinpointLocalizer pinpoint() {
         return (PinpointLocalizer) localizer;
@@ -293,15 +284,10 @@ public class MecanumDrive {
     }
 
     public void updateVoltageFiltering() {
-        rawVoltage = voltageSensor.getVoltage();
-        double a = voltageTimer.seconds() < voltageDataBuildupTime ? 0 : voltageAlpha;
-        filteredVoltage = filteredVoltage * a + (1 - a) * rawVoltage;
+        batteryVoltageFilter.update();
     }
     public double getFilteredVoltage() {
-        return filteredVoltage;
-    }
-    public double getRawVoltage() {
-        return rawVoltage;
+        return batteryVoltageFilter.getVoltage();
     }
     public final class FollowTrajectoryAction implements Action {
         public final TimeTrajectory timeTrajectory;
@@ -383,7 +369,8 @@ public class MecanumDrive {
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
-            double voltage = voltageSensor.getVoltage();
+
+            double voltage = getFilteredVoltage();
 
             final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS,
                     PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
@@ -479,7 +466,7 @@ public class MecanumDrive {
             driveCommandWriter.write(new DriveCommandMessage(command));
 
             MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(command);
-            double voltage = voltageSensor.getVoltage();
+            double voltage = getFilteredVoltage();
             final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS,
                     PARAMS.kV / PARAMS.inPerTick, PARAMS.kA / PARAMS.inPerTick);
             double leftFrontPower = feedforward.compute(wheelVels.leftFront) / voltage;

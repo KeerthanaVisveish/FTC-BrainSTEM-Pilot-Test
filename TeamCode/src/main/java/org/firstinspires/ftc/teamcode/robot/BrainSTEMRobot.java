@@ -72,9 +72,7 @@ public class BrainSTEMRobot {
         dtTimer = new ElapsedTime();
         dtTimer.reset();
     }
-    public void startOpmode() {
-        drive.resetVoltageTimer();
-    }
+    public void startOpmode() {}
     public void setG1(GamepadTracker g1) {
         this.g1 = g1;
     }

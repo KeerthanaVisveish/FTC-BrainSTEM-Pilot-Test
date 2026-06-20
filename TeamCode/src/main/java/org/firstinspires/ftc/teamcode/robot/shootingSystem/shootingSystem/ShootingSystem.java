@@ -254,7 +254,7 @@ public abstract class ShootingSystem extends Component {
                 break;
 
             case GOAL_TARGETING:
-                shooter.setShooterVelocityPID(lookAheadTargetShooterSpeedTps + shooterSpeedAdjustment, shooter.getVelTps(), batteryVoltage);
+                shooter.setShooterVelocityPID(lookAheadTargetShooterSpeedTps + shooterSpeedAdjustment, batteryVoltage);
                 break;
             case CUSTOM_VOLTAGE:
                 shooter.setShooterVoltage(customShooterVoltage, batteryVoltage);

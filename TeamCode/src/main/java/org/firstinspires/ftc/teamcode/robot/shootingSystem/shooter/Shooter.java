@@ -44,9 +44,9 @@ public abstract class Shooter extends Component {
     public void setShooterVoltage(double shooterVoltage, double batteryVoltage) {
         setShooterPower(shooterVoltage / batteryVoltage);
     }
-    public void setShooterVelocityPID(double targetVelTps, double curVelTps, double batteryVoltage) {
+    public void setShooterVelocityPID(double targetVelTps, double batteryVoltage) {
         this.targetVelTps = targetVelTps;
-        double error = targetVelTps - curVelTps;
+        double error = targetVelTps - getVelTps();
         double kP = getKP(error);
         pidVoltage = kP * error;
         double kV = getKV();
