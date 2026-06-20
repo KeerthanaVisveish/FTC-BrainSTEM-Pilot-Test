@@ -1,60 +1,90 @@
 package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
-import java.io.FileReader;
-import java.util.ArrayList;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 public class TrajectoryLoader {
 
     public static Trajectory loadTrajectory(JSONObject json, double dragCoeff, double magnusCoeff) {
-        double exitAngleDeg = ((Number) json.get("exitAngle")).doubleValue();
-        double impactAngleDeg = ((Number) json.get("impactAngle")).doubleValue();
-        double speed = ((Number) json.get("speed")).doubleValue();
-        double timeOfFlight = ((Number) json.get("timeOfFlight")).doubleValue();
-        double peakHeight = ((Number) json.get("peakHeight")).doubleValue();
+        try {
+            double exitAngleDeg = json.getDouble("exitAngle");
+            double impactAngleDeg = json.getDouble("impactAngle");
+            double speed = json.getDouble("speed");
+            double timeOfFlight = json.getDouble("timeOfFlight");
+            double peakHeight = json.getDouble("peakHeight");
 
-        return new Trajectory(
-                dragCoeff,
-                magnusCoeff,
-                speed,
-                Math.toRadians(exitAngleDeg),
-                Math.toRadians(impactAngleDeg),
-                peakHeight,
-                timeOfFlight
-        );
+            return new Trajectory(
+                    dragCoeff,
+                    magnusCoeff,
+                    speed,
+                    Math.toRadians(exitAngleDeg),
+                    Math.toRadians(impactAngleDeg),
+                    peakHeight,
+                    timeOfFlight
+            );
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public static TrajectoryLUT loadTrajectoryLUT(JSONObject json) {
-        double dx = ((Number) json.get("dx")).doubleValue();
-        double dy = ((Number) json.get("dy")).doubleValue();
-        double dragCoeff = ((Number) json.get("dragCoeff")).doubleValue();
-        double magnusCoeff = ((Number) json.get("magnusCoeff")).doubleValue();
-        JSONArray trajectoryArray = (JSONArray) json.get("trajectories");
-        ArrayList<Trajectory> trajectories = new ArrayList<>();
+        try {
+            double dx = json.getDouble("dx");
+            double dy = json.getDouble("dy");
+            double dragCoeff = json.getDouble("dragCoeff");
+            double magnusCoeff = json.getDouble("magnusCoeff");
+            JSONArray trajectoryArray = json.getJSONArray("trajectories");
+            ArrayList<Trajectory> trajectories = new ArrayList<>();
 
-        for (Object obj : trajectoryArray) {
-            JSONObject trajJson = (JSONObject) obj;
-            trajectories.add(loadTrajectory(trajJson, dragCoeff, magnusCoeff));
+            for (int i = 0; i < trajectoryArray.length(); i++) {
+                JSONObject trajJson = trajectoryArray.getJSONObject(i);
+                Trajectory trajectory = loadTrajectory(trajJson, dragCoeff, magnusCoeff);
+                if (trajectory == null)
+                    return null;
+                trajectories.add(trajectory);
+            }
+
+            return new TrajectoryLUT(
+                    dx,
+                    dy,
+                    dragCoeff,
+                    magnusCoeff,
+                    trajectories
+            );
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return null;
         }
-
-        return new TrajectoryLUT(
-                dx,
-                dy,
-                dragCoeff,
-                magnusCoeff,
-                trajectories
-        );
     }
 
     public static JSONObject getJsonObject(String filepath) {
-        JSONParser parser = new JSONParser();
-        try (FileReader reader = new FileReader(filepath)) {
-            Object obj = parser.parse(reader);
-            return (JSONObject) obj;
-        } catch (Exception e) {
+        try (FileInputStream stream = new FileInputStream(filepath)) {
+            return getJsonObject(stream);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static JSONObject getJsonObject(InputStream stream) {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] data = new byte[1024];
+            int n;
+            while ((n = stream.read(data)) != -1) {
+                buffer.write(data, 0, n);
+            }
+            return new JSONObject(buffer.toString(StandardCharsets.UTF_8.name()));
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
             return null;
         }

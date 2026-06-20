@@ -207,7 +207,7 @@ public class ShootingSystem extends Component {
         double timeStep = .01;
         Vector2d futureDisp = robotVel.times(timeStep);
         Vector2d[] futureClippedPositions = getClippedPositions(robotPosIn.plus(futureDisp), turretPoseIn.position.plus(futureDisp));
-        double[] futureLaunchData = calculateLaunchTrajectory(futureClippedPositions[0], futureClippedPositions[1], goalPosIn, robotVel);
+        double[] futureLaunchData = godSolveCalculateLaunchTrajectory(futureClippedPositions[0], futureClippedPositions[1], goalPosIn, robotVel);
 
         if(futureLaunchData != null && turretInRange())
             return (futureLaunchData[2] - currentTargetGoalAngle) / timeStep;
@@ -226,7 +226,7 @@ public class ShootingSystem extends Component {
         Vector2d[] clippedPoses = getClippedPositions(robotPoseIn.position, turretPoseIn.position);
         clippedRobotPoseIn = new Pose2d(clippedPoses[0], robotPoseIn.heading.toDouble());
         clippedTurretPoseIn = new Pose2d(clippedPoses[1], turretPoseIn.heading.toDouble());
-        double[] launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel);
+        double[] launchData = godSolveCalculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel);
         if(launchData != null) {
             lookAheadTargetExitSpeedTps = launchData[0];
             currentTargetExitSpeedTps = launchData[1];
@@ -275,7 +275,7 @@ public class ShootingSystem extends Component {
         hood.update();
     }
 
-    private double[] calculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps) {
+    private double[] godSolveCalculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps) {
         Vector3d exitPosM = new Vector3d(turretPosIn.x, turretPosIn.y, ShootingMathOld.approximateExitHeightM(locationState == Location.GATE_CYCLE)).times(.0254);
         Vector3d robotPosM = new Vector3d(robotPosIn.x, robotPosIn.y, 0).times(.0254);
         Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z).times(.0254);
@@ -305,6 +305,8 @@ public class ShootingSystem extends Component {
         }
         return null;
     }
+
+
 
     // pro: yes velocity-based hood adjustment
     // con: math is weird

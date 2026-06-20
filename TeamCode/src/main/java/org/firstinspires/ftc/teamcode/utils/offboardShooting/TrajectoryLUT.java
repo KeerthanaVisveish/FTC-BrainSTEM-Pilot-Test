@@ -6,8 +6,8 @@ import java.util.Comparator;
 public class TrajectoryLUT {
     public final double distFromGoal;
     public final double relGoalHeight;
-    public final double dragCoeff;
-    public final double magnusCoeff;
+    public final double dragCoef;
+    public final double magnusCoef;
 
     private final ArrayList<Trajectory> impactSortedTrajectories;
     private final ArrayList<Trajectory> speedSortedTrajectories;
@@ -15,13 +15,13 @@ public class TrajectoryLUT {
     public TrajectoryLUT(
             double distFromGoal,
             double relGoalHeight,
-            double dragCoeff,
-            double magnusCoeff,
+            double dragCoef,
+            double magnusCoef,
             ArrayList<Trajectory> trajectories) {
         this.distFromGoal = distFromGoal;
         this.relGoalHeight = relGoalHeight;
-        this.dragCoeff = dragCoeff;
-        this.magnusCoeff = magnusCoeff;
+        this.dragCoef = dragCoef;
+        this.magnusCoef = magnusCoef;
 
         this.impactSortedTrajectories = new ArrayList<>(trajectories);
         this.speedSortedTrajectories = new ArrayList<>(trajectories);

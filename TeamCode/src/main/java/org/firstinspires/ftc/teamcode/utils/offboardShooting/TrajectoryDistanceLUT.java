@@ -1,23 +1,30 @@
 package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
-import java.nio.file.Paths;
+import org.json.JSONObject;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
-
-import org.json.simple.JSONObject;
-
-import edu.wpi.first.wpilibj.Filesystem;
 
 public class TrajectoryDistanceLUT {
     private final ArrayList<TrajectoryLUT> trajectoryLUTs;
 
-    public TrajectoryDistanceLUT(ArrayList<String> filepaths) {
+    private TrajectoryDistanceLUT() {
+        this.trajectoryLUTs = new ArrayList<>();
+    }
+
+    public TrajectoryDistanceLUT(String baseDirectory, ArrayList<String> filepaths) {
         this.trajectoryLUTs = new ArrayList<>();
 
         for (String filepath : filepaths) {
-            String fullFilepath = Paths.get(Filesystem.getDeployDirectory().getAbsolutePath(), "trajectoryDataBase", filepath).toString();
+            String fullFilepath = new File(new File(baseDirectory, "trajectoryDataBase"), filepath).getAbsolutePath();
             JSONObject json = TrajectoryLoader.getJsonObject(fullFilepath);
+            if (json == null)
+                continue;
+
             TrajectoryLUT trajectoryLUT = TrajectoryLoader.loadTrajectoryLUT(json);
+            if (trajectoryLUT == null)
+                continue;
             trajectoryLUTs.add(trajectoryLUT);
         }
 
@@ -116,8 +123,7 @@ public class TrajectoryDistanceLUT {
     private record NeighborTrajectoryInfo(TrajectoryLUT loLUT, TrajectoryLUT hiLUT, double loDist, double hiDist) {}
 
     public static TrajectoryDistanceLUT fromTrajectoryLUTs(ArrayList<TrajectoryLUT> trajectoryLUTs) {
-        TrajectoryDistanceLUT lut = new TrajectoryDistanceLUT(new ArrayList<String>());
-        lut.trajectoryLUTs.clear();
+        TrajectoryDistanceLUT lut = new TrajectoryDistanceLUT();
         lut.trajectoryLUTs.addAll(trajectoryLUTs);
         lut.trajectoryLUTs.sort(Comparator.comparingDouble(t -> t.distFromGoal));
         return lut;
