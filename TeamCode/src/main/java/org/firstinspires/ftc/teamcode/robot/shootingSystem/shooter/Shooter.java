@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 
@@ -82,12 +83,13 @@ public abstract class Shooter extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");
-        telemetry.addData("SH target", targetVelTps);
-        telemetry.addData("SH current", curShooterVelTps);
+        telemetry.addData("SH target speed", targetVelTps);
+        telemetry.addData("SH current speed", curShooterVelTps);
         telemetry.addData("SH   shooter voltage total", totalVoltage);
         telemetry.addData("SH   shooter voltage pid", pidVoltage);
         telemetry.addData("SH   shooter voltage velocity", velocityVoltage);
         telemetry.addData("SH   shooter voltage friction", frictionVoltage);
         telemetry.addData("SH shooter power", highShooter.getPower());
+        telemetry.addData("SH motor combined current", highShooter.getCurrent(CurrentUnit.AMPS) + lowShooter.getCurrent(CurrentUnit.AMPS));
     }
 }

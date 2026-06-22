@@ -23,7 +23,7 @@ public class ShooterV2 extends Shooter {
     }
     @Override
     public void updateProperties() {
-        curShooterVelTps = (srsHub.getShooter1Velocity() + srsHub.getShooter2Velocity()) * .5;
+        curShooterVelTps = (srsHub.getShooterLowVelocity() + srsHub.getShooterHighVelocity()) * .5;
         trackBallShots();
     }
     @Override

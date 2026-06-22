@@ -42,7 +42,7 @@ public class Collector extends Component {
     }
 
     public enum ClutchState {
-        ENGAGED, UNENGAGED
+        ENGAGED, DISENGAGED
     }
 
     public enum FlickerState {
@@ -97,7 +97,7 @@ public class Collector extends Component {
 
         setIntakeState(IntakeState.OFF);
         cachedIntakeState = IntakeState.INTAKE;
-        setClutchState(ClutchState.UNENGAGED);
+        setClutchState(ClutchState.DISENGAGED);
         setFlickerState(FlickerState.DOWN);
 
         clutchTimer.reset();
@@ -140,7 +140,7 @@ public class Collector extends Component {
                 clutchRight.setPosition(params.engagedPos);
                 clutchLeft.setPosition(params.engagedPos);
                 break;
-            case UNENGAGED:
+            case DISENGAGED:
                 clutchRight.setPosition(params.disengagedPos);
                 clutchLeft.setPosition(params.disengagedPos);
                 break;

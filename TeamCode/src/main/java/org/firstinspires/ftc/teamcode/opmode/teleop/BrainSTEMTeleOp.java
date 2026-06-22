@@ -203,7 +203,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDriver1() {
-        if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
+        if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED) {
             if (gp1.gamepad.right_trigger > 0.2)
                 robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             else if (gp1.gamepad.left_trigger > 0.2)
@@ -223,23 +223,23 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             }
         }
         if(gp1.isFirstRightBumper()) {
-            if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
+            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED) {
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
                 robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             }
             else {
-                robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
+                robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
                 robot.collector.setIntakeState(Collector.IntakeState.OFF);
             }
         }
         if(!inCompetition || allowD1Shoot) {
             if(gp1.isFirstY()) {
-                if(robot.collector.getClutchState() == Collector.ClutchState.UNENGAGED) {
+                if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED) {
                     robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
                     robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
                 }
                 else {
-                    robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
+                    robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
                     robot.collector.setIntakeState(Collector.IntakeState.OFF);
                 }
             }
@@ -249,7 +249,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     private void updateDriver2() {
         if (gp2.isFirstB()) {
             if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED)
-                robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
+                robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
             else {
                 robot.collector.setIntakeState(Collector.IntakeState.OFF);
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);

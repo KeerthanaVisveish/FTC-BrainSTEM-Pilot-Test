@@ -85,7 +85,7 @@ public class AutoCommands {
 
     public Action disengageClutch() {
         return packet -> {
-            robot.collector.setClutchState(Collector.ClutchState.UNENGAGED);
+            robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
             return false;
         };
     }
