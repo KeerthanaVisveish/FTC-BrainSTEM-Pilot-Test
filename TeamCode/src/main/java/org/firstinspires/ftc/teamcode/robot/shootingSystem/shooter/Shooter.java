@@ -10,6 +10,7 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystem;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 
 @Config
@@ -80,6 +81,8 @@ public abstract class Shooter extends Component {
     public abstract double getSpeedAdjustment();
     public abstract double getMinVelForShot();
     public abstract double getShotVelDropThreshold();
+    public abstract double getNormTolerance(ShootingSystem.Location location);
+    public abstract double getFirstShootTolerance();
     @Override
     public void printInfo() {
         telemetry.addLine("SHOOTER------");

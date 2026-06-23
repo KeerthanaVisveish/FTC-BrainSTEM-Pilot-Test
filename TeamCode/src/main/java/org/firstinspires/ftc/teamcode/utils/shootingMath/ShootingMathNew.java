@@ -58,12 +58,12 @@ public class ShootingMathNew {
    * @param shooterConversion
    * @return AnswerKey datatype containing info about solution (see AnswerKey class)
    */
-  public AnswerKeyPt2 godSolvePart2(AnswerKeyPt1 answerKeyPt1, Vector3d goalPos, double targetImpactAngleRad, double shooterEncoderSpeed, ToDoubleFunction<Double> shooterConversion) {
+  public AnswerKeyPt2 godSolvePart2(AnswerKeyPt1 answerKeyPt1, Vector3d goalPos, double targetImpactAngleRad, double shooterEncoderSpeed, ShooterConversion shooterConversion) {
     if(!answerKeyPt1.solutionExists)
       return new AnswerKeyPt2();
 
     // step 3: run heuristic to respond to velocity drop
-    double shooterSpeedMps = shooterConversion.applyAsDouble(answerKeyPt1.launchVector.exitAng) * shooterEncoderSpeed; // initial guess at shooter speed
+    double shooterSpeedMps = shooterConversion.convert(shooterEncoderSpeed, answerKeyPt1.launchVector.exitAng); // initial guess at shooter speed
     LaunchVector estimatedLaunchVector = null;
 
     for(int i = 0; i < godSolveIterations; i++) {
@@ -71,7 +71,7 @@ public class ShootingMathNew {
       estimatedLaunchVector = solve(answerKeyPt1.lookAheadExitPos, answerKeyPt1.lookAheadVelAtExitPos, goalPos, shooterSpeedMps, targetImpactAngleRad);
       if(!estimatedLaunchVector.valid)
         return new AnswerKeyPt2(prevShooterSpeedMps);
-      shooterSpeedMps = shooterConversion.applyAsDouble(estimatedLaunchVector.exitAng) * shooterEncoderSpeed;
+      shooterSpeedMps = shooterConversion.convert(shooterEncoderSpeed, estimatedLaunchVector.exitAng);
       shooterSpeedMps = prevShooterSpeedMps * speedHeuristicAlpha + shooterSpeedMps * (1 - speedHeuristicAlpha);
 
       double speedError = shooterSpeedMps - prevShooterSpeedMps;
@@ -264,27 +264,5 @@ public class ShootingMathNew {
   public double calculateShooterSpeed(double dist, double height, double exitAngle, ToDoubleFunction<Double> shooterConversion) {
     double desiredExitSpeed = calculateExitSpeed(dist, height, exitAngle);
     return desiredExitSpeed / shooterConversion.applyAsDouble(exitAngle);
-  }
-
-  public static void main(String[] args) {
-    Vector3d exitPos = new Vector3d(0, 0, 0);
-    Vector3d robotPos = new Vector3d(.1, 0, 0);
-    Vector3d goalPos = new Vector3d(4.75, 4.07, 1.75);
-    Vector3d robotVelAtExitPos = new Vector3d(0, 0, 0);
-    double shooterSpeedEps = 9.156 * 2.2;
-    double targetImpactAngle = Math.toRadians(-55);
-    double lookAheadTime = 0;
-    ToDoubleFunction<Double> shooterConversion = n -> -.005 * n + .5;
-
-    ShootingMathNew shootingMath = new ShootingMathNew();
-    System.out.println("results below");
-    System.out.println("ideal solve: " + shootingMath.solve(exitPos, robotVelAtExitPos, goalPos, shooterSpeedEps * .5, targetImpactAngle));
-    System.out.println();
-    AnswerKeyPt1 godSolvePart1 = shootingMath.godSolvePart1(exitPos, robotPos, robotVelAtExitPos, 0, goalPos, targetImpactAngle, lookAheadTime);
-    System.out.println("god solve pt1: " + godSolvePart1);
-    if(godSolvePart1.solutionExists) {
-      AnswerKeyPt2 godSolvePart2 = shootingMath.godSolvePart2(godSolvePart1, goalPos, targetImpactAngle, lookAheadTime, shooterConversion);
-      System.out.println(godSolvePart2);
-    }
   }
 }

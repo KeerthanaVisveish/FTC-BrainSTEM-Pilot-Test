@@ -28,8 +28,10 @@ public class HoodV2 extends Hood {
         public double encoderToExitAngleSlope = -0.342467, encoderToExitAngleIntercept = 298.29433;
         public double externalAngularOffset = 0; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
-        public double onTargetErrorThreshold = Math.toRadians(.5);
-        public double onTargetDampeningFactor = .3;
+        public double onTargetErrorThreshold = Math.toRadians(1);
+
+        public double dampeningErrorThreshold = Math.toRadians(.5);
+        public double dampeningFactor = .3;
     }
     public static Params params = new Params();
 
@@ -66,8 +68,8 @@ public class HoodV2 extends Hood {
         gravityPower = -Math.sin(lookAheadExitAngle) * params.kG;
         totalPower = pidPower + frictionPower + gravityPower;
         totalPower = Range.clip(totalPower, -params.maxPower, params.maxPower);
-        if(onTarget())
-            totalPower *= params.onTargetDampeningFactor;
+        if(Math.abs(pid.getTarget() - currentExitAngle) < params.dampeningErrorThreshold)
+            totalPower *= params.dampeningFactor;
         setHoodPower(totalPower);
     }
     @Override

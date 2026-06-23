@@ -4,10 +4,12 @@ import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.SRSHub;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystem;
 
 @Config
 public class ShooterV2 extends Shooter {
     public static class Params {
+        public double firstShootTolerance = 40, farShootTolerance = 50, closeShootTolerance = 90;
         public double velocitySign = -1;
         public double kP = 0.03;
         // y=0.0101436x+1.12464
@@ -52,5 +54,15 @@ public class ShooterV2 extends Shooter {
     @Override
     public double getShotVelDropThreshold() {
         return params.shotVelDropThreshold;
+    }
+
+    @Override
+    public double getNormTolerance(ShootingSystem.Location location) {
+        return location == ShootingSystem.Location.FAR ? params.farShootTolerance : params.closeShootTolerance;
+    }
+
+    @Override
+    public double getFirstShootTolerance() {
+        return params.firstShootTolerance;
     }
 }

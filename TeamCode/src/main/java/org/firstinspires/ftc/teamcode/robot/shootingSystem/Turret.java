@@ -9,7 +9,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
@@ -36,7 +35,48 @@ public class Turret extends Component {
         public double maxAngle = Math.toRadians(90);
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
-    public static class PowerTuning {
+    public static class PowerTuningV1 {
+        public double kP = .028, kI = 0, kD = 0;
+        public double maxPid = 3.5;
+        public double maxIntegral = 5;
+        public double motionProfileAccel = .01, motionProfileMaxVel = 1, motionProfileDeadZone = 5;
+        public double dampeningRadius = Math.toRadians(1), dampeningFactor = .5;
+        public double maxVoltage = 7, outOfRangeMaxVoltage = 5;
+
+        public double kT = -.015;
+        public double kV = 0;
+        public double kA = 0;
+
+        public double[] kfPosLookupData = new double[] {
+                -350, .4,
+                -300, .4,
+                -130, .4,
+                0, .4,
+                30, .45,
+                100, .5,
+                120, .6,
+                160, .6,
+                170, .7,
+                190, .8,
+                230, .85,
+                300, 1.05,
+                350, 1.05
+        };
+        public double[] kfNegLookupData = new double[] {
+                -350, -1,
+                -300, -1,
+                -156, -.9,
+                -130, -.8,
+                -75, -.7,
+                -25, -.6,
+                0, -.5,
+                5, -.5,
+                110, -.4,
+                170, -.4,
+                350, -.4
+        };
+    }
+    public static class PowerTuningV2 {
         public double kP = .028, kI = 0, kD = 0;
         public double maxPid = 3.5;
         public double maxIntegral = 5;
@@ -79,7 +119,7 @@ public class Turret extends Component {
     }
     public static TestingParams testingParams = new TestingParams();
     public static TurretParams turretParams = new TurretParams();
-    public static PowerTuning powerTuning = new PowerTuning();
+    public static PowerTuningV2 powerTuning = new PowerTuningV2();
     private double currentAngleRad, currentVelocityRad, currentAccelerationRad;
     private double currentEncoder;
 

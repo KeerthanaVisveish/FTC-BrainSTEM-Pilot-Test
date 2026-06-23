@@ -14,6 +14,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.Drawing;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.SRSHub;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
@@ -60,7 +61,6 @@ public abstract class ShootingSystem extends Component {
         public double gateLocationYThreshold = -12, gateLocationXThreshold = -50;
     }
     public static class GeneralParams {
-        public double firstShootToleranceTps = 40, closeShootToleranceTps = 80, farShootToleranceTps = 40;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
         public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
@@ -109,17 +109,21 @@ public abstract class ShootingSystem extends Component {
         GOAL_TARGETING, CUSTOM_ANGLE;
     }
     private HoodState hoodState;
-
     private double customHoodAngle = Math.toRadians(45); // default angle
 
+    public final SRSHub srsHub;
     public final Shooter shooter;
     public final Hood hood;
     public final Turret turret;
+
+
     public ShootingSystem(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry);
 
-        shooter = new ShooterV1(hardwareMap, telemetry);
-        hood = new HoodV1(hardwareMap, telemetry);
+        srsHub = new SRSHub(hardwareMap);
+
+        shooter = new ShooterV2(hardwareMap, telemetry, srsHub);
+        hood = new HoodV2(hardwareMap, telemetry, srsHub);
         turret = new Turret(hardwareMap, telemetry);
 
         setTurretToCenter();
@@ -423,11 +427,11 @@ public abstract class ShootingSystem extends Component {
     }
     public boolean shooterNormGood() {
         double shooterError = Math.abs(currentTargetShooterSpeedTps - shooter.getVelTps());
-        return shooterError < (locationState == Location.FAR ? generalParams.farShootToleranceTps : generalParams.closeShootToleranceTps);
+        return shooterError < shooter.getNormTolerance(locationState);
     }
     public boolean shooterFirstGood() {
         double shooterError = Math.abs(currentTargetShooterSpeedTps - shooter.getVelTps());
-        return shooterError < generalParams.firstShootToleranceTps;
+        return shooterError < shooter.getFirstShootTolerance();
     }
     public boolean turretOnTarget() {
         double error = Math.abs(turretTargetAngle - turret.getCurAngleRad());
