@@ -139,10 +139,13 @@ public class Collector extends Component {
             case ENGAGED:
                 clutchRight.setPosition(params.engagedPos);
                 clutchLeft.setPosition(params.engagedPos);
+                if(intakeState == IntakeState.INTAKE || intakeState == (IntakeState.INTAKE_SLOW))
+                    setCollectionSystemState(CollectionSystemState.SHOOTING);
                 break;
             case DISENGAGED:
                 clutchRight.setPosition(params.disengagedPos);
                 clutchLeft.setPosition(params.disengagedPos);
+                setCollectionSystemState(CollectionSystemState.NORMAL);
                 break;
         }
     }
@@ -277,10 +280,12 @@ public class Collector extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
-        telemetry.addData("CO clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
+        telemetry.addData("CO system state", collectionSystemState);
         telemetry.addData("CO collection state", intakeState);
-        telemetry.addData("CO power", collectorMotor.getPower());
+        telemetry.addData("CO clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
         telemetry.addData("CO flicker state", getFlickerState());
+        telemetry.addLine();
+        telemetry.addData("CO power", collectorMotor.getPower());
         telemetry.addData("CO flicker left pos", flickerLeft.getPosition());
         telemetry.addData("CO flicker timer", flickerTimer.seconds());
         telemetry.addData("CO bl dist", backLeftLaserDist);

@@ -11,7 +11,6 @@ public abstract class Hood extends Component {
         super(hardwareMap, telemetry);
     }
 
-    public abstract void update();
     public abstract void setTargetExitAngle(double exitAngle);
 
     public abstract boolean onTarget();

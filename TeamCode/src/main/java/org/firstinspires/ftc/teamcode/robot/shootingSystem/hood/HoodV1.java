@@ -33,9 +33,6 @@ public class HoodV1 extends Hood {
         hoodRight.setPwmRange(new PwmControl.PwmRange(params.downPWM, params.upPWM));
     }
 
-    @Override
-    public void update() {}
-
     public void setPosition(double position) {
         hoodLeft.setPosition(position);
         hoodRight.setPosition(position);

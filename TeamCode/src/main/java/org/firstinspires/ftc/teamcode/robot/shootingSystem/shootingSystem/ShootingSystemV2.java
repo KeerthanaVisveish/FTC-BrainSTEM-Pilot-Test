@@ -21,7 +21,9 @@ import java.util.ArrayList;
 @Config
 public class ShootingSystemV2 extends ShootingSystem {
     public static class V2Params {
-        public double shooterTpsPerMps = 0;
+        //y=0.0042825x+3.38083
+        public double shooterTpsToMpsSlope = 0.0042825;
+        public double shooterTpsToMpsIntercept = 3.38083;
         public int numIterations = 5;
         public boolean useVelocityCompensation = true;
         public int drawTrajNumPoints = 200;
@@ -46,7 +48,7 @@ public class ShootingSystemV2 extends ShootingSystem {
         double distFromGoalM = turretPosIn.minus(new Vector2d(goalPosIn.x, goalPosIn.y)).times(0.0254).norm();
 
         if(trajectoryDistanceLUT.distanceInRange(distFromGoalM)) {
-            double curExitSpeedMps = shooterVelTps / v2Params.shooterTpsPerMps;
+            double curExitSpeedMps = getMpsFromTps(shooterVelTps);
             TrajectoryMath.TargetingInfo targetingInfo = TrajectoryMath.calculateTargetingInfo(trajectoryDistanceLUT, turretPosIn, turretPosIn, new Vector2d(goalPosIn.x, goalPosIn.y), new OdoInfo(robotVelocityIps.x, robotVelocityIps.y, 0), curExitSpeedMps, impactAngleRad, v2Params.numIterations);
 
             if(targetingInfo == null)
@@ -54,7 +56,7 @@ public class ShootingSystemV2 extends ShootingSystem {
 
             if(targetingInfo.idealTargetTrajectory() == null)
                 return null;
-            double targetShooterSpeedTps = targetingInfo.idealTargetTrajectory().exitSpeedMps * v2Params.shooterTpsPerMps;
+            double targetShooterSpeedTps = getTpsFromMps(targetingInfo.idealTargetTrajectory().exitSpeedMps);
 
             boolean useActualTraj = v2Params.useVelocityCompensation && targetingInfo.actualTargetTrajectory() != null;
             mostRecentTrajectory = useActualTraj ? targetingInfo.actualTargetTrajectory() : targetingInfo.idealTargetTrajectory();
@@ -66,6 +68,12 @@ public class ShootingSystemV2 extends ShootingSystem {
             return mostRecentLaunchData;
         }
         return null;
+    }
+    private double getMpsFromTps(double tps) {
+        return v2Params.shooterTpsToMpsSlope * tps + v2Params.shooterTpsToMpsIntercept;
+    }
+    private double getTpsFromMps(double mps) {
+        return (mps - v2Params.shooterTpsToMpsIntercept) / v2Params.shooterTpsToMpsSlope;
     }
 
     @Override

@@ -18,6 +18,7 @@ public class ShooterHoodTest extends LinearOpMode {
     public static boolean controlHoodWithPower = true;
     public static double hoodPower = 0;
     public static double targetExitAngleDeg = 45;
+    public static double errorThreshold = 100;
 
 
     public static double targetShooterSpeed = 0;
@@ -43,11 +44,6 @@ public class ShooterHoodTest extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-
-
-        // TODO: in HoodV2class, configure servo directions so positive power equates to positive absolute encoder change
-        // TODO: in ShooterV2class, configure shooter directions so positive power equates to positive encoder change
-
         
         while(opModeIsActive()) {
             batteryVoltageFilter.update();
@@ -75,13 +71,16 @@ public class ShooterHoodTest extends LinearOpMode {
                 collector.setIntakeState(Collector.IntakeState.OFF);
 
             hoodV2.update();
-            collector.updateState(true);
+            collector.updateState(Math.abs(targetShooterSpeed - shooterV2.getVelTps()) < errorThreshold);
 
             telemetry.addLine("SRSHUB-----");
+            telemetry.addData("hood abs velocity", srsHub.getHoodVelocity());
             telemetry.addData("hood abs encoder", srsHub.getHoodAbsEncoder());
             telemetry.addData("hood 1 encoder", srsHub.getHoodServo1Encoder());
             telemetry.addData("hood 2 encoder", srsHub.getHoodServo2Encoder());
             telemetry.addData("shooter high encoder", srsHub.getShooterHighEncoder());
+            telemetry.addData("shooter high velocity", srsHub.getShooterHighVelocity());
+            telemetry.addData("shooter low velocity", srsHub.getShooterLowVelocity());
 
             collector.printInfo();
             shooterV2.printInfo();

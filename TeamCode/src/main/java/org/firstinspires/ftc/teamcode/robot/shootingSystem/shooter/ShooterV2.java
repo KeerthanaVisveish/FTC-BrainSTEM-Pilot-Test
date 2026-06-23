@@ -8,9 +8,11 @@ import org.firstinspires.ftc.teamcode.robot.shootingSystem.SRSHub;
 @Config
 public class ShooterV2 extends Shooter {
     public static class Params {
-        public double kP = 0;
-        public double kV = 0;
-        public double kF = 0;
+        public double velocitySign = -1;
+        public double kP = 0.03;
+        // y=0.0101436x+1.12464
+        public double kV = 0.0101436;
+        public double kF = 1.12464;
         public double speedAdjustment = 0;
         public double minVelForShot = 0;
         public double shotVelDropThreshold = 0;
@@ -23,7 +25,7 @@ public class ShooterV2 extends Shooter {
     }
     @Override
     public void updateProperties() {
-        curShooterVelTps = (srsHub.getShooterLowVelocity() + srsHub.getShooterHighVelocity()) * .5;
+        curShooterVelTps = params.velocitySign * (srsHub.getShooterLowVelocity() + srsHub.getShooterHighVelocity()) * .5;
         trackBallShots();
     }
     @Override

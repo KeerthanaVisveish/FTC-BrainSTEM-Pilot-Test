@@ -19,13 +19,13 @@ public class HoodV2 extends Hood {
         public double maxExitAngle = Math.toRadians(69);
         public double kP = 2;
         public double kI = 0;
-        public double kD = 0.01;
+        public double kD = 0.1;
         public double kF = 0.08;
         public double kG = 0.01414;
-        public double kGLookAhead = 0; // assumes 50Hz loop times
+        public double kGLookAheadScale = 1;
         public double maxPower = .99;
-        //y=-0.00668771x+3.47549
-        public double encoderToExitAngleSlope = -0.00668771, encoderToExitAngleIntercept = 3.47549;
+        //y=-0.342467x+298.29433
+        public double encoderToExitAngleSlope = -0.342467, encoderToExitAngleIntercept = 298.29433;
         public double externalAngularOffset = 0; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
         public double onTargetErrorThreshold = Math.toRadians(.5);
@@ -46,27 +46,23 @@ public class HoodV2 extends Hood {
 
         this.srsHub = srsHub;
 
-        // TODO: configure hood directions so positive power equates to positive exit angle change
         hoodLeft = hardwareMap.get(CRServo.class, RobotProperties.hoodLeftName);
         hoodLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         hoodRight = hardwareMap.get(CRServo.class, RobotProperties.hoodRightName);
         hoodRight.setDirection(DcMotorSimple.Direction.FORWARD);
         pid = new PIDController(params.kP, params.kI, params.kD);
     }
-
-    @Override
-    public void update() {
-    }
     @Override
     public void setTargetExitAngle(double exitAngle) {
         exitAngle = Range.clip(exitAngle, params.minExitAngle, params.maxExitAngle);
         pid.setTarget(exitAngle);
         pid.setPIDValues(params.kP, params.kI, params.kD);
+        double prevExitAngle = currentExitAngle;
         currentExitAngle = getExitAngleFromPosition(srsHub.getHoodAbsEncoder());
         double error = pid.getTarget() - currentExitAngle;
         pidPower = pid.updateWithError(error);
         frictionPower = Math.signum(error) * params.kF;
-        lookAheadExitAngle = currentExitAngle + getAngularVelocityFromEncoder(srsHub.getHoodVelocity()) * params.kGLookAhead;
+        lookAheadExitAngle = currentExitAngle + (currentExitAngle - prevExitAngle) * params.kGLookAheadScale;
         gravityPower = -Math.sin(lookAheadExitAngle) * params.kG;
         totalPower = pidPower + frictionPower + gravityPower;
         totalPower = Range.clip(totalPower, -params.maxPower, params.maxPower);
@@ -83,10 +79,11 @@ public class HoodV2 extends Hood {
         hoodRight.setPower(p);
     }
     private double getExitAngleFromPosition(double pos) {
-        return pos * params.encoderToExitAngleSlope + params.encoderToExitAngleIntercept + params.externalAngularOffset;
+        double deg = pos * params.encoderToExitAngleSlope + params.encoderToExitAngleIntercept + params.externalAngularOffset;
+        return Math.toRadians(deg);
     }
     private double getAngularVelocityFromEncoder(double encoderVelocity) {
-        return encoderVelocity * params.encoderToExitAngleSlope;
+        return encoderVelocity * Math.toRadians(params.encoderToExitAngleSlope);
     }
 
     @Override

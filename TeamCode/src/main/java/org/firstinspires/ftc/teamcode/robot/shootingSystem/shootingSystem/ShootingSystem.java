@@ -268,7 +268,6 @@ public abstract class ShootingSystem extends Component {
                 hood.setTargetExitAngle(customHoodAngle);
                 break;
         }
-        hood.update();
     }
 
 

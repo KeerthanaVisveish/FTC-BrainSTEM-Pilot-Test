@@ -53,7 +53,7 @@ public abstract class Shooter extends Component {
         double kV = getKV();
         velocityVoltage = kV * targetVelTps;
         frictionVoltage = Math.signum(targetVelTps) * getKF();
-        totalVoltage = pidVoltage + velocityVoltage;
+        totalVoltage = pidVoltage + velocityVoltage + frictionVoltage;
 
         setShooterVoltage(totalVoltage, batteryVoltage);
     }
