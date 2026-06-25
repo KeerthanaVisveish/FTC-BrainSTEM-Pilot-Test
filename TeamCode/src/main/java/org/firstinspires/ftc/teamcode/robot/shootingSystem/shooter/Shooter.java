@@ -95,7 +95,9 @@ public abstract class Shooter extends Component {
         telemetry.addData("SH   shooter voltage pid", pidVoltage);
         telemetry.addData("SH   shooter voltage velocity", velocityVoltage);
         telemetry.addData("SH   shooter voltage friction", frictionVoltage);
-        telemetry.addData("SH shooter power", highShooter.getPower());
+        double power = highShooter.getPower();
+        telemetry.addData("SH shooter power", power);
+        telemetry.addData("SH shooter power * 200", power * 200);
         telemetry.addData("SH motor combined current", highShooter.getCurrent(CurrentUnit.AMPS) + lowShooter.getCurrent(CurrentUnit.AMPS));
     }
 }

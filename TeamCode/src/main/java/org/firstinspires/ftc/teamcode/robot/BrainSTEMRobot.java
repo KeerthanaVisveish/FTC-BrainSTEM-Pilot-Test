@@ -59,7 +59,6 @@ public class BrainSTEMRobot {
     public GamepadTracker g1;
     private final ElapsedTime dtTimer;
     private double dt;
-
     public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
         this.telemetry = telemetry;
         this.alliance = allianceColor;
@@ -86,6 +85,7 @@ public class BrainSTEMRobot {
 
         limelight.update();
         shootingSystemV1.updateSubsystems(drive.pinpoint().getPose(), drive.pinpoint().getVelocity(), drive.pinpoint().getRawAccel(), drive.getFilteredVoltage(), dt, alliance);
+
         collector.updateState(shootingSystemV1.meetsSafetyInterlocks());
 //        led.update(this);
     }

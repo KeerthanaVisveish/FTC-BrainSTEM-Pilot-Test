@@ -13,11 +13,12 @@ public class ShooterV2 extends Shooter {
     public static class Params {
         //linear: y=0.00783937x+0.468228
         // logarithmic: y=-28.38609 + 5.28369*ln(x)
-        public Function<Double, Double> getMpsFunction = tps -> -28.38609 + 5.28369 * Math.log(tps);
-        public Function<Double, Double> getTpsFunction = mps -> Math.exp((mps + 28.38609) / 5.28369);
-        public double firstShootTolerance = 40, farShootTolerance = 50, closeShootTolerance = 90;
+        public Function<Double, Double> getMpsFunction = tps -> -32.33448 + 5.93989 * Math.log(tps);
+        public Function<Double, Double> getTpsFunction = mps -> Math.exp((mps + 32.33448) / 5.93989);
+        public double firstShootTolerance = 40, farShootTolerance = 100, closeShootTolerance = 120;
         public double velocitySign = -1;
-        public double kP = 0.03;
+        public double smallErrorKP = 0.08, bigErrorKP = .2;
+        public double kPErrorThreshold = 60;
         // y=0.0101436x+1.12464
         public double kV = 0.0075;
         public double kF = 1.12464;
@@ -38,7 +39,7 @@ public class ShooterV2 extends Shooter {
     }
     @Override
     public double getKP(double error) {
-        return params.kP;
+        return Math.abs(error) < params.kPErrorThreshold ? params.smallErrorKP : params.bigErrorKP;
     }
     @Override
     public double getKV() {

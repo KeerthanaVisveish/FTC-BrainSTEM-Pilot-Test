@@ -16,7 +16,7 @@ public class HoodV2 extends Hood {
 
     public static class Params {
         public double minExitAngle = Math.toRadians(30);
-        public double maxExitAngle = Math.toRadians(70);
+        public double maxExitAngle = Math.toRadians(65);
         public double kP = 2;
         public double kI = 0;
         public double kD = 0.1;
@@ -26,9 +26,9 @@ public class HoodV2 extends Hood {
         public double maxPower = .99;
         //y=-0.37015x+261.88606
         public double encoderToExitAngleSlope = -0.37015, encoderToExitAngleIntercept = 261.88606;
-        public double externalAngularOffset = 0; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
+        public double externalAngularOffset = 3.72; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
-        public double onTargetErrorThreshold = Math.toRadians(1);
+        public double onTargetErrorThreshold = Math.toRadians(2);
 
         public double dampeningErrorThreshold = Math.toRadians(1);
         public double dampeningFactor = .3;

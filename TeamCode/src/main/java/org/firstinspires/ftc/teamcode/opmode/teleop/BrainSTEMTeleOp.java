@@ -214,7 +214,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collector.setIntakeState(Collector.IntakeState.OFF);
         }
 
-        if (gp1.isFirstLeftBumper()) {
+        if (gp1.isFirstB() && !inCompetition) {
             if (robot.shootingSystemV1.turretCentered()) {
                 robot.shootingSystemV1.setTurretToGoalTargeting();
                 robot.shootingSystemV1.setShooterToGoalTargeting();
@@ -226,8 +226,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(45));
             }
         }
+        if(gp1.isFirstLeftBumper())
+            robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
         if(gp1.isFirstRightBumper()) {
-            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED) {
+            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED && robot.shootingSystemV1.meetsFirstSafetyInterlocks()) {
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
                 robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             }

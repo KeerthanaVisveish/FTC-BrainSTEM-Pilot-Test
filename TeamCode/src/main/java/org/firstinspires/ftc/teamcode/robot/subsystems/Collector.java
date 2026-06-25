@@ -34,9 +34,6 @@ public class Collector extends Component {
 
     public static Params params = new Params();
 
-    public enum CollectionSystemState {
-        SHOOTING, NORMAL
-    }
     public enum IntakeState {
         OFF, INTAKE, INTAKE_SLOW, OUTTAKE
     }
@@ -61,8 +58,8 @@ public class Collector extends Component {
     private final AnalogInput backTopLaser;
     private final AnalogInput backBottomLaser;
 
-    private CollectionSystemState collectionSystemState;
     private IntakeState intakeState, cachedIntakeState;
+    private int framesInState;
     private final ElapsedTime jamTimer;
     private ClutchState clutchState;
     private FlickerState flickerState;
@@ -104,15 +101,10 @@ public class Collector extends Component {
         jamTimer = new ElapsedTime();
         jamTimer.reset();
     }
-    private void setCollectionSystemState(CollectionSystemState collectionSystemState) {
-        this.collectionSystemState = collectionSystemState;
-    }
-    public CollectionSystemState getCollectionSystemState() {
-        return collectionSystemState;
-    }
     public IntakeState getIntakeState() { return intakeState; }
     public void setIntakeState(IntakeState collectorState) {
         this.intakeState = collectorState;
+        framesInState = 0;
         switch (collectorState) {
             case OFF:
                 collectorMotor.setPower(0);
@@ -127,10 +119,6 @@ public class Collector extends Component {
                 collectorMotor.setPower(params.fullIntakePower);
                 break;
         }
-        if((collectorState == IntakeState.INTAKE || collectorState == IntakeState.INTAKE_SLOW) && clutchState == ClutchState.ENGAGED)
-            setCollectionSystemState(CollectionSystemState.SHOOTING);
-        else
-            setCollectionSystemState(CollectionSystemState.NORMAL);
     }
     public ClutchState getClutchState() { return clutchState; }
     public void setClutchState(ClutchState clutchState) {
@@ -139,13 +127,10 @@ public class Collector extends Component {
             case ENGAGED:
                 clutchRight.setPosition(params.engagedPos);
                 clutchLeft.setPosition(params.engagedPos);
-                if(intakeState == IntakeState.INTAKE || intakeState == (IntakeState.INTAKE_SLOW))
-                    setCollectionSystemState(CollectionSystemState.SHOOTING);
                 break;
             case DISENGAGED:
                 clutchRight.setPosition(params.disengagedPos);
                 clutchLeft.setPosition(params.disengagedPos);
-                setCollectionSystemState(CollectionSystemState.NORMAL);
                 break;
         }
     }
@@ -174,9 +159,12 @@ public class Collector extends Component {
                 break;
         }
     }
+    public int getFramesInState() {
+        return framesInState;
+    }
     public void updateState(boolean shootingInterlocksMet) {
         // checking safety interlocks for shooting
-        if (collectionSystemState == CollectionSystemState.SHOOTING) {
+        if (getClutchState() == ClutchState.ENGAGED) {
             if(!shootingInterlocksMet && (intakeState == IntakeState.INTAKE || intakeState == IntakeState.INTAKE_SLOW)) {
                 cachedIntakeState = intakeState;
                 setIntakeState(IntakeState.OFF);
@@ -233,6 +221,7 @@ public class Collector extends Component {
         }
 
         checkForIntakeBalls();
+        framesInState++;
     }
 
     private double voltageToDistance(double voltage) {
@@ -280,7 +269,6 @@ public class Collector extends Component {
     @Override
     public void printInfo() {
         telemetry.addLine("===COLLECTION======");
-        telemetry.addData("CO system state", collectionSystemState);
         telemetry.addData("CO collection state", intakeState);
         telemetry.addData("CO clutch engaged", getClutchState() == ClutchState.ENGAGED ? -50 : 0);
         telemetry.addData("CO flicker state", getFlickerState());

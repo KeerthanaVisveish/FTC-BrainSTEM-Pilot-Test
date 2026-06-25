@@ -35,46 +35,46 @@ public abstract class ShootingSystem extends Component {
         public double closeRedX = -65, closeRedY = 63;
         public double closeBlueX = -65, closeBlueY = -62;
         public double closeHeight = 38;
-        public double closeImpactAng = Math.toRadians(-20);
+        public double closeImpactAng = Math.toRadians(-19);
 
         // when cycling from gate
         public double gateRedX = -66, gateRedY = 64.5;
         public double gateBlueX = -66, gateBlueY = -63;
-        public double gateHeight = 39.5;
-        public double gateImpactAng = -.31;
+        public double gateHeight = 41.5;
+        public double gateImpactAng = Math.toRadians(-17);
 
         // when shooting from opposing goal area
-        public double oppositeRedX = -61, oppositeRedY = 66;
-        public double oppositeBlueX = -62, oppositeBlueY = -66;
+        public double oppositeRedX = -62.5, oppositeRedY = 66;
+        public double oppositeBlueX = -62.5, oppositeBlueY = -66;
         public double oppositeHeight = 41.5;
-        public double oppositeImpactAng = -.31;
+        public double oppositeImpactAng = Math.toRadians(-16);
 
 
         // when shooting in far zone
         public double farRedX = -65, farRedY = 67;
         public double farBlueX = -66, farBlueY = -62;
-        public double farHeight = 41;
-        public double farImpactAng = Math.toRadians(-30);
+        public double farHeight = 50;
+        public double farImpactAng = Math.toRadians(-20);
 
         public double reallyCloseRadius = 45;
         public double gateLocationYThreshold = -12, gateLocationXThreshold = -50;
     }
     public static class GeneralParams {
-        public boolean useShootingInterlocks = false;
+        public boolean useShootingInterlocks = true;
         public boolean usePoseClipping = false;
         public boolean enableShooter = true;
         public boolean enableTurret = true;
         public boolean enableHood = true;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
-        public double shooterLookAhead = 0;
-        public double hoodFilterA = .5;
+        public double shooterLookAhead = 0.005;
+        public double hoodFilterA = .2;
     }
 
     public record LaunchData(double targetShooterSpeedTps, double targetHoodExitAngleRad, double targetTurretFieldAngleRad) {}
     public static GoalParams goalParams = new GoalParams();
     public static GeneralParams generalParams = new GeneralParams();
     public enum Location {
-        GATE_CYCLE, NEAR_WALL, REALLY_CLOSE, FAR
+        GATE_CYCLE, OPPOSITE_SIDE, REALLY_CLOSE, FAR
     }
     private Location locationState;
     private Vector3d goalPosIn;
@@ -89,6 +89,7 @@ public abstract class ShootingSystem extends Component {
 
     private double rawHoodExitAngleRad, filteredHoodExitAngleRad;
     private Pose2d turretPoseIn;
+    private double distFromGoal;
     private Pose2d clippedRobotPoseIn, clippedTurretPoseIn;
     public final Vector2d nearTriangleTip = new Vector2d(RobotProperties.length * Math.sqrt(2), 0);
     public final Vector2d farTriangleTip = new Vector2d(48 - RobotProperties.length * Math.sqrt(2), 0);
@@ -174,7 +175,7 @@ public abstract class ShootingSystem extends Component {
             impactAngleRad = goalParams.closeImpactAng;
         }
         else if(robotPos.y * sign < goalParams.gateLocationYThreshold || robotPos.x < goalParams.gateLocationXThreshold) {
-            locationState = Location.NEAR_WALL;
+            locationState = Location.OPPOSITE_SIDE;
             goalPosIn = oppositeGoalPos;
             impactAngleRad = goalParams.oppositeImpactAng;
         }
@@ -191,7 +192,7 @@ public abstract class ShootingSystem extends Component {
     }
     private Vector2d[] getClippedPositions(Vector2d robotPosIn, Vector2d turretPosIn) {
         Vector2d clippedTurretPosIn, clippedRobotPosIn;
-        if((locationState == Location.NEAR_WALL || locationState == Location.GATE_CYCLE) && Math.abs(robotPosIn.y) > 1e-6) {
+        if((locationState == Location.OPPOSITE_SIDE || locationState == Location.GATE_CYCLE) && Math.abs(robotPosIn.y) > 1e-6) {
             Vector2d perpLaunchLine = new Vector2d(1, Math.signum(robotPosIn.y)).div(Math.sqrt(2));
             clippedTurretPosIn = clipVectorInsideLaunchLine(turretPosIn, perpLaunchLine, nearTriangleTip);
             clippedRobotPosIn = clippedTurretPosIn.plus(robotPosIn.minus(turretPosIn));
@@ -229,13 +230,14 @@ public abstract class ShootingSystem extends Component {
 
         turret.updateProperties(dt);
         turretPoseIn = ShootingMathOld.calcTurretPose(robotPoseIn, turret.getCurAngleRad());
+        distFromGoal = turretPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y)).norm();
 
         shooter.updateProperties();
 
         Vector2d[] clippedPoses = generalParams.usePoseClipping ? getClippedPositions(robotPoseIn.position, turretPoseIn.position) : new Vector2d[] {robotPoseIn.position, turretPoseIn.position};
         clippedRobotPoseIn = new Pose2d(clippedPoses[0], robotPoseIn.heading.toDouble());
         clippedTurretPoseIn = new Pose2d(clippedPoses[1], turretPoseIn.heading.toDouble());
-        LaunchData launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel, impactAngleRad, shooter.getVelTps());
+        LaunchData launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel, impactAngleRad, shooter.getVelTps() - shooterSpeedAdjustment);
         if(launchData != null) {
             currentTargetShooterSpeedTps = launchData.targetShooterSpeedTps;
             lookAheadTargetShooterSpeedTps = currentTargetShooterSpeedTps + Math.max(0, robotVel.dot(turretPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y))) * generalParams.shooterLookAhead);
@@ -458,6 +460,9 @@ public abstract class ShootingSystem extends Component {
     public boolean meetsSafetyInterlocks() {
         return !generalParams.useShootingInterlocks || (turretOnTarget() && shooterNormGood() && hood.onTarget());
     }
+    public boolean meetsFirstSafetyInterlocks() {
+        return !generalParams.useShootingInterlocks || (turretOnTarget() && shooterFirstGood() && hood.onTarget());
+    }
     public Location getLocationState() {
         return locationState;
     }
@@ -550,11 +555,12 @@ public abstract class ShootingSystem extends Component {
         telemetry.addLine();
         telemetry.addLine("SHOOTING SYSTEM-------");
         telemetry.addData("SS dist state", locationState);
-        telemetry.addData("SS shooter norm good", shooterNormGood());
-        telemetry.addData("SS safety interlocks met", meetsSafetyInterlocks());
+        telemetry.addData("SS dist from goal", distFromGoal);
+        telemetry.addData("SS meets safety interlocks num", meetsSafetyInterlocks() ? 4 : 0);
+        telemetry.addData("SS shooter first good num", shooterFirstGood() ? 1 : 0);
         telemetry.addData("SS shooter norm good num", shooterNormGood() ? 1 : 0);
         telemetry.addData("SS turret on target num", turretOnTarget() ? 2: 0);
-        telemetry.addData("SS meets safety interlocks num", meetsSafetyInterlocks() ? 3 : 0);
+        telemetry.addData("SS hood on target num", hood.onTarget() ? 3 : 0);
         telemetry.addLine("");
         telemetry.addData("SS turret state", turretState);
         telemetry.addData("SS turret relative target deg", Math.toDegrees(turretTargetAngle));

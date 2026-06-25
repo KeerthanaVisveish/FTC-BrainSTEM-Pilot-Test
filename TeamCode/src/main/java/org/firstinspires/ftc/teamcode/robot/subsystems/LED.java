@@ -87,7 +87,7 @@ public class LED extends Component {
             }
         }
         if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
-            if(robot.collector.getCollectionSystemState() == Collector.CollectionSystemState.SHOOTING)
+            if(robot.collector.getIntakeState() == Collector.IntakeState.INTAKE || robot.collector.getIntakeState() == Collector.IntakeState.INTAKE_SLOW)
                 setLed(green);
             else
                 setLed(yellow);

@@ -18,7 +18,7 @@ import org.firstinspires.ftc.teamcode.utils.pidDrive.MathUtils;
 @Config
 public class Turret extends Component {
     public static class TestingParams {
-        public boolean enableKF = true;
+        public boolean enableKF = false;
         public boolean enableFeedForwardVelocity = true;
         public boolean enableKA = true;
         public boolean enablePID = true;
@@ -29,7 +29,7 @@ public class Turret extends Component {
         public double minParkRotateVoltage = 9;
         public double offsetFromCenter = 3.442; // offset of center of turret from center of robot in inches
 
-        public double angleAdjustment = Math.toRadians(3);
+        public double angleAdjustment = Math.toRadians(1.5);
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double accelFilterConcavity = 2, accelFilterMax = 200;
         public double maxAngle = Math.toRadians(90);
@@ -77,32 +77,35 @@ public class Turret extends Component {
         };
     }
     public static class PowerTuningV2 {
-        public double kP = .028, kI = 0, kD = 0.3;
-        public double maxPid = 3.5;
+        public double kP = 1, kI = 0.001, kD = 0.5;
+        public double maxPidInputDeg = 8;
         public double maxIntegral = 5;
-        public double motionProfileAccel = 6, motionProfileMaxSpeed = 8, motionProfileDeadZoneDeg = 1;
+        public double motionProfileAccel = 6, motionProfileMaxSpeed = 8;
+        public double motionProfileLookAheadDeg = 1;
         public double dampeningRadius = Math.toRadians(.5), dampeningFactor = .5;
         public double maxVoltage = 12;
 
         public double kT = -.015;
-        public double kV = 1.3;
-        public double kA = 0;
+
+        //y=1.09292x+1.00825
+        public double kVSlope = 1.09292, kVIntercept = 1.00825;
+        public double kA = 0.05;
 
         public double[] kfPosLookupData = new double[] {
-                -2, .8,
-                0, .8,
-                .5, .8,
-                1, .8,
-                1.5, .8,
-                2, .8
+                -2, .6,
+                0, .6,
+                .5, .6,
+                1, .6,
+                1.5, .6,
+                2, .6
         };
         public double[] kfNegLookupData = new double[] {
-                -2, -1,
-                0, -1,
-                .5, -0.9,
-                1, -0.9,
-                1.5, -.8,
-                2, -.8
+                -2, -.6,
+                0, -.6,
+                .5, -.6,
+                1, -.6,
+                1.5, -.6,
+                2, -.6
         };
     }
     public static TestingParams testingParams = new TestingParams();
@@ -216,21 +219,23 @@ public class Turret extends Component {
             fVoltage = 0;
 
         if(testingParams.enablePID) {
+            pidController.setMaxIntegral(powerTuning.maxIntegral);
             pidController.setPIDValues(powerTuning.kP, powerTuning.kI, powerTuning.kD);
-            pidVoltage = Range.clip(pidController.updateWithError(positionError), -powerTuning.maxPid, powerTuning.maxPid);
+            double max = Math.toRadians(powerTuning.maxPidInputDeg);
+            pidVoltage = pidController.updateWithError(Range.clip(positionError, -max, max));
         }
         else
             pidVoltage = 0;
 
         if(testingParams.enableFeedForwardVelocity) {
-            vVoltage = powerTuning.kV * targetVelocity;
+            double sign = Math.abs(targetVelocity) < 0.1 ? 0 : Math.signum(targetVelocity);
+            vVoltage = powerTuning.kVSlope * targetVelocity + powerTuning.kVIntercept * sign;
         }
         else
             vVoltage = 0;
 
-        if(testingParams.enableKA) {
+        if(testingParams.enableKA)
             aVoltage = powerTuning.kA * targetAcceleration;
-        }
         else
             aVoltage = 0;
 
@@ -242,7 +247,6 @@ public class Turret extends Component {
         if(testingParams.enablePower) {
             if(Math.abs(positionError) < powerTuning.dampeningRadius)
                 fVoltage *= powerTuning.dampeningFactor;
-
             totalVoltage = fVoltage + pidVoltage + vVoltage + aVoltage + tVoltage;
         }
         else
@@ -270,15 +274,14 @@ public class Turret extends Component {
         // x = (v1^2 - v0^2) / (2a)
         // v0^2 = v1^2 - 2ax
         double totalTravelDist = targetAngle - currentAngleRad;
-        if(Math.abs(totalTravelDist) < Math.toRadians(powerTuning.motionProfileDeadZoneDeg))
-            return new double[] {0, 0};
 
         double travelDir = Math.signum(totalTravelDist);
-        double speed = Math.sqrt(2 * powerTuning.motionProfileAccel * Math.abs(totalTravelDist));
+        double d = Math.max(0, Math.abs(totalTravelDist) - Math.toRadians(powerTuning.motionProfileLookAheadDeg));
+        double speed = Math.sqrt(2 * powerTuning.motionProfileAccel * d);
         if(speed > powerTuning.motionProfileMaxSpeed)
             return new double[] {powerTuning.motionProfileMaxSpeed * travelDir, 0};
         else
-            return new double[] {speed * travelDir, -powerTuning.motionProfileAccel};
+            return new double[] {speed * travelDir, powerTuning.motionProfileAccel * (-travelDir)};
     }
     @Override
     public void printInfo() {

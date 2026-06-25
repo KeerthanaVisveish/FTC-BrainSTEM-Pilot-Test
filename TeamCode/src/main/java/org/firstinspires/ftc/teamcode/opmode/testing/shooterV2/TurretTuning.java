@@ -29,7 +29,7 @@ public class TurretTuning extends LinearOpMode {
             batteryVoltageFilter.update();
             turret.updateProperties(.05);
             if(controlTurretWithVoltage) {
-                if(Math.abs(turret.getCurAngleRad()) > Math.PI * .5)
+                if(Math.abs(turret.getCurAngleRad()) > Math.PI * .5 && Math.signum(turret.getCurAngleRad()) == Math.signum(turretVoltage))
                     turret.setTurretVoltage(0, 0);
                 else
                     turret.setTurretVoltage(turretVoltage, batteryVoltageFilter.getVoltage());

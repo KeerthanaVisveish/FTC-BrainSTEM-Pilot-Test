@@ -19,13 +19,16 @@ import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
 @Config
 public class ShootingSystemV1 extends ShootingSystem {
     public static class Params {
-        public double x1 = 70, y1 = 0;
-        public double x2 = 144, y2 = 50;
+        public double x1 = 110, y1 = 0;
+        public double x2 = 150, y2 = 80;
+        public boolean useDynamicHood = true;
         public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
         public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
     }
     public static Params params = new Params();
     private final ShootingMathNew shootingMathNew;
+    private AnswerKeyPt1 answerKeyPt1;
+    private AnswerKeyPt2 answerKeyPt2;
     public ShootingSystemV1(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry, robotPose, alliance);
         this.shootingMathNew = new ShootingMathNew();
@@ -39,8 +42,8 @@ public class ShootingSystemV1 extends ShootingSystem {
             ShooterConversion shooterConversion = (encoderSpeed, exitAngle) -> ShooterV2.params.getMpsFunction.apply(encoderSpeed - getDragCompensation(goalDist));
             Vector3d robotVelocityMps = new Vector3d(robotVelocityIps.x, robotVelocityIps.y, 0).times(.0254);
 
-            AnswerKeyPt1 answerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelocityMps, 0, goalPosM, impactAngleRad, 0);
-            AnswerKeyPt2 answerKeyPt2 = shootingMathNew.godSolvePart2(answerKeyPt1, goalPosM, impactAngleRad, shooterVelTps, shooterConversion);
+            answerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelocityMps, 0, goalPosM, impactAngleRad, 0);
+            answerKeyPt2 = shootingMathNew.godSolvePart2(answerKeyPt1, goalPosM, impactAngleRad, shooterVelTps, shooterConversion);
 
             if(answerKeyPt1.solutionExists) {
                 // y - y1 = m(x - x1)
@@ -48,7 +51,8 @@ public class ShootingSystemV1 extends ShootingSystem {
                 double targetShooterSpeedTps = ShooterV2.params.getTpsFunction.apply(answerKeyPt1.launchVector.speed) + getDragCompensation(goalDist);
 
                 double targetTurretFieldAngleRad, targetHoodExitAngleRad;
-                if(answerKeyPt2.solutionExists) {
+                boolean useDynamicHood = params.useDynamicHood;
+                if(answerKeyPt2.solutionExists && useDynamicHood) {
                     targetTurretFieldAngleRad = answerKeyPt2.launchVector.turretAng;
                     targetHoodExitAngleRad = answerKeyPt2.launchVector.exitAng;
                 }
@@ -66,5 +70,12 @@ public class ShootingSystemV1 extends ShootingSystem {
         double slope = (params.y2 - params.y1) / (params.x2 - params.x1);
         double intercept = -slope * params.x1 + params.y1;
         return Math.max(slope * goalDist + intercept, 0);
+    }
+
+    @Override
+    public void printInfo() {
+        super.printInfo();
+        telemetry.addData("answer key pt1 exists", answerKeyPt1.solutionExists ? 1 : 0);
+        telemetry.addData("answer key pt2 exists", answerKeyPt2.solutionExists ? 2 : 0);
     }
 }
