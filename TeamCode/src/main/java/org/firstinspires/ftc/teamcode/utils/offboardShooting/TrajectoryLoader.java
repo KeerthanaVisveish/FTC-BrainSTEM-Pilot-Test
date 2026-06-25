@@ -12,13 +12,19 @@ import java.util.ArrayList;
 
 public class TrajectoryLoader {
 
+    private static final double DEFAULT_DY = 0.845;
+    private static final double DEFAULT_DRAG_COEFF = 0.0255312;
+    private static final double DEFAULT_MAGNUS_COEFF = -0.21;
+
     public static Trajectory loadTrajectory(JSONObject json, double dragCoeff, double magnusCoeff) {
         try {
             double exitAngleDeg = json.getDouble("exitAngle");
-            double impactAngleDeg = json.getDouble("impactAngle");
             double speed = json.getDouble("speed");
             double timeOfFlight = json.getDouble("timeOfFlight");
-            double peakHeight = json.getDouble("peakHeight");
+            double impactAngleDeg = optDouble(json, 0.0, "impactAngle");
+            double peakHeight = optDouble(json, 0.0, "peakHeight");
+            double speedMoe = optDouble(json, 0.0, "speedMOE", "speedMoe");
+            double angleMoe = optDouble(json, 0.0, "angleMOE", "angleMoe");
 
             return new Trajectory(
                     dragCoeff,
@@ -27,7 +33,9 @@ public class TrajectoryLoader {
                     Math.toRadians(exitAngleDeg),
                     Math.toRadians(impactAngleDeg),
                     peakHeight,
-                    timeOfFlight
+                    timeOfFlight,
+                    speedMoe,
+                    angleMoe
             );
         } catch (JSONException e) {
             e.printStackTrace();
@@ -37,13 +45,13 @@ public class TrajectoryLoader {
 
     public static TrajectoryLUT loadTrajectoryLUT(JSONObject groupJson) {
         try {
+            if (!groupJson.has("dx"))
+                return null;
+
             double dx = groupJson.getDouble("dx");
-            double dy = groupJson.getDouble("dy");
-            double dragCoeff = groupJson.getDouble("dragCoeff");
-            double magnusCoeff = groupJson.getDouble("magnusCoeff");
-            int optimalIndex = groupJson.has("optimalTrajectoryIndex")
-                    ? groupJson.getInt("optimalTrajectoryIndex")
-                    : groupJson.optInt("biggestMOETrajectory", 0);
+            double dy = optDouble(groupJson, DEFAULT_DY, "dy");
+            double dragCoeff = optDouble(groupJson, DEFAULT_DRAG_COEFF, "dragCoeff");
+            double magnusCoeff = optDouble(groupJson, DEFAULT_MAGNUS_COEFF, "magnusCoeff");
             JSONArray trajectoryArray = groupJson.getJSONArray("trajectories");
             ArrayList<Trajectory> trajectories = new ArrayList<>();
 
@@ -55,7 +63,11 @@ public class TrajectoryLoader {
                 trajectories.add(trajectory);
             }
 
-            if (trajectories.isEmpty() || optimalIndex < 0 || optimalIndex >= trajectories.size())
+            if (trajectories.isEmpty())
+                return null;
+
+            int optimalIndex = resolveOptimalTrajectoryIndex(groupJson, trajectories);
+            if (optimalIndex < 0 || optimalIndex >= trajectories.size())
                 return null;
 
             return new TrajectoryLUT(
@@ -104,5 +116,32 @@ public class TrajectoryLoader {
         } catch (Exception e) {
             throw new RuntimeException("Failed to read JSON file: " + filepath, e);
         }
+    }
+
+    private static int resolveOptimalTrajectoryIndex(JSONObject groupJson, ArrayList<Trajectory> trajectories) {
+        if (groupJson.has("optimalTrajectoryIndex"))
+            return groupJson.optInt("optimalTrajectoryIndex");
+        if (groupJson.has("biggestMOETrajectory"))
+            return groupJson.optInt("biggestMOETrajectory");
+
+        int bestIndex = 0;
+        double bestMoe = -1.0;
+        for (int i = 0; i < trajectories.size(); i++) {
+            Trajectory trajectory = trajectories.get(i);
+            double combinedMoe = trajectory.speedMoe * trajectory.angleMoe;
+            if (combinedMoe > bestMoe) {
+                bestMoe = combinedMoe;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    private static double optDouble(JSONObject json, double defaultValue, String... keys) throws JSONException {
+        for (String key : keys) {
+            if (json.has(key))
+                return json.getDouble(key);
+        }
+        return defaultValue;
     }
 }

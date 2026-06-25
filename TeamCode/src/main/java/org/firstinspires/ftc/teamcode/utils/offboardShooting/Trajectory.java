@@ -14,6 +14,8 @@ public class Trajectory {
     public final double impactAngleRad;
     public final double peakHeight;
     public final double timeOfFlight;
+    public final double speedMoe;
+    public final double angleMoe;
 
     public Trajectory(
             double dragCoef,
@@ -22,7 +24,9 @@ public class Trajectory {
             double exitAngleRad,
             double impactAngleRad,
             double peakHeight,
-            double timeOfFlight) {
+            double timeOfFlight,
+            double speedMoe,
+            double angleMoe) {
         this.dragCoef = dragCoef;
         this.magnusCoef = magnusCoef;
         this.exitSpeedMps = launchSpeedMps;
@@ -30,6 +34,8 @@ public class Trajectory {
         this.impactAngleRad = impactAngleRad;
         this.peakHeight = peakHeight;
         this.timeOfFlight = timeOfFlight;
+        this.speedMoe = speedMoe;
+        this.angleMoe = angleMoe;
     }
 
     public Trajectory lerp(Trajectory other, double t) {
@@ -38,6 +44,8 @@ public class Trajectory {
         double interpImpactAngle = lerp(impactAngleRad, other.impactAngleRad, t);
         double interpPeakHeight = lerp(peakHeight, other.peakHeight, t);
         double interpTOF = lerp(timeOfFlight, other.timeOfFlight, t);
+        double interpSpeedMoe = lerp(speedMoe, other.speedMoe, t);
+        double interpAngleMoe = lerp(angleMoe, other.angleMoe, t);
 
         return new Trajectory(
                 dragCoef,
@@ -46,7 +54,9 @@ public class Trajectory {
                 interpExitAngle,
                 interpImpactAngle,
                 interpPeakHeight,
-                interpTOF
+                interpTOF,
+                interpSpeedMoe,
+                interpAngleMoe
         );
     }
 
