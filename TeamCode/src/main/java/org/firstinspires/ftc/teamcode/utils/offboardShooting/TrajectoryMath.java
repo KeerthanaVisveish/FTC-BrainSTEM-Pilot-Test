@@ -31,16 +31,16 @@ public class TrajectoryMath {
         Vector2d turretPos,
         Vector2d turretVel,
         double startDistFromGoal,
-        double angleOrSpeed,
+        double speed,
         int tofEstimationIterations,
-        boolean useImpactAngle // true = lookup by impact angle, false = lookup by exit speed
+        boolean useOptimalTrajectory // true = optimal trajectory lookup, false = exit-speed lookup
     ) {
         Vector2d displacedGoal = goalPos;
         Vector2d turretToGoal;
         double distFromGoal = startDistFromGoal;
-        Trajectory trajectory = useImpactAngle
-            ? trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, angleOrSpeed)
-            : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, angleOrSpeed);
+        Trajectory trajectory = useOptimalTrajectory
+            ? trajectoryLUT.getInterpolatedOptimalTrajectory(distFromGoal)
+            : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, speed);
 
         if (trajectory == null) return new TrajectoryGoalInfo(null, null, 0.0);
 
@@ -49,9 +49,9 @@ public class TrajectoryMath {
             turretToGoal = displacedGoal.minus(turretPos);
             distFromGoal = turretToGoal.norm();
 
-            trajectory = useImpactAngle
-                ? trajectoryLUT.getInterpolatedImpactAngleTrajectory(distFromGoal, angleOrSpeed)
-                : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, angleOrSpeed);
+            trajectory = useOptimalTrajectory
+                ? trajectoryLUT.getInterpolatedOptimalTrajectory(distFromGoal)
+                : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, speed);
 
             if (trajectory == null) return new TrajectoryGoalInfo(null, null, 0.0);
         }
@@ -76,7 +76,6 @@ public class TrajectoryMath {
         Vector2d goalPos,
         OdoInfo robotVel,
         double currentExitSpeed,
-        double targetImpactAngleRad,
         int tofEstimationIterations
     ) {
         Vector2d robotVelocity = new Vector2d(robotVel.x, robotVel.y);
@@ -96,7 +95,7 @@ public class TrajectoryMath {
             turretPos,
             turretVel,
             startDistFromGoal,
-            targetImpactAngleRad,
+            currentExitSpeed,
             tofEstimationIterations,
             true);
 

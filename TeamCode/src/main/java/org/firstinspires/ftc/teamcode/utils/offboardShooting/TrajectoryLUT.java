@@ -11,23 +11,36 @@ public class TrajectoryLUT {
 
     private final ArrayList<Trajectory> impactSortedTrajectories;
     private final ArrayList<Trajectory> speedSortedTrajectories;
+    private final Trajectory optimalTrajectory;
 
     public TrajectoryLUT(
             double distFromGoal,
             double relGoalHeight,
             double dragCoef,
             double magnusCoef,
+            int optimalTrajectoryIndex,
             ArrayList<Trajectory> trajectories) {
         this.distFromGoal = distFromGoal;
         this.relGoalHeight = relGoalHeight;
         this.dragCoef = dragCoef;
         this.magnusCoef = magnusCoef;
 
+        if (trajectories.isEmpty())
+            throw new IllegalArgumentException("trajectories must not be empty");
+        if (optimalTrajectoryIndex < 0 || optimalTrajectoryIndex >= trajectories.size())
+            throw new IllegalArgumentException("optimalTrajectoryIndex out of range");
+
         this.impactSortedTrajectories = new ArrayList<>(trajectories);
         this.speedSortedTrajectories = new ArrayList<>(trajectories);
 
         this.impactSortedTrajectories.sort(Comparator.comparingDouble(t -> t.impactAngleRad));
         this.speedSortedTrajectories.sort(Comparator.comparingDouble(t -> t.exitSpeedMps));
+
+        this.optimalTrajectory = trajectories.get(optimalTrajectoryIndex);
+    }
+
+    public Trajectory getOptimalTrajectory() {
+        return optimalTrajectory;
     }
 
     public Trajectory getInterpolatedImpactAngleTrajectory(double impactAngleRad) {

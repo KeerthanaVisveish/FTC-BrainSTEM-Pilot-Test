@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
 import org.json.JSONObject;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -13,20 +12,19 @@ public class TrajectoryDistanceLUT {
         this.trajectoryLUTs = new ArrayList<>();
     }
 
-    public TrajectoryDistanceLUT(String baseDirectory, ArrayList<String> filePaths) {
+    public TrajectoryDistanceLUT(ArrayList<String> filePaths) {
         this.trajectoryLUTs = new ArrayList<>();
 
         for (String filepath : filePaths) {
-            String fullFilepath = new File(new File(baseDirectory, "trajectoryDataBase"), filepath).getAbsolutePath();
-            JSONObject json = TrajectoryLoader.getJsonObject(fullFilepath);
-            if (json == null)
-                continue;
-
+            JSONObject json = TrajectoryLoader.getJsonObject(filepath);
             TrajectoryLUT trajectoryLUT = TrajectoryLoader.loadTrajectoryLUT(json);
             if (trajectoryLUT == null)
                 continue;
             trajectoryLUTs.add(trajectoryLUT);
         }
+
+        if (trajectoryLUTs.isEmpty())
+            throw new RuntimeException("No trajectory LUTs loaded from file paths");
 
         trajectoryLUTs.sort(Comparator.comparingDouble(t -> t.distFromGoal));
     }
@@ -46,6 +44,35 @@ public class TrajectoryDistanceLUT {
         return neighbors.loLUT.impactAngleInRange(impactAngleRad)
                 && neighbors.hiLUT.impactAngleInRange(impactAngleRad);
     }
+
+    public Trajectory getInterpolatedOptimalTrajectory(double distFromGoal) {
+        if (trajectoryLUTs.isEmpty())
+            return null;
+
+        if (distFromGoal <= trajectoryLUTs.get(0).distFromGoal)
+            return trajectoryLUTs.get(0).getOptimalTrajectory();
+        if (distFromGoal >= trajectoryLUTs.get(trajectoryLUTs.size() - 1).distFromGoal)
+            return trajectoryLUTs.get(trajectoryLUTs.size() - 1).getOptimalTrajectory();
+
+        NeighborTrajectoryInfo neighbors = getNeighboringTrajectoryLUTs(distFromGoal);
+        if (neighbors == null)
+            return null;
+
+        double distRange = neighbors.hiDist - neighbors.loDist;
+        if (distRange <= 1e-9)
+            return neighbors.loLUT.getOptimalTrajectory();
+
+        double t = (distFromGoal - neighbors.loDist) / distRange;
+
+        Trajectory loTraj = neighbors.loLUT.getOptimalTrajectory();
+        Trajectory hiTraj = neighbors.hiLUT.getOptimalTrajectory();
+
+        if (loTraj == null || hiTraj == null)
+            return null;
+
+        return loTraj.lerp(hiTraj, t);
+    }
+
 
     public Trajectory getInterpolatedImpactAngleTrajectory(double distFromGoal, double impactAngleRad) {
         if (trajectoryLUTs.isEmpty())
