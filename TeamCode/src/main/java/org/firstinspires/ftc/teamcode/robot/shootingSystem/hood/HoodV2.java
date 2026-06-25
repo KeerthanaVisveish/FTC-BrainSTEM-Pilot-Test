@@ -15,8 +15,8 @@ import org.firstinspires.ftc.teamcode.utils.math.PIDController;
 public class HoodV2 extends Hood {
 
     public static class Params {
-        public double minExitAngle = Math.toRadians(20);
-        public double maxExitAngle = Math.toRadians(69);
+        public double minExitAngle = Math.toRadians(30);
+        public double maxExitAngle = Math.toRadians(70);
         public double kP = 2;
         public double kI = 0;
         public double kD = 0.1;
@@ -24,13 +24,13 @@ public class HoodV2 extends Hood {
         public double kG = 0.01414;
         public double kGLookAheadScale = 1;
         public double maxPower = .99;
-        //y=-0.342467x+298.29433
-        public double encoderToExitAngleSlope = -0.342467, encoderToExitAngleIntercept = 298.29433;
+        //y=-0.37015x+261.88606
+        public double encoderToExitAngleSlope = -0.37015, encoderToExitAngleIntercept = 261.88606;
         public double externalAngularOffset = 0; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
         public double onTargetErrorThreshold = Math.toRadians(1);
 
-        public double dampeningErrorThreshold = Math.toRadians(.5);
+        public double dampeningErrorThreshold = Math.toRadians(1);
         public double dampeningFactor = .3;
     }
     public static Params params = new Params();
@@ -83,9 +83,6 @@ public class HoodV2 extends Hood {
     private double getExitAngleFromPosition(double pos) {
         double deg = pos * params.encoderToExitAngleSlope + params.encoderToExitAngleIntercept + params.externalAngularOffset;
         return Math.toRadians(deg);
-    }
-    private double getAngularVelocityFromEncoder(double encoderVelocity) {
-        return encoderVelocity * Math.toRadians(params.encoderToExitAngleSlope);
     }
 
     @Override

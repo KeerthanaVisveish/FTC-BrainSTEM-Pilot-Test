@@ -15,6 +15,7 @@ import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 
 @Config
 public abstract class Shooter extends Component {
+    public static double rampUpScale = .6, rampUpSpeed = 200;
     private double targetVelTps;
     protected double curShooterVelTps, prevVelForShotTracking;
 
@@ -55,6 +56,8 @@ public abstract class Shooter extends Component {
         velocityVoltage = kV * targetVelTps;
         frictionVoltage = Math.signum(targetVelTps) * getKF();
         totalVoltage = pidVoltage + velocityVoltage + frictionVoltage;
+        if(Math.abs(getVelTps()) < rampUpSpeed)
+            totalVoltage *= rampUpScale;
 
         setShooterVoltage(totalVoltage, batteryVoltage);
     }

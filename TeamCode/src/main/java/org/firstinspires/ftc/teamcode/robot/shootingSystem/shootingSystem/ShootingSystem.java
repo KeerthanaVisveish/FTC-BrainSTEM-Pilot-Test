@@ -8,7 +8,6 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
@@ -61,10 +60,14 @@ public abstract class ShootingSystem extends Component {
         public double gateLocationYThreshold = -12, gateLocationXThreshold = -50;
     }
     public static class GeneralParams {
+        public boolean useShootingInterlocks = false;
+        public boolean usePoseClipping = false;
+        public boolean enableShooter = true;
+        public boolean enableTurret = true;
+        public boolean enableHood = true;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
-        public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
-        public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
         public double shooterLookAhead = 0;
+        public double hoodFilterA = .5;
     }
 
     public record LaunchData(double targetShooterSpeedTps, double targetHoodExitAngleRad, double targetTurretFieldAngleRad) {}
@@ -79,11 +82,12 @@ public abstract class ShootingSystem extends Component {
 
     private double turretAngleAdjustment, shooterSpeedAdjustment;
 
-    private double turretTargetAngle, turretGoalTargetAngle, turretGoalLockOnVelocity;
+    private double turretTargetAngle, turretGoalTargetAngle, turretGoalLockOnVelocity, turretMotionProfileVel;
+    private double turretTargetVel, turretMotionProfileAccel;
     private double lookAheadTargetShooterSpeedTps, currentTargetShooterSpeedTps;
 
 
-    private double hoodExitAngleRad;
+    private double rawHoodExitAngleRad, filteredHoodExitAngleRad;
     private Pose2d turretPoseIn;
     private Pose2d clippedRobotPoseIn, clippedTurretPoseIn;
     public final Vector2d nearTriangleTip = new Vector2d(RobotProperties.length * Math.sqrt(2), 0);
@@ -120,7 +124,7 @@ public abstract class ShootingSystem extends Component {
     public ShootingSystem(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry);
 
-        srsHub = new SRSHub(hardwareMap);
+        srsHub = new SRSHub(hardwareMap, telemetry);
 
         shooter = new ShooterV2(hardwareMap, telemetry, srsHub);
         hood = new HoodV2(hardwareMap, telemetry, srsHub);
@@ -128,7 +132,7 @@ public abstract class ShootingSystem extends Component {
 
         setTurretToCenter();
         setShooterOff();
-        setHoodToGoalTargeting();
+        setHoodToCustomExitAngle(Math.toRadians(45));
 
         locationState = Location.GATE_CYCLE;
 
@@ -203,18 +207,23 @@ public abstract class ShootingSystem extends Component {
         }
         return new Vector2d[] {clippedRobotPosIn, clippedTurretPosIn};
     }
-    private double calculateTurretGoalLockOnVelocity(Vector2d robotPosIn, Vector2d robotVel, double currentTurretTargetFieldAngle) {
+    private double calculateTurretGoalLockOnVelocity(Vector2d robotPosIn, Vector2d robotTranslationalVel, double robotAngularVel, double currentTurretFieldTargetAngle) {
         double timeStep = .01;
-        Vector2d futureDisp = robotVel.times(timeStep);
-        Vector2d[] futureClippedPositions = getClippedPositions(robotPosIn.plus(futureDisp), turretPoseIn.position.plus(futureDisp));
-        LaunchData futureLaunchData = calculateLaunchTrajectory(futureClippedPositions[0], futureClippedPositions[1], goalPosIn, robotVel, impactAngleRad, shooter.getVelTps());
+        Vector2d futureDisp = robotTranslationalVel.times(timeStep);
+        Vector2d[] futureClippedPositions;
+        if(generalParams.usePoseClipping)
+            futureClippedPositions = getClippedPositions(robotPosIn.plus(futureDisp), turretPoseIn.position.plus(futureDisp));
+        else
+            futureClippedPositions = new Vector2d[] { robotPosIn.plus(futureDisp), turretPoseIn.position.plus(futureDisp) };
+        LaunchData futureLaunchData = calculateLaunchTrajectory(futureClippedPositions[0], futureClippedPositions[1], goalPosIn, robotTranslationalVel, impactAngleRad, shooter.getVelTps());
 
         if(futureLaunchData != null && turretInRange())
-            return (futureLaunchData.targetTurretFieldAngleRad - currentTurretTargetFieldAngle) / timeStep;
+            return (futureLaunchData.targetTurretFieldAngleRad - currentTurretFieldTargetAngle) / timeStep - robotAngularVel;
         else
             return 0;
     }
     public void updateSubsystems(Pose2d robotPoseIn, OdoInfo robotVelIn, OdoInfo robotAccel, double batteryVoltage, double dt, Alliance alliance) {
+        srsHub.update();
         updateGoalPoses(robotPoseIn.position, alliance);
         Vector2d robotVel = new Vector2d(robotVelIn.x, robotVelIn.y);
 
@@ -223,54 +232,65 @@ public abstract class ShootingSystem extends Component {
 
         shooter.updateProperties();
 
-        Vector2d[] clippedPoses = getClippedPositions(robotPoseIn.position, turretPoseIn.position);
+        Vector2d[] clippedPoses = generalParams.usePoseClipping ? getClippedPositions(robotPoseIn.position, turretPoseIn.position) : new Vector2d[] {robotPoseIn.position, turretPoseIn.position};
         clippedRobotPoseIn = new Pose2d(clippedPoses[0], robotPoseIn.heading.toDouble());
         clippedTurretPoseIn = new Pose2d(clippedPoses[1], turretPoseIn.heading.toDouble());
         LaunchData launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel, impactAngleRad, shooter.getVelTps());
         if(launchData != null) {
             currentTargetShooterSpeedTps = launchData.targetShooterSpeedTps;
-            lookAheadTargetShooterSpeedTps = currentTargetShooterSpeedTps + robotVel.dot(turretPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y))) * generalParams.shooterLookAhead;
-            hoodExitAngleRad = launchData.targetHoodExitAngleRad;
+            lookAheadTargetShooterSpeedTps = currentTargetShooterSpeedTps + Math.max(0, robotVel.dot(turretPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y))) * generalParams.shooterLookAhead);
+            rawHoodExitAngleRad = launchData.targetHoodExitAngleRad;
+            if(filteredHoodExitAngleRad == 0)
+                filteredHoodExitAngleRad = rawHoodExitAngleRad;
+            else
+                filteredHoodExitAngleRad = filteredHoodExitAngleRad * generalParams.hoodFilterA + rawHoodExitAngleRad * (1 - generalParams.hoodFilterA);
             turretGoalTargetAngle = launchData.targetTurretFieldAngleRad;
         }
 
-        double turretTargetVel;
-        switch(turretState) {
-            case GOAL_TARGETING:
-                turretTargetAngle = MathUtils.angleNormDeltaRad(turretGoalTargetAngle - robotPoseIn.heading.toDouble() + turretAngleAdjustment);
-                turretGoalLockOnVelocity = calculateTurretGoalLockOnVelocity(robotPoseIn.position, robotVel, turretGoalTargetAngle);
-                turretTargetVel = turretGoalLockOnVelocity + turret.calculateMotionProfile(turretTargetAngle);
-                turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, 0, 0, turretInRange() ? Turret.powerTuning.maxVoltage : Turret.powerTuning.outOfRangeMaxVoltage, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
-                break;
-            case ANGLE_TARGETING:
-                turretTargetVel = turret.calculateMotionProfile(turretTargetAngle);
-                if(angleTargetingPassPosition && Math.signum(turretTargetAngle - turret.getCurAngleRad()) != angleTargetingInitialDir)
-                    turret.setTurretPower(0);
-                else
-                    turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, 0, angleTargetingMinVoltage, turretInRange() ? Turret.powerTuning.maxVoltage : Turret.powerTuning.outOfRangeMaxVoltage, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
-                break;
+        if(generalParams.enableTurret) {
+            double[] motionProfile = turret.calculateMotionProfile(turretTargetAngle);
+            turretMotionProfileVel = motionProfile[0];
+            turretMotionProfileAccel = motionProfile[1];
+            switch (turretState) {
+                case GOAL_TARGETING:
+                    turretTargetAngle = MathUtils.angleNormDeltaRad(turretGoalTargetAngle - robotPoseIn.heading.toDouble() + turretAngleAdjustment);
+                    turretGoalLockOnVelocity = calculateTurretGoalLockOnVelocity(robotPoseIn.position, robotVel, robotVelIn.headingRad, turretGoalTargetAngle);
+                    turretTargetVel = turretGoalLockOnVelocity + turretMotionProfileVel;
+                    turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, turretMotionProfileAccel, 0, Turret.powerTuning.maxVoltage, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
+                    break;
+                case ANGLE_TARGETING:
+                    turretTargetVel = turretMotionProfileVel;
+                    if (angleTargetingPassPosition && Math.signum(turretTargetAngle - turret.getCurAngleRad()) != angleTargetingInitialDir)
+                        turret.setTurretPower(0);
+                    else
+                        turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, turretMotionProfileAccel, angleTargetingMinVoltage, Turret.powerTuning.maxVoltage, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
+                    break;
+            }
         }
 
+        if(generalParams.enableShooter) {
+            switch (shooterState) {
+                case OFF:
+                    shooter.setShooterVoltage(0, batteryVoltage);
+                    break;
 
-        switch (shooterState) {
-            case OFF:
-                shooter.setShooterVoltage(0, batteryVoltage);
-                break;
-
-            case GOAL_TARGETING:
-                shooter.setShooterVelocityPID(lookAheadTargetShooterSpeedTps + shooterSpeedAdjustment, batteryVoltage);
-                break;
-            case CUSTOM_VOLTAGE:
-                shooter.setShooterVoltage(customShooterVoltage, batteryVoltage);
+                case GOAL_TARGETING:
+                    shooter.setShooterVelocityPID(lookAheadTargetShooterSpeedTps + shooterSpeedAdjustment, batteryVoltage);
+                    break;
+                case CUSTOM_VOLTAGE:
+                    shooter.setShooterVoltage(customShooterVoltage, batteryVoltage);
+            }
         }
 
-        switch (hoodState) {
-            case GOAL_TARGETING:
-                hood.setTargetExitAngle(hoodExitAngleRad);
-                break;
-            case CUSTOM_ANGLE:
-                hood.setTargetExitAngle(customHoodAngle);
-                break;
+        if(generalParams.enableHood) {
+            switch (hoodState) {
+                case GOAL_TARGETING:
+                    hood.setTargetExitAngle(filteredHoodExitAngleRad);
+                    break;
+                case CUSTOM_ANGLE:
+                    hood.setTargetExitAngle(customHoodAngle);
+                    break;
+            }
         }
     }
 
@@ -420,11 +440,6 @@ public abstract class ShootingSystem extends Component {
         turretAngleAdjustment = 0;
         shooterSpeedAdjustment = 0;
     }
-
-    public double calcEfficiencyCoef(double ballExitAngleRad) {
-        double rawE = generalParams.efficiencyCoefM * ballExitAngleRad + generalParams.efficiencyCoefB;
-        return Range.clip(rawE, generalParams.minEfficiencyCoef, generalParams.maxEfficiencyCoef);
-    }
     public boolean shooterNormGood() {
         double shooterError = Math.abs(currentTargetShooterSpeedTps - shooter.getVelTps());
         return shooterError < shooter.getNormTolerance(locationState);
@@ -441,7 +456,7 @@ public abstract class ShootingSystem extends Component {
         return Math.abs(turretTargetAngle) < Turret.turretParams.maxAngle;
     }
     public boolean meetsSafetyInterlocks() {
-        return turretOnTarget() && shooterNormGood() && hood.onTarget();
+        return !generalParams.useShootingInterlocks || (turretOnTarget() && shooterNormGood() && hood.onTarget());
     }
     public Location getLocationState() {
         return locationState;
@@ -541,13 +556,19 @@ public abstract class ShootingSystem extends Component {
         telemetry.addData("SS turret on target num", turretOnTarget() ? 2: 0);
         telemetry.addData("SS meets safety interlocks num", meetsSafetyInterlocks() ? 3 : 0);
         telemetry.addLine("");
-        telemetry.addData("SS turret relative target deg", Math.toDegrees(turretGoalTargetAngle));
+        telemetry.addData("SS turret state", turretState);
+        telemetry.addData("SS turret relative target deg", Math.toDegrees(turretTargetAngle));
+        telemetry.addData("SS turret target velocity", turretTargetVel);
         telemetry.addData("SS turret lock on velocity", turretGoalLockOnVelocity);
+        telemetry.addData("SS turret motion profile velocity", turretMotionProfileVel);
+        telemetry.addData("SS turret motion profile accel", turretMotionProfileAccel);
         telemetry.addLine("");
+        telemetry.addData("SS shooter state", shooterState);
         telemetry.addData("SS shooter lookahead target speed tps", lookAheadTargetShooterSpeedTps);
         telemetry.addData("SS shooter current target speed tps", currentTargetShooterSpeedTps);
         telemetry.addLine("");
-        telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(hoodExitAngleRad), 3));
+        telemetry.addData("SS hood state", hoodState);
+        telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(rawHoodExitAngleRad), 3));
         telemetry.addLine("");
     }
 }

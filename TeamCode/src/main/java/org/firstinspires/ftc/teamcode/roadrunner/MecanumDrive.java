@@ -562,10 +562,17 @@ public class MecanumDrive {
     }
 
     public void printInfo(Telemetry telemetry) {
-        telemetry.addData("bl current", leftBack.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("fl current", leftFront.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("br current", rightBack.getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("fr current", rightFront.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("DRIVE pose", pinpoint().getPose());
+        telemetry.addData("DRIVE velocity", pinpoint().getVelocity().toString(2));
+        telemetry.addData("filtered battery voltage", batteryVoltageFilter.getVoltage());
+        telemetry.addData("DRIVE bl power", leftBack.getPower());
+        telemetry.addData("DRIVE fl power", leftFront.getPower());
+        telemetry.addData("DRIVE br power", rightBack.getPower());
+        telemetry.addData("DRIVE fr power", rightFront.getPower());
+        telemetry.addData("DRIVE bl current", leftBack.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("DRIVE fl current", leftFront.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("DRIVE br current", rightBack.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("DRIVE fr current", rightFront.getCurrent(CurrentUnit.AMPS));
 
     }
 }

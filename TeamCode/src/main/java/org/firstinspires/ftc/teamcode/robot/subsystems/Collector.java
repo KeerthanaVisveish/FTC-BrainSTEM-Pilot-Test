@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.robot.RobotProperties;
 @Config
 public class Collector extends Component {
 
-    public static class Params{
+    public static class Params {
         public double engagedPos = 0.1;
         public double disengagedPos = 0.65;
         public double has3BallsConfirmFrames = 2, has3BallsAutoConfirmFrames = 5;

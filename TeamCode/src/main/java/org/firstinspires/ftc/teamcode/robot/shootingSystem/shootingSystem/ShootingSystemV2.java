@@ -6,8 +6,10 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.Trajectory;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryDistanceLUT;
@@ -21,9 +23,6 @@ import java.util.ArrayList;
 @Config
 public class ShootingSystemV2 extends ShootingSystem {
     public static class V2Params {
-        //y=0.0042825x+3.38083
-        public double shooterTpsToMpsSlope = 0.0042825;
-        public double shooterTpsToMpsIntercept = 3.38083;
         public int numIterations = 5;
         public boolean useVelocityCompensation = true;
         public int drawTrajNumPoints = 200;
@@ -70,10 +69,10 @@ public class ShootingSystemV2 extends ShootingSystem {
         return null;
     }
     private double getMpsFromTps(double tps) {
-        return v2Params.shooterTpsToMpsSlope * tps + v2Params.shooterTpsToMpsIntercept;
+        return ShooterV2.params.getMpsFunction.apply(tps);
     }
     private double getTpsFromMps(double mps) {
-        return (mps - v2Params.shooterTpsToMpsIntercept) / v2Params.shooterTpsToMpsSlope;
+        return ShooterV2.params.getTpsFunction.apply(mps);
     }
 
     @Override

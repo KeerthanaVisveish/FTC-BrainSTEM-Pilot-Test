@@ -20,7 +20,7 @@ public class Turret extends Component {
     public static class TestingParams {
         public boolean enableKF = true;
         public boolean enableFeedForwardVelocity = true;
-        public boolean enableKA = false;
+        public boolean enableKA = true;
         public boolean enablePID = true;
         public boolean enableTorqueMitigation = true;
         public boolean enablePower = true;
@@ -77,44 +77,32 @@ public class Turret extends Component {
         };
     }
     public static class PowerTuningV2 {
-        public double kP = .028, kI = 0, kD = 0;
+        public double kP = .028, kI = 0, kD = 0.3;
         public double maxPid = 3.5;
         public double maxIntegral = 5;
-        public double motionProfileAccel = .01, motionProfileMaxVel = 1, motionProfileDeadZone = 5;
-        public double dampeningRadius = Math.toRadians(1), dampeningFactor = .5;
-        public double maxVoltage = 7, outOfRangeMaxVoltage = 5;
+        public double motionProfileAccel = 6, motionProfileMaxSpeed = 8, motionProfileDeadZoneDeg = 1;
+        public double dampeningRadius = Math.toRadians(.5), dampeningFactor = .5;
+        public double maxVoltage = 12;
 
         public double kT = -.015;
-        public double kV = 0;
+        public double kV = 1.3;
         public double kA = 0;
 
         public double[] kfPosLookupData = new double[] {
-                -350, .4,
-                -300, .4,
-                -130, .4,
-                0, .4,
-                30, .45,
-                100, .5,
-                120, .6,
-                160, .6,
-                170, .7,
-                190, .8,
-                230, .85,
-                300, 1.05,
-                350, 1.05
+                -2, .8,
+                0, .8,
+                .5, .8,
+                1, .8,
+                1.5, .8,
+                2, .8
         };
         public double[] kfNegLookupData = new double[] {
-                -350, -1,
-                -300, -1,
-                -156, -.9,
-                -130, -.8,
-                -75, -.7,
-                -25, -.6,
-                0, -.5,
-                5, -.5,
-                110, -.4,
-                170, -.4,
-                350, -.4
+                -2, -1,
+                0, -1,
+                .5, -0.9,
+                1, -0.9,
+                1.5, -.8,
+                2, -.8
         };
     }
     public static TestingParams testingParams = new TestingParams();
@@ -213,16 +201,15 @@ public class Turret extends Component {
     public void controlTurretToTarget(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double robotHeading, OdoInfo robotAccel, double robotBattery) {
         torqueAtTurretAxisOfRotation = calculateExternalTorque(robotHeading, robotAccel);
         double wrappedTargetAngle = wrapTargetAngle(targetAngle, turretParams.maxAngle, smoothWhenOutOfRange);
-        setTurretVoltage(calculateTurretVoltage(wrappedTargetAngle, targetVelocity, targetAcceleration, minVoltageMag, maxVoltageMag, torqueAtTurretAxisOfRotation), robotBattery);
+        setTurretVoltage(calculateVoltage(wrappedTargetAngle, targetVelocity, targetAcceleration, minVoltageMag, maxVoltageMag, torqueAtTurretAxisOfRotation), robotBattery);
     }
 
-    public double calculateTurretVoltage(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double torqueAtTurretAxisOfRotation) {
+    public double calculateVoltage(double targetAngle, double targetVelocity, double targetAcceleration, double minVoltageMag, double maxVoltageMag, double torqueAtTurretAxisOfRotation) {
         double positionError = targetAngle - currentAngleRad;
 
         if(testingParams.enableKF) {
             double dir = targetVelocity == 0 ? Math.signum(positionError) : Math.signum(targetVelocity);
-            double maxEncoder = turretParams.maxAngle * turretParams.ticksPerRad;
-            double input = Range.clip(currentEncoder, -maxEncoder, maxEncoder);
+            double input = Range.clip(currentAngleRad, -turretParams.maxAngle, turretParams.maxAngle);
             fVoltage = dir == 1 ? kFPosLookup.get(input) : kfNegLookup.get(input);
         }
         else
@@ -279,13 +266,19 @@ public class Turret extends Component {
         return currentEncoder;
     }
 
-    public double calculateMotionProfile(double targetAngle) {
+    public double[] calculateMotionProfile(double targetAngle) {
         // x = (v1^2 - v0^2) / (2a)
         // v0^2 = v1^2 - 2ax
-        double positionError = targetAngle - currentAngleRad;
-        double motionProfileVel = Math.signum(positionError) * Math.min(powerTuning.motionProfileMaxVel, Math.sqrt(2 * powerTuning.motionProfileAccel * Math.max(0, Math.abs(positionError) - powerTuning.motionProfileDeadZone)));
-        return motionProfileVel;
+        double totalTravelDist = targetAngle - currentAngleRad;
+        if(Math.abs(totalTravelDist) < Math.toRadians(powerTuning.motionProfileDeadZoneDeg))
+            return new double[] {0, 0};
 
+        double travelDir = Math.signum(totalTravelDist);
+        double speed = Math.sqrt(2 * powerTuning.motionProfileAccel * Math.abs(totalTravelDist));
+        if(speed > powerTuning.motionProfileMaxSpeed)
+            return new double[] {powerTuning.motionProfileMaxSpeed * travelDir, 0};
+        else
+            return new double[] {speed * travelDir, -powerTuning.motionProfileAccel};
     }
     @Override
     public void printInfo() {
@@ -300,7 +293,7 @@ public class Turret extends Component {
         telemetry.addData("TU total voltage", totalVoltage);
         telemetry.addLine("-----");
         telemetry.addData("TU current encoder", currentEncoder);
-        telemetry.addData("TU current angle", currentAngleRad);
+        telemetry.addData("TU current angle deg", MathUtils.format(Math.toDegrees(currentAngleRad), 3));
         telemetry.addData("TU current vel", currentVelocityRad);
         telemetry.addData("TU current accel", currentAccelerationRad);
         telemetry.addLine("-----");

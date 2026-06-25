@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.SRSHub;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystem;
@@ -9,11 +11,15 @@ import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.Shooti
 @Config
 public class ShooterV2 extends Shooter {
     public static class Params {
+        //linear: y=0.00783937x+0.468228
+        // logarithmic: y=-28.38609 + 5.28369*ln(x)
+        public Function<Double, Double> getMpsFunction = tps -> -28.38609 + 5.28369 * Math.log(tps);
+        public Function<Double, Double> getTpsFunction = mps -> Math.exp((mps + 28.38609) / 5.28369);
         public double firstShootTolerance = 40, farShootTolerance = 50, closeShootTolerance = 90;
         public double velocitySign = -1;
         public double kP = 0.03;
         // y=0.0101436x+1.12464
-        public double kV = 0.0101436;
+        public double kV = 0.0075;
         public double kF = 1.12464;
         public double speedAdjustment = 0;
         public double minVelForShot = 0;

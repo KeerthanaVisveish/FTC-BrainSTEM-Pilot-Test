@@ -1,13 +1,17 @@
 package org.firstinspires.ftc.teamcode.robot.shootingSystem;
 
+import android.sax.StartElementListener;
+
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.RobotLog;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.RobotProperties;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Component;
 
 @Config
-public class SRSHub {
+public class SRSHub extends Component {
     // absolute encoders
     public static int hoodAbsoluteEncoderPort = 1;
     public static int hoodServo1Port = 4;
@@ -21,7 +25,8 @@ public class SRSHub {
 
     private final SRSHubRaw srsHubRaw;
 
-    public SRSHub(HardwareMap hardwareMap) {
+    public SRSHub(HardwareMap hardwareMap, Telemetry telemetry) {
+        super(hardwareMap, telemetry);
         SRSHubRaw.Config config = new SRSHubRaw.Config();
 
         config.setEncoder(hoodAbsoluteEncoderPort, SRSHubRaw.Encoder.PWM);
@@ -46,9 +51,6 @@ public class SRSHub {
     public int getHoodAbsEncoder() {
         return srsHubRaw.readEncoder(hoodAbsoluteEncoderPort).position;
     }
-    public double getHoodVelocity() {
-        return srsHubRaw.readEncoder(hoodAbsoluteEncoderPort).velocity;
-    }
     public double getHoodServo1Encoder() {
         return srsHubRaw.readEncoder(hoodServo1Port).position;
     }
@@ -63,5 +65,13 @@ public class SRSHub {
     }
     public double getShooterHighEncoder() {
         return srsHubRaw.readEncoder(shooterHighEncoderPort).position;
+    }
+
+    @Override
+    public void printInfo() {
+        telemetry.addLine("SRSHUB----------");
+        telemetry.addData("SRS hood encoder", getHoodAbsEncoder());
+        telemetry.addData("SRS shooter low vel", getShooterLowVelocity());
+        telemetry.addData("SRS shooter high vel", getShooterHighVelocity());
     }
 }

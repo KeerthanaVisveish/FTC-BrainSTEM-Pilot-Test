@@ -266,7 +266,7 @@ public class LimelightLocalization extends LLParent {
         return targetGreenPos;
     }
     private Pose3D getRawCameraPoseFromLimelight() {
-        if (params.useMT2) {
+        if (params.useMT2 && robot.shootingSystemV1.getTurretPose() != null) {
             double turretHeadingDeg = Math.toDegrees(robot.shootingSystemV1.getTurretPose().heading.toDouble());
             limelight.updateRobotOrientation(turretHeadingDeg);
         }

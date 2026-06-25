@@ -34,7 +34,7 @@ public class ShooterHoodTest extends LinearOpMode {
         telemetry.update();
 
         BatteryVoltageFilter batteryVoltageFilter = BatteryVoltageFilter.getInstance(hardwareMap);
-        SRSHub srsHub = new SRSHub(hardwareMap);
+        SRSHub srsHub = new SRSHub(hardwareMap, telemetry);
         ShooterV2 shooterV2 = new ShooterV2(hardwareMap, telemetry, srsHub);
         HoodV2 hoodV2 = new HoodV2(hardwareMap, telemetry, srsHub);
         Collector collector = new Collector(hardwareMap, telemetry);
@@ -70,11 +70,9 @@ public class ShooterHoodTest extends LinearOpMode {
             else if(!runIntake && collector.getIntakeState() != Collector.IntakeState.OFF)
                 collector.setIntakeState(Collector.IntakeState.OFF);
 
-            hoodV2.update();
             collector.updateState(Math.abs(targetShooterSpeed - shooterV2.getVelTps()) < errorThreshold);
 
             telemetry.addLine("SRSHUB-----");
-            telemetry.addData("hood abs velocity", srsHub.getHoodVelocity());
             telemetry.addData("hood abs encoder", srsHub.getHoodAbsEncoder());
             telemetry.addData("hood 1 encoder", srsHub.getHoodServo1Encoder());
             telemetry.addData("hood 2 encoder", srsHub.getHoodServo2Encoder());

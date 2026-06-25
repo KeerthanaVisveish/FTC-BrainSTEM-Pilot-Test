@@ -1,11 +1,13 @@
 package org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem;
 
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShooterConversion;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathOld;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.AnswerKeyPt1;
@@ -14,7 +16,15 @@ import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathNew;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
 
 
+@Config
 public class ShootingSystemV1 extends ShootingSystem {
+    public static class Params {
+        public double x1 = 70, y1 = 0;
+        public double x2 = 144, y2 = 50;
+        public double efficiencyCoefM = -0.0766393, efficiencyCoefB = 0.446492;
+        public double minEfficiencyCoef = 0.3327, maxEfficiencyCoef = 0.4000;
+    }
+    public static Params params = new Params();
     private final ShootingMathNew shootingMathNew;
     public ShootingSystemV1(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry, robotPose, alliance);
@@ -25,18 +35,17 @@ public class ShootingSystemV1 extends ShootingSystem {
             Vector3d exitPosM = new Vector3d(turretPosIn.x, turretPosIn.y, ShootingMathOld.approximateExitHeightM(false)).times(.0254);
             Vector3d robotPosM = new Vector3d(robotPosIn.x, robotPosIn.y, 0).times(.0254);
             Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z).times(.0254);
-//            ToDoubleFunction<Double> shooterConversion = exitAngle -> {
-//                double e = calcEfficiencyCoef(exitAngle);
-//                return ShootingMathOld.ticksPerSecToExitSpeedMps(1, e);
-//            };
-            ShooterConversion shooterConversion = (encoderSpeed, exitAngle) -> ShootingSystemV2.v2Params.shooterTpsToMpsSlope * encoderSpeed + ShootingSystemV2.v2Params.shooterTpsToMpsIntercept;
+            double goalDist = turretPosIn.minus(new Vector2d(goalPosIn.x, goalPosIn.y)).norm();
+            ShooterConversion shooterConversion = (encoderSpeed, exitAngle) -> ShooterV2.params.getMpsFunction.apply(encoderSpeed - getDragCompensation(goalDist));
             Vector3d robotVelocityMps = new Vector3d(robotVelocityIps.x, robotVelocityIps.y, 0).times(.0254);
 
             AnswerKeyPt1 answerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelocityMps, 0, goalPosM, impactAngleRad, 0);
             AnswerKeyPt2 answerKeyPt2 = shootingMathNew.godSolvePart2(answerKeyPt1, goalPosM, impactAngleRad, shooterVelTps, shooterConversion);
 
             if(answerKeyPt1.solutionExists) {
-                double targetShooterSpeedTps = ShootingMathOld.exitMpsToMotorTicksPerSec(answerKeyPt1.launchVector.speed, calcEfficiencyCoef(answerKeyPt1.launchVector.exitAng));
+                // y - y1 = m(x - x1)
+                // y = mx - mx1 + y1
+                double targetShooterSpeedTps = ShooterV2.params.getTpsFunction.apply(answerKeyPt1.launchVector.speed) + getDragCompensation(goalDist);
 
                 double targetTurretFieldAngleRad, targetHoodExitAngleRad;
                 if(answerKeyPt2.solutionExists) {
@@ -51,5 +60,11 @@ public class ShootingSystemV1 extends ShootingSystem {
             }
             return null;
 
+    }
+
+    private double getDragCompensation(double goalDist) {
+        double slope = (params.y2 - params.y1) / (params.x2 - params.x1);
+        double intercept = -slope * params.x1 + params.y1;
+        return Math.max(slope * goalDist + intercept, 0);
     }
 }

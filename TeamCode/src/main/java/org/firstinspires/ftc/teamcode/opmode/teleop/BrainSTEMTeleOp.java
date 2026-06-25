@@ -30,7 +30,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     public static double odoPoseStoreFrequency = 2; // in Hertz
     public static boolean printCollector = false,
             printShooter = false, printTurret = false, printShootingSystem = false,
-            printLimelight = false, printPark = false, printDrivetrain = false, printHood = false;
+            printLimelight = false, printPark = false, printDrivetrain = false, printHood = false, printSrsHub = false;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
 
@@ -160,6 +160,8 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.drive.printInfo(telemetry);
                 if(printHood)
                     robot.shootingSystemV1.hood.printInfo();
+                if(printSrsHub)
+                    robot.shootingSystemV1.srsHub.printInfo();
             }
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();
@@ -216,10 +218,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             if (robot.shootingSystemV1.turretCentered()) {
                 robot.shootingSystemV1.setTurretToGoalTargeting();
                 robot.shootingSystemV1.setShooterToGoalTargeting();
+                robot.shootingSystemV1.setHoodToGoalTargeting();
             }
             else {
                 robot.shootingSystemV1.setTurretToCenter();
                 robot.shootingSystemV1.setShooterOff();
+                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(45));
             }
         }
         if(gp1.isFirstRightBumper()) {
@@ -273,9 +277,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
 
         if (gp2.isFirstDpadLeft())
-            robot.shootingSystemV1.decTurretAngleAdjustment();
-        else if (gp2.isFirstDpadRight())
             robot.shootingSystemV1.incTurretAngleAdjustment();
+        else if (gp2.isFirstDpadRight())
+            robot.shootingSystemV1.decTurretAngleAdjustment();
         if(gp2.isFirstLeftStickButton())
             robot.shootingSystemV1.decShooterSpeedAdjustment();
         else if(gp2.isFirstRightStickButton())
