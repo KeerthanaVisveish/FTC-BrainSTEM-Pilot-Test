@@ -1,14 +1,13 @@
 package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
+import com.qualcomm.robotcore.util.ReadWriteFile;
+
+import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.File;
 import java.util.ArrayList;
 
 public class TrajectoryLoader {
@@ -16,10 +15,12 @@ public class TrajectoryLoader {
     public static Trajectory loadTrajectory(JSONObject json, double dragCoeff, double magnusCoeff) {
         try {
             double exitAngleDeg = json.getDouble("exitAngle");
-            double impactAngleDeg = json.getDouble("impactAngle");
             double speed = json.getDouble("speed");
-            double timeOfFlight = json.getDouble("timeOfFlight");
-            double peakHeight = json.getDouble("peakHeight");
+            double timeOfFlight = json.getDouble("tof");
+            double impactAngleDeg = optDouble(json, 0.0, "impactAngle");
+            double peakHeight = optDouble(json, 0.0, "peakHeight");
+            double speedMoe = optDouble(json, 0.0, "speedMOE", "speedMoe");
+            double angleMoe = optDouble(json, 0.0, "angleMOE", "angleMoe");
 
             return new Trajectory(
                     dragCoeff,
@@ -28,7 +29,9 @@ public class TrajectoryLoader {
                     Math.toRadians(exitAngleDeg),
                     Math.toRadians(impactAngleDeg),
                     peakHeight,
-                    timeOfFlight
+                    timeOfFlight,
+                    speedMoe,
+                    angleMoe
             );
         } catch (JSONException e) {
             e.printStackTrace();
@@ -36,13 +39,13 @@ public class TrajectoryLoader {
         }
     }
 
-    public static TrajectoryLUT loadTrajectoryLUT(JSONObject json) {
+    public static TrajectoryLUT loadTrajectoryLUT(JSONObject groupJson, double dy, double dragCoeff, double magnusCoeff) {
         try {
-            double dx = json.getDouble("dx");
-            double dy = json.getDouble("dy");
-            double dragCoeff = json.getDouble("dragCoeff");
-            double magnusCoeff = json.getDouble("magnusCoeff");
-            JSONArray trajectoryArray = json.getJSONArray("trajectories");
+            if (!groupJson.has("dx"))
+                return null;
+
+            double dx = groupJson.getDouble("dx");
+            JSONArray trajectoryArray = groupJson.getJSONArray("trajectories");
             ArrayList<Trajectory> trajectories = new ArrayList<>();
 
             for (int i = 0; i < trajectoryArray.length(); i++) {
@@ -53,11 +56,19 @@ public class TrajectoryLoader {
                 trajectories.add(trajectory);
             }
 
+            if (trajectories.isEmpty())
+                return null;
+
+            int optimalIndex = resolveOptimalTrajectoryIndex(groupJson, trajectories);
+            if (optimalIndex < 0 || optimalIndex >= trajectories.size())
+                return null;
+
             return new TrajectoryLUT(
                     dx,
                     dy,
                     dragCoeff,
                     magnusCoeff,
+                    optimalIndex,
                     trajectories
             );
         } catch (JSONException e) {
@@ -66,27 +77,67 @@ public class TrajectoryLoader {
         }
     }
 
-    public static JSONObject getJsonObject(String filepath) {
-        try (FileInputStream stream = new FileInputStream(filepath)) {
-            return getJsonObject(stream);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+    public static TrajectoryDistanceLUT loadTrajectoryDistanceLUT(JSONObject root) {
+        try {
+            double dy = root.getDouble("dy");
+            double dragCoeff = root.getDouble("dragCoeff");
+            double magnusCoeff = root.getDouble("magnusCoeff");
+            JSONArray groups = root.getJSONArray("groups");
+            ArrayList<TrajectoryLUT> trajectoryLUTs = new ArrayList<>();
+
+            for (int i = 0; i < groups.length(); i++) {
+                TrajectoryLUT trajectoryLUT = loadTrajectoryLUT(groups.getJSONObject(i), dy, dragCoeff, magnusCoeff);
+                if (trajectoryLUT != null)
+                    trajectoryLUTs.add(trajectoryLUT);
+            }
+
+            if (trajectoryLUTs.isEmpty())
+                throw new RuntimeException("No trajectory groups loaded from JSON");
+
+            return TrajectoryDistanceLUT.fromTrajectoryLUTs(trajectoryLUTs);
+        } catch (JSONException e) {
+            throw new RuntimeException("Failed to parse trajectory groups from JSON", e);
         }
     }
 
-    public static JSONObject getJsonObject(InputStream stream) {
+    public static TrajectoryDistanceLUT loadFromSettingsFile(String filename) {
+        return loadTrajectoryDistanceLUT(getJsonObject(filename));
+    }
+
+    public static JSONObject getJsonObject(String filepath) {
         try {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] data = new byte[1024];
-            int n;
-            while ((n = stream.read(data)) != -1) {
-                buffer.write(data, 0, n);
-            }
-            return new JSONObject(buffer.toString(StandardCharsets.UTF_8.name()));
-        } catch (IOException | JSONException e) {
-            e.printStackTrace();
-            return null;
+            File file = AppUtil.getInstance().getSettingsFile(filepath);
+            String contents = ReadWriteFile.readFile(file);
+            return new JSONObject(contents);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read JSON file: " + filepath, e);
         }
+    }
+
+    private static int resolveOptimalTrajectoryIndex(JSONObject groupJson, ArrayList<Trajectory> trajectories) {
+        if (groupJson.has("optimalTrajectoryIndex"))
+            return groupJson.optInt("optimalTrajectoryIndex");
+        if (groupJson.has("biggestMOETrajectory"))
+            return groupJson.optInt("biggestMOETrajectory");
+
+        int bestIndex = 0;
+        double bestMoe = -1.0;
+        for (int i = 0; i < trajectories.size(); i++) {
+            Trajectory trajectory = trajectories.get(i);
+            double combinedMoe = trajectory.exitSpeedMOE * trajectory.exitAngleMOE;
+            if (combinedMoe > bestMoe) {
+                bestMoe = combinedMoe;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    private static double optDouble(JSONObject json, double defaultValue, String... keys) throws JSONException {
+        for (String key : keys) {
+            if (json.has(key))
+                return json.getDouble(key);
+        }
+        return defaultValue;
     }
 }

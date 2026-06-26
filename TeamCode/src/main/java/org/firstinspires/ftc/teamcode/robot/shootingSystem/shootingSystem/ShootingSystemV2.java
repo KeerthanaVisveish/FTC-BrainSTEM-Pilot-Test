@@ -12,6 +12,7 @@ import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.Trajectory;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryDistanceLUT;
+import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryLoader;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryMath;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.LaunchVector;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathNew;
@@ -37,7 +38,7 @@ public class ShootingSystemV2 extends ShootingSystem {
     public ShootingSystemV2(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry, robotPose, alliance);
 
-        this.trajectoryDistanceLUT = new TrajectoryDistanceLUT("", new ArrayList<>());
+        this.trajectoryDistanceLUT = TrajectoryLoader.loadFromSettingsFile("mtiTrajectories.json");
     }
 
     @Override
@@ -45,9 +46,13 @@ public class ShootingSystemV2 extends ShootingSystem {
         mostRecentTurretPos = turretPosIn;
         double distFromGoalM = turretPosIn.minus(new Vector2d(goalPosIn.x, goalPosIn.y)).times(0.0254).norm();
 
-        if(trajectoryDistanceLUT.distanceInRange(distFromGoalM)) {
+        telemetry.addLine("OFFBOARD SHOOTING INFO======================");
+        telemetry.addData("distFromGoalMeters", distFromGoalM);
+        boolean distanceInRange = trajectoryDistanceLUT.distanceInRange(distFromGoalM);
+        telemetry.addData("distanceInRange", distanceInRange);
+        if(distanceInRange) {
             double curExitSpeedMps = getMpsFromTps(shooterVelTps);
-            TrajectoryMath.TargetingInfo targetingInfo = TrajectoryMath.calculateTargetingInfo(trajectoryDistanceLUT, turretPosIn, turretPosIn, new Vector2d(goalPosIn.x, goalPosIn.y), new OdoInfo(robotVelocityIps.x, robotVelocityIps.y, 0), curExitSpeedMps, impactAngleRad, v2Params.numIterations);
+            TrajectoryMath.TargetingInfo targetingInfo = TrajectoryMath.calculateTargetingInfo(trajectoryDistanceLUT, turretPosIn, turretPosIn, new Vector2d(goalPosIn.x, goalPosIn.y), new OdoInfo(robotVelocityIps.x, robotVelocityIps.y, 0), curExitSpeedMps, v2Params.numIterations);
 
             if(targetingInfo == null)
                 return null;
@@ -55,7 +60,7 @@ public class ShootingSystemV2 extends ShootingSystem {
             if(targetingInfo.idealTargetTrajectory() == null)
                 return null;
             double targetShooterSpeedTps = getTpsFromMps(targetingInfo.idealTargetTrajectory().exitSpeedMps);
-
+            telemetry.addData("targetShooterSpeedTps", targetShooterSpeedTps);
             boolean useActualTraj = v2Params.useVelocityCompensation && targetingInfo.actualTargetTrajectory() != null;
             mostRecentTrajectory = useActualTraj ? targetingInfo.actualTargetTrajectory() : targetingInfo.idealTargetTrajectory();
 
@@ -88,5 +93,15 @@ public class ShootingSystemV2 extends ShootingSystem {
             fieldOverlay.setStroke("blue");
             fieldOverlay.strokeLine(points.get(0).x, points.get(0).y, points.get(points.size()-1).x, points.get(points.size()-1).y);
         }
+    }
+
+    public boolean onTarget(double distFromGoal, double exitSpeedMps, double exitAngleRad) {
+        Trajectory traj1 = trajectoryDistanceLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, exitSpeedMps);
+        double exitAngleError = Math.abs(traj1.exitAngleRad - exitAngleRad);
+        if (exitAngleError < traj1.exitAngleMOE)
+            return true;
+        Trajectory traj2 = trajectoryDistanceLUT.getInterpolatedExitAngleTrajectory(distFromGoal, exitAngleRad);
+        double exitSpeedError = Math.abs(traj2.exitSpeedMps - exitSpeedMps);
+        return exitSpeedError < traj2.exitSpeedMOE;
     }
 }
