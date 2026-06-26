@@ -70,7 +70,7 @@ public class LED extends Component {
             return;
         }
 
-        if (robot.shootingSystemV1.shooterTargetingGoal() && !robot.shootingSystemV1.shooterNormGood()) {
+        if (robot.shootingSystem.shooterTargetingGoal() && !robot.shootingSystem.shooterNormGood()) {
             if (shooterFlashTimer.seconds() > shooterFlashOnTime + shooterFlashOffTime)
                 shooterFlashTimer.reset();
             else if (shooterFlashTimer.seconds() > shooterFlashOnTime) {
@@ -78,7 +78,7 @@ public class LED extends Component {
                 return;
             }
         }
-        if(!robot.shootingSystemV1.turretOnTarget() && robot.shootingSystemV1.turretTargetingGoal()) {
+        if(!robot.shootingSystem.turretOnTarget() && robot.shootingSystem.turretTargetingGoal()) {
             if(turretFlashTimer.seconds() > turretFlashOnTime + turretFlashOffTime)
                 turretFlashTimer.reset();
             else if(turretFlashTimer.seconds() > turretFlashOnTime) {

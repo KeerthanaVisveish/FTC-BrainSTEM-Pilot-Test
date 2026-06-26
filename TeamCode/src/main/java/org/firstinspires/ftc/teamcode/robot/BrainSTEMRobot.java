@@ -27,6 +27,7 @@ import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGenerati
 import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathInfo;
 import org.firstinspires.ftc.teamcode.robot.limelight.ballDetection.pathGeneration.PathPose;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystemV1;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystemV2;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Parking;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystem;
@@ -48,7 +49,7 @@ import java.util.function.DoubleSupplier;
 public class BrainSTEMRobot {
     public static boolean drawRobot = true, drawRobotDerivatives = false, drawPoseClipping = true, drawShooting = true, drawLimelight = false;
 
-    public ShootingSystem shootingSystemV1;
+    public ShootingSystem shootingSystem;
     public Collector collector;
     public Parking parking;
     public MecanumDrive drive;
@@ -65,7 +66,7 @@ public class BrainSTEMRobot {
 
         drive = new MecanumDrive(hardwareMap, initialPose);
         limelight = new Limelight(hardwareMap, telemetry, this);
-        shootingSystemV1 = new ShootingSystemV1(hardwareMap, telemetry, initialPose, alliance);
+        shootingSystem = new ShootingSystemV2(hardwareMap, telemetry, initialPose, alliance);
         collector = new Collector(hardwareMap, telemetry);
         parking = new Parking(hardwareMap, telemetry);
         dtTimer = new ElapsedTime();
@@ -83,12 +84,12 @@ public class BrainSTEMRobot {
         drive.updateVoltageFiltering();
         drive.updatePoseEstimate();
 
-        shootingSystemV1.updateSubsystems(drive.pinpoint().getPose(), drive.pinpoint().getVelocity(), drive.pinpoint().getRawAccel(), drive.getFilteredVoltage(), dt, alliance);
+        shootingSystem.updateSubsystems(drive.pinpoint().getPose(), drive.pinpoint().getVelocity(), drive.pinpoint().getRawAccel(), drive.getFilteredVoltage(), dt, alliance);
 
-        collector.updateState(shootingSystemV1.meetsSafetyInterlocks());
+        collector.updateState(shootingSystem.meetsSafetyInterlocks());
 
         if(collector.getClutchState() != Collector.ClutchState.ENGAGED)
-            shootingSystemV1.shooter.resetNumBallsShot();
+            shootingSystem.shooter.resetNumBallsShot();
 
         limelight.update();
     }
@@ -103,7 +104,7 @@ public class BrainSTEMRobot {
         OdoInfo robotAcceleration = drive.pinpoint().getRawAccel();
 
         if(drawPoseClipping)
-            shootingSystemV1.drawClippedPoses(fieldOverlay);
+            shootingSystem.drawClippedPoses(fieldOverlay);
 
         if(drawRobot) {
             fieldOverlay.setStroke("red");
@@ -111,7 +112,7 @@ public class BrainSTEMRobot {
         }
 
         if(drawShooting)
-            shootingSystemV1.drawShootingInfo(fieldOverlay);
+            shootingSystem.drawShootingInfo(fieldOverlay);
 
         if(drawRobotDerivatives) {
             fieldOverlay.setStroke("red");
@@ -129,7 +130,7 @@ public class BrainSTEMRobot {
                 limelight.ballDetection.clearAllScansAction(),
                 // first scan
                 new SequentialAction(
-                        shootingSystemV1.rotateTurretToCustomAngle(angle1Sup),
+                        shootingSystem.rotateTurretToCustomAngle(angle1Sup),
                         new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                         limelight.ballDetection.takeBallScanAction()
                 ),
@@ -144,7 +145,7 @@ public class BrainSTEMRobot {
                                     if (limelight.ballDetection.getCombinedBlobsFromMostRecentScan().size() >= 2)
                                         return false;
                                     secondScan = new SequentialAction(
-                                            shootingSystemV1.rotateTurretToCustomAngle(angle2Sup),
+                                            shootingSystem.rotateTurretToCustomAngle(angle2Sup),
                                             new SleepAction(LimelightBallDetection.params.waitToScanAfterTurretMove),
                                             limelight.ballDetection.takeBallScanAction()
                                     );
@@ -153,18 +154,18 @@ public class BrainSTEMRobot {
                             }
                         },
 
-                new InstantAction(() -> shootingSystemV1.setTurretToGoalTargeting())
+                new InstantAction(() -> shootingSystem.setTurretToGoalTargeting())
         );
     }
     public Action lookAtClassifier() {
         return new SequentialAction(
-                shootingSystemV1.rotateTurretToCustomAngle(() -> {
+                shootingSystem.rotateTurretToCustomAngle(() -> {
                     Vector2d classifierPosition = new Vector2d(-22, alliance == Alliance.RED ? 72 : -72);
-                    Vector2d turretToClassifier = shootingSystemV1.getTurretPose().position.minus(classifierPosition);
+                    Vector2d turretToClassifier = shootingSystem.getTurretPose().position.minus(classifierPosition);
                     return MathUtils.vecAngle(turretToClassifier) - drive.pinpoint().getPose().heading.toDouble();
                 }),
                 limelight.classifier.readBallsInClassifier(),
-                new InstantAction(() -> shootingSystemV1.setTurretToGoalTargeting())
+                new InstantAction(() -> shootingSystem.setTurretToGoalTargeting())
         );
     }
     public Action waitXSecondsIf2BallsInClassifier(double maxWaitTime) {
@@ -200,10 +201,10 @@ public class BrainSTEMRobot {
                                 collector::has3Balls),
                         new SequentialAction(
                                 new SleepAction(0.2),
-                                new InstantAction(() -> shootingSystemV1.setTurretToCenter())
+                                new InstantAction(() -> shootingSystem.setTurretToCenter())
                         )
                 ),
-                new InstantAction(() -> shootingSystemV1.setTurretToGoalTargeting())
+                new InstantAction(() -> shootingSystem.setTurretToGoalTargeting())
         );
     }
     private Action generateLimelightCollectDrive(double maxLimelightWaitTime) {

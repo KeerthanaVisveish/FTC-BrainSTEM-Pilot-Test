@@ -475,9 +475,14 @@ public abstract class ShootingSystem extends Component {
     public boolean turretInRange() {
         return Math.abs(turretTargetAngle) < Turret.turretParams.maxAngle;
     }
+    // v1
     public boolean meetsSafetyInterlocks() {
         return !generalParams.useShootingInterlocks || (turretOnTarget() && shooterNormGood() && hood.onTarget());
     }
+    // v2
+//    public boolean meetsSafetyInterlocks() {
+//        return !generalParams.useShootingInterlocks || (turretOnTarget() && onTarget(distFromGoal, ));
+//    }
     public boolean meetsFirstSafetyInterlocks() {
         return !generalParams.useShootingInterlocks || (turretOnTarget() && shooterFirstGood() && hood.onTarget());
     }

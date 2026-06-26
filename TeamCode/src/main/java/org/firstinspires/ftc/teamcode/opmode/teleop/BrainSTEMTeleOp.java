@@ -94,10 +94,10 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         while (opModeInInit()) {
             if (!inCompetition) {
                 if (gamepad1.start && gamepad1.backWasPressed())
-                    robot.shootingSystemV1.turret.resetEncoders();
-                robot.shootingSystemV1.turret.updateProperties(.01);
+                    robot.shootingSystem.turret.resetEncoders();
+                robot.shootingSystem.turret.updateProperties(.01);
                 telemetry.addData("reset turret encoder", "hold START + BACK");
-                telemetry.addData("turret encoder", robot.shootingSystemV1.turret.getEncoder());
+                telemetry.addData("turret encoder", robot.shootingSystem.turret.getEncoder());
             }
             else
                 telemetry.addLine("turret encoder reset disabled");
@@ -110,9 +110,9 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         PoseUpdatePacket.poseUpdatePackets.clear();
         robot.startOpmode();
         if (inCompetition) {
-            robot.shootingSystemV1.setTurretToGoalTargeting();
-            robot.shootingSystemV1.setShooterToGoalTargeting();
-            robot.shootingSystemV1.setHoodToGoalTargeting();
+            robot.shootingSystem.setTurretToGoalTargeting();
+            robot.shootingSystem.setShooterToGoalTargeting();
+            robot.shootingSystem.setHoodToGoalTargeting();
         }
 
         double lastOdoPoseStoreTime = -10;
@@ -149,19 +149,19 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 if (printLimelight)
                     robot.limelight.printInfo(telemetry);
                 if (printTurret)
-                    robot.shootingSystemV1.turret.printInfo();
+                    robot.shootingSystem.turret.printInfo();
                 if (printShooter)
-                    robot.shootingSystemV1.shooter.printInfo();
+                    robot.shootingSystem.shooter.printInfo();
                 if (printShootingSystem)
-                    robot.shootingSystemV1.printInfo();
+                    robot.shootingSystem.printInfo();
                 if (printPark)
                     robot.parking.printInfo();
                 if(printDrivetrain)
                     robot.drive.printInfo(telemetry);
                 if(printHood)
-                    robot.shootingSystemV1.hood.printInfo();
+                    robot.shootingSystem.hood.printInfo();
                 if(printSrsHub)
-                    robot.shootingSystemV1.srsHub.printInfo();
+                    robot.shootingSystem.srsHub.printInfo();
             }
             TelemetryPacket packet = new TelemetryPacket();
             Canvas fieldOverlay = packet.fieldOverlay();
@@ -215,21 +215,21 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstB() && !inCompetition) {
-            if (robot.shootingSystemV1.turretCentered()) {
-                robot.shootingSystemV1.setTurretToGoalTargeting();
-                robot.shootingSystemV1.setShooterToGoalTargeting();
-                robot.shootingSystemV1.setHoodToGoalTargeting();
+            if (robot.shootingSystem.turretCentered()) {
+                robot.shootingSystem.setTurretToGoalTargeting();
+                robot.shootingSystem.setShooterToGoalTargeting();
+                robot.shootingSystem.setHoodToGoalTargeting();
             }
             else {
-                robot.shootingSystemV1.setTurretToCenter();
-                robot.shootingSystemV1.setShooterOff();
-                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(65));
+                robot.shootingSystem.setTurretToCenter();
+                robot.shootingSystem.setShooterOff();
+                robot.shootingSystem.setHoodToCustomExitAngle(Math.toRadians(65));
             }
         }
         if(gp1.isFirstLeftBumper())
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
         if(gp1.isFirstRightBumper()) {
-            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED && robot.shootingSystemV1.meetsFirstSafetyInterlocks()) {
+            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED && robot.shootingSystem.meetsFirstSafetyInterlocks()) {
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
                 robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
             }
@@ -267,33 +267,33 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
 
         if (gp2.isFirstDpadLeft())
-            robot.shootingSystemV1.incTurretAngleAdjustment();
+            robot.shootingSystem.incTurretAngleAdjustment();
         else if (gp2.isFirstDpadRight())
-            robot.shootingSystemV1.decTurretAngleAdjustment();
+            robot.shootingSystem.decTurretAngleAdjustment();
         if(gp2.isFirstLeftStickButton())
-            robot.shootingSystemV1.decShooterSpeedAdjustment();
+            robot.shootingSystem.decShooterSpeedAdjustment();
         else if(gp2.isFirstRightStickButton())
-            robot.shootingSystemV1.incShooterSpeedAdjustment();
+            robot.shootingSystem.incShooterSpeedAdjustment();
 
         if (gamepad2.right_trigger > .5) {
             Pose2d cornerResetPose = createPose(alliance == Alliance.RED ? redCornerResetPose : blueCornerResetPose);
             robot.drive.pinpoint().setPose(cornerResetPose);
-            robot.shootingSystemV1.resetAdjustments();
+            robot.shootingSystem.resetAdjustments();
         }
 
         if (gp2.isFirstY()) {
             if (robot.parking.getParkState() != Parking.ParkState.EXTENDED) {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
-                robot.shootingSystemV1.setTurretToCenter();
-                robot.shootingSystemV1.setShooterOff();
-                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(65));
+                robot.shootingSystem.setTurretToCenter();
+                robot.shootingSystem.setShooterOff();
+                robot.shootingSystem.setHoodToCustomExitAngle(Math.toRadians(65));
             }
-            else if (robot.shootingSystemV1.turretCentered()) {
-                robot.shootingSystemV1.setTurretToCustomAngle(Turret.turretParams.maxAngle, Turret.turretParams.minParkRotateVoltage, true);
+            else if (robot.shootingSystem.turretCentered()) {
+                robot.shootingSystem.setTurretToCustomAngle(Turret.turretParams.maxAngle, Turret.turretParams.minParkRotateVoltage, true);
             }
             else {
                 robot.parking.setParkState(Parking.ParkState.RETRACTED);
-                robot.shootingSystemV1.setTurretToCenter();
+                robot.shootingSystem.setTurretToCenter();
             }
         }
         if (!inCompetition) {

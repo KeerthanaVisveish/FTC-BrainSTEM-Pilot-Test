@@ -39,13 +39,13 @@ public class AutoCommands {
     // TURRET
     public Action enableTurretTracking() {
         return packet -> {
-            robot.shootingSystemV1.setTurretToGoalTargeting();
+            robot.shootingSystem.setTurretToGoalTargeting();
             return false;
         };
     }
     public Action enableCustomTurretTracking(double targetRelAngle) {
         return telemetryPacket -> {
-            robot.shootingSystemV1.setTurretToCustomAngle(targetRelAngle, 0, false);
+            robot.shootingSystem.setTurretToCustomAngle(targetRelAngle, 0, false);
             return false;
         };
     }
@@ -54,24 +54,24 @@ public class AutoCommands {
     // SHOOTER
     public Action speedUpShooter() {
         return packet -> {
-            robot.shootingSystemV1.setShooterToGoalTargeting();
-            return !robot.shootingSystemV1.shooterFirstGood();
+            robot.shootingSystem.setShooterToGoalTargeting();
+            return !robot.shootingSystem.shooterFirstGood();
         };
     }
     public Action enableHoodTracking() {
-        return new InstantAction(() -> robot.shootingSystemV1.setHoodToGoalTargeting());
+        return new InstantAction(() -> robot.shootingSystem.setHoodToGoalTargeting());
     }
     public Action setShouldScore(boolean shouldScore) {
         if(shouldScore) {
             return new InstantAction(() -> {
-                robot.shootingSystemV1.setShooterToGoalTargeting();
-                robot.shootingSystemV1.setHoodToGoalTargeting();
+                robot.shootingSystem.setShooterToGoalTargeting();
+                robot.shootingSystem.setHoodToGoalTargeting();
             });
         }
         else {
             return new InstantAction(() -> {
-                robot.shootingSystemV1.setShooterToCustomVoltage(AutoPid.shoot.shooterMissVoltage);
-                robot.shootingSystemV1.setHoodToCustomExitAngle(AutoPid.shoot.hoodMissExitAngle);
+                robot.shootingSystem.setShooterToCustomVoltage(AutoPid.shoot.shooterMissVoltage);
+                robot.shootingSystem.setHoodToCustomExitAngle(AutoPid.shoot.hoodMissExitAngle);
             });
         }
     }
@@ -81,7 +81,7 @@ public class AutoCommands {
         return packet -> {
             robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
             robot.collector.clutchTimer.reset();
-            robot.shootingSystemV1.shooter.resetNumBallsShot();
+            robot.shootingSystem.shooter.resetNumBallsShot();
             return false;
         };
     }

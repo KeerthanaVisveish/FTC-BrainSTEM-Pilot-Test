@@ -113,7 +113,7 @@ public class Limelight {
         }
 
         if (drawingParams.FOVDist > 0) {
-            Pose2d cameraPose = getLimelightPose(robot.shootingSystemV1.getTurretPose());
+            Pose2d cameraPose = getLimelightPose(robot.shootingSystem.getTurretPose());
             Vector2d cameraPos = cameraPose.position;
             double maxAngleRad = cameraPose.heading.toDouble() + Math.toRadians(hardwareParams.hFOV * 0.5);
             double minAngleRad = cameraPose.heading.toDouble() - Math.toRadians(hardwareParams.hFOV * 0.5);

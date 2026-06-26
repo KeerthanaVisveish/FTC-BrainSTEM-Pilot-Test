@@ -158,7 +158,7 @@ public class LimelightClassifier extends LLParent {
     }
     private double getCameraY() {
         Pose2d robotPose = robot.drive.localizer.getPose();
-        Pose2d turretPose = ShootingMathOld.calcTurretPose(robotPose, robot.shootingSystemV1.turret.getCurAngleRad());
+        Pose2d turretPose = ShootingMathOld.calcTurretPose(robotPose, robot.shootingSystem.turret.getCurAngleRad());
         return Limelight.getLimelightPose(turretPose).position.y;
     }
     public Action readBallsInClassifier() {

@@ -114,7 +114,7 @@ public class LimelightBallDetection extends LLParent {
         double tx = Limelight.pixelXToTx(px);
         double ty = Limelight.pixelYToTy(py);
         ballPixelCoords.add(new double[] {px, py});
-        Pose2d cameraPose = Limelight.getLimelightPose(robot.shootingSystemV1.getTurretPose());
+        Pose2d cameraPose = Limelight.getLimelightPose(robot.shootingSystem.getTurretPose());
         Vector2d fieldPosition = Limelight.calculateBallFieldPosition(cameraPose, tx, ty);
         if (params.projectBallsInsideField)
             fieldPosition = GeometryUtils.projectOntoField(robot.drive.localizer.getPose().position, fieldPosition, params.minDistFromFieldWall);

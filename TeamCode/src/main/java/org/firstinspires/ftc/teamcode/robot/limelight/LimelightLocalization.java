@@ -130,7 +130,7 @@ public class LimelightLocalization extends LLParent {
                 if(!drivetrainGoodForUpdate)
                     drivetrainMovedSinceLastUpdate = true;
 
-                double turretHeading = ShootingMathOld.calcTurretPose(robot.drive.pinpoint().getPose(), robot.shootingSystemV1.turret.getCurAngleRad()).heading.toDouble();
+                double turretHeading = ShootingMathOld.calcTurretPose(robot.drive.pinpoint().getPose(), robot.shootingSystem.turret.getCurAngleRad()).heading.toDouble();
                 if(rawCameraPose3 == null
                         || !localizeInterlocksMet
                         || (params.useMT2 && Math.abs(rawCameraPose3.getOrientation().getYaw(AngleUnit.RADIANS) - turretHeading) > params.maxLocalizeHeadingError)) {
@@ -155,7 +155,7 @@ public class LimelightLocalization extends LLParent {
                 }
 
                 prevCameraPoses.add(rawCameraPose3);
-                double desiredNumToAvg = robot.shootingSystemV1.getLocationState() == ShootingSystem.Location.FAR ? params.farNumPrevFramesToAvg : params.nearNumPrevFramesToAvg;
+                double desiredNumToAvg = robot.shootingSystem.getLocationState() == ShootingSystem.Location.FAR ? params.farNumPrevFramesToAvg : params.nearNumPrevFramesToAvg;
                 if(prevCameraPoses.size() > desiredNumToAvg)
                     prevCameraPoses.remove(0);
 
@@ -251,7 +251,7 @@ public class LimelightLocalization extends LLParent {
         Vector2d jankOffset = parallelBasis.times(params.jankParallelOffset).plus(perpBasis.times(params.jankPerpOffset));
         avgCameraPose = new Pose2d(avgCameraPose.position.plus(jankOffset), avgCameraPose.heading.toDouble());
         Pose2d turretPose = Limelight.getTurretPose(avgCameraPose);
-        return ShootingMathOld.getRobotPose(turretPose, robot.shootingSystemV1.turret.getCurAngleRad());
+        return ShootingMathOld.getRobotPose(turretPose, robot.shootingSystem.turret.getCurAngleRad());
     }
     private boolean updateInterlocks() {
         drivetrainGoodForUpdate = isDrivetrainStable();
@@ -266,8 +266,8 @@ public class LimelightLocalization extends LLParent {
         return targetGreenPos;
     }
     private Pose3D getRawCameraPoseFromLimelight() {
-        if (params.useMT2 && robot.shootingSystemV1.getTurretPose() != null) {
-            double turretHeadingDeg = Math.toDegrees(robot.shootingSystemV1.getTurretPose().heading.toDouble());
+        if (params.useMT2 && robot.shootingSystem.getTurretPose() != null) {
+            double turretHeadingDeg = Math.toDegrees(robot.shootingSystem.getTurretPose().heading.toDouble());
             limelight.updateRobotOrientation(turretHeadingDeg);
         }
 
@@ -335,7 +335,7 @@ public class LimelightLocalization extends LLParent {
         return Math.abs(Math.toDegrees(odoVel.headingRad)) < params.maxUpdateHeadingDegVel && Math.hypot(odoVel.x, odoVel.y) < params.maxUpdateTranslationalVel;
     }
     private boolean isTurretStable() {
-        return robot.shootingSystemV1.turret.getCurVelRps() < params.maxUpdateTurretVelTicksPerSec;
+        return robot.shootingSystem.turret.getCurVelRps() < params.maxUpdateTurretVelTicksPerSec;
     }
     private boolean isInLocalizationZone() {
         Pose2d odoPose = robot.drive.localizer.getPose();
@@ -356,7 +356,7 @@ public class LimelightLocalization extends LLParent {
         Pose2d robotPoseToDraw = avgRobotPose == null ? new Pose2d(0, 0, 0) : new Pose2d(avgRobotPose.position, avgRobotPose.heading);
         Drawing.drawRobot(fieldOverlay, robotPoseToDraw);
 
-        Pose2d turretPose = ShootingMathOld.calcTurretPose(robotPoseToDraw, robot.shootingSystemV1.turret.getCurAngleRad());
+        Pose2d turretPose = ShootingMathOld.calcTurretPose(robotPoseToDraw, robot.shootingSystem.turret.getCurAngleRad());
         Drawing.drawCirclePose(fieldOverlay, turretPose, 3);
 
         Pose2d limelightPose = Limelight.getLimelightPose(turretPose);
