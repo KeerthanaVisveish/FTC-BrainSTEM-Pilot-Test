@@ -6,14 +6,13 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
-import org.firstinspires.ftc.teamcode.utils.offboardShooting.MTITrajectoryDistLUT;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.Trajectory;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryDistanceLUT;
+import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryLoader;
 import org.firstinspires.ftc.teamcode.utils.offboardShooting.TrajectoryMath;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.LaunchVector;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.ShootingMathNew;
@@ -39,7 +38,7 @@ public class ShootingSystemV2 extends ShootingSystem {
     public ShootingSystemV2(HardwareMap hardwareMap, Telemetry telemetry, Pose2d robotPose, Alliance alliance) {
         super(hardwareMap, telemetry, robotPose, alliance);
 
-        this.trajectoryDistanceLUT = MTITrajectoryDistLUT.get();
+        this.trajectoryDistanceLUT = TrajectoryLoader.loadFromSettingsFile("mtiTrajectories.json");
     }
 
     @Override
@@ -94,5 +93,15 @@ public class ShootingSystemV2 extends ShootingSystem {
             fieldOverlay.setStroke("blue");
             fieldOverlay.strokeLine(points.get(0).x, points.get(0).y, points.get(points.size()-1).x, points.get(points.size()-1).y);
         }
+    }
+
+    public boolean onTarget(double distFromGoal, double exitSpeedMps, double exitAngleRad) {
+        Trajectory traj1 = trajectoryDistanceLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, exitSpeedMps);
+        double exitAngleError = Math.abs(traj1.exitAngleRad - exitAngleRad);
+        if (exitAngleError < traj1.exitAngleMOE)
+            return true;
+        Trajectory traj2 = trajectoryDistanceLUT.getInterpolatedExitAngleTrajectory(distFromGoal, exitAngleRad);
+        double exitSpeedError = Math.abs(traj2.exitSpeedMps - exitSpeedMps);
+        return exitSpeedError < traj2.exitSpeedMOE;
     }
 }

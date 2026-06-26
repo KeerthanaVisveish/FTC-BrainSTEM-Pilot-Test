@@ -577,4 +577,6 @@ public abstract class ShootingSystem extends Component {
         telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(rawHoodExitAngleRad), 3));
         telemetry.addLine("");
     }
+
+    public abstract boolean onTarget(double distFromGoal, double launchSpeedMps, double exitAngleRad);
 }
