@@ -48,12 +48,13 @@ public abstract class AutoPid extends LinearOpMode {
         public String shotTimes = "0, 0, 0, 0, 0, 0";
         public String nearPartnerQual = "n 2on gn gn gn 1n";
         public String nearPartnerPlayoff = "n 2on 1on gn gn gn";
-        public String nearSolo = "n 2on gn g.5n 1n 3n";
+        public String nearSolo = "n 2n gn g.5n 1n 3n";
         public String farLoadingFirst = "f lf 3f af af", farThirdFirst = "f 3f lf af af";
         public String farNoLimelight = "f lf 3f lcf lcf lcf", far18 = "f 3f lf lc24f lc12f lcf";
         public Alliance alliance = Alliance.RED; // this is just the default it's re assigned later
         public String stringBuilder = "";
         public boolean smartPark = false;
+        public boolean gatePark = false;
         public boolean shouldColorSort = false;
     }
     public enum AutoState {
@@ -273,6 +274,10 @@ public abstract class AutoPid extends LinearOpMode {
                 prevCollectLetter = collectionLetter;
             }
             final boolean finalToNear = toNear;
+
+            if(customizable.gatePark)
+                actionOrder.add(getGateParkDrive());
+
             Action noColorSortAutoAction = new SequentialAction(
                     getPreloadDriveAndShoot(preloadShootPose, stringBuilder.charAt(0) == 'n', false),
                     actionOrder.get(0),
@@ -283,7 +288,8 @@ public abstract class AutoPid extends LinearOpMode {
                     numPaths > 5 ? actionOrder.get(5) : new SleepAction(0),
                     numPaths > 6 ? actionOrder.get(6) : new SleepAction(0),
                     numPaths > 7 ? actionOrder.get(7) : new SleepAction(0),
-                    numPaths > 8 ? actionOrder.get(8) : new SleepAction(0)
+                    numPaths > 8 ? actionOrder.get(8) : new SleepAction(0),
+                    numPaths > 9 ? actionOrder.get(9) : new SleepAction(0)
             );
 
             BooleanSupplier nearShouldStop = () -> (autoTimer.seconds() > timeConstraints.nearParkStopTime
@@ -522,29 +528,17 @@ public abstract class AutoPid extends LinearOpMode {
                     preloadShootDrive
             );
 
-        boolean shootingEarly = shootingNear && !colorSorting;
         return new SequentialAction(
                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_SHOOT),
                 new ParallelAction(
                         autoCommands.flickerHalfUp(),
                         autoCommands.speedUpShooter(),
-                        (colorSorting ?
-                                new SequentialAction(
-                                        autoCommands.enableCustomTurretTracking((isRed ? 1 : -1) * misc.motifScanTurretRelAngle),
-                                        new TimedAction(telemetryPacket -> {
-                                            if(robot.limelight.localization.foundMotif())
-                                                targetGreenPos = robot.limelight.localization.getTargetGreenPos();
-                                            return targetGreenPos == -1;
-                                        }, timeConstraints.maxMotifScanTime),
-                                        autoCommands.enableTurretTracking()
-                                )
-                                 : autoCommands.enableTurretTracking()
-                        ),
-                        preloadDriveAction,
-                        shootingEarly ? getShootAction(3, timeConstraints.nearPostFlickerShootTime) : new SleepAction(0)
+                        autoCommands.enableHoodTracking(),
+                        autoCommands.enableTurretTracking(),
+                        autoCommands.engageClutch(),
+                        preloadDriveAction
                 ),
-                !shootingEarly ? getShootAction(colorSorting ? timeConstraints.colorSortShooterInterlockMaxWait : 0, timeConstraints.farPostFlickerShootTime)
-                        : new SleepAction(0)
+                getShootAction(3, timeConstraints.flickerWaitTime)
         );
     }
     private Action buildCollectAndShoot(Action collectDrive, Action gateDrive, DrivePath shootDrive, boolean shootingNear, double postIntakeTime, boolean runIntake, boolean notLast, double shotTime, boolean initiallyExtake, boolean shootingPurple, int spikeMark) {
@@ -599,15 +593,13 @@ public abstract class AutoPid extends LinearOpMode {
                                             double dot = robot.drive.localizer.getPose().position.dot(perpNearParkLine);
                                             return dot < shoot.earlyEngageClutchDist;
                                         }),
-                                        shootingPurple ? getPurpleOnlyShootAction(timeConstraints.shooterInterlockMaxWait, spikeMark) : getShootAction(timeConstraints.shooterInterlockMaxWait, timeConstraints.nearPostFlickerShootTime)
+                                        shootingPurple ? getPurpleOnlyShootAction(timeConstraints.shooterInterlockMaxWait, spikeMark) : getShootAction(timeConstraints.shooterInterlockMaxWait, timeConstraints.flickerWaitTime)
                                 ) : new SleepAction(0)
                         )
                 ),
                 shootEarly ? new SleepAction(0) : getShootAction(
                         timeConstraints.shooterInterlockMaxWait,
-                        shootingNear ?
-                                (notLast ? timeConstraints.nearPostFlickerShootTime : timeConstraints.nearLastShootExtraTime)
-                                : timeConstraints.farPostFlickerShootTime)
+                        !shootingNear || notLast ? timeConstraints.flickerWaitTime : timeConstraints.nearLastShootExtraTime)
         );
     }
     private Action getShootAction(double shooterInterlockMaxTime, double postFlickWaitTime) {
@@ -616,17 +608,16 @@ public abstract class AutoPid extends LinearOpMode {
                         new InstantAction(() -> autoState = AutoState.SHOOT),
                         autoCommands.stopIntake(),
                         autoCommands.engageClutch(),
-                        new SequentialAction(
-                                new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystemV1.shooterFirstGood() && robot.shootingSystemV1.turretOnTarget()),
-                                new ParallelAction(
-                                        autoCommands.runIntake(),
-                                        new SleepAction(timeConstraints.maxShootTime)
-                                )
-                        )
+                        new CustomEndAction(new SleepAction(shooterInterlockMaxTime), () -> robot.shootingSystemV1.meetsSafetyInterlocks())
                 ),
-                new ParallelAction(
-                        autoCommands.flickerUp(),
-                        new SleepAction(postFlickWaitTime)
+                autoCommands.runIntake(),
+                new CustomEndAction(
+                        new SequentialAction(
+                                new CustomEndAction(new SleepAction(timeConstraints.maxShoot2Time), () -> robot.shootingSystemV1.shooter.getNumBallsShot() >= 2),
+                                autoCommands.flickerUp(),
+                                new SleepAction(postFlickWaitTime)
+                        ),
+                        () -> robot.shootingSystemV1.shooter.getNumBallsShot() >= 3
                 ),
                 autoCommands.stopIntake()
         );
@@ -669,7 +660,7 @@ public abstract class AutoPid extends LinearOpMode {
                         )
                 ),
                 autoCommands.flickerUp(),
-                new SleepAction(timeConstraints.nearPostFlickerShootTime),
+                new SleepAction(timeConstraints.flickerWaitTime),
                 autoCommands.stopIntake()
         );
     }

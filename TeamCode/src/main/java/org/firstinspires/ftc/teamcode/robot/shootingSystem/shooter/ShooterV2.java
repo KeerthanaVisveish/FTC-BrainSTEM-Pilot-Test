@@ -15,7 +15,7 @@ public class ShooterV2 extends Shooter {
         // logarithmic: y=-28.38609 + 5.28369*ln(x)
         public Function<Double, Double> getMpsFunction = tps -> -32.33448 + 5.93989 * Math.log(tps);
         public Function<Double, Double> getTpsFunction = mps -> Math.exp((mps + 32.33448) / 5.93989);
-        public double firstShootTolerance = 40, farShootTolerance = 100, closeShootTolerance = 120;
+        public double firstShootTolerance = 80, farShootTolerance = 160, closeShootTolerance = 200;
         public double velocitySign = -1;
         public double smallErrorKP = 0.08, bigErrorKP = .2;
         public double kPErrorThreshold = 60;
@@ -23,8 +23,8 @@ public class ShooterV2 extends Shooter {
         public double kV = 0.0075;
         public double kF = 1.12464;
         public double speedAdjustment = 0;
-        public double minVelForShot = 0;
-        public double shotVelDropThreshold = 0;
+        public double minVelForShot = 100;
+        public double shotVelDropThreshold = 55;
     }
     public static Params params = new Params();
     private final SRSHub srsHub;

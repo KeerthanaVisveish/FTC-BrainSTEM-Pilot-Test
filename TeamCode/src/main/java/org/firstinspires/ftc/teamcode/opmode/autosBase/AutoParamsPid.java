@@ -152,15 +152,15 @@ public class AutoParamsPid {
         public double shootThirdTime = .4;
 
         public double missBallAdjustTime = .3;
-        public double maxShootTime = 1.2;
+        public double maxShoot2Time = 1.2, twoShotIntakeBuffer = .3;
         public double spikeGateOpeningWait = .4, gateCollectFirstOpenWait = .1, gateCollectOpenWait = .11, gateTapWait = 1;
         public double gateCollectMaxTime = .5;
         public double farParkTime = 28.9, nearParkStopTime = 29, stopAllTime = 31;
         public double postIntakeTimeIfGateOpen = 1.1, postIntakeTime = 0.8, loadingSlowIntakeTime = 1;
         public double farPreloadDriveDelay = .5;
         public double maxLimelightWait = 1;
-        public double shooterInterlockMaxWait = .1, colorSortShooterInterlockMaxWait = 1;
-        public double nearPostFlickerShootTime = .2, farPostFlickerShootTime = .2;
+        public double shooterInterlockMaxWait = .1;
+        public double flickerWaitTime = .2;
         public double nearLastShootExtraTime = 2;
 
     }

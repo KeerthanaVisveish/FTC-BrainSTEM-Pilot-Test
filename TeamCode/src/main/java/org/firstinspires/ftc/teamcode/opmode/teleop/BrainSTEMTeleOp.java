@@ -223,7 +223,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             else {
                 robot.shootingSystemV1.setTurretToCenter();
                 robot.shootingSystemV1.setShooterOff();
-                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(45));
+                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(65));
             }
         }
         if(gp1.isFirstLeftBumper())
@@ -236,18 +236,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             else {
                 robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
                 robot.collector.setIntakeState(Collector.IntakeState.OFF);
-            }
-        }
-        if(!inCompetition || allowD1Shoot) {
-            if(gp1.isFirstY()) {
-                if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED) {
-                    robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
-                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
-                }
-                else {
-                    robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
-                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
-                }
             }
         }
     }
@@ -298,6 +286,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.parking.setParkState(Parking.ParkState.EXTENDED);
                 robot.shootingSystemV1.setTurretToCenter();
                 robot.shootingSystemV1.setShooterOff();
+                robot.shootingSystemV1.setHoodToCustomExitAngle(Math.toRadians(65));
             }
             else if (robot.shootingSystemV1.turretCentered()) {
                 robot.shootingSystemV1.setTurretToCustomAngle(Turret.turretParams.maxAngle, Turret.turretParams.minParkRotateVoltage, true);

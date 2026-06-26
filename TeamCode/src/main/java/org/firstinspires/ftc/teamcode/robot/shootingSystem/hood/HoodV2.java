@@ -28,7 +28,7 @@ public class HoodV2 extends Hood {
         public double encoderToExitAngleSlope = -0.37015, encoderToExitAngleIntercept = 261.88606;
         public double externalAngularOffset = 3.72; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
-        public double onTargetErrorThreshold = Math.toRadians(2);
+        public double onTargetErrorThreshold = Math.toRadians(5);
 
         public double dampeningErrorThreshold = Math.toRadians(1);
         public double dampeningFactor = .3;

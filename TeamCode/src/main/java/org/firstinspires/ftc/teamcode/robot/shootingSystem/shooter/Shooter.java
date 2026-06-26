@@ -23,6 +23,7 @@ public abstract class Shooter extends Component {
     protected final DcMotorEx lowShooter, highShooter;
 
 
+    private double velDrop;
     private int numBallsShot;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry) {
@@ -62,14 +63,13 @@ public abstract class Shooter extends Component {
         setShooterVoltage(totalVoltage, batteryVoltage);
     }
     protected void trackBallShots() {
-        double drop = prevVelForShotTracking - curShooterVelTps;
-        if (prevVelForShotTracking > getMinVelForShot() && drop > getShotVelDropThreshold())
+        velDrop = curShooterVelTps - prevVelForShotTracking;
+        if (prevVelForShotTracking > getMinVelForShot() && velDrop > getShotVelDropThreshold())
             numBallsShot++;
         prevVelForShotTracking = curShooterVelTps;
     }
     public void resetNumBallsShot() {
         numBallsShot = 0;
-        prevVelForShotTracking = 0;
     }
     public int getNumBallsShot() {
         return numBallsShot;
@@ -95,9 +95,11 @@ public abstract class Shooter extends Component {
         telemetry.addData("SH   shooter voltage pid", pidVoltage);
         telemetry.addData("SH   shooter voltage velocity", velocityVoltage);
         telemetry.addData("SH   shooter voltage friction", frictionVoltage);
+        telemetry.addData("SH   vel drop", velDrop);
         double power = highShooter.getPower();
         telemetry.addData("SH shooter power", power);
         telemetry.addData("SH shooter power * 200", power * 200);
         telemetry.addData("SH motor combined current", highShooter.getCurrent(CurrentUnit.AMPS) + lowShooter.getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("SH num balls shot", numBallsShot);
     }
 }

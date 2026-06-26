@@ -8,6 +8,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
@@ -34,43 +35,44 @@ public abstract class ShootingSystem extends Component {
         // when shooting from really close
         public double closeRedX = -65, closeRedY = 63;
         public double closeBlueX = -65, closeBlueY = -62;
-        public double closeHeight = 38;
-        public double closeImpactAng = Math.toRadians(-19);
+        public double closeHeight = 37;
+        public double closeImpactAng = -18;
 
         // when cycling from gate
         public double gateRedX = -66, gateRedY = 64.5;
         public double gateBlueX = -66, gateBlueY = -63;
         public double gateHeight = 41.5;
-        public double gateImpactAng = Math.toRadians(-17);
+        public double gateImpactAng = -18;
 
         // when shooting from opposing goal area
-        public double oppositeRedX = -62.5, oppositeRedY = 66;
-        public double oppositeBlueX = -62.5, oppositeBlueY = -66;
+        public double oppositeRedX = -63.5, oppositeRedY = 66;
+        public double oppositeBlueX = -63.5, oppositeBlueY = -66;
         public double oppositeHeight = 41.5;
-        public double oppositeImpactAng = Math.toRadians(-16);
+        public double oppositeImpactAng = -18;
 
 
         // when shooting in far zone
-        public double farRedX = -65, farRedY = 67;
+        public double farRedX = -65, farRedY = 66;
         public double farBlueX = -66, farBlueY = -62;
         public double farHeight = 50;
-        public double farImpactAng = Math.toRadians(-20);
+        public double farImpactAng = -20;
 
         public double reallyCloseRadius = 45;
         public double gateLocationYThreshold = -12, gateLocationXThreshold = -50;
     }
     public static class GeneralParams {
         public boolean useShootingInterlocks = true;
-        public boolean usePoseClipping = false;
+        public boolean usePoseClipping = true;
         public boolean enableShooter = true;
         public boolean enableTurret = true;
         public boolean enableHood = true;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
         public double shooterLookAhead = 0.005;
         public double hoodFilterA = .2;
+        public double shooterFilterA = .2;
     }
 
-    public record LaunchData(double targetShooterSpeedTps, double targetHoodExitAngleRad, double targetTurretFieldAngleRad) {}
+    public record LaunchData(double targetShooterSpeedTps, double idealExitAngleRad, double compensatedExitAngleRad, double targetTurretFieldAngleRad) {}
     public static GoalParams goalParams = new GoalParams();
     public static GeneralParams generalParams = new GeneralParams();
     public enum Location {
@@ -87,12 +89,13 @@ public abstract class ShootingSystem extends Component {
     private double lookAheadTargetShooterSpeedTps, currentTargetShooterSpeedTps;
 
 
-    private double rawHoodExitAngleRad, filteredHoodExitAngleRad;
+    private double filteredHoodExitAngleRad;
     private Pose2d turretPoseIn;
     private double distFromGoal;
+    private double filteredShooterSpeed;
     private Pose2d clippedRobotPoseIn, clippedTurretPoseIn;
-    public final Vector2d nearTriangleTip = new Vector2d(RobotProperties.length * Math.sqrt(2), 0);
-    public final Vector2d farTriangleTip = new Vector2d(48 - RobotProperties.length * Math.sqrt(2), 0);
+    public final Vector2d nearTriangleTip = new Vector2d(RobotProperties.length, 0);
+    public final Vector2d farTriangleTip = new Vector2d(48 - RobotProperties.length, 0);
     public enum TurretState {
         GOAL_TARGETING, ANGLE_TARGETING
     }
@@ -133,7 +136,7 @@ public abstract class ShootingSystem extends Component {
 
         setTurretToCenter();
         setShooterOff();
-        setHoodToCustomExitAngle(Math.toRadians(45));
+        setHoodToCustomExitAngle(Math.toRadians(65));
 
         locationState = Location.GATE_CYCLE;
 
@@ -184,11 +187,12 @@ public abstract class ShootingSystem extends Component {
             goalPosIn = gateGoalPos;
             impactAngleRad = goalParams.gateImpactAng;
         }
+        impactAngleRad = Math.toRadians(impactAngleRad);
     }
 
     private Vector2d clipVectorInsideLaunchLine(Vector2d pos, Vector2d perpLaunchLine, Vector2d triangleTip) {
         pos = pos.minus(triangleTip);
-        return pos.minus(perpLaunchLine.times(Math.max(0, pos.dot(perpLaunchLine))));
+        return pos.minus(perpLaunchLine.times(Math.max(0, pos.dot(perpLaunchLine)))).plus(triangleTip);
     }
     private Vector2d[] getClippedPositions(Vector2d robotPosIn, Vector2d turretPosIn) {
         Vector2d clippedTurretPosIn, clippedRobotPosIn;
@@ -237,15 +241,30 @@ public abstract class ShootingSystem extends Component {
         Vector2d[] clippedPoses = generalParams.usePoseClipping ? getClippedPositions(robotPoseIn.position, turretPoseIn.position) : new Vector2d[] {robotPoseIn.position, turretPoseIn.position};
         clippedRobotPoseIn = new Pose2d(clippedPoses[0], robotPoseIn.heading.toDouble());
         clippedTurretPoseIn = new Pose2d(clippedPoses[1], turretPoseIn.heading.toDouble());
-        LaunchData launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel, impactAngleRad, shooter.getVelTps() - shooterSpeedAdjustment);
+
+        double rawShooterSpeed = shooter.getVelTps() - shooterSpeedAdjustment;
+        if(filteredShooterSpeed == 0)
+            filteredShooterSpeed = rawShooterSpeed;
+        else
+            filteredShooterSpeed = filteredShooterSpeed * generalParams.shooterFilterA + rawShooterSpeed * (1 - generalParams.shooterFilterA);
+
+        LaunchData launchData = calculateLaunchTrajectory(clippedRobotPoseIn.position, clippedTurretPoseIn.position, goalPosIn, robotVel, impactAngleRad, filteredShooterSpeed);
         if(launchData != null) {
             currentTargetShooterSpeedTps = launchData.targetShooterSpeedTps;
             lookAheadTargetShooterSpeedTps = currentTargetShooterSpeedTps + Math.max(0, robotVel.dot(turretPoseIn.position.minus(new Vector2d(goalPosIn.x, goalPosIn.y))) * generalParams.shooterLookAhead);
-            rawHoodExitAngleRad = launchData.targetHoodExitAngleRad;
+
             if(filteredHoodExitAngleRad == 0)
-                filteredHoodExitAngleRad = rawHoodExitAngleRad;
-            else
-                filteredHoodExitAngleRad = filteredHoodExitAngleRad * generalParams.hoodFilterA + rawHoodExitAngleRad * (1 - generalParams.hoodFilterA);
+                filteredHoodExitAngleRad = launchData.idealExitAngleRad;
+            else {
+                double velError = Math.abs(currentTargetShooterSpeedTps - filteredShooterSpeed);
+                double t = Math.min(1, velError / shooter.getShotVelDropThreshold());
+                filteredHoodExitAngleRad = launchData.idealExitAngleRad * (1 - t) + launchData.compensatedExitAngleRad * t;
+                // vel error = abs(target vel - actual vel)
+                // normalized vel error = min(1, vel error / threshold)
+                // filtered = lerp(ideal hood, actual hood, normalized vel error)
+            }
+//                filteredHoodExitAngleRad = filteredHoodExitAngleRad * generalParams.hoodFilterA + launchData.idealExitAngleRad * (1 - generalParams.hoodFilterA);
+
             turretGoalTargetAngle = launchData.targetTurretFieldAngleRad;
         }
 
@@ -256,6 +275,7 @@ public abstract class ShootingSystem extends Component {
             switch (turretState) {
                 case GOAL_TARGETING:
                     turretTargetAngle = MathUtils.angleNormDeltaRad(turretGoalTargetAngle - robotPoseIn.heading.toDouble() + turretAngleAdjustment);
+                    turretTargetAngle = Range.clip(turretTargetAngle, -Turret.turretParams.maxAngle, Turret.turretParams.maxAngle);
                     turretGoalLockOnVelocity = calculateTurretGoalLockOnVelocity(robotPoseIn.position, robotVel, robotVelIn.headingRad, turretGoalTargetAngle);
                     turretTargetVel = turretGoalLockOnVelocity + turretMotionProfileVel;
                     turret.controlTurretToTarget(turretTargetAngle, turretTargetVel, turretMotionProfileAccel, 0, Turret.powerTuning.maxVoltage, robotPoseIn.heading.toDouble(), robotAccel, batteryVoltage);
@@ -295,8 +315,6 @@ public abstract class ShootingSystem extends Component {
             }
         }
     }
-
-
     protected abstract LaunchData calculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps, double impactAngleRad, double shooterVelTps);
 
     // pro: yes velocity-based hood adjustment
@@ -572,9 +590,10 @@ public abstract class ShootingSystem extends Component {
         telemetry.addData("SS shooter state", shooterState);
         telemetry.addData("SS shooter lookahead target speed tps", lookAheadTargetShooterSpeedTps);
         telemetry.addData("SS shooter current target speed tps", currentTargetShooterSpeedTps);
+        telemetry.addData("SS shooter filtered speed", filteredShooterSpeed);
         telemetry.addLine("");
         telemetry.addData("SS hood state", hoodState);
-        telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(rawHoodExitAngleRad), 3));
+        telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(filteredHoodExitAngleRad), 3));
         telemetry.addLine("");
     }
 }

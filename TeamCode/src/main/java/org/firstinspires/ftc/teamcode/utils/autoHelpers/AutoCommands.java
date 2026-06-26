@@ -58,6 +58,9 @@ public class AutoCommands {
             return !robot.shootingSystemV1.shooterFirstGood();
         };
     }
+    public Action enableHoodTracking() {
+        return new InstantAction(() -> robot.shootingSystemV1.setHoodToGoalTargeting());
+    }
     public Action setShouldScore(boolean shouldScore) {
         if(shouldScore) {
             return new InstantAction(() -> {

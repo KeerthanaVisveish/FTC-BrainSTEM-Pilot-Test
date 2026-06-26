@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.BlueAutoPid;
 public class BlueNearSolo extends BlueAutoPid {
     public BlueNearSolo() {
         customizable.stringBuilder = customizable.nearSolo;
+        customizable.gatePark = false;
     }
 }

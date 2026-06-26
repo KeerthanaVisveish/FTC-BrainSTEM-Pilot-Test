@@ -29,8 +29,6 @@ public class PreGameSetupTele extends LinearOpMode {
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, new Pose2d(startX, startY, startA));
 
-        ServoImplEx led = hardwareMap.get(ServoImplEx.class, "rightLED");
-
         telemetry.addLine("Limelight is Ready");
         telemetry.update();
 
@@ -49,11 +47,6 @@ public class PreGameSetupTele extends LinearOpMode {
             telemetry.addData("current pipeline index", result.getPipelineIndex());
             telemetry.addData("current pipeline type", result.getPipelineType());
             telemetry.addData("num april tags", result.getFiducialResults().size());
-
-            if(!result.getFiducialResults().isEmpty())
-                led.setPosition(LED.green);
-            else
-                led.setPosition(LED.red);
             telemetry.update();
         }
         cameraIsReset = true;

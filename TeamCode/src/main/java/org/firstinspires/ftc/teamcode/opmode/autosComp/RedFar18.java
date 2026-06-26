@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.RedAutoPid;
 public class RedFar18 extends RedAutoPid {
     public RedFar18() {
         customizable.stringBuilder = customizable.far18;
+        customizable.gatePark = false;
     }
 }

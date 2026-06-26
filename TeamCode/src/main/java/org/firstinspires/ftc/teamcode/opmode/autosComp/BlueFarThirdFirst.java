@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.BlueAutoPid;
 public class BlueFarThirdFirst extends BlueAutoPid {
     public BlueFarThirdFirst() {
         customizable.stringBuilder = customizable.farThirdFirst;
+        customizable.gatePark = false;
     }
 }

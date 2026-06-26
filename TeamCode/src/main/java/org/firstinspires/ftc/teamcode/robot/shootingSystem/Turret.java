@@ -80,7 +80,7 @@ public class Turret extends Component {
         public double kP = 1, kI = 0.001, kD = 0.5;
         public double maxPidInputDeg = 8;
         public double maxIntegral = 5;
-        public double motionProfileAccel = 6, motionProfileMaxSpeed = 8;
+        public double motionProfileAccel = 6, motionProfileMaxSpeed = 10;
         public double motionProfileLookAheadDeg = 1;
         public double dampeningRadius = Math.toRadians(.5), dampeningFactor = .5;
         public double maxVoltage = 12;
@@ -89,7 +89,7 @@ public class Turret extends Component {
 
         //y=1.09292x+1.00825
         public double kVSlope = 1.09292, kVIntercept = 1.00825;
-        public double kA = 0.05;
+        public double kA = 0.06;
 
         public double[] kfPosLookupData = new double[] {
                 -2, .6,

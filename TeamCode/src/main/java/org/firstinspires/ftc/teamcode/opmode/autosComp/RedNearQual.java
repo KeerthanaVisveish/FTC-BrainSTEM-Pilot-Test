@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.RedAutoPid;
 public class RedNearQual extends RedAutoPid {
     public RedNearQual() {
         customizable.stringBuilder = customizable.nearPartnerQual;
+        customizable.gatePark = true;
     }
 }

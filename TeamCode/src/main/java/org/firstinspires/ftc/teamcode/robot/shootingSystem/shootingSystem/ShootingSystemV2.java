@@ -6,7 +6,6 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.Function;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
@@ -63,7 +62,7 @@ public class ShootingSystemV2 extends ShootingSystem {
             double targetHoodExitAngleRad = mostRecentTrajectory.exitAngleRad;
             double targetTurretFieldAngleRad = useActualTraj ? targetingInfo.actualTurretFieldAngleRad() : targetingInfo.idealTurretFieldAngleRad();
 
-            mostRecentLaunchData = new LaunchData(targetShooterSpeedTps, targetHoodExitAngleRad, targetTurretFieldAngleRad);
+            mostRecentLaunchData = new LaunchData(targetShooterSpeedTps, targetHoodExitAngleRad, targetHoodExitAngleRad, targetTurretFieldAngleRad);
             return mostRecentLaunchData;
         }
         return null;
@@ -85,7 +84,7 @@ public class ShootingSystemV2 extends ShootingSystem {
                     v2Params.drawTrajSparsity,
                     mostRecentLaunchData.targetTurretFieldAngleRad(),
                     new Vector3d(mostRecentTurretPos.x, mostRecentTurretPos.y, 0),
-                    ShootingMathNew.construct3DVector(new LaunchVector(mostRecentLaunchData.targetShooterSpeedTps(), mostRecentLaunchData.targetHoodExitAngleRad(), mostRecentLaunchData.targetTurretFieldAngleRad())));
+                    ShootingMathNew.construct3DVector(new LaunchVector(mostRecentLaunchData.targetShooterSpeedTps(), mostRecentLaunchData.idealExitAngleRad(), mostRecentLaunchData.targetTurretFieldAngleRad())));
             fieldOverlay.setStroke("blue");
             fieldOverlay.strokeLine(points.get(0).x, points.get(0).y, points.get(points.size()-1).x, points.get(points.size()-1).y);
         }

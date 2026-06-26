@@ -8,5 +8,6 @@ import org.firstinspires.ftc.teamcode.opmode.autosBase.BlueAutoPid;
 public class BlueNearPlayoff extends BlueAutoPid {
     public BlueNearPlayoff() {
         customizable.stringBuilder = customizable.nearPartnerPlayoff;
+        customizable.gatePark = true;
     }
 }
