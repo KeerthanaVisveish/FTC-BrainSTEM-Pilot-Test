@@ -192,7 +192,8 @@ public abstract class ShootingSystem extends Component {
 
     private Vector2d clipVectorInsideLaunchLine(Vector2d pos, Vector2d perpLaunchLine, Vector2d triangleTip) {
         pos = pos.minus(triangleTip);
-        return pos.minus(perpLaunchLine.times(Math.max(0, pos.dot(perpLaunchLine)))).plus(triangleTip);
+        Vector2d clipped = pos.minus(perpLaunchLine.times(Math.max(0, pos.dot(perpLaunchLine)))).plus(triangleTip);
+        return new Vector2d(Math.min(clipped.x, 72 - RobotProperties.length * .25), clipped.y);
     }
     private Vector2d[] getClippedPositions(Vector2d robotPosIn, Vector2d turretPosIn) {
         Vector2d clippedTurretPosIn, clippedRobotPosIn;

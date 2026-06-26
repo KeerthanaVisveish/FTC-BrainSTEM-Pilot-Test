@@ -66,7 +66,7 @@ public class BrainSTEMRobot {
 
         drive = new MecanumDrive(hardwareMap, initialPose);
         limelight = new Limelight(hardwareMap, telemetry, this);
-        shootingSystem = new ShootingSystemV2(hardwareMap, telemetry, initialPose, alliance);
+        shootingSystem = new ShootingSystemV1(hardwareMap, telemetry, initialPose, alliance);
         collector = new Collector(hardwareMap, telemetry);
         parking = new Parking(hardwareMap, telemetry);
         dtTimer = new ElapsedTime();

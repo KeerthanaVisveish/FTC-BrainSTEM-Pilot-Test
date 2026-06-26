@@ -296,15 +296,5 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.shootingSystem.setTurretToCenter();
             }
         }
-        if (!inCompetition) {
-            if(Math.abs(gamepad2.left_stick_y) > .3) {
-                robot.parking.setParkState(Parking.ParkState.OFF);
-                robot.parking.setLeftParkPosition(robot.parking.parkLeftServo.getPosition() + Parking.PARK_PARAMS.TESTING_INC * Math.signum(gamepad2.left_stick_y));
-            }
-            if(Math.abs(gamepad2.right_stick_y) > .3) {
-                robot.parking.setParkState(Parking.ParkState.OFF);
-                robot.parking.setRightParkPosition(robot.parking.parkRightServo.getPosition() + Parking.PARK_PARAMS.TESTING_INC * Math.signum(gamepad2.right_stick_y));
-            }
-        }
     }
 }
