@@ -46,7 +46,7 @@ public abstract class AutoPid extends LinearOpMode {
     public static class Customizable {
         // efz auto: l lf lc10f lcf lc12f lcf
         public String shotTimes = "0, 0, 0, 0, 0, 0";
-        public String nearPartnerQual = "n 2on gn gn gn 1n";
+        public String nearPartnerQual = "n 2n gn gn gn 1n";
         public String nearPartnerPlayoff = "n 2on 1on gn gn gn";
         public String nearSolo = "n 2n gn g.5n 1n 3n";
         public String farLoadingFirst = "f lf 3f af af", farThirdFirst = "f 3f lf af af";
@@ -505,7 +505,7 @@ public abstract class AutoPid extends LinearOpMode {
         if(shootingNear)
             preloadShootWaypoint
                     .setHeadingLerp(PathParams.HeadingLerpType.TANGENT)
-                    .setMaxTime(colorSorting ? 3 : 2.5)
+                    .setMaxTime(2.5)
                     .setFarHeadingKP(.01)
                     .setCloseHeadingKP(.007)
                     .setMinLinearPower(shoot.nearMinDrivePower1);
@@ -530,14 +530,18 @@ public abstract class AutoPid extends LinearOpMode {
 
         return new SequentialAction(
                 new InstantAction(() -> autoState = AutoState.DRIVE_TO_SHOOT),
+                autoCommands.stopIntake(),
                 new ParallelAction(
                         autoCommands.flickerHalfUp(),
                         autoCommands.speedUpShooter(),
                         autoCommands.enableHoodTracking(),
                         autoCommands.enableTurretTracking(),
-                        autoCommands.engageClutch(),
                         preloadDriveAction
                 ),
+                packet -> {
+                    telemetry.addLine("starting shoot action");
+                    return false;
+                },
                 getShootAction(3, timeConstraints.flickerWaitTime)
         );
     }

@@ -24,8 +24,8 @@ public class HoodV2 extends Hood {
         public double kG = 0.01414;
         public double kGLookAheadScale = 1;
         public double maxPower = .99;
-        //y=-0.37015x+261.88606
-        public double encoderToExitAngleSlope = -0.37015, encoderToExitAngleIntercept = 261.88606;
+        //y=-0.344205x+245.48311
+        public double encoderToExitAngleSlope = -0.344205, encoderToExitAngleIntercept = 245.48311;
         public double externalAngularOffset = 3.72; // figure out through CAD bc i don't know what part of hood corresponds to exit angle
         // assuming the conversion function: y = mx + b
         public double onTargetErrorThreshold = Math.toRadians(5);

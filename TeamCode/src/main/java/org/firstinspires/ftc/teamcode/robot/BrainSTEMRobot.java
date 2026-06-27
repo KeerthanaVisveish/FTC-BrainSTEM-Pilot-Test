@@ -47,6 +47,7 @@ import java.util.function.DoubleSupplier;
 
 @Config
 public class BrainSTEMRobot {
+    public static boolean useV1Shooting = true;
     public static boolean drawRobot = true, drawRobotDerivatives = false, drawPoseClipping = true, drawShooting = true, drawLimelight = false;
 
     public ShootingSystem shootingSystem;
@@ -66,7 +67,10 @@ public class BrainSTEMRobot {
 
         drive = new MecanumDrive(hardwareMap, initialPose);
         limelight = new Limelight(hardwareMap, telemetry, this);
-        shootingSystem = new ShootingSystemV1(hardwareMap, telemetry, initialPose, alliance);
+        if (useV1Shooting)
+            shootingSystem = new ShootingSystemV1(hardwareMap, telemetry, initialPose, alliance);
+        else
+            shootingSystem = new ShootingSystemV2(hardwareMap, telemetry, initialPose, alliance);
         collector = new Collector(hardwareMap, telemetry);
         parking = new Parking(hardwareMap, telemetry);
         dtTimer = new ElapsedTime();

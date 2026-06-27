@@ -34,7 +34,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
 
-    public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.CONTINUOUS;
+    public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.ON_COMMAND;
     // TODO: check these during driver practice
     public static double[] redCornerResetPose = { 62.7, -61.7, 90 };
     // 62.5, -61.6, 90

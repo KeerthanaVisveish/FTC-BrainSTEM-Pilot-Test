@@ -35,26 +35,26 @@ public abstract class ShootingSystem extends Component {
         // when shooting from really close
         public double closeRedX = -65, closeRedY = 63;
         public double closeBlueX = -65, closeBlueY = -62;
-        public double closeHeight = 37;
-        public double closeImpactAng = -18;
+        public double closeHeight = 52;
+        public double closeImpactAng = -20;
 
         // when cycling from gate
         public double gateRedX = -66, gateRedY = 64.5;
         public double gateBlueX = -66, gateBlueY = -63;
-        public double gateHeight = 41.5;
-        public double gateImpactAng = -18;
+        public double gateHeight = 52;
+        public double gateImpactAng = -20;
 
         // when shooting from opposing goal area
-        public double oppositeRedX = -63.5, oppositeRedY = 66;
-        public double oppositeBlueX = -63.5, oppositeBlueY = -66;
-        public double oppositeHeight = 41.5;
-        public double oppositeImpactAng = -18;
+        public double oppositeRedX = -64, oppositeRedY = 66;
+        public double oppositeBlueX = -64, oppositeBlueY = -66;
+        public double oppositeHeight = 52;
+        public double oppositeImpactAng = -20;
 
 
         // when shooting in far zone
         public double farRedX = -65, farRedY = 66;
         public double farBlueX = -66, farBlueY = -62;
-        public double farHeight = 50;
+        public double farHeight = 52;
         public double farImpactAng = -20;
 
         public double reallyCloseRadius = 45;
@@ -68,7 +68,6 @@ public abstract class ShootingSystem extends Component {
         public boolean enableHood = true;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
         public double shooterLookAhead = 0.005;
-        public double hoodFilterA = .2;
         public double shooterFilterA = .2;
     }
 
@@ -91,7 +90,7 @@ public abstract class ShootingSystem extends Component {
 
     private double filteredHoodExitAngleRad;
     private Pose2d turretPoseIn;
-    private double distFromGoal;
+    protected double distFromGoal;
     private double filteredShooterSpeed;
     private Pose2d clippedRobotPoseIn, clippedTurretPoseIn;
     public final Vector2d nearTriangleTip = new Vector2d(RobotProperties.length, 0);
@@ -597,11 +596,11 @@ public abstract class ShootingSystem extends Component {
         telemetry.addData("SS shooter lookahead target speed tps", lookAheadTargetShooterSpeedTps);
         telemetry.addData("SS shooter current target speed tps", currentTargetShooterSpeedTps);
         telemetry.addData("SS shooter filtered speed", filteredShooterSpeed);
+        telemetry.addData("SS shooter speed adjustment", shooter.getSpeedAdjustment());
         telemetry.addLine("");
         telemetry.addData("SS hood state", hoodState);
         telemetry.addData("SS hood exit angle deg", MathUtils.format(Math.toDegrees(filteredHoodExitAngleRad), 3));
         telemetry.addLine("");
     }
 
-    public abstract boolean onTarget(double distFromGoal, double launchSpeedMps, double exitAngleRad);
 }
