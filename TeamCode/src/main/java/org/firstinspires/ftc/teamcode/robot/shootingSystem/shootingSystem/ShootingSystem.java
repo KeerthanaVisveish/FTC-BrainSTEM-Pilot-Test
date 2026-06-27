@@ -603,5 +603,6 @@ public abstract class ShootingSystem extends Component {
         telemetry.addLine("");
     }
 
+    // not using right now
     public abstract boolean onTarget(double distFromGoal, double launchSpeedMps, double exitAngleRad);
 }

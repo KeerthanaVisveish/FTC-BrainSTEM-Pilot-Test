@@ -81,6 +81,8 @@ public class ShootingSystemV1 extends ShootingSystem {
         telemetry.addData("answer key pt2 exists", answerKeyPt2.solutionExists ? 2 : 0);
     }
 
+
+    // not using right now
     public boolean onTarget(double distFromGoal, double launchSpeedMps, double exitAngleRad) {
         return true;
     }

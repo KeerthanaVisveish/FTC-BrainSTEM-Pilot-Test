@@ -43,6 +43,10 @@ public class ShootingSystemV2 extends ShootingSystem {
 
     @Override
     protected LaunchData calculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps, double impactAngleRad, double shooterVelTps) {
+        Vector2d turretPosM = turretPosIn.times(0.0254);
+        Vector2d goalPosM = new Vector2d(goalPosIn.x, goalPosIn.y).times(0.0254);
+        OdoInfo robotVelocityMps = new OdoInfo(robotVelocityIps.x * 0.0254, robotVelocityIps.y * 0.0254, 0);
+
         mostRecentTurretPos = turretPosIn;
         double distFromGoalM = turretPosIn.minus(new Vector2d(goalPosIn.x, goalPosIn.y)).times(0.0254).norm();
 
@@ -52,22 +56,22 @@ public class ShootingSystemV2 extends ShootingSystem {
         telemetry.addData("distanceInRange", distanceInRange);
         if(distanceInRange) {
             double curExitSpeedMps = getMpsFromTps(shooterVelTps);
-            TrajectoryMath.TargetingInfo targetingInfo = TrajectoryMath.calculateTargetingInfo(trajectoryDistanceLUT, turretPosIn, turretPosIn, new Vector2d(goalPosIn.x, goalPosIn.y), new OdoInfo(robotVelocityIps.x, robotVelocityIps.y, 0), curExitSpeedMps, v2Params.numIterations);
+            TrajectoryMath.TargetingInfo targetingInfo = TrajectoryMath.calculateTargetingInfo(trajectoryDistanceLUT, turretPosM, turretPosM, goalPosM, robotVelocityMps, curExitSpeedMps, v2Params.numIterations);
 
-            if(targetingInfo == null)
+            if(targetingInfo == null || targetingInfo.idealTargetTrajectory() == null)
                 return null;
 
-            if(targetingInfo.idealTargetTrajectory() == null)
-                return null;
             double targetShooterSpeedTps = getTpsFromMps(targetingInfo.idealTargetTrajectory().exitSpeedMps);
             telemetry.addData("targetShooterSpeedTps", targetShooterSpeedTps);
-            boolean useActualTraj = v2Params.useVelocityCompensation && targetingInfo.actualTargetTrajectory() != null;
-            mostRecentTrajectory = useActualTraj ? targetingInfo.actualTargetTrajectory() : targetingInfo.idealTargetTrajectory();
+            boolean foundActualTrajectory = targetingInfo.actualTargetTrajectory() != null;
+            boolean useActualTrajectory = v2Params.useVelocityCompensation && foundActualTrajectory;
+            double idealExitAngleRad = targetingInfo.idealTargetTrajectory().exitAngleRad;
+            double actualExitAngleRad = foundActualTrajectory ? targetingInfo.actualTargetTrajectory().exitAngleRad : idealExitAngleRad;
+            mostRecentTrajectory = useActualTrajectory ? targetingInfo.actualTargetTrajectory() : targetingInfo.idealTargetTrajectory();
 
-            double targetHoodExitAngleRad = mostRecentTrajectory.exitAngleRad;
-            double targetTurretFieldAngleRad = useActualTraj ? targetingInfo.actualTurretFieldAngleRad() : targetingInfo.idealTurretFieldAngleRad();
+            double targetTurretFieldAngleRad = useActualTrajectory ? targetingInfo.actualTurretFieldAngleRad() : targetingInfo.idealTurretFieldAngleRad();
 
-            mostRecentLaunchData = new LaunchData(targetShooterSpeedTps, targetHoodExitAngleRad, targetHoodExitAngleRad, targetTurretFieldAngleRad);
+            mostRecentLaunchData = new LaunchData(targetShooterSpeedTps, idealExitAngleRad, actualExitAngleRad, targetTurretFieldAngleRad);
             return mostRecentLaunchData;
         }
         return null;
@@ -95,6 +99,7 @@ public class ShootingSystemV2 extends ShootingSystem {
         }
     }
 
+    // not using right now
     public boolean onTarget(double distFromGoal, double exitSpeedMps, double exitAngleRad) {
         Trajectory traj1 = trajectoryDistanceLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, exitSpeedMps);
         double exitAngleError = Math.abs(traj1.exitAngleRad - exitAngleRad);

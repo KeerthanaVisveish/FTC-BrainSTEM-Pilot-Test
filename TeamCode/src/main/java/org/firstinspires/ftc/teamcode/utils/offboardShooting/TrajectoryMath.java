@@ -30,14 +30,14 @@ public class TrajectoryMath {
         Vector2d goalPos,
         Vector2d turretPos,
         Vector2d turretVel,
-        double startDistFromGoal,
+        double startDistFromGoalM,
         double speed,
         int tofEstimationIterations,
         boolean useOptimalTrajectory // true = optimal trajectory lookup, false = exit-speed lookup
     ) {
         Vector2d displacedGoal = goalPos;
         Vector2d turretToGoal;
-        double distFromGoal = startDistFromGoal;
+        double distFromGoal = startDistFromGoalM;
         Trajectory trajectory = useOptimalTrajectory
             ? trajectoryLUT.getInterpolatedOptimalTrajectory(distFromGoal)
             : trajectoryLUT.getInterpolatedExitSpeedTrajectory(distFromGoal, speed);
@@ -69,6 +69,7 @@ public class TrajectoryMath {
         }
     }
 
+    // TAKES EVERYTHING IN METERS
     public static TargetingInfo calculateTargetingInfo(
         TrajectoryDistanceLUT trajectoryLUT,
         Vector2d centerOfRotation,
