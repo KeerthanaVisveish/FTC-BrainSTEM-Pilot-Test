@@ -42,16 +42,25 @@ public class ShootingSystemV1 extends ShootingSystem {
         shooterLookup.add(0, 540);
         hoodLookup.add(0, 65);
 
-        shooterLookup.add(40, 540);
+        shooterLookup.add(40, 530);
         hoodLookup.add(40, 65);
 
         shooterLookup.add(49, 540);
         hoodLookup.add(49, 63);
 
-        shooterLookup.add(68, 590);
+        shooterLookup.add(64, 560);
+        hoodLookup.add(64, 56);
+
+        shooterLookup.add(68, 580);
         hoodLookup.add(68, 53);
 
-        shooterLookup.add(88, 620);
+        shooterLookup.add(73, 620);
+        hoodLookup.add(73, 50);
+
+        shooterLookup.add(77, 630);
+        hoodLookup.add(77, 48);
+
+        shooterLookup.add(88, 640);
         hoodLookup.add(88, 47);
 
         shooterLookup.add(107, 680);
@@ -66,15 +75,15 @@ public class ShootingSystemV1 extends ShootingSystem {
         shooterLookup.add(132, 780);
         hoodLookup.add(132, 45);
 
-        shooterLookup.add(140, 790);
+        shooterLookup.add(140, 800);
         hoodLookup.add(140, 45);
 
-        shooterLookup.add(150, 800);
+        shooterLookup.add(150, 820);
         hoodLookup.add(150, 45);
 
-        shooterLookup.add(155, 810);
+        shooterLookup.add(155, 840);
         hoodLookup.add(155, 45);
-        shooterLookup.add(1000000, 810);
+        shooterLookup.add(1000000, 840);
         hoodLookup.add(10000000, 45);
 
         shooterLookup.createLUT();
@@ -83,11 +92,6 @@ public class ShootingSystemV1 extends ShootingSystem {
     }
     @Override
     protected LaunchData calculateLaunchTrajectory(Vector2d robotPosIn, Vector2d turretPosIn, Vector3d goalPosIn, Vector2d robotVelocityIps, double impactAngleRad, double shooterVelTps) {
-        if(true) {
-            Vector2d relGoal = new Vector2d(goalPosIn.x, goalPosIn.y).minus(turretPosIn);
-            double e = Math.toRadians(hoodLookup.get(distFromGoal));
-            return new LaunchData(shooterLookup.get(distFromGoal), e, e, Math.atan2(relGoal.y, relGoal.x));
-        }
         Vector3d exitPosM = new Vector3d(turretPosIn.x * .0254, turretPosIn.y * .0254, ShootingMathOld.approximateExitHeightM(false));
             Vector3d robotPosM = new Vector3d(robotPosIn.x, robotPosIn.y, 0).times(.0254);
             Vector3d goalPosM = new Vector3d(goalPosIn.x, goalPosIn.y, goalPosIn.z).times(.0254);
@@ -98,6 +102,15 @@ public class ShootingSystemV1 extends ShootingSystem {
 
             answerKeyPt1 = shootingMathNew.godSolvePart1(exitPosM, robotPosM, robotVelocityMps, 0, goalPosM, impactAngleRad, 0);
             answerKeyPt2 = shootingMathNew.godSolvePart2(answerKeyPt1, goalPosM, impactAngleRad, shooterVelTps, shooterConversion);
+
+        if(true) {
+            Vector2d relGoal = new Vector2d(goalPosIn.x, goalPosIn.y).minus(turretPosIn);
+            double e = Math.toRadians(hoodLookup.get(distFromGoal));
+            double a = Math.atan2(relGoal.y, relGoal.x);
+            if(answerKeyPt1.solutionExists)
+                a = answerKeyPt1.launchVector.turretAng;
+            return new LaunchData(shooterLookup.get(distFromGoal), e, e, a);
+        }
 
             if(answerKeyPt1.solutionExists) {
                 // y - y1 = m(x - x1)

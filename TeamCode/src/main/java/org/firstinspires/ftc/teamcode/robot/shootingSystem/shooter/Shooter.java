@@ -18,6 +18,7 @@ public abstract class Shooter extends Component {
     public static double rampUpScale = .6, rampUpSpeed = 200;
     private double targetVelTps;
     protected double curShooterVelTps, prevVelForShotTracking;
+    public static boolean useBatteryVoltage = false;
 
     private double pidVoltage, velocityVoltage, frictionVoltage, totalVoltage;
     protected final DcMotorEx lowShooter, highShooter;
@@ -60,7 +61,10 @@ public abstract class Shooter extends Component {
         if(Math.abs(getVelTps()) < rampUpSpeed)
             totalVoltage *= rampUpScale;
 
-        setShooterVoltage(totalVoltage, batteryVoltage);
+        if(useBatteryVoltage)
+            setShooterVoltage(totalVoltage, batteryVoltage);
+        else
+            setShooterPower(totalVoltage / 13);
     }
     protected void trackBallShots() {
         velDrop = curShooterVelTps - prevVelForShotTracking;

@@ -33,6 +33,7 @@ public class BrainSTEMTeleOp extends LinearOpMode {
             printLimelight = false, printPark = false, printDrivetrain = false, printHood = false, printSrsHub = false;
     public static boolean streamCameraToFTCDashboard = true;
     public static boolean inCompetition = true, allowD1Shoot = false;
+    public static int rumbleMS = 300;
 
     public static LimelightLocalization.LocalizationType localizationType = LimelightLocalization.LocalizationType.ON_COMMAND;
     // TODO: check these during driver practice
@@ -138,6 +139,13 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                     robot.parking.setParkState(Parking.ParkState.TESTING);
                 Parking.PARK_PARAMS.testingPos += gamepad1.left_stick_y * Parking.PARK_PARAMS.testingInc;
             }
+
+            if(robot.collector.getFlickerState() != Collector.FlickerState.DOWN)
+                robot.collector.setIntakeState(Collector.IntakeState.OFF);
+            if(robot.collector.has3Balls() && !robot.collector.prevHas3Balls())
+                gamepad1.rumble(rumbleMS);
+
+
             robot.update();
 
 
@@ -226,18 +234,18 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.shootingSystem.setHoodToCustomExitAngle(Math.toRadians(65));
             }
         }
-        if(gp1.isFirstLeftBumper())
+        if(gp1.isFirstLeftBumper() || gp1.isFirstRightBumper())
             robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
-        if(gp1.isFirstRightBumper()) {
-            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED && robot.shootingSystem.meetsFirstSafetyInterlocks()) {
-                robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
-                robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
-            }
-            else {
-                robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
-                robot.collector.setIntakeState(Collector.IntakeState.OFF);
-            }
-        }
+//        if(gp1.isFirstRightBumper()) {
+//            if(robot.collector.getClutchState() == Collector.ClutchState.DISENGAGED && robot.shootingSystem.meetsFirstSafetyInterlocks()) {
+//                robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
+//                robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
+//            }
+//            else {
+//                robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
+//                robot.collector.setIntakeState(Collector.IntakeState.OFF);
+//            }
+//        }
     }
 
     private void updateDriver2() {
@@ -249,6 +257,12 @@ public class BrainSTEMTeleOp extends LinearOpMode {
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
             }
         }
+
+//        if(gp2.isFirstLeftTrigger())
+//            if(robot.shootingSystem.isHoodGoalTargeting())
+//                robot.shootingSystem.setHoodToCustomExitAngle(Math.toRadians(40));
+//            else
+//                robot.shootingSystem.setHoodToGoalTargeting();
         if(robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
             if (gp2.isFirstA())
                 if (robot.collector.getIntakeState() != Collector.IntakeState.INTAKE)
@@ -263,8 +277,6 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
         if (gp2.isFirstLeftBumper())
             robot.collector.setFlickerState(Collector.FlickerState.HALF_UP_DOWN);
-        if(gp2.isFirstLeftTrigger())
-            robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
 
         if (gp2.isFirstDpadLeft())
             robot.shootingSystem.incTurretAngleAdjustment();

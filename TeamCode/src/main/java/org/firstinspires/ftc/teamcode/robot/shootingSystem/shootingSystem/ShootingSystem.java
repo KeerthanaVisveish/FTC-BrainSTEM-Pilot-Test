@@ -67,7 +67,7 @@ public abstract class ShootingSystem extends Component {
         public boolean enableTurret = true;
         public boolean enableHood = true;
         public double farTurretTol = Math.toRadians(3), nearTurretTol = Math.toRadians(10);
-        public double shooterLookAhead = 0.005;
+        public double shooterLookAhead = 0.01;
         public double shooterFilterA = .2;
     }
 
@@ -496,6 +496,9 @@ public abstract class ShootingSystem extends Component {
     public void setHoodToCustomExitAngle(double e) {
         hoodState = HoodState.CUSTOM_ANGLE;
         customHoodAngle = e;
+    }
+    public boolean isHoodGoalTargeting() {
+        return hoodState == HoodState.GOAL_TARGETING;
     }
 
     public void setShooterToGoalTargeting() {

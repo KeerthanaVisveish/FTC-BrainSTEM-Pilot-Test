@@ -32,7 +32,7 @@ public class Turret extends Component {
         public double angleAdjustment = Math.toRadians(1.5);
         public double TICKS_PER_REV = 1228.5, ticksPerRad = TICKS_PER_REV / (2 * Math.PI);
         public double accelFilterConcavity = 2, accelFilterMax = 200;
-        public double maxAngle = Math.toRadians(90);
+        public double maxAngle = Math.toRadians(100);
         public double outOfRangeAngleLerpStart = Math.toRadians(135);
     }
     public static class PowerTuningV1 {

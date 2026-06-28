@@ -24,7 +24,7 @@ public class AutoParamsPid {
 
         public double[] secondNearWaypoint = { 6.5, 25.5, 60 };
         public double[] secondNearWaypointTol = {4, 4, 5 };
-        public double[] secondNearControlPoint = { 12.5, 27, 75};
+        public double[] secondNearControlPoint = { 13, 27, 75};
         public double secondNearT1 = 26, secondNearT2 = 18;
         public double secondNearCloseHeadingKP = .003;
 
@@ -130,7 +130,6 @@ public class AutoParamsPid {
         // (62.043, 15.995, -179.94)
         // (61.841, 15.906, -179.922)
         //(61.965, 16.458, -179.724)
-        public double motifScanTurretRelAngle = Math.PI * .5;
         public double[] preGate1 = { -3, 48, 90 };
         public double[] gate1 = { -3, 54, 90 };
         public double[] preGate2 = { 4.5, 44, 90 };
@@ -142,11 +141,9 @@ public class AutoParamsPid {
         public double[] parkFar = { 56, 25, 90 };
         public double[] hpParkFar = { 56.5, 49, 90 };
         public double minParkFarPower = .5;
-        public double[] gatePark = { -3, 45, 90 };
+        public double[] gatePark = { -4, 40, 45 };
     }
     public static class TimeConstraints {
-        public double maxMotifScanTime = 3;
-
         public double shoot1FirstTime = .25, shoot2FirstTime = .4;
         public double shoot1SecondTime = .15;
         public double shootThirdTime = .4;

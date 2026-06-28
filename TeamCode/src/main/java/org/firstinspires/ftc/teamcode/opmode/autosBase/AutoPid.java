@@ -28,6 +28,7 @@ import org.firstinspires.ftc.teamcode.opmode.teleop.PreGameSetupTele;
 import org.firstinspires.ftc.teamcode.robot.BrainSTEMRobot;
 import org.firstinspires.ftc.teamcode.robot.limelight.Limelight;
 import org.firstinspires.ftc.teamcode.robot.limelight.LimelightLocalization;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.AutoCommands;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
@@ -49,7 +50,7 @@ public abstract class AutoPid extends LinearOpMode {
         public String nearPartnerQual = "n 2n gn gn gn 1n";
         public String nearPartnerPlayoff = "n 2on 1on gn gn gn";
         public String nearSolo = "n 2n gn g.5n 1n 3n";
-        public String farLoadingFirst = "f lf 3f af af", farThirdFirst = "f 3f lf af af";
+        public String farLoadingFirst = "f lf 3f af af", farThirdFirst = "f 3f lf af af lcf";
         public String farNoLimelight = "f lf 3f lcf lcf lcf", far18 = "f 3f lf lc24f lc12f lcf";
         public Alliance alliance = Alliance.RED; // this is just the default it's re assigned later
         public String stringBuilder = "";
@@ -325,7 +326,7 @@ public abstract class AutoPid extends LinearOpMode {
                         @Override
                         public boolean run(@NonNull TelemetryPacket telemetryPacket) {
                             if (first) {
-                                if (shouldPark[0] || (!shouldStop[0] && !finalToNear))
+                                if (shouldPark[0] || (!shouldStop[0] && !finalToNear) && customizable.smartPark)
                                     action = getFarParkDrive();
                                 else
                                     action = telemetryPacket1 -> {
@@ -602,8 +603,7 @@ public abstract class AutoPid extends LinearOpMode {
                         )
                 ),
                 shootEarly ? new SleepAction(0) : getShootAction(
-                        timeConstraints.shooterInterlockMaxWait,
-                        !shootingNear || notLast ? timeConstraints.flickerWaitTime : timeConstraints.nearLastShootExtraTime)
+                        timeConstraints.shooterInterlockMaxWait, timeConstraints.flickerWaitTime)
         );
     }
     private Action getShootAction(double shooterInterlockMaxTime, double postFlickWaitTime) {
@@ -617,7 +617,28 @@ public abstract class AutoPid extends LinearOpMode {
                 autoCommands.runIntake(),
                 new CustomEndAction(
                         new SequentialAction(
-                                new CustomEndAction(new SleepAction(timeConstraints.maxShoot2Time), () -> robot.shootingSystem.shooter.getNumBallsShot() >= 2),
+                                new CustomEndAction(new Action() {
+                                    private ElapsedTime timer;
+                                    private double shootingTime;
+                                    private boolean first = true;
+                                    @Override
+                                    public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+                                        if(first) {
+                                            timer = new ElapsedTime();
+                                            timer.reset();
+                                            shootingTime = 0;
+                                            first = false;
+                                        }
+
+                                        if(robot.collector.getIntakeState() != Collector.IntakeState.INTAKE || robot.collector.getClutchState() != Collector.ClutchState.ENGAGED) {
+                                            shootingTime += timer.seconds();
+                                            timer.reset();
+                                        }
+
+
+                                        return shootingTime < timeConstraints.maxShoot2Time && timer.seconds() < timeConstraints.maxShoot2Time;
+                                    }
+                                }, () -> robot.shootingSystem.shooter.getNumBallsShot() >= 2),
                                 autoCommands.flickerUp(),
                                 new SleepAction(postFlickWaitTime)
                         ),

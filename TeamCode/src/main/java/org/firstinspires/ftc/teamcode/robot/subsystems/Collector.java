@@ -123,6 +123,7 @@ public class Collector extends Component {
     public ClutchState getClutchState() { return clutchState; }
     public void setClutchState(ClutchState clutchState) {
         this.clutchState = clutchState;
+        cachedIntakeState = IntakeState.OFF;
         switch (clutchState) {
             case ENGAGED:
                 clutchRight.setPosition(params.engagedPos);
@@ -197,7 +198,7 @@ public class Collector extends Component {
                 }
                 break;
             case FULL_UP_DOWN:
-                if(flickerTimer.seconds() > .4) {
+                if(flickerTimer.seconds() > .35) {
                     setFlickerState(FlickerState.DOWN);
                 }
                 else if (flickerTimer.seconds() > .2) {

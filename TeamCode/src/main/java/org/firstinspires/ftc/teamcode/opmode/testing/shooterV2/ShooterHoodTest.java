@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.SRSHub;
+import org.firstinspires.ftc.teamcode.robot.shootingSystem.Turret;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.hood.HoodV2;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shooter.ShooterV2;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
@@ -38,6 +39,7 @@ public class ShooterHoodTest extends LinearOpMode {
         ShooterV2 shooterV2 = new ShooterV2(hardwareMap, telemetry, srsHub);
         HoodV2 hoodV2 = new HoodV2(hardwareMap, telemetry, srsHub);
         Collector collector = new Collector(hardwareMap, telemetry);
+        Turret turret = new Turret(hardwareMap, telemetry);
 
 
         telemetry.addLine("srshub initialized");
@@ -49,6 +51,7 @@ public class ShooterHoodTest extends LinearOpMode {
             batteryVoltageFilter.update();
             srsHub.update();
             shooterV2.updateProperties();
+            turret.setTurretPower(0);
 
             if(controlHoodWithPower)
                 hoodV2.setHoodPower(hoodPower);
