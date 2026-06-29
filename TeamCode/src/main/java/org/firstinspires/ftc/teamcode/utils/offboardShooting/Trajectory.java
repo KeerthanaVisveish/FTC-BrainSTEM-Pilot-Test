@@ -1,7 +1,11 @@
 package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
+import androidx.annotation.NonNull;
+
+import org.firstinspires.ftc.teamcode.utils.misc.TelemetryHelper;
 import org.firstinspires.ftc.teamcode.utils.shootingMath.Vector3d;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -66,7 +70,7 @@ public class Trajectory {
 
     public ArrayList<Vector3d> simulateTrajectory(
             int numPoints,
-            int sparsity,
+            int sparsityForTelemetry,
             double turretAngleRad,
             Vector3d startPosition,
             Vector3d startVelocity) {
@@ -121,11 +125,18 @@ public class Trajectory {
         }
 
         ArrayList<Vector3d> pointsToPublish = IntStream.range(0, points.size())
-                .filter(i -> i % sparsity == 0)
+                .filter(i -> i % sparsityForTelemetry == 0)
                 .mapToObj(points::get)
                 .collect(Collectors.toCollection(ArrayList::new));
         pointsToPublish.add(points.get(points.size() - 1));
 
         return pointsToPublish;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        DecimalFormat df = new DecimalFormat("0.000");
+        return "ExitSpeed: " + df.format(exitSpeedMps) + "m/s | ExitAngle: " + df.format(Math.toDegrees(exitAngleRad)) + "deg | ToF: " + df.format(timeOfFlight) + "s";
     }
 }
