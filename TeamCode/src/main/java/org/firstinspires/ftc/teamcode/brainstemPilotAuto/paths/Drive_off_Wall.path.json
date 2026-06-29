@@ -1,0 +1,39 @@
+{
+  "id": "Drive_off_Wall",
+  "name": "Drive off Wall",
+  "waypoints": [
+    {
+      "x": 37.6164,
+      "y": -62.2852,
+      "prevControl": null,
+      "nextControl": {
+        "x": 30.2567,
+        "y": -33.3914
+      },
+      "rotation": 0
+    },
+    {
+      "x": 23.7147,
+      "y": -12.4025,
+      "prevControl": {
+        "x": 29.4389,
+        "y": -30.6656
+      },
+      "nextControl": null,
+      "rotation": -90
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 100
+  },
+  "subsystemTriggers": [],
+  "rotationTargets": [],
+  "startSide": "R",
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "waypointParams": {}
+}
