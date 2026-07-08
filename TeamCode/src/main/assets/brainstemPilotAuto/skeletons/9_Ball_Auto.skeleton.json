@@ -1,0 +1,27 @@
+{
+  "name": "9 Ball Auto",
+  "commands": [
+    {
+      "id": "cmd-1782769619950-ebyir",
+      "type": "parallel",
+      "label": "Initialize Systems",
+      "parallelSubs": []
+    },
+    {
+      "id": "cmd-1782769626831-1xfy8",
+      "type": "path",
+      "label": "Drive off of the Wall"
+    },
+    {
+      "id": "cmd-1783382928511-cihcj",
+      "type": "wait",
+      "label": "Shoot Preloads",
+      "defaultWait": 2
+    },
+    {
+      "id": "cmd-1782769666048-y4qlx",
+      "type": "path",
+      "label": "Drive to First Spike Mark"
+    }
+  ]
+}
