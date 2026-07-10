@@ -1,5 +1,5 @@
 {
-  "name": "9 Ball (123)",
+  "name": "Nine Ball (123)",
   "skeletonId": "9_Ball_Auto",
   "commandOverrides": [
     {
@@ -12,9 +12,21 @@
       "pathId": "Drive_off_Wall"
     },
     {
+      "cmdId": "cmd-1783382928511-cihcj",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1783636319553-ui0xt",
+      "skip": false
+    },
+    {
       "cmdId": "cmd-1782769666048-y4qlx",
       "skip": false,
       "pathId": "Drive_to_First_Spike"
+    },
+    {
+      "cmdId": "cmd-1783637369671-chaam",
+      "skip": false
     }
   ]
 }

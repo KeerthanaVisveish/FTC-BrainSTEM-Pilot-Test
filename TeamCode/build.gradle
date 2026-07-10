@@ -11,9 +11,22 @@
 
 // Custom definitions may go here
 
+// Sync Brainstem Pilot JSON project files into Android assets before each build.
+tasks.register('syncBrainstemPilotAssets', Sync) {
+    from('src/main/java/org/firstinspires/ftc/teamcode/brainstemPilotAuto') {
+        exclude 'opmodeAutos/**'
+        exclude '**/*.java'
+    }
+    into 'src/main/assets/brainstemPilotAuto'
+}
+
 // Include common definitions from above.
 apply from: '../build.common.gradle'
 apply from: '../build.dependencies.gradle'
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('syncBrainstemPilotAssets')
+}
 
 android {
     namespace = 'org.firstinspires.ftc.teamcode'

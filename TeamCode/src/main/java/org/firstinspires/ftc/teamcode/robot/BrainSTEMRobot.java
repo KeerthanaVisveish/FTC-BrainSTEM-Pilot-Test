@@ -31,6 +31,7 @@ import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.Shooti
 import org.firstinspires.ftc.teamcode.robot.subsystems.Collector;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Parking;
 import org.firstinspires.ftc.teamcode.robot.shootingSystem.shootingSystem.ShootingSystem;
+import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.CustomEndAction;
 import org.firstinspires.ftc.teamcode.utils.autoHelpers.TimedAction;
 import org.firstinspires.ftc.teamcode.utils.math.OdoInfo;
@@ -63,6 +64,7 @@ public class BrainSTEMRobot {
     private double dt;
     public BrainSTEMRobot(Alliance allianceColor, Telemetry telemetry, HardwareMap hardwareMap, Pose2d initialPose){
         this.telemetry = telemetry;
+        TelemetryLog.set(telemetry);
         this.alliance = allianceColor;
 
         drive = new MecanumDrive(hardwareMap, initialPose);

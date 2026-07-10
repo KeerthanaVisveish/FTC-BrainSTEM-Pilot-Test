@@ -1,3 +1,22 @@
 {
-  "subsystems": []
+  "subsystems": [
+    {
+      "id": "sys-collector",
+      "name": "Collector",
+      "mechanismCount": 1,
+      "visualBinding": "",
+      "commands": [
+        {
+          "id": "cmd-intake-on",
+          "name": "Intake On",
+          "visualBinding": ""
+        },
+        {
+          "id": "cmd-1783636302937",
+          "name": "Intake Off",
+          "visualBinding": ""
+        }
+      ]
+    }
+  ]
 }

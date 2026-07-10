@@ -11,8 +11,8 @@ import com.acmerobotics.roadrunner.Vector2d;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
-import org.firstinspires.ftc.teamcode.utils.autoReader.FieldConstants;
-import org.firstinspires.ftc.teamcode.utils.autoReader.PilotGeometry;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.FieldConstants;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotGeometry;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierCurve;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.PathFollowerUtils;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.RotationPoint;

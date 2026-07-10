@@ -2,7 +2,7 @@ package org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.tolerance;
 
 import com.acmerobotics.roadrunner.Vector2d;
 
-import org.firstinspires.ftc.teamcode.utils.autoReader.PilotGeometry;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotGeometry;
 
 import java.util.ArrayList;
 import java.util.Arrays;

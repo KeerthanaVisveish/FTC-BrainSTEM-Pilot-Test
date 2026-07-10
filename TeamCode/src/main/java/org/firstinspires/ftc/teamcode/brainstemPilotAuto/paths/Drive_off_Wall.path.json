@@ -23,13 +23,9 @@
       "rotation": 180
     }
   ],
-  "constraints": {
-    "maxVel": 100,
-    "maxAccel": 100
-  },
+  "constraints": {},
   "subsystemTriggers": [],
   "rotationTargets": [],
-  "startSide": "L",
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",

@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.utils.offboardShooting;
 
+import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
+
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
@@ -11,6 +13,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class TrajectoryLoader {
+    private static final String TAG = "TrajectoryLoader";
 
     public static Trajectory loadTrajectory(JSONObject json, double dragCoeff, double magnusCoeff) {
         try {
@@ -34,7 +37,7 @@ public class TrajectoryLoader {
                     angleMoe
             );
         } catch (JSONException e) {
-            e.printStackTrace();
+            TelemetryLog.error(TAG, "Failed to parse trajectory JSON", e);
             return null;
         }
     }
@@ -72,7 +75,7 @@ public class TrajectoryLoader {
                     trajectories
             );
         } catch (JSONException e) {
-            e.printStackTrace();
+            TelemetryLog.error(TAG, "Failed to parse trajectory JSON", e);
             return null;
         }
     }
@@ -96,6 +99,7 @@ public class TrajectoryLoader {
 
             return TrajectoryDistanceLUT.fromTrajectoryLUTs(trajectoryLUTs);
         } catch (JSONException e) {
+            TelemetryLog.error(TAG, "Failed to parse trajectory groups from JSON", e);
             throw new RuntimeException("Failed to parse trajectory groups from JSON", e);
         }
     }
@@ -110,6 +114,7 @@ public class TrajectoryLoader {
             String contents = ReadWriteFile.readFile(file);
             return new JSONObject(contents);
         } catch (Exception e) {
+            TelemetryLog.error(TAG, "Failed to read JSON file: " + filepath, e);
             throw new RuntimeException("Failed to read JSON file: " + filepath, e);
         }
     }

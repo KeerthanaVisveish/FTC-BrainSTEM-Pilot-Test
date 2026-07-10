@@ -16,12 +16,26 @@
       "id": "cmd-1783382928511-cihcj",
       "type": "wait",
       "label": "Shoot Preloads",
-      "defaultWait": 2
+      "defaultWait": 1
+    },
+    {
+      "id": "cmd-1783636319553-ui0xt",
+      "type": "subsystem",
+      "label": "Intake On",
+      "subsystemName": "Collector",
+      "commandName": "Intake On"
     },
     {
       "id": "cmd-1782769666048-y4qlx",
       "type": "path",
       "label": "Drive to First Spike Mark"
+    },
+    {
+      "id": "cmd-1783637369671-chaam",
+      "type": "subsystem",
+      "label": "Intake Off",
+      "subsystemName": "Collector",
+      "commandName": "Intake Off"
     }
   ]
 }

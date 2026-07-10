@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.utils.autoReader;
+package org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.autoReader;
 
 import android.content.Context;
 
@@ -13,9 +13,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
-import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierCurve;
+import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotCommands;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.CommandOverride;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.FieldConstants;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.ParallelWhilePrimaryRuns;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.SkeletonAuto;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.SkeletonCommand;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.TriggerWatcher;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.VariantAuto;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierParams;
-import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.RotationPoint;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.follower.BezierDrivePath;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.follower.BezierPath;
 
@@ -29,6 +36,8 @@ import java.util.Optional;
 
 public class BrainstemPilot {
 
+    private static final String TAG = "BrainstemPilot";
+
     private static final ObjectMapper m_objectMapper = new ObjectMapper();
     private static MecanumDrive m_drive;
     private static Alliance m_alliance;
@@ -39,15 +48,20 @@ public class BrainstemPilot {
 
     public static final String PATH_CHOOSER_PREFIX = "path:";
 
-    public static void initialize(Context appContext, MecanumDrive drive, Alliance alliance, BezierParams defaultParams) {
+    public static void prepareAssets(Context appContext, BezierParams defaultParams) {
         PilotAssetLoader.initialize(appContext);
+        m_defaultParams = defaultParams;
+    }
+
+    public static void initialize(Context appContext, MecanumDrive drive, Alliance alliance, BezierParams defaultParams) {
+        prepareAssets(appContext, defaultParams);
         m_drive = drive;
         m_alliance = alliance;
-        m_defaultParams = defaultParams;
     }
 
     public static PilotAutoBuilder buildAuto(String variantAutoName) {
         if (m_drive == null || m_defaultParams == null || m_alliance == null) {
+            TelemetryLog.critical(TAG, "BrainstemPilot must be initialized before constructing autonomous routes.");
             throw new IllegalStateException("BrainstemPilot must be initialized before constructing autonomous routes.");
         }
         return PilotAutoBuilder.forAuto(variantAutoName);
@@ -55,39 +69,23 @@ public class BrainstemPilot {
 
     public static PilotAutoBuilder buildPath(String pathId) {
         if (m_drive == null || m_defaultParams == null || m_alliance == null) {
+            TelemetryLog.critical(TAG, "BrainstemPilot must be initialized before constructing autonomous routes.");
             throw new IllegalStateException("BrainstemPilot must be initialized before constructing autonomous routes.");
         }
         return PilotAutoBuilder.forPath(pathId);
     }
 
-    public static FieldSide getPathStartSide(String pathId) {
-        try {
-            return PathParser.readStartSide(pathId);
-        } catch (IOException e) {
-            System.err.println("[BrainstemPilot] WARNING: Failed to read startSide for path: " + pathId);
-            e.printStackTrace();
-            return FieldSide.RIGHT;
-        }
-    }
-
-    static Action buildPathInternal(String pathId, FieldSide runSide) {
-        FieldSide authoredSide = getPathStartSide(pathId);
-        boolean shouldMirrorSide = runSide != authoredSide;
-
+    static Action buildPathInternal(String pathId) {
         try {
             BezierPath[] pathSegments = PathParser.parsePathFile(pathId, m_defaultParams);
-            if (shouldMirrorSide) {
-                pathSegments = mirrorSide(pathSegments);
-            }
 
-            String cacheKey = pathCacheKey(pathId, runSide);
+            String cacheKey = pathCacheKey(pathId);
             List<BezierPath[]> cachedPaths = new ArrayList<>();
             cachedPaths.add(pathSegments);
             m_parsedAutosCache.put(cacheKey, cachedPaths);
             return buildPathAction(pathId, pathSegments);
         } catch (IOException e) {
-            System.err.println("[BrainstemPilot] ERROR: Failed to load path: " + pathId);
-            e.printStackTrace();
+            TelemetryLog.error(TAG, "Failed to load path: " + pathId, e);
             return new InstantAction(() -> {});
         }
     }
@@ -100,14 +98,14 @@ public class BrainstemPilot {
         return chooserValue != null && chooserValue.startsWith(PATH_CHOOSER_PREFIX);
     }
 
-    public static Action buildFromChooser(String chooserValue, FieldSide runSide) {
+    public static Action buildFromChooser(String chooserValue) {
         if (isPathChooserValue(chooserValue)) {
-            return buildPath(chooserValue.substring(PATH_CHOOSER_PREFIX.length())).forSide(runSide).build();
+            return buildPath(chooserValue.substring(PATH_CHOOSER_PREFIX.length())).build();
         }
-        return buildAuto(chooserValue).forSide(runSide).build();
+        return buildAuto(chooserValue).build();
     }
 
-    public static Optional<Pose2d> getStartingPose(String chooserValue, FieldSide runSide, Alliance alliance) {
+    public static Optional<Pose2d> getStartingPose(String chooserValue, Alliance alliance) {
         if (m_defaultParams == null || chooserValue == null || alliance == null) {
             return Optional.empty();
         }
@@ -117,19 +115,18 @@ public class BrainstemPilot {
             return Optional.empty();
         }
 
-        String cacheKey = chooserValue + "|" + runSide.name() + "|" + alliance.name();
+        String cacheKey = chooserValue + "|" + alliance.name();
         Pose2d cached = m_startingPoseCache.get(cacheKey);
         if (cached != null) {
             return Optional.of(cached);
         }
 
         try {
-            Pose2d pose = parseStartingPoseFromPath(firstPathId, runSide, alliance);
+            Pose2d pose = parseStartingPoseFromPath(firstPathId, alliance);
             m_startingPoseCache.put(cacheKey, pose);
             return Optional.of(pose);
         } catch (IOException e) {
-            System.err.println("[BrainstemPilot] WARNING: Failed to resolve starting pose for: " + chooserValue);
-            e.printStackTrace();
+            TelemetryLog.warn(TAG, "Failed to resolve starting pose for: " + chooserValue, e);
             return Optional.empty();
         }
     }
@@ -143,43 +140,12 @@ public class BrainstemPilot {
                 options.put(displayName, pathChooserValue(pathId));
             }
         } catch (IOException e) {
-            System.err.println("[BrainstemPilot] WARNING: Failed to list path assets.");
-            e.printStackTrace();
+            TelemetryLog.warn(TAG, "Failed to list path assets.", e);
         }
         return options;
     }
 
-    public static FieldSide getAuthoredStartSide(String variantAutoName) {
-        try {
-            VariantAuto variant = loadVariant(variantAutoName);
-            if (variant == null) {
-                return FieldSide.RIGHT;
-            }
-
-            SkeletonAuto skeleton = loadSkeleton(variant.skeletonId);
-            if (skeleton == null) {
-                return FieldSide.RIGHT;
-            }
-
-            Map<String, CommandOverride> overrideMap = buildOverrideMap(variant);
-            String firstPathId = resolveFirstPathId(skeleton, overrideMap);
-            if (firstPathId == null) {
-                System.err.println("[BrainstemPilot] WARNING: No path found to read startSide for: " + variantAutoName);
-                return FieldSide.RIGHT;
-            }
-
-            return PathParser.readStartSide(firstPathId);
-        } catch (IOException e) {
-            System.err.println("[BrainstemPilot] WARNING: Failed to read startSide for: " + variantAutoName);
-            e.printStackTrace();
-            return FieldSide.RIGHT;
-        }
-    }
-
-    static Action buildAutoInternal(String variantAutoName, FieldSide runSide) {
-        FieldSide authoredSide = getAuthoredStartSide(variantAutoName);
-        boolean shouldMirrorSide = runSide != authoredSide;
-
+    static Action buildAutoInternal(String variantAutoName) {
         try {
             VariantAuto variant = loadVariant(variantAutoName);
             if (variant == null) {
@@ -204,20 +170,16 @@ public class BrainstemPilot {
                     String activePathId = (override != null && override.pathId != null)
                             ? override.pathId : skCmd.label;
                     if (activePathId == null || activePathId.isEmpty()) {
-                        System.err.println("[BrainstemPilot] WARNING: Path ID was empty for command ID: " + skCmd.id);
+                        TelemetryLog.warn(TAG, "Path ID was empty for command ID: " + skCmd.id);
                         continue;
                     }
                     try {
                         BezierPath[] pathSegments = PathParser.parsePathFile(activePathId, m_defaultParams);
-                        if (shouldMirrorSide) {
-                            pathSegments = mirrorSide(pathSegments);
-                        }
 
                         autoActionsSequence.add(buildPathAction(activePathId, pathSegments));
                         pathsToCache.add(pathSegments);
                     } catch (IOException e) {
-                        System.err.println("[BrainstemPilot] ERROR: Skipping invalid path: " + activePathId);
-                        e.printStackTrace();
+                        TelemetryLog.error(TAG, "Skipping invalid path: " + activePathId, e);
                     }
 
                 } else if ("wait".equalsIgnoreCase(skCmd.type)) {
@@ -229,7 +191,7 @@ public class BrainstemPilot {
                     if (skCmd.subsystemName != null && skCmd.commandName != null) {
                         autoActionsSequence.add(PilotCommands.getCommand(skCmd.subsystemName, skCmd.commandName));
                     } else {
-                        System.err.println("[BrainstemPilot] WARNING: Subsystem command missing name fields, id: " + skCmd.id);
+                        TelemetryLog.warn(TAG, "Subsystem command missing name fields, id: " + skCmd.id);
                     }
 
                 } else if ("parallel".equalsIgnoreCase(skCmd.type)) {
@@ -248,15 +210,13 @@ public class BrainstemPilot {
             }
 
             if (!pathsToCache.isEmpty()) {
-                String cacheKey = variantAutoName + "_" + runSide.name();
-                m_parsedAutosCache.put(cacheKey, pathsToCache);
+                m_parsedAutosCache.put(variantAutoName, pathsToCache);
             }
 
             return new SequentialAction(autoActionsSequence.toArray(new Action[0]));
 
         } catch (Exception e) {
-            System.err.println("[BrainstemPilot] CRITICAL: Engine failure loading routing profiles for: " + variantAutoName);
-            e.printStackTrace();
+            TelemetryLog.critical(TAG, "Engine failure loading routing profiles for: " + variantAutoName, e);
             return new InstantAction(() -> {});
         }
     }
@@ -277,41 +237,12 @@ public class BrainstemPilot {
                 : driveAction;
     }
 
-    private static String pathCacheKey(String pathId, FieldSide runSide) {
-        return "path_" + pathId + "_" + runSide.name();
-    }
-
-    public static BezierPath[] mirrorSide(BezierPath[] paths) {
-        BezierPath[] mirrored = new BezierPath[paths.length];
-        for (int i = 0; i < paths.length; i++) {
-            mirrored[i] = mirrorSide(paths[i]);
-        }
-        return mirrored;
-    }
-
-    public static BezierPath mirrorSide(BezierPath path) {
-        BezierCurve curve = path.curve;
-        BezierCurve mirroredCurve = new BezierCurve(
-                FieldConstants.mirrorSide(curve.getStart()),
-                FieldConstants.mirrorSide(curve.getControl1()),
-                FieldConstants.mirrorSide(curve.getControl2()),
-                FieldConstants.mirrorSide(curve.getEnd())
-        );
-
-        ArrayList<RotationPoint> mirroredRotations = new ArrayList<>();
-        for (RotationPoint rotationPoint : path.rotationPoints) {
-            mirroredRotations.add(
-                    new RotationPoint(PilotGeometry.negateHeading(rotationPoint.getHeadingRad()), rotationPoint.getT())
-            );
-        }
-
-        BezierPath mirroredPath = new BezierPath(mirroredCurve, path.params, mirroredRotations);
-        mirroredPath.subsystemTriggers = new ArrayList<>(path.subsystemTriggers);
-        return mirroredPath;
+    private static String pathCacheKey(String pathId) {
+        return "path_" + pathId;
     }
 
     public static void draw(Canvas canvas, String variantAutoName) {
-        draw(canvas, variantAutoName, getAuthoredStartSide(variantAutoName));
+        drawCachedPaths(canvas, variantAutoName);
     }
 
     private static VariantAuto loadVariant(String variantAutoName) throws IOException {
@@ -367,21 +298,16 @@ public class BrainstemPilot {
             }
             return resolveFirstPathId(skeleton, buildOverrideMap(variant));
         } catch (IOException e) {
-            System.err.println("[BrainstemPilot] WARNING: Failed to resolve first path for: " + chooserValue);
-            e.printStackTrace();
+            TelemetryLog.warn(TAG, "Failed to resolve first path for: " + chooserValue, e);
             return null;
         }
     }
 
-    private static Pose2d parseStartingPoseFromPath(String pathId, FieldSide runSide, Alliance alliance)
+    private static Pose2d parseStartingPoseFromPath(String pathId, Alliance alliance)
             throws IOException {
         BezierPath[] segments = PathParser.parsePathFile(pathId, m_defaultParams);
         if (segments.length == 0) {
             throw new IOException("Path has no segments: " + pathId);
-        }
-
-        if (runSide != PathParser.readStartSide(pathId)) {
-            segments = mirrorSide(segments);
         }
 
         BezierPath firstSegment = segments[0];
@@ -396,10 +322,10 @@ public class BrainstemPilot {
         return bluePose;
     }
 
-    public static void drawPath(Canvas canvas, String pathId, FieldSide runSide) {
+    public static void drawPath(Canvas canvas, String pathId) {
         if (canvas == null) return;
 
-        List<BezierPath[]> completeSequence = m_parsedAutosCache.get(pathCacheKey(pathId, runSide));
+        List<BezierPath[]> completeSequence = m_parsedAutosCache.get(pathCacheKey(pathId));
         if (completeSequence == null) {
             return;
         }
@@ -411,10 +337,9 @@ public class BrainstemPilot {
         }
     }
 
-    public static void draw(Canvas canvas, String variantAutoName, FieldSide runSide) {
+    private static void drawCachedPaths(Canvas canvas, String cacheKey) {
         if (canvas == null) return;
 
-        String cacheKey = variantAutoName + "_" + runSide.name();
         List<BezierPath[]> completeSequence = m_parsedAutosCache.get(cacheKey);
         if (completeSequence != null) {
             for (BezierPath[] segmentGroup : completeSequence) {

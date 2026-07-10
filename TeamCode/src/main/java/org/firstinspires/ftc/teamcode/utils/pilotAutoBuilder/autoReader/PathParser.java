@@ -1,8 +1,10 @@
-package org.firstinspires.ftc.teamcode.utils.autoReader;
+package org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.autoReader;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotCommands;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotGeometry;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierCurve;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierParams;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.RotationPoint;
@@ -208,11 +210,6 @@ public class PathParser {
         }
 
         return pathSegments;
-    }
-
-    public static FieldSide readStartSide(String pathId) throws IOException {
-        JsonNode root = m_objectMapper.readTree(PilotAssetLoader.readPathText(pathId));
-        return FieldSide.fromStartSideKey(root.path("startSide").asText("R"));
     }
 
     private static double sampleGlobalRotation(List<GlobalRotation> timeline, double distance) {

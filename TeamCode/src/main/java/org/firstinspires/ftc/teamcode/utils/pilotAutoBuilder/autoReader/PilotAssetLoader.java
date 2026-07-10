@@ -1,4 +1,6 @@
-package org.firstinspires.ftc.teamcode.utils.autoReader;
+package org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.autoReader;
+
+import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -15,6 +17,7 @@ import java.util.List;
 
 /** Loads Brainstem Pilot JSON assets bundled under {@code assets/brainstemPilotAuto/}. */
 public final class PilotAssetLoader {
+    private static final String TAG = "PilotAssetLoader";
     private static Context appContext;
 
     private PilotAssetLoader() {}
@@ -29,6 +32,7 @@ public final class PilotAssetLoader {
 
     public static InputStream open(String relativePath) throws IOException {
         if (!isInitialized()) {
+            TelemetryLog.critical(TAG, "PilotAssetLoader must be initialized with app context before loading assets.");
             throw new IllegalStateException("PilotAssetLoader must be initialized with app context before loading assets.");
         }
         return appContext.getAssets().open("brainstemPilotAuto/" + relativePath);

@@ -1,13 +1,16 @@
-package org.firstinspires.ftc.teamcode.utils.autoReader;
+package org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses;
 
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.InstantAction;
+
+import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 public class PilotCommands {
+    private static final String TAG = "PilotCommands";
     private static final Map<String, Supplier<Action>> m_registry = new HashMap<>();
 
     public static void registerCommand(String subsystemName, String commandName, Supplier<Action> commandSupplier) {
@@ -18,7 +21,7 @@ public class PilotCommands {
         String key = subsystemName + ":" + commandName;
         Supplier<Action> supplier = m_registry.get(key);
         if (supplier == null) {
-            System.err.println("[PilotCommands] WARNING: No registered command for: " + key);
+            TelemetryLog.warn(TAG, "No registered command for: " + key);
             return new InstantAction(() -> {});
         }
         return supplier.get();
