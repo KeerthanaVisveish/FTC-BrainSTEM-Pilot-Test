@@ -3,12 +3,12 @@
   "name": "Drive off Wall",
   "waypoints": [
     {
-      "x": -37.959,
-      "y": 62.3611,
+      "x": -40.2909,
+      "y": 62.5909,
       "prevControl": null,
       "nextControl": {
-        "x": -23.3854,
-        "y": 41.6871
+        "x": -25.7173,
+        "y": 41.9169
       },
       "rotation": -90
     },
