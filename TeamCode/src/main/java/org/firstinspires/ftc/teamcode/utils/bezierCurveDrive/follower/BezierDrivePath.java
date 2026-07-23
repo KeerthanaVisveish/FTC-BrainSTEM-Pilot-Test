@@ -73,7 +73,7 @@ public class BezierDrivePath implements Action {
         isRed = alliance == Alliance.RED;
     }
 
-    private void execute() {
+    private void execute(TelemetryPacket packet) {
         if (finished || currentPathIndex >= paths.length) {
             finished = true;
             return;
@@ -176,6 +176,17 @@ public class BezierDrivePath implements Action {
                 rotationPower * MecanumDrive.PARAMS.maxAngVel
         ));
 
+        if (packet != null) {
+            packet.put(preface() + "/path index", currentPathIndex);
+            // end point of the current bezier curve (field coords)
+            packet.put(preface() + "/end point x", endPoint.x);
+            packet.put(preface() + "/end point y", endPoint.y);
+            // calculated powers (robot frame): x = axial, y = lateral
+            packet.put(preface() + "/axial power", robotRelativeLinear.x);
+            packet.put(preface() + "/lateral power", robotRelativeLinear.y);
+            packet.put(preface() + "/rotation power", rotationPower);
+        }
+
         if (canvas != null) {
             canvas.setStrokeWidth(1);
             canvas.strokeLine(robotPos.x, robotPos.y, robotPos.x + linearVector.x, robotPos.y + linearVector.y);
@@ -194,7 +205,7 @@ public class BezierDrivePath implements Action {
             initialized = true;
         }
 
-        execute();
+        execute(packet);
 
         if (finished) {
             end();

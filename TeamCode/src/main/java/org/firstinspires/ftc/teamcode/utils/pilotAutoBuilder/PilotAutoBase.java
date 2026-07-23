@@ -31,6 +31,8 @@ public abstract class PilotAutoBase extends LinearOpMode {
     private Pose2d startPose;
 
     protected BrainSTEMRobot robot;
+    public static double speedkP = 0.01, speedkF = 0.001;
+    public static double headingkP = 0.01, headingkF = 0.001;
 
     protected PilotAutoBase(String variantAutoName) {
         this.variantAutoName = variantAutoName;
@@ -80,10 +82,10 @@ public abstract class PilotAutoBase extends LinearOpMode {
 
     private BezierParams createDefaultBezierParams() {
         return new BezierParams()
-            .setSpeedKp(0.01)
-            .setSpeedKf(0.001)
-            .setHeadingKp(0.01)
-            .setHeadingKf(0.001)
+            .setSpeedKp(speedkP)
+            .setSpeedKf(speedkF)
+            .setHeadingKp(headingkP)
+            .setHeadingKf(headingkF)
             .setTolerance(new CircleTolerance(0.5, 5));
     }
 
