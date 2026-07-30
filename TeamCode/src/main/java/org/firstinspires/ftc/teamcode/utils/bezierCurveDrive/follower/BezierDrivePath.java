@@ -136,7 +136,16 @@ public class BezierDrivePath implements Action {
 
         Vector2d lookaheadPoint = PathFollowerUtils.getLookaheadPoint(activeCurve, closestT, LOOKAHEAD_T);
 
-        double totalRemainingLength = PathFollowerUtils.estimateRemainingLength(activeCurve, closestT, REMAINING_LENGTH_SAMPLES);
+        // The curve-projected remaining length collapses to 0 once the robot's closest point
+        // reaches/overshoots t=1, even if the robot is still far from the actual end point
+        // (e.g. after overshooting). Floor it with the straight-line distance to the end point
+        // so the proportional speed term never vanishes while real position error remains.
+
+        double totalRemainingLength = Math.max(
+                PathFollowerUtils.estimateRemainingLength(activeCurve, closestT, REMAINING_LENGTH_SAMPLES),
+                robotToEndPoint.norm()
+        );
+
         for (int i = currentPathIndex + 1; i < paths.length; i++) {
             BezierCurve nextCurve = applyAllianceTransform(paths[i].curve);
             totalRemainingLength += PathFollowerUtils.estimateRemainingLength(nextCurve, 0, REMAINING_LENGTH_SAMPLES);

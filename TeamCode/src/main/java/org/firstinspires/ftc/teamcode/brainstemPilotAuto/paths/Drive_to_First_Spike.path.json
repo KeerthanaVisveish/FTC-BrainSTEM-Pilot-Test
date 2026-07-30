@@ -13,14 +13,17 @@
       "rotation": 180
     },
     {
-      "x": -55.5828,
+      "x": -50.5828,
       "y": 12.2011,
       "prevControl": {
         "x": -43.3817,
         "y": 12.2011
       },
       "nextControl": null,
-      "rotation": 180
+      "rotation": 180,
+      "params": {
+        "maxLinearSpeed": 30
+      }
     }
   ],
   "constraints": {},
@@ -31,5 +34,9 @@
   "headingUnit": "deg",
   "speedUnit": "in/s",
   "accelUnit": "in/s²",
-  "waypointParams": {}
+  "waypointParams": {
+    "1": {
+      "maxLinearSpeed": 30
+    }
+  }
 }

@@ -13,7 +13,8 @@
     },
     {
       "cmdId": "cmd-1783382928511-cihcj",
-      "skip": false
+      "skip": false,
+      "waitDuration": 0.8
     },
     {
       "cmdId": "cmd-1783636319553-ui0xt",
@@ -23,6 +24,15 @@
       "cmdId": "cmd-1782769666048-y4qlx",
       "skip": false,
       "pathId": "Drive_to_First_Spike"
+    },
+    {
+      "cmdId": "cmd-1785432736595-kgvyp",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785432748258-aqwtg",
+      "skip": false,
+      "pathId": "Drive_to_Shoot"
     },
     {
       "cmdId": "cmd-1783637369671-chaam",

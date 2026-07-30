@@ -31,6 +31,17 @@
       "label": "Drive to First Spike Mark"
     },
     {
+      "id": "cmd-1785432736595-kgvyp",
+      "type": "wait",
+      "label": "Wait to Collect",
+      "defaultWait": 0.5
+    },
+    {
+      "id": "cmd-1785432748258-aqwtg",
+      "type": "path",
+      "label": "Drive to Shoot"
+    },
+    {
       "id": "cmd-1783637369671-chaam",
       "type": "subsystem",
       "label": "Intake Off",
