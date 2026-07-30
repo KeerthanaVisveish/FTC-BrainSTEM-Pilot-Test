@@ -31,8 +31,8 @@ public abstract class PilotAutoBase extends LinearOpMode {
     private Pose2d startPose;
 
     protected BrainSTEMRobot robot;
-    public static double speedkP = 0.01, speedkF = 0.001;
-    public static double headingkP = 0.01, headingkF = 0.001;
+    public static double speedkP = 0.5, speedkF = 0.05;
+    public static double headingkP = 0.75, headingkF = 0.05;
 
     protected PilotAutoBase(String variantAutoName) {
         this.variantAutoName = variantAutoName;

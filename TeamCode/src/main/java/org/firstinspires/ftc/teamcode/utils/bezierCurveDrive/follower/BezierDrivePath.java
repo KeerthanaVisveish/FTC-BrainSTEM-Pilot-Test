@@ -177,11 +177,13 @@ public class BezierDrivePath implements Action {
         ));
 
         if (packet != null) {
-            packet.put(preface() + "/path index", currentPathIndex);
-            // end point of the current bezier curve (field coords)
             packet.put(preface() + "/end point x", endPoint.x);
             packet.put(preface() + "/end point y", endPoint.y);
-            // calculated powers (robot frame): x = axial, y = lateral
+            packet.put(preface() + "/current point x", robotPose.position.x);
+            packet.put(preface() + "/current point y", robotPose.position.y);
+            packet.put(preface() + "/in pos tol", inPositionTolerance);
+            packet.put(preface() + "/in heading tol", inHeadingTolerance);
+            packet.put(preface() + "/is finished", finished);
             packet.put(preface() + "/axial power", robotRelativeLinear.x);
             packet.put(preface() + "/lateral power", robotRelativeLinear.y);
             packet.put(preface() + "/rotation power", rotationPower);
