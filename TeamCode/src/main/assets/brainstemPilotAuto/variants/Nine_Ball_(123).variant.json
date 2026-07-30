@@ -13,7 +13,8 @@
     },
     {
       "cmdId": "cmd-1783382928511-cihcj",
-      "skip": false
+      "skip": false,
+      "waitDuration": 0.8
     },
     {
       "cmdId": "cmd-1783636319553-ui0xt",

@@ -16,7 +16,7 @@
       "id": "cmd-1783382928511-cihcj",
       "type": "wait",
       "label": "Shoot Preloads",
-      "defaultWait": 1
+      "defaultWait": 0
     },
     {
       "id": "cmd-1783636319553-ui0xt",
