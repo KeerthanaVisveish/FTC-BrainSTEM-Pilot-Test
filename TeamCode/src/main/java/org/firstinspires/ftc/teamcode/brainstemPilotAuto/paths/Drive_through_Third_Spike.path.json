@@ -1,29 +1,26 @@
 {
-  "id": "Drive_to_Shoot",
-  "name": "Drive to Shoot",
+  "id": "Drive_through_Third_Spike",
+  "name": "Drive through Third Spike",
   "waypoints": [
     {
-      "x": -50.5828,
-      "y": 12.2011,
+      "x": -25.7959,
+      "y": -36.3221,
       "prevControl": null,
       "nextControl": {
-        "x": -34.6208,
-        "y": 11.2009
+        "x": -40.5041,
+        "y": -36.5442
       },
       "rotation": 180
     },
     {
-      "x": -26.0222,
-      "y": 24.0988,
+      "x": -57.4751,
+      "y": -36.3221,
       "prevControl": {
-        "x": -30.5478,
-        "y": 16.8579
+        "x": -44.8034,
+        "y": -36.3179
       },
       "nextControl": null,
-      "rotation": 134.9593,
-      "params": {
-        "maxLinearSpeed": 30
-      }
+      "rotation": 180
     }
   ],
   "constraints": {},
@@ -34,9 +31,5 @@
   "headingUnit": "deg",
   "speedUnit": "in/s",
   "accelUnit": "in/s²",
-  "waypointParams": {
-    "1": {
-      "maxLinearSpeed": 30
-    }
-  }
+  "waypointParams": {}
 }

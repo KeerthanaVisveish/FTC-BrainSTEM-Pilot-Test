@@ -17,6 +17,50 @@
           "visualBinding": ""
         }
       ]
+    },
+    {
+      "id": "sys-1785543011305",
+      "name": "Shooter",
+      "mechanismCount": 1,
+      "visualBinding": "",
+      "commands": [
+        {
+          "id": "cmd-1785543017106",
+          "name": "Shooter On",
+          "visualBinding": ""
+        }
+      ]
+    },
+    {
+      "id": "sys-1785543021671",
+      "name": "Turret",
+      "mechanismCount": 1,
+      "visualBinding": "",
+      "commands": [
+        {
+          "id": "cmd-1785543025672",
+          "name": "Track Turret",
+          "visualBinding": ""
+        }
+      ]
+    },
+    {
+      "id": "sys-1785543036305",
+      "name": "Transfer",
+      "mechanismCount": 1,
+      "visualBinding": "",
+      "commands": [
+        {
+          "id": "cmd-1785543039922",
+          "name": "Engage Clutch",
+          "visualBinding": ""
+        },
+        {
+          "id": "cmd-1785543050938",
+          "name": "Disengage Clutch",
+          "visualBinding": ""
+        }
+      ]
     }
   ]
 }

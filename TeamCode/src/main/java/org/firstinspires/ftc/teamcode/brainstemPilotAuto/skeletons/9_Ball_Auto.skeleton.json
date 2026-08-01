@@ -5,18 +5,43 @@
       "id": "cmd-1782769619950-ebyir",
       "type": "parallel",
       "label": "Initialize Systems",
-      "parallelSubs": []
+      "parallelSubs": [
+        {
+          "id": "psub-1785543069805",
+          "type": "subsystem",
+          "label": "",
+          "defaultWait": 0,
+          "subsystemName": "Shooter",
+          "commandName": "Shooter On"
+        },
+        {
+          "id": "psub-1785543073339",
+          "type": "subsystem",
+          "label": "",
+          "defaultWait": 0,
+          "subsystemName": "Turret",
+          "commandName": "Track Turret"
+        },
+        {
+          "id": "psub-1785543085054",
+          "type": "subsystem",
+          "label": "",
+          "defaultWait": 0,
+          "subsystemName": "Transfer",
+          "commandName": "Disengage Clutch"
+        }
+      ]
     },
     {
       "id": "cmd-1782769626831-1xfy8",
       "type": "path",
-      "label": "Drive off of the Wall"
+      "label": "Drive Off Wall"
     },
     {
       "id": "cmd-1783382928511-cihcj",
       "type": "wait",
-      "label": "Shoot Preloads",
-      "defaultWait": 0
+      "label": "Wait for Shooter Spinup",
+      "defaultWait": 0.5
     },
     {
       "id": "cmd-1783636319553-ui0xt",
@@ -26,27 +51,129 @@
       "commandName": "Intake On"
     },
     {
-      "id": "cmd-1782769666048-y4qlx",
-      "type": "path",
-      "label": "Drive to First Spike Mark"
+      "id": "cmd-1785543104046-ffm5k",
+      "type": "subsystem",
+      "label": "Shoot Preloads",
+      "subsystemName": "Transfer",
+      "commandName": "Engage Clutch"
     },
     {
-      "id": "cmd-1785432736595-kgvyp",
+      "id": "cmd-1785543118575-i4qn5",
       "type": "wait",
-      "label": "Wait to Collect",
-      "defaultWait": 0.5
+      "label": "Shoot Preloads",
+      "defaultWait": 1.5
+    },
+    {
+      "id": "cmd-1785543116509-2ubu5",
+      "type": "subsystem",
+      "label": "Disengage Clutch",
+      "subsystemName": "Transfer",
+      "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1785544632201-zjnd7",
+      "type": "path",
+      "label": "Approach First Spike"
+    },
+    {
+      "id": "cmd-1782769666048-y4qlx",
+      "type": "path",
+      "label": "Drive through First Spike Mark"
     },
     {
       "id": "cmd-1785432748258-aqwtg",
       "type": "path",
-      "label": "Drive to Shoot"
+      "label": "Drive to Shoot "
     },
     {
       "id": "cmd-1783637369671-chaam",
       "type": "subsystem",
-      "label": "Intake Off",
-      "subsystemName": "Collector",
-      "commandName": "Intake Off"
+      "label": "Shoot First Spike Balls",
+      "subsystemName": "Transfer",
+      "commandName": "Engage Clutch"
+    },
+    {
+      "id": "cmd-1785543198158-k4zul",
+      "type": "wait",
+      "label": "Shoot First Spike Balls",
+      "defaultWait": 1.5
+    },
+    {
+      "id": "cmd-1785543210559-474r4",
+      "type": "subsystem",
+      "label": "Disengage Clutch",
+      "subsystemName": "Transfer",
+      "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1785543238608-un74m",
+      "type": "path",
+      "label": "Approach Second Spike Mark"
+    },
+    {
+      "id": "cmd-1785544092654-62srl",
+      "type": "path",
+      "label": "Drive through Second Spike Mark"
+    },
+    {
+      "id": "cmd-1785543261458-ckgwy",
+      "type": "path",
+      "label": "Drive to Shoot"
+    },
+    {
+      "id": "cmd-1785543275009-nyugy",
+      "type": "subsystem",
+      "label": "Shoot Second Spike Balls",
+      "subsystemName": "Transfer",
+      "commandName": "Engage Clutch"
+    },
+    {
+      "id": "cmd-1785543284674-3h531",
+      "type": "wait",
+      "label": "Shoot Second Spike Balls",
+      "defaultWait": 1.5
+    },
+    {
+      "id": "cmd-1785543277426-74hfm",
+      "type": "subsystem",
+      "label": "Disengage Clutch",
+      "subsystemName": "Transfer",
+      "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1785543317074-8il6q",
+      "type": "path",
+      "label": "Approach Third Spike Mark"
+    },
+    {
+      "id": "cmd-1785544104670-rrkbu",
+      "type": "path",
+      "label": "Drive through Third Spike Mark"
+    },
+    {
+      "id": "cmd-1785543326891-ljan7",
+      "type": "path",
+      "label": "Drive to Shoot"
+    },
+    {
+      "id": "cmd-1785543332507-97ntj",
+      "type": "subsystem",
+      "label": "Shoot Third Spike Balls",
+      "subsystemName": "Transfer",
+      "commandName": "Engage Clutch"
+    },
+    {
+      "id": "cmd-1785543345174-ycu6d",
+      "type": "wait",
+      "label": "Shoot Third Spike Balls",
+      "defaultWait": 1.5
+    },
+    {
+      "id": "cmd-1785543358107-4fjpr",
+      "type": "subsystem",
+      "label": "Disengage Clutch",
+      "subsystemName": "Transfer",
+      "commandName": "Disengage Clutch"
     }
   ]
 }
