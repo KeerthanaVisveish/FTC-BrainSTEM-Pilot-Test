@@ -1,0 +1,42 @@
+{
+  "id": "Return_to_Shoot_from_Third_Spike",
+  "name": "Return to Shoot from Third Spike",
+  "waypoints": [
+    {
+      "x": -57.4751,
+      "y": -36.3221,
+      "prevControl": null,
+      "nextControl": {
+        "x": -35.2997,
+        "y": -2.1497
+      },
+      "rotation": 180
+    },
+    {
+      "x": -26.0222,
+      "y": 24.0988,
+      "prevControl": {
+        "x": -29.8689,
+        "y": 8.2592
+      },
+      "nextControl": null,
+      "rotation": 134.9593,
+      "params": {
+        "maxLinearSpeed": 30
+      }
+    }
+  ],
+  "constraints": {},
+  "subsystemTriggers": [],
+  "rotationTargets": [],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "waypointParams": {
+    "1": {
+      "maxLinearSpeed": 30
+    }
+  }
+}

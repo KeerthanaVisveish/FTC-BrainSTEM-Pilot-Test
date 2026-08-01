@@ -1,29 +1,26 @@
 {
-  "id": "Drive_to_First_Spike",
-  "name": "Drive to First Spike",
+  "id": "Drive_through_Second_Spike",
+  "name": "Drive through Second Spike",
   "waypoints": [
     {
-      "x": -27.1135,
-      "y": 12.2011,
+      "x": -25.7959,
+      "y": -12.106,
       "prevControl": null,
       "nextControl": {
-        "x": -40.6703,
-        "y": 12.2011
+        "x": -40.2778,
+        "y": -12.5585
       },
       "rotation": 180
     },
     {
-      "x": -50.5828,
-      "y": 12.2011,
+      "x": -57.4751,
+      "y": -12.5585,
       "prevControl": {
-        "x": -43.3817,
-        "y": 12.2011
+        "x": -47.2925,
+        "y": -12.3323
       },
       "nextControl": null,
-      "rotation": 180,
-      "params": {
-        "maxLinearSpeed": 30
-      }
+      "rotation": 180
     }
   ],
   "constraints": {},
@@ -34,9 +31,5 @@
   "headingUnit": "deg",
   "speedUnit": "in/s",
   "accelUnit": "in/s²",
-  "waypointParams": {
-    "1": {
-      "maxLinearSpeed": 30
-    }
-  }
+  "waypointParams": {}
 }

@@ -1,0 +1,42 @@
+{
+  "id": "Return_to_Shoot_from_First_Spike",
+  "name": "Return to Shoot from First Spike",
+  "waypoints": [
+    {
+      "x": -50.5828,
+      "y": 12.2011,
+      "prevControl": null,
+      "nextControl": {
+        "x": -34.6208,
+        "y": 11.2009
+      },
+      "rotation": 180
+    },
+    {
+      "x": -26.0222,
+      "y": 24.0988,
+      "prevControl": {
+        "x": -30.5478,
+        "y": 16.8579
+      },
+      "nextControl": null,
+      "rotation": 134.9593,
+      "params": {
+        "maxLinearSpeed": 30
+      }
+    }
+  ],
+  "constraints": {},
+  "subsystemTriggers": [],
+  "rotationTargets": [],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "waypointParams": {
+    "1": {
+      "maxLinearSpeed": 30
+    }
+  }
+}

@@ -21,21 +21,95 @@
       "skip": false
     },
     {
-      "cmdId": "cmd-1782769666048-y4qlx",
-      "skip": false,
-      "pathId": "Drive_to_First_Spike"
+      "cmdId": "cmd-1785543104046-ffm5k",
+      "skip": false
     },
     {
-      "cmdId": "cmd-1785432736595-kgvyp",
+      "cmdId": "cmd-1785543118575-i4qn5",
       "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543116509-2ubu5",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785544632201-zjnd7",
+      "skip": true
+    },
+    {
+      "cmdId": "cmd-1782769666048-y4qlx",
+      "skip": false,
+      "pathId": "Drive_through_First_Spike"
     },
     {
       "cmdId": "cmd-1785432748258-aqwtg",
       "skip": false,
-      "pathId": "Drive_to_Shoot"
+      "pathId": "Return_to_Shoot_from_First_Spike"
     },
     {
       "cmdId": "cmd-1783637369671-chaam",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543198158-k4zul",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543210559-474r4",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543238608-un74m",
+      "skip": false,
+      "pathId": "Approach_Second_Spike"
+    },
+    {
+      "cmdId": "cmd-1785544092654-62srl",
+      "skip": false,
+      "pathId": "Drive_through_Second_Spike"
+    },
+    {
+      "cmdId": "cmd-1785543261458-ckgwy",
+      "skip": false,
+      "pathId": "Return_to_Shoot_from_Second_Spike"
+    },
+    {
+      "cmdId": "cmd-1785543275009-nyugy",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543284674-3h531",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543277426-74hfm",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543317074-8il6q",
+      "skip": false,
+      "pathId": "Approach_Third_Spike"
+    },
+    {
+      "cmdId": "cmd-1785544104670-rrkbu",
+      "skip": false,
+      "pathId": "Drive_through_Third_Spike"
+    },
+    {
+      "cmdId": "cmd-1785543326891-ljan7",
+      "skip": false,
+      "pathId": "Return_to_Shoot_from_Third_Spike"
+    },
+    {
+      "cmdId": "cmd-1785543332507-97ntj",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543345174-ycu6d",
+      "skip": false
+    },
+    {
+      "cmdId": "cmd-1785543358107-4fjpr",
       "skip": false
     }
   ]
