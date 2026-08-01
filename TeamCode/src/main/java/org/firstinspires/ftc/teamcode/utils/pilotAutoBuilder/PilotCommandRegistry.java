@@ -18,5 +18,26 @@ public final class PilotCommandRegistry {
             robot.collector.setIntakeState(Collector.IntakeState.OFF);
             return false;
         });
+
+        PilotCommands.registerCommand("Shooter", "Shooter On", () -> packet -> {
+            robot.shootingSystem.setShooterToGoalTargeting();
+            robot.shootingSystem.setHoodToGoalTargeting();
+            return false;
+        });
+
+        PilotCommands.registerCommand("Turret", "Track Turret", () -> packet -> {
+            robot.shootingSystem.setTurretToGoalTargeting();
+            return false;
+        });
+
+        PilotCommands.registerCommand("Transfer", "Engage Clutch", () -> packet -> {
+            robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
+            return false;
+        });
+
+        PilotCommands.registerCommand("Transfer", "Disengage Clutch", () -> packet -> {
+            robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
+            return false;
+        });
     }
 }
