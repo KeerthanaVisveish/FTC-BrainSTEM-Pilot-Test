@@ -25,7 +25,14 @@
   ],
   "constraints": {},
   "subsystemTriggers": [],
-  "rotationTargets": [],
+  "rotationTargets": [
+    {
+      "id": "rot-1786482384381",
+      "progress": 0.43,
+      "rotation": 90,
+      "arcLengthM": 26.48556939501349
+    }
+  ],
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",

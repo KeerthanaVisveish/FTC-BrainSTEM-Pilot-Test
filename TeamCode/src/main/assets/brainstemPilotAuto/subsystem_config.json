@@ -59,6 +59,11 @@
           "id": "cmd-1785543050938",
           "name": "Disengage Clutch",
           "visualBinding": ""
+        },
+        {
+          "id": "cmd-1786480601268",
+          "name": "Flicker",
+          "visualBinding": ""
         }
       ]
     }

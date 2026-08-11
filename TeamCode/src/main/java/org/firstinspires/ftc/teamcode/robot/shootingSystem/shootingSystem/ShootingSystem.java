@@ -34,26 +34,26 @@ public abstract class ShootingSystem extends Component {
     public static class GoalParams {
         // when shooting from really close
         public double closeRedX = -65, closeRedY = 63;
-        public double closeBlueX = -65, closeBlueY = -62;
+        public double closeBlueX = -65, closeBlueY = 62;
         public double closeHeight = 52;
         public double closeImpactAng = -20;
 
         // when cycling from gate
         public double gateRedX = -66, gateRedY = 64.5;
-        public double gateBlueX = -66, gateBlueY = -63;
+        public double gateBlueX = -66, gateBlueY = 63;
         public double gateHeight = 52;
         public double gateImpactAng = -20;
 
         // when shooting from opposing goal area
         public double oppositeRedX = -64, oppositeRedY = 66;
-        public double oppositeBlueX = -64, oppositeBlueY = -66;
+        public double oppositeBlueX = -64, oppositeBlueY = 66;
         public double oppositeHeight = 52;
         public double oppositeImpactAng = -20;
 
 
         // when shooting in far zone
         public double farRedX = -65, farRedY = 66;
-        public double farBlueX = -66, farBlueY = -62;
+        public double farBlueX = -66, farBlueY = 62;
         public double farHeight = 52;
         public double farImpactAng = -20;
 

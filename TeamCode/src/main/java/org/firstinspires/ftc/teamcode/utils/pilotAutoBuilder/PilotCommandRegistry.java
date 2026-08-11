@@ -39,5 +39,10 @@ public final class PilotCommandRegistry {
             robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
             return false;
         });
+
+        PilotCommands.registerCommand("Transfer", "Flicker", () -> packet -> {
+            robot.collector.setFlickerState(Collector.FlickerState.FULL_UP_DOWN);
+            return false;
+        });
     }
 }

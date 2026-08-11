@@ -31,8 +31,8 @@ public abstract class PilotAutoBase extends LinearOpMode {
     private Pose2d startPose;
 
     protected BrainSTEMRobot robot;
-    public static double speedkP = 0.3, speedkF = 0.05;
-    public static double headingkP = 0.5, headingkF = 0.05;
+    public static double speedkP = 0.15, speedkF = 0.01;
+    public static double headingkP = 0.15, headingkF = 0.01;
 
     protected PilotAutoBase(String variantAutoName) {
         this.variantAutoName = variantAutoName;
@@ -86,7 +86,7 @@ public abstract class PilotAutoBase extends LinearOpMode {
             .setSpeedKf(speedkF)
             .setHeadingKp(headingkP)
             .setHeadingKf(headingkF)
-            .setTolerance(new CircleTolerance(1.5, 5));
+            .setTolerance(new CircleTolerance(2, 5));
     }
 
     private boolean runRobotUpdateLoop(TelemetryPacket packet) {

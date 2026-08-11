@@ -64,11 +64,31 @@
       "defaultWait": 1.5
     },
     {
+      "id": "cmd-1786480578507-qtjsv",
+      "type": "subsystem",
+      "label": "Flick",
+      "subsystemName": "Transfer",
+      "commandName": "Flicker"
+    },
+    {
+      "id": "cmd-1786480580621-yt72z",
+      "type": "wait",
+      "label": "",
+      "defaultWait": 0.5
+    },
+    {
       "id": "cmd-1785543116509-2ubu5",
       "type": "subsystem",
       "label": "Disengage Clutch",
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1786481095649-meei6",
+      "type": "subsystem",
+      "label": "Intake On",
+      "subsystemName": "Collector",
+      "commandName": "Intake On"
     },
     {
       "id": "cmd-1785544632201-zjnd7",
@@ -99,11 +119,31 @@
       "defaultWait": 1.5
     },
     {
+      "id": "cmd-1786480625720-hxepb",
+      "type": "subsystem",
+      "label": "Flick",
+      "subsystemName": "Transfer",
+      "commandName": "Flicker"
+    },
+    {
+      "id": "cmd-1786480627271-azg57",
+      "type": "wait",
+      "label": "",
+      "defaultWait": 0.5
+    },
+    {
       "id": "cmd-1785543210559-474r4",
       "type": "subsystem",
       "label": "Disengage Clutch",
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1786481109382-lyeg4",
+      "type": "subsystem",
+      "label": "Intake On",
+      "subsystemName": "Collector",
+      "commandName": "Intake On"
     },
     {
       "id": "cmd-1785543238608-un74m",
@@ -134,11 +174,31 @@
       "defaultWait": 1.5
     },
     {
+      "id": "cmd-1786480647837-4oiyb",
+      "type": "subsystem",
+      "label": "Flick",
+      "subsystemName": "Transfer",
+      "commandName": "Flicker"
+    },
+    {
+      "id": "cmd-1786480649671-r9t2s",
+      "type": "wait",
+      "label": "",
+      "defaultWait": 0.5
+    },
+    {
       "id": "cmd-1785543277426-74hfm",
       "type": "subsystem",
       "label": "Disengage Clutch",
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1786481118865-rx4yr",
+      "type": "subsystem",
+      "label": "Intake On",
+      "subsystemName": "Collector",
+      "commandName": "Intake On"
     },
     {
       "id": "cmd-1785543317074-8il6q",
@@ -169,11 +229,31 @@
       "defaultWait": 1.5
     },
     {
+      "id": "cmd-1786480664704-9k2hb",
+      "type": "subsystem",
+      "label": "Flick",
+      "subsystemName": "Transfer",
+      "commandName": "Flicker"
+    },
+    {
+      "id": "cmd-1786480666587-q2h33",
+      "type": "wait",
+      "label": "",
+      "defaultWait": 0.5
+    },
+    {
       "id": "cmd-1785543358107-4fjpr",
       "type": "subsystem",
       "label": "Disengage Clutch",
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
+    },
+    {
+      "id": "cmd-1786481126600-8zs4u",
+      "type": "subsystem",
+      "label": "Intake On",
+      "subsystemName": "Collector",
+      "commandName": "Intake On"
     }
   ]
 }
