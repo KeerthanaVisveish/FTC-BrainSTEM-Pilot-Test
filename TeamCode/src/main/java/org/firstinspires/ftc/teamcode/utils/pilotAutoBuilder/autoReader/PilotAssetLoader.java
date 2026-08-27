@@ -67,16 +67,20 @@ public final class PilotAssetLoader {
         return "paths/" + pathId + ".path.json";
     }
 
-    public static String variantAssetRelativePath(String variantAutoName) {
-        return "variants/" + variantAutoName + ".variant.json";
+    public static String autoAssetRelativePath(String autoId) {
+        return "autos/" + autoId + ".auto.json";
     }
 
-    public static String skeletonAssetRelativePath(String skeletonId) {
-        return "skeletons/" + skeletonId + ".skeleton.json";
+    public static String pointAssetRelativePath(String pointId) {
+        return "points/" + pointId + ".point.json";
     }
 
     public static List<String> listPathIds() throws IOException {
         return listJsonIds("paths", ".path.json", ".json");
+    }
+
+    public static List<String> listAutoIds() throws IOException {
+        return listJsonIds("autos", ".auto.json");
     }
 
     private static List<String> listJsonIds(String folder, String... suffixes) throws IOException {

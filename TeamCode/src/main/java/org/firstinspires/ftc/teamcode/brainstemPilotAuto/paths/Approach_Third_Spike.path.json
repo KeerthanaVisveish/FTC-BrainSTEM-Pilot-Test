@@ -1,23 +1,25 @@
 {
   "id": "Approach_Third_Spike",
+  "created_date": "2026-08-27T01:13:37.914Z",
+  "updated_date": "2026-08-27T01:13:37.914Z",
   "name": "Approach Third Spike",
   "waypoints": [
     {
-      "x": -26.0222,
-      "y": 24.0988,
+      "x": -10.5982,
+      "y": 9.153,
       "prevControl": null,
       "nextControl": {
-        "x": -20.3652,
-        "y": 12.3323
+        "x": -3.4993,
+        "y": -11.4255
       },
-      "rotation": 135
+      "rotation": 130.7321
     },
     {
       "x": -25.7959,
       "y": -36.3221,
       "prevControl": {
-        "x": -18.3287,
-        "y": 4.865
+        "x": -13.2477,
+        "y": -29.8675
       },
       "nextControl": null,
       "rotation": 180
@@ -25,14 +27,7 @@
   ],
   "constraints": {},
   "subsystemTriggers": [],
-  "rotationTargets": [
-    {
-      "id": "rot-1786482384381",
-      "progress": 0.43,
-      "rotation": 90,
-      "arcLengthM": 26.48556939501349
-    }
-  ],
+  "rotationTargets": [],
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",

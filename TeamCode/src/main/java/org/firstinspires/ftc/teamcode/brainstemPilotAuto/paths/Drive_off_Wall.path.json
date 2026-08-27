@@ -1,5 +1,7 @@
 {
   "id": "Drive_off_Wall",
+  "created_date": "2026-08-26T23:51:46.273Z",
+  "updated_date": "2026-08-26T23:51:46.273Z",
   "name": "Drive off Wall",
   "waypoints": [
     {
@@ -13,11 +15,11 @@
       "rotation": -90
     },
     {
-      "x": -27.1135,
-      "y": 12.2011,
+      "x": -22.6415,
+      "y": 12.0434,
       "prevControl": {
-        "x": -23.0465,
-        "y": 33.553
+        "x": -18.5745,
+        "y": 33.3953
       },
       "nextControl": null,
       "rotation": 180

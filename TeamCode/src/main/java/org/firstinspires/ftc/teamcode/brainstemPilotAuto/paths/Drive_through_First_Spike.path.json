@@ -5,21 +5,21 @@
   "name": "Drive through First Spike",
   "waypoints": [
     {
-      "x": -27.1135,
-      "y": 12.2011,
+      "x": -22.6415,
+      "y": 12.0434,
       "prevControl": null,
       "nextControl": {
-        "x": -40.6703,
-        "y": 12.2011
+        "x": -36.1983,
+        "y": 12.0434
       },
       "rotation": 180
     },
     {
-      "x": -50.5828,
-      "y": 12.2011,
+      "x": -51.0638,
+      "y": 12.766,
       "prevControl": {
-        "x": -43.3817,
-        "y": 12.2011
+        "x": -43.8627,
+        "y": 12.766
       },
       "nextControl": null,
       "rotation": 180,
@@ -40,5 +40,6 @@
     "1": {
       "maxLinearSpeed": 30
     }
-  }
+  },
+  "folder": ""
 }
