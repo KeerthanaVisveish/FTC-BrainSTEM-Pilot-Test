@@ -1,23 +1,25 @@
 {
   "id": "Approach_Second_Spike",
+  "created_date": "2026-08-27T01:13:37.914Z",
+  "updated_date": "2026-08-27T01:13:37.914Z",
   "name": "Approach Second Spike",
   "waypoints": [
     {
-      "x": -26.0222,
-      "y": 24.0988,
+      "x": -10.5982,
+      "y": 9.153,
       "prevControl": null,
       "nextControl": {
-        "x": -20.3652,
-        "y": 12.3323
+        "x": -8.9122,
+        "y": -3.8539
       },
-      "rotation": 135
+      "rotation": 130.7321
     },
     {
       "x": -25.7959,
       "y": -12.106,
       "prevControl": {
-        "x": -18.3287,
-        "y": 4.865
+        "x": -16.6198,
+        "y": -7.9486
       },
       "nextControl": null,
       "rotation": 180

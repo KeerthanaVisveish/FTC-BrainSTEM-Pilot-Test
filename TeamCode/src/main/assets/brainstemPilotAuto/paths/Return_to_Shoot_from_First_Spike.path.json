@@ -1,5 +1,7 @@
 {
   "id": "Return_to_Shoot_from_First_Spike",
+  "created_date": "2026-08-27T01:13:37.914Z",
+  "updated_date": "2026-08-27T01:13:37.914Z",
   "name": "Return to Shoot from First Spike",
   "waypoints": [
     {
@@ -13,14 +15,14 @@
       "rotation": 180
     },
     {
-      "x": -26.0222,
-      "y": 24.0988,
+      "x": -10.5982,
+      "y": 9.153,
       "prevControl": {
-        "x": -30.5478,
-        "y": 16.8579
+        "x": -15.1238,
+        "y": 1.9121
       },
       "nextControl": null,
-      "rotation": 134.9593,
+      "rotation": 130.7321,
       "params": {
         "maxLinearSpeed": 30
       }

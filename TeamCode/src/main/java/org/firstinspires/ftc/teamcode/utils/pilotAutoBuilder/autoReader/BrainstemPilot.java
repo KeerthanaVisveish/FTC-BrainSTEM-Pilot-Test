@@ -14,14 +14,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utils.TelemetryLog;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotAuto;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotCommands;
-import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.CommandOverride;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.FieldConstants;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.ParallelWhilePrimaryRuns;
-import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.SkeletonAuto;
-import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.SkeletonCommand;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotPoint;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotSchema;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotSlot;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.TriggerWatcher;
-import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.VariantAuto;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierParams;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.follower.BezierDrivePath;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.follower.BezierPath;
@@ -45,6 +45,7 @@ public class BrainstemPilot {
 
     private static final Map<String, List<BezierPath[]>> m_parsedAutosCache = new HashMap<>();
     private static final Map<String, Pose2d> m_startingPoseCache = new HashMap<>();
+    private static final Map<String, PilotPoint> m_pointCache = new HashMap<>();
 
     public static final String PATH_CHOOSER_PREFIX = "path:";
 
@@ -59,30 +60,30 @@ public class BrainstemPilot {
         m_alliance = alliance;
     }
 
-    public static PilotAutoBuilder buildAuto(String variantAutoName) {
-        if (m_drive == null || m_defaultParams == null || m_alliance == null) {
-            TelemetryLog.critical(TAG, "BrainstemPilot must be initialized before constructing autonomous routes.");
-            throw new IllegalStateException("BrainstemPilot must be initialized before constructing autonomous routes.");
-        }
-        return PilotAutoBuilder.forAuto(variantAutoName);
+    public static PilotAutoBuilder buildAuto(String autoId) {
+        requireInitialized();
+        return PilotAutoBuilder.forAuto(autoId);
     }
 
     public static PilotAutoBuilder buildPath(String pathId) {
+        requireInitialized();
+        return PilotAutoBuilder.forPath(pathId);
+    }
+
+    private static void requireInitialized() {
         if (m_drive == null || m_defaultParams == null || m_alliance == null) {
             TelemetryLog.critical(TAG, "BrainstemPilot must be initialized before constructing autonomous routes.");
             throw new IllegalStateException("BrainstemPilot must be initialized before constructing autonomous routes.");
         }
-        return PilotAutoBuilder.forPath(pathId);
     }
 
     static Action buildPathInternal(String pathId) {
         try {
             BezierPath[] pathSegments = PathParser.parsePathFile(pathId, m_defaultParams);
 
-            String cacheKey = pathCacheKey(pathId);
             List<BezierPath[]> cachedPaths = new ArrayList<>();
             cachedPaths.add(pathSegments);
-            m_parsedAutosCache.put(cacheKey, cachedPaths);
+            m_parsedAutosCache.put(pathCacheKey(pathId), cachedPaths);
             return buildPathAction(pathId, pathSegments);
         } catch (IOException e) {
             TelemetryLog.error(TAG, "Failed to load path: " + pathId, e);
@@ -110,11 +111,6 @@ public class BrainstemPilot {
             return Optional.empty();
         }
 
-        String firstPathId = resolveFirstPathIdFromChooser(chooserValue);
-        if (firstPathId == null) {
-            return Optional.empty();
-        }
-
         String cacheKey = chooserValue + "|" + alliance.name();
         Pose2d cached = m_startingPoseCache.get(cacheKey);
         if (cached != null) {
@@ -122,7 +118,16 @@ public class BrainstemPilot {
         }
 
         try {
-            Pose2d pose = parseStartingPoseFromPath(firstPathId, alliance);
+            Pose2d bluePose = isPathChooserValue(chooserValue)
+                    ? parseStartingPoseFromPath(chooserValue.substring(PATH_CHOOSER_PREFIX.length()))
+                    : parseStartingPoseFromAuto(chooserValue);
+            if (bluePose == null) {
+                return Optional.empty();
+            }
+
+            Pose2d pose = alliance == Alliance.RED
+                    ? FieldConstants.mirrorAlliance(FieldConstants.mirrorSide(bluePose))
+                    : bluePose;
             m_startingPoseCache.put(cacheKey, pose);
             return Optional.of(pose);
         } catch (IOException e) {
@@ -145,60 +150,100 @@ public class BrainstemPilot {
         return options;
     }
 
-    static Action buildAutoInternal(String variantAutoName) {
+    /**
+     * Builds {@code autos/<autoId>.auto.json} into a single sequential action.
+     *
+     * <p>The geometry that joins slots together is not stored in the files — it is implied by
+     * sequence order, and is reproduced here to match the editor's preview:
+     * <ul>
+     *   <li>only {@code path} and {@code point} slots are positional; the rest pass the running
+     *       pose through unchanged</li>
+     *   <li>the first positional slot starts at its own stored pose</li>
+     *   <li>a path's first waypoint snaps to the previous positional slot's end pose</li>
+     *   <li>a point is a destination driven to, producing a straight connecting segment that
+     *       finishes at the point's own heading</li>
+     * </ul>
+     */
+    static Action buildAutoInternal(String autoId) {
         try {
-            VariantAuto variant = loadVariant(variantAutoName);
-            if (variant == null) {
+            PilotAuto auto = loadAuto(autoId);
+            if (auto == null || auto.sequence == null) {
+                TelemetryLog.warn(TAG, "Auto has no sequence: " + autoId);
                 return new InstantAction(() -> {});
             }
-
-            SkeletonAuto skeleton = loadSkeleton(variant.skeletonId);
-            if (skeleton == null) {
-                return new InstantAction(() -> {});
-            }
-
-            Map<String, CommandOverride> overrideMap = buildOverrideMap(variant);
 
             List<Action> autoActionsSequence = new ArrayList<>();
             List<BezierPath[]> pathsToCache = new ArrayList<>();
+            Pose2d runningPose = null;
 
-            for (SkeletonCommand skCmd : skeleton.commands) {
-                CommandOverride override = overrideMap.get(skCmd.id);
-                if (override != null && override.skip) continue;
+            for (PilotSlot slot : auto.sequence) {
+                if (slot.skip) continue;
 
-                if ("path".equalsIgnoreCase(skCmd.type)) {
-                    String activePathId = (override != null && override.pathId != null)
-                            ? override.pathId : skCmd.label;
-                    if (activePathId == null || activePathId.isEmpty()) {
-                        TelemetryLog.warn(TAG, "Path ID was empty for command ID: " + skCmd.id);
+                if (slot.isType("path")) {
+                    if (slot.pathId == null || slot.pathId.isEmpty()) {
+                        TelemetryLog.warn(TAG, "Path ID was empty for slot: " + slot.id);
                         continue;
                     }
                     try {
-                        BezierPath[] pathSegments = PathParser.parsePathFile(activePathId, m_defaultParams);
+                        BezierPath[] pathSegments =
+                                PathParser.parsePathFile(slot.pathId, m_defaultParams, runningPose);
 
-                        autoActionsSequence.add(buildPathAction(activePathId, pathSegments));
+                        autoActionsSequence.add(buildPathAction(slot.pathId, pathSegments));
                         pathsToCache.add(pathSegments);
+                        runningPose = PathParser.endPose(pathSegments);
                     } catch (IOException e) {
-                        TelemetryLog.error(TAG, "Skipping invalid path: " + activePathId, e);
+                        TelemetryLog.error(TAG, "Skipping invalid path: " + slot.pathId, e);
                     }
 
-                } else if ("wait".equalsIgnoreCase(skCmd.type)) {
-                    if (skCmd.defaultWait > 0) {
-                        autoActionsSequence.add(new SleepAction(skCmd.defaultWait));
+                } else if (slot.isType("point")) {
+                    if (slot.pointId == null || slot.pointId.isEmpty()) {
+                        TelemetryLog.warn(TAG, "Point ID was empty for slot: " + slot.id);
+                        continue;
+                    }
+                    try {
+                        PilotPoint point = loadPoint(slot.pointId);
+                        Pose2d pointPose = poseOf(point);
+
+                        if (runningPose == null) {
+                            // First positional slot: nothing to connect from, so it only
+                            // establishes where the auto begins.
+                            runningPose = pointPose;
+                            continue;
+                        }
+
+                        BezierPath[] pointSegments = PathParser.buildPointSegment(
+                                runningPose, point, slot.params, slot.subsystemTriggers, m_defaultParams);
+
+                        autoActionsSequence.add(buildPathAction(slot.pointId, pointSegments));
+                        pathsToCache.add(pointSegments);
+                        runningPose = pointPose;
+                    } catch (IOException e) {
+                        TelemetryLog.error(TAG, "Skipping invalid point: " + slot.pointId, e);
                     }
 
-                } else if ("subsystem".equalsIgnoreCase(skCmd.type)) {
-                    if (skCmd.subsystemName != null && skCmd.commandName != null) {
-                        autoActionsSequence.add(PilotCommands.getCommand(skCmd.subsystemName, skCmd.commandName));
+                } else if (slot.isType("wait")) {
+                    double seconds = slot.waitSeconds();
+                    if (seconds > 0) {
+                        autoActionsSequence.add(new SleepAction(seconds));
+                    }
+
+                } else if (slot.isType("subsystem")) {
+                    if (slot.subsystemName != null && slot.commandName != null) {
+                        autoActionsSequence.add(PilotCommands.getCommand(slot.subsystemName, slot.commandName));
                     } else {
-                        TelemetryLog.warn(TAG, "Subsystem command missing name fields, id: " + skCmd.id);
+                        TelemetryLog.warn(TAG, "Subsystem slot missing name fields, id: " + slot.id);
                     }
 
-                } else if ("parallel".equalsIgnoreCase(skCmd.type)) {
-                    if (skCmd.parallelSubs != null && !skCmd.parallelSubs.isEmpty()) {
+                } else if (slot.isType("parallel")) {
+                    if (slot.parallelSubs != null && !slot.parallelSubs.isEmpty()) {
                         List<Action> parallelActions = new ArrayList<>();
-                        for (SkeletonCommand sub : skCmd.parallelSubs) {
-                            if (sub.subsystemName != null && sub.commandName != null) {
+                        for (PilotSlot sub : slot.parallelSubs) {
+                            if (sub.isType("wait")) {
+                                double seconds = sub.waitSeconds();
+                                if (seconds > 0) {
+                                    parallelActions.add(new SleepAction(seconds));
+                                }
+                            } else if (sub.subsystemName != null && sub.commandName != null) {
                                 parallelActions.add(PilotCommands.getCommand(sub.subsystemName, sub.commandName));
                             }
                         }
@@ -206,17 +251,20 @@ public class BrainstemPilot {
                             autoActionsSequence.add(new ParallelAction(parallelActions.toArray(new Action[0])));
                         }
                     }
+
+                } else {
+                    TelemetryLog.warn(TAG, "Unknown slot type '" + slot.type + "' for slot: " + slot.id);
                 }
             }
 
             if (!pathsToCache.isEmpty()) {
-                m_parsedAutosCache.put(variantAutoName, pathsToCache);
+                m_parsedAutosCache.put(autoId, pathsToCache);
             }
 
             return new SequentialAction(autoActionsSequence.toArray(new Action[0]));
 
         } catch (Exception e) {
-            TelemetryLog.critical(TAG, "Engine failure loading routing profiles for: " + variantAutoName, e);
+            TelemetryLog.critical(TAG, "Engine failure loading routing profiles for: " + autoId, e);
             return new InstantAction(() -> {});
         }
     }
@@ -241,100 +289,64 @@ public class BrainstemPilot {
         return "path_" + pathId;
     }
 
-    public static void draw(Canvas canvas, String variantAutoName) {
-        drawCachedPaths(canvas, variantAutoName);
+    public static void draw(Canvas canvas, String autoId) {
+        drawCachedPaths(canvas, autoId);
     }
 
-    private static VariantAuto loadVariant(String variantAutoName) throws IOException {
-        String json = PilotAssetLoader.readText(PilotAssetLoader.variantAssetRelativePath(variantAutoName));
-        return m_objectMapper.readValue(json, VariantAuto.class);
+    private static PilotAuto loadAuto(String autoId) throws IOException {
+        String json = PilotAssetLoader.readText(PilotAssetLoader.autoAssetRelativePath(autoId));
+        PilotAuto auto = m_objectMapper.readValue(json, PilotAuto.class);
+        PilotSchema.validate("Auto '" + autoId + "'", auto.schemaVersion, auto.units, auto.headingUnit);
+        return auto;
     }
 
-    private static SkeletonAuto loadSkeleton(String skeletonId) throws IOException {
-        String json = PilotAssetLoader.readText(PilotAssetLoader.skeletonAssetRelativePath(skeletonId));
-        return m_objectMapper.readValue(json, SkeletonAuto.class);
-    }
-
-    private static Map<String, CommandOverride> buildOverrideMap(VariantAuto variant) {
-        Map<String, CommandOverride> overrideMap = new HashMap<>();
-        if (variant.commandOverrides != null) {
-            for (CommandOverride override : variant.commandOverrides) {
-                overrideMap.put(override.cmdId, override);
-            }
+    private static PilotPoint loadPoint(String pointId) throws IOException {
+        PilotPoint cachedPoint = m_pointCache.get(pointId);
+        if (cachedPoint != null) {
+            return cachedPoint;
         }
-        return overrideMap;
+
+        String json = PilotAssetLoader.readText(PilotAssetLoader.pointAssetRelativePath(pointId));
+        PilotPoint point = m_objectMapper.readValue(json, PilotPoint.class);
+        PilotSchema.validate("Point '" + pointId + "'", point.schemaVersion, point.units, point.headingUnit);
+        m_pointCache.put(pointId, point);
+        return point;
     }
 
-    private static String resolveFirstPathId(SkeletonAuto skeleton, Map<String, CommandOverride> overrideMap) {
-        for (SkeletonCommand skCmd : skeleton.commands) {
-            CommandOverride override = overrideMap.get(skCmd.id);
-            if (override != null && override.skip) {
-                continue;
+    private static Pose2d poseOf(PilotPoint point) {
+        return new Pose2d(point.x, point.y, Math.toRadians(point.rotation));
+    }
+
+    /** Start pose of an auto: the stored pose of its first non-skipped positional slot. */
+    private static Pose2d parseStartingPoseFromAuto(String autoId) throws IOException {
+        PilotAuto auto = loadAuto(autoId);
+        if (auto == null || auto.sequence == null) {
+            return null;
+        }
+
+        for (PilotSlot slot : auto.sequence) {
+            if (slot.skip) continue;
+
+            if (slot.isType("path") && slot.pathId != null && !slot.pathId.isEmpty()) {
+                return parseStartingPoseFromPath(slot.pathId);
             }
-            if ("path".equalsIgnoreCase(skCmd.type)) {
-                String activePathId = (override != null && override.pathId != null)
-                        ? override.pathId : skCmd.label;
-                if (activePathId != null && !activePathId.isEmpty()) {
-                    return activePathId;
-                }
+            if (slot.isType("point") && slot.pointId != null && !slot.pointId.isEmpty()) {
+                return poseOf(loadPoint(slot.pointId));
             }
         }
         return null;
     }
 
-    private static String resolveFirstPathIdFromChooser(String chooserValue) {
-        if (isPathChooserValue(chooserValue)) {
-            return chooserValue.substring(PATH_CHOOSER_PREFIX.length());
-        }
-
-        try {
-            VariantAuto variant = loadVariant(chooserValue);
-            if (variant == null) {
-                return null;
-            }
-            SkeletonAuto skeleton = loadSkeleton(variant.skeletonId);
-            if (skeleton == null) {
-                return null;
-            }
-            return resolveFirstPathId(skeleton, buildOverrideMap(variant));
-        } catch (IOException e) {
-            TelemetryLog.warn(TAG, "Failed to resolve first path for: " + chooserValue, e);
-            return null;
-        }
-    }
-
-    private static Pose2d parseStartingPoseFromPath(String pathId, Alliance alliance)
-            throws IOException {
+    private static Pose2d parseStartingPoseFromPath(String pathId) throws IOException {
         BezierPath[] segments = PathParser.parsePathFile(pathId, m_defaultParams);
         if (segments.length == 0) {
             throw new IOException("Path has no segments: " + pathId);
         }
-
-        BezierPath firstSegment = segments[0];
-        double headingRad = firstSegment.rotationPoints.isEmpty()
-                ? 0.0
-                : firstSegment.rotationPoints.get(0).getHeadingRad();
-        Pose2d bluePose = new Pose2d(firstSegment.curve.getStart(), headingRad);
-
-        if (alliance == Alliance.RED) {
-            return FieldConstants.mirrorAlliance(FieldConstants.mirrorSide(bluePose));
-        }
-        return bluePose;
+        return PathParser.startPose(segments);
     }
 
     public static void drawPath(Canvas canvas, String pathId) {
-        if (canvas == null) return;
-
-        List<BezierPath[]> completeSequence = m_parsedAutosCache.get(pathCacheKey(pathId));
-        if (completeSequence == null) {
-            return;
-        }
-
-        for (BezierPath[] segmentGroup : completeSequence) {
-            for (BezierPath segment : segmentGroup) {
-                segment.curve.draw(canvas, 20);
-            }
-        }
+        drawCachedPaths(canvas, pathCacheKey(pathId));
     }
 
     private static void drawCachedPaths(Canvas canvas, String cacheKey) {

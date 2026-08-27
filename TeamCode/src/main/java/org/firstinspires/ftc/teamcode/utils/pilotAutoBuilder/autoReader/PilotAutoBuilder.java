@@ -18,8 +18,8 @@ public class PilotAutoBuilder {
         m_target = target;
     }
 
-    static PilotAutoBuilder forAuto(String variantAutoName) {
-        return new PilotAutoBuilder(variantAutoName, Target.AUTO);
+    static PilotAutoBuilder forAuto(String autoId) {
+        return new PilotAutoBuilder(autoId, Target.AUTO);
     }
 
     static PilotAutoBuilder forPath(String pathId) {

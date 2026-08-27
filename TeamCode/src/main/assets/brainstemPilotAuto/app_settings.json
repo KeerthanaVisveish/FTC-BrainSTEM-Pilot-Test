@@ -1,4 +1,9 @@
 {
   "projectType": "ftc",
-  "selectedFieldId": "decode_2026"
+  "selectedFieldId": "decode_2026",
+  "folders": {
+    "autos": [],
+    "paths": [],
+    "points": []
+  }
 }

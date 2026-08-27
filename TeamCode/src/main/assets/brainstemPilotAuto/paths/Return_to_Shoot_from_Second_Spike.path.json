@@ -1,5 +1,7 @@
 {
   "id": "Return_to_Shoot_from_Second_Spike",
+  "created_date": "2026-08-27T01:13:37.914Z",
+  "updated_date": "2026-08-27T01:13:37.914Z",
   "name": "Return to Shoot from Second Spike",
   "waypoints": [
     {
@@ -13,11 +15,11 @@
       "rotation": 180
     },
     {
-      "x": -26.0222,
-      "y": 24.0988,
+      "x": 2.1678,
+      "y": 42.3926,
       "prevControl": {
-        "x": -29.8689,
-        "y": 8.2592
+        "x": -1.6789,
+        "y": 26.553
       },
       "nextControl": null,
       "rotation": 134.9593,

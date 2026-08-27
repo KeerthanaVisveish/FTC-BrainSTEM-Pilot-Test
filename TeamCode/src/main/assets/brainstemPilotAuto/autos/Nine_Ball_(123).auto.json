@@ -1,10 +1,13 @@
 {
-  "name": "9 Ball Auto",
-  "commands": [
+  "id": "Nine_Ball_(123)",
+  "created_date": "2026-08-27T01:44:37.535Z",
+  "updated_date": "2026-08-27T01:44:37.535Z",
+  "name": "Nine Ball (123)",
+  "sequence": [
     {
       "id": "cmd-1782769619950-ebyir",
       "type": "parallel",
-      "label": "Initialize Systems",
+      "skip": false,
       "parallelSubs": [
         {
           "id": "psub-1785543069805",
@@ -35,223 +38,233 @@
     {
       "id": "cmd-1782769626831-1xfy8",
       "type": "path",
-      "label": "Drive Off Wall"
+      "skip": false,
+      "pathId": "Drive_off_Wall"
     },
     {
       "id": "cmd-1783382928511-cihcj",
       "type": "wait",
-      "label": "Wait for Shooter Spinup",
-      "defaultWait": 0.5
+      "skip": false,
+      "duration": 0.8
     },
     {
       "id": "cmd-1783636319553-ui0xt",
       "type": "subsystem",
-      "label": "Intake On",
+      "skip": false,
       "subsystemName": "Collector",
       "commandName": "Intake On"
     },
     {
       "id": "cmd-1785543104046-ffm5k",
       "type": "subsystem",
-      "label": "Shoot Preloads",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Engage Clutch"
     },
     {
       "id": "cmd-1785543118575-i4qn5",
       "type": "wait",
-      "label": "Shoot Preloads",
-      "defaultWait": 1.5
+      "skip": false,
+      "duration": 1.5
     },
     {
       "id": "cmd-1786480578507-qtjsv",
       "type": "subsystem",
-      "label": "Flick",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Flicker"
     },
     {
       "id": "cmd-1786480580621-yt72z",
       "type": "wait",
-      "label": "",
-      "defaultWait": 0.5
+      "skip": false,
+      "duration": 0.5
     },
     {
       "id": "cmd-1785543116509-2ubu5",
       "type": "subsystem",
-      "label": "Disengage Clutch",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
     },
     {
       "id": "cmd-1786481095649-meei6",
       "type": "subsystem",
-      "label": "Intake On",
+      "skip": false,
       "subsystemName": "Collector",
       "commandName": "Intake On"
     },
     {
-      "id": "cmd-1785544632201-zjnd7",
-      "type": "path",
-      "label": "Approach First Spike"
-    },
-    {
       "id": "cmd-1782769666048-y4qlx",
       "type": "path",
-      "label": "Drive through First Spike Mark"
+      "skip": false,
+      "pathId": "Drive_through_First_Spike"
     },
     {
-      "id": "cmd-1785432748258-aqwtg",
-      "type": "path",
-      "label": "Drive to Shoot "
+      "id": "slot-1787793335998-sxs57",
+      "type": "point",
+      "pointId": "Shoot_Location",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
     },
     {
       "id": "cmd-1783637369671-chaam",
       "type": "subsystem",
-      "label": "Shoot First Spike Balls",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Engage Clutch"
     },
     {
       "id": "cmd-1785543198158-k4zul",
       "type": "wait",
-      "label": "Shoot First Spike Balls",
-      "defaultWait": 1.5
+      "skip": false,
+      "duration": 1.5
     },
     {
       "id": "cmd-1786480625720-hxepb",
       "type": "subsystem",
-      "label": "Flick",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Flicker"
     },
     {
       "id": "cmd-1786480627271-azg57",
       "type": "wait",
-      "label": "",
-      "defaultWait": 0.5
+      "skip": false,
+      "duration": 0.5
     },
     {
       "id": "cmd-1785543210559-474r4",
       "type": "subsystem",
-      "label": "Disengage Clutch",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
     },
     {
       "id": "cmd-1786481109382-lyeg4",
       "type": "subsystem",
-      "label": "Intake On",
+      "skip": false,
       "subsystemName": "Collector",
       "commandName": "Intake On"
     },
     {
       "id": "cmd-1785543238608-un74m",
       "type": "path",
-      "label": "Approach Second Spike Mark"
+      "skip": false,
+      "pathId": "Approach_Second_Spike"
     },
     {
       "id": "cmd-1785544092654-62srl",
       "type": "path",
-      "label": "Drive through Second Spike Mark"
+      "skip": false,
+      "pathId": "Drive_through_Second_Spike"
     },
     {
-      "id": "cmd-1785543261458-ckgwy",
-      "type": "path",
-      "label": "Drive to Shoot"
+      "id": "slot-1787793387755-kmfvc",
+      "type": "point",
+      "pointId": "Shoot_Location",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
     },
     {
       "id": "cmd-1785543275009-nyugy",
       "type": "subsystem",
-      "label": "Shoot Second Spike Balls",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Engage Clutch"
     },
     {
       "id": "cmd-1785543284674-3h531",
       "type": "wait",
-      "label": "Shoot Second Spike Balls",
-      "defaultWait": 1.5
+      "skip": false,
+      "duration": 1.5
     },
     {
       "id": "cmd-1786480647837-4oiyb",
       "type": "subsystem",
-      "label": "Flick",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Flicker"
     },
     {
       "id": "cmd-1786480649671-r9t2s",
       "type": "wait",
-      "label": "",
-      "defaultWait": 0.5
+      "skip": false,
+      "duration": 0.5
     },
     {
       "id": "cmd-1785543277426-74hfm",
       "type": "subsystem",
-      "label": "Disengage Clutch",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
     },
     {
       "id": "cmd-1786481118865-rx4yr",
       "type": "subsystem",
-      "label": "Intake On",
+      "skip": false,
       "subsystemName": "Collector",
       "commandName": "Intake On"
     },
     {
       "id": "cmd-1785543317074-8il6q",
       "type": "path",
-      "label": "Approach Third Spike Mark"
+      "skip": false,
+      "pathId": "Approach_Third_Spike"
     },
     {
       "id": "cmd-1785544104670-rrkbu",
       "type": "path",
-      "label": "Drive through Third Spike Mark"
+      "skip": false,
+      "pathId": "Drive_through_Third_Spike"
     },
     {
-      "id": "cmd-1785543326891-ljan7",
-      "type": "path",
-      "label": "Drive to Shoot"
+      "id": "slot-1787793366489-e9sog",
+      "type": "point",
+      "pointId": "Shoot_Location",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
     },
     {
       "id": "cmd-1785543332507-97ntj",
       "type": "subsystem",
-      "label": "Shoot Third Spike Balls",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Engage Clutch"
     },
     {
       "id": "cmd-1785543345174-ycu6d",
       "type": "wait",
-      "label": "Shoot Third Spike Balls",
-      "defaultWait": 1.5
+      "skip": false,
+      "duration": 1.5
     },
     {
       "id": "cmd-1786480664704-9k2hb",
       "type": "subsystem",
-      "label": "Flick",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Flicker"
     },
     {
       "id": "cmd-1786480666587-q2h33",
       "type": "wait",
-      "label": "",
-      "defaultWait": 0.5
+      "skip": false,
+      "duration": 0.5
     },
     {
       "id": "cmd-1785543358107-4fjpr",
       "type": "subsystem",
-      "label": "Disengage Clutch",
+      "skip": false,
       "subsystemName": "Transfer",
       "commandName": "Disengage Clutch"
     },
     {
       "id": "cmd-1786481126600-8zs4u",
       "type": "subsystem",
-      "label": "Intake On",
+      "skip": false,
       "subsystemName": "Collector",
       "commandName": "Intake On"
     }

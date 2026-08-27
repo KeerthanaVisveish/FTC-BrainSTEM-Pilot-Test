@@ -83,7 +83,13 @@ public class PathParser {
      */
     public static BezierPath[] parsePathFile(String pathId, BezierParams defaultParams, Pose2d startOverride)
             throws IOException {
-        JsonNode root = m_objectMapper.readTree(PilotAssetLoader.readPathText(pathId));
+        return parsePathJson(pathId, PilotAssetLoader.readPathText(pathId), defaultParams, startOverride);
+    }
+
+    /** Path parsing proper, decoupled from asset loading. */
+    public static BezierPath[] parsePathJson(String pathId, String json, BezierParams defaultParams, Pose2d startOverride)
+            throws IOException {
+        JsonNode root = m_objectMapper.readTree(json);
 
         PilotSchema.validate(
                 "Path '" + pathId + "'",

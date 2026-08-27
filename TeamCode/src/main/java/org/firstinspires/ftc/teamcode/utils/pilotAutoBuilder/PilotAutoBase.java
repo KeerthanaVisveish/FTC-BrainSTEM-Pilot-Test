@@ -24,7 +24,7 @@ import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.tolerance.CircleTol
 @Config
 public abstract class PilotAutoBase extends LinearOpMode {
     public static Alliance defaultAlliance = Alliance.BLUE;
-    private final String variantAutoName;
+    private final String autoId;
     private Alliance alliance;
     private BezierParams defaultParams;
     private Action pilotAuto;
@@ -34,8 +34,8 @@ public abstract class PilotAutoBase extends LinearOpMode {
     public static double speedkP = 0.15, speedkF = 0.01;
     public static double headingkP = 0.15, headingkF = 0.01;
 
-    protected PilotAutoBase(String variantAutoName) {
-        this.variantAutoName = variantAutoName;
+    protected PilotAutoBase(String autoId) {
+        this.autoId = autoId;
     }
 
     @Override
@@ -56,7 +56,7 @@ public abstract class PilotAutoBase extends LinearOpMode {
             if (gamepad1.bWasPressed()) alliance = Alliance.RED;
             if (alliance != previousAlliance) applyAllianceConfiguration();
 
-            telemetry.addData("Variant", variantAutoName);
+            telemetry.addData("Auto", autoId);
             telemetry.addData("Alliance", alliance);
             telemetry.addData("Start pose", startPose);
             telemetry.addLine("X = Blue | B = Red");
@@ -71,13 +71,13 @@ public abstract class PilotAutoBase extends LinearOpMode {
     }
 
     private void applyAllianceConfiguration() {
-        startPose = BrainstemPilot.getStartingPose(variantAutoName, alliance)
+        startPose = BrainstemPilot.getStartingPose(autoId, alliance)
                 .orElse(new Pose2d(0, 0, 0));
         robot = new BrainSTEMRobot(alliance, telemetry, hardwareMap, startPose);
         PilotCommandRegistry.registerAll(robot);
         BrainstemPilot.initialize(hardwareMap.appContext, robot.drive, alliance, defaultParams);
         robot.drive.pinpoint().setPose(startPose);
-        pilotAuto = BrainstemPilot.buildAuto(variantAutoName).build();
+        pilotAuto = BrainstemPilot.buildAuto(autoId).build();
     }
 
     private BezierParams createDefaultBezierParams() {
@@ -92,7 +92,7 @@ public abstract class PilotAutoBase extends LinearOpMode {
     private boolean runRobotUpdateLoop(TelemetryPacket packet) {
         robot.update();
         robot.drive.updatePoseEstimate();
-        BrainstemPilot.draw(packet.fieldOverlay(), variantAutoName);
+        BrainstemPilot.draw(packet.fieldOverlay(), autoId);
         robot.drawRobotInfo(packet.fieldOverlay());
         return true;
     }
