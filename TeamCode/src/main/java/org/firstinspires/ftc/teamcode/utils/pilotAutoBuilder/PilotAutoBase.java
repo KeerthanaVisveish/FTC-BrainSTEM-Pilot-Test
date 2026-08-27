@@ -17,10 +17,6 @@ import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.autoReader.Brainste
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierParams;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.tolerance.CircleTolerance;
 
-/**
- * Base OpMode for Brainstem Pilot JSON-driven autos.
- * Subclasses are auto-generated under this package by Brainstem Pilot UI (FTC projects).
- */
 @Config
 public abstract class PilotAutoBase extends LinearOpMode {
     public static Alliance defaultAlliance = Alliance.BLUE;
@@ -33,6 +29,10 @@ public abstract class PilotAutoBase extends LinearOpMode {
     protected BrainSTEMRobot robot;
     public static double speedkP = 0.15, speedkF = 0.01;
     public static double headingkP = 0.15, headingkF = 0.01;
+    /** Project default max velocity (in/s). Used where a record carries no constraints of its
+     *  own — point connectors, and any path whose constraints are empty. Mirrors the Brainstem
+     *  Pilot project default for FTC. */
+    public static double maxLinearSpeed = 60;
 
     protected PilotAutoBase(String autoId) {
         this.autoId = autoId;
@@ -86,6 +86,7 @@ public abstract class PilotAutoBase extends LinearOpMode {
             .setSpeedKf(speedkF)
             .setHeadingKp(headingkP)
             .setHeadingKf(headingkF)
+            .setMaxLinearSpeed(maxLinearSpeed)
             .setTolerance(new CircleTolerance(2, 5));
     }
 

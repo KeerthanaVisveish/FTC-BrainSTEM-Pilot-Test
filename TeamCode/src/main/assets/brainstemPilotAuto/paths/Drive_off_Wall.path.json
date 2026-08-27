@@ -1,7 +1,8 @@
 {
+  "schemaVersion": 2,
   "id": "Drive_off_Wall",
   "created_date": "2026-08-26T23:51:46.273Z",
-  "updated_date": "2026-08-26T23:51:46.273Z",
+  "updated_date": "2026-08-27T02:37:35.364Z",
   "name": "Drive off Wall",
   "waypoints": [
     {
@@ -25,7 +26,11 @@
       "rotation": 180
     }
   ],
-  "constraints": {},
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": false
+  },
   "subsystemTriggers": [],
   "rotationTargets": [
     {
@@ -39,6 +44,5 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²",
-  "waypointParams": {}
+  "accelUnit": "in/s²"
 }

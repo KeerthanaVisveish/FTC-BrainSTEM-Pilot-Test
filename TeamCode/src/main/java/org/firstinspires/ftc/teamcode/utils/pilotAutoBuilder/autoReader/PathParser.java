@@ -357,7 +357,11 @@ public class PathParser {
         }
         if (toleranceOverridden) bp.setTolerance(new CircleTolerance(dist, headDeg));
         if (params.has("minLinearSpeed")) bp.setMinLinearSpeed(params.get("minLinearSpeed").asDouble());
-        if (params.has("maxLinearSpeed")) bp.setMaxLinearSpeed(params.get("maxLinearSpeed").asDouble() * maxLinearVelocity);
+        // An absolute speed in the file's units (in/s), clamped by the path's own limit —
+        // not a fraction. The editor treats it as min(maxVel, value).
+        if (params.has("maxLinearSpeed")) {
+            bp.setMaxLinearSpeed(Math.min(maxLinearVelocity, params.get("maxLinearSpeed").asDouble()));
+        }
         if (params.has("maxTurnPower")) bp.setMaxTurnPower(params.get("maxTurnPower").asDouble());
         if (params.has("maxTime")) bp.setMaxTime(params.get("maxTime").asDouble());
         if (params.has("passPosition")) bp.setPassPosition(params.get("passPosition").asBoolean());

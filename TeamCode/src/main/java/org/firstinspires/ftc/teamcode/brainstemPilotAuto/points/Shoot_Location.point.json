@@ -1,9 +1,15 @@
 {
+  "schemaVersion": 2,
   "id": "Shoot_Location",
   "created_date": "2026-08-27T01:15:35.967Z",
-  "updated_date": "2026-08-27T01:15:35.967Z",
+  "updated_date": "2026-08-27T02:44:00.933Z",
   "name": "Shoot Location",
   "x": -10.598153352067442,
   "y": 9.152950622240066,
-  "rotation": 130.73214022527793
+  "rotation": 130,
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
 }

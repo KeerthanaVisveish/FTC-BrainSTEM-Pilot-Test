@@ -1,7 +1,8 @@
 {
+  "schemaVersion": 2,
   "id": "Approach_Second_Spike",
   "created_date": "2026-08-27T01:13:37.914Z",
-  "updated_date": "2026-08-27T01:13:37.914Z",
+  "updated_date": "2026-08-27T02:44:00.922Z",
   "name": "Approach Second Spike",
   "waypoints": [
     {
@@ -12,7 +13,7 @@
         "x": -8.9122,
         "y": -3.8539
       },
-      "rotation": 130.7321
+      "rotation": 130
     },
     {
       "x": -25.7959,
@@ -25,13 +26,16 @@
       "rotation": 180
     }
   ],
-  "constraints": {},
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": false
+  },
   "subsystemTriggers": [],
   "rotationTargets": [],
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²",
-  "waypointParams": {}
+  "accelUnit": "in/s²"
 }

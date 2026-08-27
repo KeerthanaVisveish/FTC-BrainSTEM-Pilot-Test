@@ -1,8 +1,9 @@
 {
-  "id": "Nine_Ball_(123)",
+  "schemaVersion": 2,
+  "id": "Twelve_Ball_(123)",
   "created_date": "2026-08-27T01:44:37.535Z",
-  "updated_date": "2026-08-27T01:44:37.535Z",
-  "name": "Nine Ball (123)",
+  "updated_date": "2026-08-27T02:42:15.000Z",
+  "name": "Twelve Ball (123)",
   "sequence": [
     {
       "id": "cmd-1782769619950-ebyir",
@@ -268,5 +269,10 @@
       "subsystemName": "Collector",
       "commandName": "Intake On"
     }
-  ]
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
 }

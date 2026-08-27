@@ -1,7 +1,8 @@
 {
+  "schemaVersion": 2,
   "id": "Drive_through_Third_Spike",
   "created_date": "2026-08-26T23:38:02.745Z",
-  "updated_date": "2026-08-26T23:38:02.745Z",
+  "updated_date": "2026-08-27T02:38:43.645Z",
   "name": "Drive through Third Spike",
   "waypoints": [
     {
@@ -25,13 +26,16 @@
       "rotation": 180
     }
   ],
-  "constraints": {},
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": false
+  },
   "subsystemTriggers": [],
   "rotationTargets": [],
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²",
-  "waypointParams": {}
+  "accelUnit": "in/s²"
 }

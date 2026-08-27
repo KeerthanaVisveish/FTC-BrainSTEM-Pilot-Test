@@ -1,7 +1,8 @@
 {
+  "schemaVersion": 2,
   "id": "Drive_through_First_Spike",
   "created_date": "2026-08-01T00:22:06.539Z",
-  "updated_date": "2026-08-01T00:22:06.539Z",
+  "updated_date": "2026-08-27T02:39:27.294Z",
   "name": "Drive through First Spike",
   "waypoints": [
     {
@@ -28,7 +29,11 @@
       }
     }
   ],
-  "constraints": {},
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": false
+  },
   "subsystemTriggers": [],
   "rotationTargets": [],
   "coordinateSystem": "pedro-center",
@@ -36,10 +41,5 @@
   "headingUnit": "deg",
   "speedUnit": "in/s",
   "accelUnit": "in/s²",
-  "waypointParams": {
-    "1": {
-      "maxLinearSpeed": 30
-    }
-  },
   "folder": ""
 }
