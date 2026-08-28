@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "id": "Heading_Tune_Path",
+  "created_date": "2026-08-28T23:29:48.000Z",
+  "updated_date": "2026-08-28T23:30:22.391Z",
+  "name": "Heading Tune Path",
+  "waypoints": [
+    {
+      "x": 0,
+      "y": 60,
+      "prevControl": null,
+      "nextControl": {
+        "x": -24.9288,
+        "y": 34.7797
+      },
+      "rotation": -90
+    },
+    {
+      "x": 1.8093,
+      "y": -45.4347,
+      "prevControl": {
+        "x": 27.5423,
+        "y": -10.454
+      },
+      "nextControl": null,
+      "rotation": -90
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": true
+  },
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

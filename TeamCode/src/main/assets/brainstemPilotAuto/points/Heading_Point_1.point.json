@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "id": "Heading_Point_1",
+  "created_date": "2026-08-28T23:23:19.087Z",
+  "updated_date": "2026-08-28T23:23:35.596Z",
+  "name": "Heading Point 1",
+  "x": 0,
+  "y": 0,
+  "rotation": 0,
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

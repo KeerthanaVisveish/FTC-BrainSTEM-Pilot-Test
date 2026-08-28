@@ -5,7 +5,9 @@
     "autos": [
       "Auto Gain Tuning"
     ],
-    "paths": [],
+    "paths": [
+      "Gain Tuning"
+    ],
     "points": []
   }
 }

@@ -1,26 +1,26 @@
 {
   "schemaVersion": 2,
-  "id": "Path_10",
-  "created_date": "2026-08-28T20:51:42.989Z",
-  "updated_date": "2026-08-28T22:12:47.516Z",
-  "name": "Path 10",
+  "id": "Backward_Tune",
+  "created_date": "2026-08-28T22:12:12.397Z",
+  "updated_date": "2026-08-28T23:09:26.642Z",
+  "name": "Backward Tune",
   "waypoints": [
     {
       "x": -40,
-      "y": 62,
+      "y": -36,
       "prevControl": null,
       "nextControl": {
-        "x": -39.5888,
-        "y": 26.4335
+        "x": -40.2077,
+        "y": -14.2737
       },
       "rotation": -90
     },
     {
       "x": -40,
-      "y": -36,
+      "y": 62,
       "prevControl": {
-        "x": -40.3265,
-        "y": -1.3524
+        "x": -39.8057,
+        "y": 34.3776
       },
       "nextControl": null,
       "rotation": -90
@@ -35,5 +35,6 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²"
+  "accelUnit": "in/s²",
+  "folder": "Gain Tuning"
 }

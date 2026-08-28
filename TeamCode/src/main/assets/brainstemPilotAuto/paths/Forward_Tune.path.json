@@ -1,26 +1,26 @@
 {
   "schemaVersion": 2,
-  "id": "Path_11",
-  "created_date": "2026-08-28T22:12:12.397Z",
-  "updated_date": "2026-08-28T22:12:47.522Z",
-  "name": "Path 11",
+  "id": "Forward_Tune",
+  "created_date": "2026-08-28T20:51:42.989Z",
+  "updated_date": "2026-08-28T23:09:23.149Z",
+  "name": "Forward Tune",
   "waypoints": [
     {
       "x": -40,
-      "y": -36,
+      "y": 62,
       "prevControl": null,
       "nextControl": {
-        "x": -40.2077,
-        "y": -14.2737
+        "x": -39.5888,
+        "y": 26.4335
       },
       "rotation": -90
     },
     {
       "x": -40,
-      "y": 62,
+      "y": -36,
       "prevControl": {
-        "x": -39.8057,
-        "y": 34.3776
+        "x": -40.3265,
+        "y": -1.3524
       },
       "nextControl": null,
       "rotation": -90
@@ -35,5 +35,6 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²"
+  "accelUnit": "in/s²",
+  "folder": "Gain Tuning"
 }

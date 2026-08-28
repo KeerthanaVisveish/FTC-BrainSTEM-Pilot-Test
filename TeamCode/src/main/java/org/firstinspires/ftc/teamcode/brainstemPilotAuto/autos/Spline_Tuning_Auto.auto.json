@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 2,
+  "id": "Heading_Tuning_Auto",
+  "created_date": "2026-08-28T23:00:33.397Z",
+  "updated_date": "2026-08-28T23:23:06.070Z",
+  "name": "Spline Tuning Auto",
+  "sequence": [
+    {
+      "id": "slot-1787958470138-bntji",
+      "type": "path",
+      "pathId": "Heading_Forward_Tune",
+      "skip": false
+    },
+    {
+      "id": "slot-1787958804205-3kl34",
+      "type": "path",
+      "pathId": "Heading_Backward_Tune",
+      "skip": false
+    }
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "folder": "Auto Gain Tuning"
+}

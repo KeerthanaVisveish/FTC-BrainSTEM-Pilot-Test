@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 2,
+  "id": "Auto",
+  "created_date": "2026-08-28T23:23:09.637Z",
+  "updated_date": "2026-08-28T23:24:56.971Z",
+  "name": "Heading Tuning Auto",
+  "sequence": [
+    {
+      "id": "slot-1787959399099-ngjoy",
+      "type": "point",
+      "pointId": "Heading_Point_1",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1787959418079-3682x",
+      "type": "point",
+      "pointId": "Heading_Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1787959491985-3grn3",
+      "type": "point",
+      "pointId": "Heading_Point_1",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1787959493418-58g7a",
+      "type": "point",
+      "pointId": "Heading_Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1787959494984-b43ab",
+      "type": "point",
+      "pointId": "Heading_Point_1",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1787959496452-e90ew",
+      "type": "point",
+      "pointId": "Heading_Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    }
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

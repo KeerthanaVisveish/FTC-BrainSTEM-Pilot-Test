@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 2,
+  "id": "Heading_Forward_Tune",
+  "created_date": "2026-08-28T23:07:50.126Z",
+  "updated_date": "2026-08-28T23:13:31.319Z",
+  "name": "Heading Forward Tune",
+  "waypoints": [
+    {
+      "x": -40,
+      "y": 62,
+      "prevControl": null,
+      "nextControl": {
+        "x": -38.8005,
+        "y": -5.428
+      },
+      "rotation": -90
+    },
+    {
+      "x": 35.3828,
+      "y": 60.3116,
+      "prevControl": {
+        "x": 35.7849,
+        "y": -6.4332
+      },
+      "nextControl": null,
+      "rotation": 90
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": true
+  },
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "folder": "Gain Tuning",
+  "rotationTargets": [
+    {
+      "id": "rot-1787958747390",
+      "progress": 0.5,
+      "rotation": 0,
+      "arcLengthM": 69.94033566957754
+    }
+  ]
+}

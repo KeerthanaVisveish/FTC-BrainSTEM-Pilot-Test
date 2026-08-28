@@ -1,4 +1,13 @@
 {
   "selectedFieldId": "decode_2026",
-  "projectType": "ftc"
+  "projectType": "ftc",
+  "folders": {
+    "autos": [
+      "Auto Gain Tuning"
+    ],
+    "paths": [
+      "Gain Tuning"
+    ],
+    "points": []
+  }
 }

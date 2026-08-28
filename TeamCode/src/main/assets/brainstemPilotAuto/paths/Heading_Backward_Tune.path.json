@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 2,
+  "id": "Heading_Backward_Tune",
+  "created_date": "2026-08-28T23:13:24.191Z",
+  "updated_date": "2026-08-28T23:14:39.208Z",
+  "name": "Heading Backward Tune",
+  "waypoints": [
+    {
+      "x": 35.3828,
+      "y": 60.3116,
+      "prevControl": null,
+      "nextControl": {
+        "x": 0.6031,
+        "y": 17.8924
+      },
+      "rotation": 90
+    },
+    {
+      "x": -40,
+      "y": 62,
+      "prevControl": {
+        "x": 1.0052,
+        "y": 18.4956
+      },
+      "nextControl": null,
+      "rotation": -90
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": true
+  },
+  "rotationTargets": [
+    {
+      "id": "rot-1787958856305",
+      "progress": 0.5,
+      "rotation": 0,
+      "arcLengthM": 50.64953885928978
+    }
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "folder": "Gain Tuning"
+}
