@@ -2,13 +2,13 @@
   "schemaVersion": 2,
   "id": "Twelve_Ball_(123)",
   "created_date": "2026-08-27T01:44:37.535Z",
-  "updated_date": "2026-08-27T02:42:15.000Z",
+  "updated_date": "2026-08-28T20:51:38.641Z",
   "name": "Twelve Ball (123)",
   "sequence": [
     {
       "id": "cmd-1782769619950-ebyir",
       "type": "parallel",
-      "skip": false,
+      "skip": true,
       "parallelSubs": [
         {
           "id": "psub-1785543069805",

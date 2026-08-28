@@ -2,25 +2,25 @@
   "schemaVersion": 2,
   "id": "Approach_Third_Spike",
   "created_date": "2026-08-27T01:13:37.914Z",
-  "updated_date": "2026-08-27T02:44:00.910Z",
+  "updated_date": "2026-08-28T20:49:05.444Z",
   "name": "Approach Third Spike",
   "waypoints": [
     {
-      "x": -10.5982,
-      "y": 9.153,
+      "x": -20.908,
+      "y": 12.0623,
       "prevControl": null,
       "nextControl": {
-        "x": -3.4993,
-        "y": -11.4255
+        "x": -13.5303,
+        "y": -9.5911
       },
-      "rotation": 130
+      "rotation": 130.3447
     },
     {
       "x": -25.7959,
       "y": -36.3221,
       "prevControl": {
-        "x": -13.2477,
-        "y": -29.8675
+        "x": -15.2789,
+        "y": -24.7278
       },
       "nextControl": null,
       "rotation": 180

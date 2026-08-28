@@ -2,18 +2,18 @@
   "schemaVersion": 2,
   "id": "Approach_Second_Spike",
   "created_date": "2026-08-27T01:13:37.914Z",
-  "updated_date": "2026-08-27T02:44:00.922Z",
+  "updated_date": "2026-08-28T20:49:05.449Z",
   "name": "Approach Second Spike",
   "waypoints": [
     {
-      "x": -10.5982,
-      "y": 9.153,
+      "x": -20.908,
+      "y": 12.0623,
       "prevControl": null,
       "nextControl": {
-        "x": -8.9122,
-        "y": -3.8539
+        "x": -19.222,
+        "y": -0.9446
       },
-      "rotation": 130
+      "rotation": 130.3447
     },
     {
       "x": -25.7959,

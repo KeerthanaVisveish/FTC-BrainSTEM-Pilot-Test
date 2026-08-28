@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "Drive_off_Wall",
   "created_date": "2026-08-26T23:51:46.273Z",
-  "updated_date": "2026-08-27T02:37:35.364Z",
+  "updated_date": "2026-08-28T20:48:00.629Z",
   "name": "Drive off Wall",
   "waypoints": [
     {
@@ -10,17 +10,17 @@
       "y": 62.5909,
       "prevControl": null,
       "nextControl": {
-        "x": -25.7173,
-        "y": 41.9169
+        "x": -26.3361,
+        "y": 40.0067
       },
       "rotation": -90
     },
     {
-      "x": -22.6415,
-      "y": 12.0434,
+      "x": -23.5215,
+      "y": 12.2634,
       "prevControl": {
-        "x": -18.5745,
-        "y": 33.3953
+        "x": -24.5267,
+        "y": 31.161
       },
       "nextControl": null,
       "rotation": 180
@@ -32,14 +32,7 @@
     "usingDefaults": false
   },
   "subsystemTriggers": [],
-  "rotationTargets": [
-    {
-      "id": "rot-1786482318547",
-      "progress": 0.5,
-      "rotation": -80,
-      "arcLengthM": 27.11206543549206
-    }
-  ],
+  "rotationTargets": [],
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",

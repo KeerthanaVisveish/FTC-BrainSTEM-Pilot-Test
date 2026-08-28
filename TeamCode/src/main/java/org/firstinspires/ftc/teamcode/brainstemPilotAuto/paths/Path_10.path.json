@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 2,
+  "id": "Path_10",
+  "created_date": "2026-08-28T20:51:42.989Z",
+  "updated_date": "2026-08-28T21:29:21.735Z",
+  "name": "Path 10",
+  "waypoints": [
+    {
+      "x": -40,
+      "y": 62,
+      "prevControl": null,
+      "nextControl": {
+        "x": -39.5888,
+        "y": 26.4335
+      },
+      "rotation": -90
+    },
+    {
+      "x": -40,
+      "y": -36,
+      "prevControl": {
+        "x": -40.3265,
+        "y": -1.3524
+      },
+      "nextControl": null,
+      "rotation": -90
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": true
+  },
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}
