@@ -80,6 +80,8 @@ public final class PathFollowerUtils {
             double remainingLength,
             double speedKP,
             double speedKF,
+            double speedKD,
+            Vector2d fieldVelocity,
             double correctiveStrength) {
 
         double speed = remainingLength * speedKP + speedKF;
@@ -103,13 +105,104 @@ public final class PathFollowerUtils {
         Vector2d tangentUnit = tangent.times(1.0 / tangentNorm);
         Vector2d perpUnit = new Vector2d(-tangentUnit.y, tangentUnit.x);
 
-        double parallelMag = dot(driveVec, tangentUnit);
+        // The D term is applied only to the tangential component. Folding it into `speed` above
+        // would flip the sign of the perpendicular correction whenever braking dominates, steering
+        // the robot away from the path exactly when it is closest to the end.
+        double parallelMag = dot(driveVec, tangentUnit) - speedKD * dot(fieldVelocity, tangentUnit);
         double perpMag = dot(driveVec, perpUnit);
 
         Vector2d parallelComponent = tangentUnit.times(parallelMag);
         Vector2d perpComponent = perpUnit.times(perpMag * correctiveStrength);
 
         return parallelComponent.plus(perpComponent);
+    }
+
+    /**
+     * Target speed for the current point on the path, in in/s.
+     *
+     * <p>This is the descending ramp of a trapezoidal profile. Braking distance grows as v^2, so
+     * the ramp is sqrt-shaped rather than linear: {@code v = sqrt(2*a*d)} is exactly the speed
+     * from which the robot can still stop in {@code d} inches at {@code a} in/s^2. The ascending
+     * ramp is left to the drivetrain — commanding cruise from a standstill produces a large
+     * velocity error, and the resulting command saturates, which is the acceleration limit.
+     */
+    public static double profileTargetVelocity(double remainingLength, double cruiseVel, double decel) {
+        if (decel <= 0) return cruiseVel;
+        return Math.min(cruiseVel, Math.sqrt(Math.max(0.0, 2.0 * decel * remainingLength)));
+    }
+
+    /**
+     * Drive vector built from a velocity profile rather than a distance-proportional power.
+     *
+     * <p>The tangential command is free to go negative — that is the whole point, and it is what
+     * the {@code speedKp/Kf} form structurally cannot do. The perpendicular command is computed
+     * from the geometric cross-track error instead of being scaled off the forward speed, so
+     * path-following authority does not vanish as the robot slows down, and it does not invert
+     * when the tangential command flips sign to brake.
+     */
+    public static Vector2d calculateProfiledDriveVector(
+            BezierCurve curve,
+            Vector2d robotPos,
+            double closestT,
+            double signedRemainingLength,
+            Vector2d fieldVelocity,
+            double cruiseVel,
+            double decel,
+            double velKv,
+            double velKs,
+            double velKp,
+            double crossTrackKp) {
+
+        Vector2d tangent = curve.getDerivative(closestT);
+        double tangentNorm = tangent.norm();
+        if (tangentNorm < 1e-6) {
+            return new Vector2d(0, 0);
+        }
+        Vector2d tangentUnit = tangent.times(1.0 / tangentNorm);
+        Vector2d perpUnit = new Vector2d(-tangentUnit.y, tangentUnit.x);
+
+        // Signed, so that a robot which has driven past the endpoint gets a negative target and
+        // reverses back to it. With an unsigned distance the command points down-tangent no matter
+        // which side of the target the robot is on, which is positive feedback: the further past it
+        // goes, the harder it drives away.
+        double targetVel = Math.signum(signedRemainingLength)
+                * profileTargetVelocity(Math.abs(signedRemainingLength), cruiseVel, decel);
+        double actualVel = dot(fieldVelocity, tangentUnit);
+
+        double tangentialCmd = velKv * targetVel + velKp * (targetVel - actualVel);
+        // Static feedforward follows the sign of the command. Adding it unconditionally would
+        // push the robot forward during the braking phase, when the command is negative.
+        if (Math.abs(tangentialCmd) > 1e-3) {
+            tangentialCmd += Math.signum(tangentialCmd) * velKs;
+        }
+        // Anything past full power is not a stronger command, just a larger number that
+        // setDrivePowers will normalise away — but it does skew the tangential/perpendicular
+        // balance, so clamp before combining.
+        tangentialCmd = Math.max(-1.0, Math.min(1.0, tangentialCmd));
+
+        // Signed perpendicular offset of the robot from the path, pushed back toward the curve.
+        double crossTrackError = dot(robotPos.minus(curve.getPoint(closestT)), perpUnit);
+        double perpCmd = -crossTrackKp * crossTrackError;
+
+        return tangentUnit.times(tangentialCmd).plus(perpUnit.times(perpCmd));
+    }
+
+    /** Commanded open-loop speed before the D term — useful for tuning telemetry. */
+    public static double commandedSpeed(double remainingLength, double speedKP, double speedKF) {
+        return remainingLength * speedKP + speedKF;
+    }
+
+    /** Signed projection of {@code vec} onto the path tangent at {@code t}. */
+    public static double projectOnTangent(BezierCurve curve, double t, Vector2d vec) {
+        Vector2d tangent = curve.getDerivative(t);
+        double norm = tangent.norm();
+        if (norm < 1e-6) return 0.0;
+        return dot(vec, tangent.times(1.0 / norm));
+    }
+
+    /** Signed velocity along the path tangent at {@code t}. Positive means moving toward the end. */
+    public static double tangentialVelocity(BezierCurve curve, double t, Vector2d fieldVelocity) {
+        return projectOnTangent(curve, t, fieldVelocity);
     }
 
     public static double getTargetRotation(List<RotationPoint> rotationPoints, double t, double entryHeadingRad) {

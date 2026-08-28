@@ -20,6 +20,26 @@ import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.tolerance.CircleTol
 @Config
 public abstract class PilotAutoBase extends LinearOpMode {
     public static Alliance defaultAlliance = Alliance.BLUE;
+
+    public static boolean useVelocityProfile = true;
+    public static double velKv = 0.014; //tuned
+    public static double velKs = 0.03; //tuned
+    public static double velKp = 0.05; //tuned
+    public static double crossTrackKp = 0.05;
+
+    // Legacy distance-proportional gains, used only when useVelocityProfile is false.
+    public static double speedkP = 0.05, speedkF = 0.05, speedkD = 0.0;
+    public static double correctivePower = 0.7;
+
+    // Heading controller, used in both modes.
+    public static double headingkP = 0.05, headingkF = 0.05;
+    public static boolean overrideCruiseVel = false;
+    public static double cruiseVel = 30;
+    public static boolean overrideProfileDecel = false;
+    public static double profileDecel = 40;
+
+    public static double maxLinearSpeed = 60;
+
     private final String autoId;
     private Alliance alliance;
     private BezierParams defaultParams;
@@ -27,12 +47,6 @@ public abstract class PilotAutoBase extends LinearOpMode {
     private Pose2d startPose;
 
     protected BrainSTEMRobot robot;
-    public static double speedkP = 0.15, speedkF = 0.01;
-    public static double headingkP = 0.15, headingkF = 0.01;
-    /** Project default max velocity (in/s). Used where a record carries no constraints of its
-     *  own — point connectors, and any path whose constraints are empty. Mirrors the Brainstem
-     *  Pilot project default for FTC. */
-    public static double maxLinearSpeed = 60;
 
     protected PilotAutoBase(String autoId) {
         this.autoId = autoId;
@@ -82,11 +96,9 @@ public abstract class PilotAutoBase extends LinearOpMode {
 
     private BezierParams createDefaultBezierParams() {
         return new BezierParams()
-            .setSpeedKp(speedkP)
-            .setSpeedKf(speedkF)
-            .setHeadingKp(headingkP)
-            .setHeadingKf(headingkF)
             .setMaxLinearSpeed(maxLinearSpeed)
+            .setProfileCruiseVel(maxLinearSpeed)
+            .setProfileDecel(profileDecel)
             .setTolerance(new CircleTolerance(2, 5));
     }
 

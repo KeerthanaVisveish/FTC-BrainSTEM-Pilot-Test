@@ -120,8 +120,10 @@ public class PathParser {
 
         JsonNode constraintsNode = root.get("constraints");
         double maxLinearVelocity = defaultParams.maxLinearSpeed;
+        double maxAcceleration = defaultParams.profileDecel;
         if (constraintsNode != null) {
             maxLinearVelocity = constraintsNode.path("maxVel").asDouble(defaultParams.maxLinearSpeed);
+            maxAcceleration = constraintsNode.path("maxAccel").asDouble(defaultParams.profileDecel);
         }
 
         List<RotationTarget> rotationTargets = new ArrayList<>();
@@ -137,7 +139,7 @@ public class PathParser {
 
         List<PilotTrigger> triggers = readTriggers(root.get("subsystemTriggers"));
 
-        return buildSegments(waypoints, maxLinearVelocity, rotationTargets, triggers, defaultParams);
+        return buildSegments(waypoints, maxLinearVelocity, maxAcceleration, rotationTargets, triggers, defaultParams);
     }
 
     /**
@@ -167,7 +169,7 @@ public class PathParser {
 
         List<PilotTrigger> triggers = slotTriggers == null ? Collections.emptyList() : slotTriggers;
 
-        return buildSegments(waypoints, defaultParams.maxLinearSpeed,
+        return buildSegments(waypoints, defaultParams.maxLinearSpeed, defaultParams.profileDecel,
                 Collections.emptyList(), triggers, defaultParams);
     }
 
@@ -203,6 +205,7 @@ public class PathParser {
 
     private static BezierPath[] buildSegments(List<Waypoint> waypoints,
                                               double maxLinearVelocity,
+                                              double maxAcceleration,
                                               List<RotationTarget> rotationTargets,
                                               List<PilotTrigger> triggers,
                                               BezierParams defaultParams) {
@@ -284,7 +287,7 @@ public class PathParser {
         for (int i = 0; i < segmentCount; i++) {
             // A segment is governed by the params of the waypoint it arrives at.
             segmentParams[i] = buildSegmentParams(
-                    waypoints.get(i + 1).params, maxLinearVelocity, defaultParams);
+                    waypoints.get(i + 1).params, maxLinearVelocity, maxAcceleration, defaultParams);
         }
 
         List<List<BezierPath.SubsystemTriggerPoint>> triggersPerSegment = new ArrayList<>();
@@ -321,18 +324,14 @@ public class PathParser {
 
     private static BezierParams buildSegmentParams(JsonNode params,
                                                    double maxLinearVelocity,
+                                                   double maxAcceleration,
                                                    BezierParams defaultParams) {
         BezierParams bp = new BezierParams()
-                .setSpeedKp(defaultParams.speedKp)
-                .setSpeedKf(defaultParams.speedKf)
-                .setHeadingKp(defaultParams.headingKp)
-                .setHeadingKf(defaultParams.headingKf)
-                .setCorrectivePower(defaultParams.correctivePower)
                 .setMaxLinearSpeed(maxLinearVelocity)
+                .setProfileCruiseVel(maxLinearVelocity)
+                .setProfileDecel(maxAcceleration)
                 .setMinLinearSpeed(defaultParams.minLinearSpeed)
                 .setMaxTurnPower(defaultParams.maxTurnPower)
-                .setMaxDrivePowerRampRate(defaultParams.maxDrivePowerRampRate)
-                .setMaxTurnPowerRampRate(defaultParams.maxTurnPowerRampRate)
                 .setMaxTime(defaultParams.maxTime)
                 .setTolerance(defaultParams.tolerance)
                 .setPassPosition(defaultParams.passPosition);

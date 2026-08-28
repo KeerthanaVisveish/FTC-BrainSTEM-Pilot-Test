@@ -8,9 +8,11 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.opmode.Alliance;
 import org.firstinspires.ftc.teamcode.roadrunner.MecanumDrive;
+import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.PilotAutoBase;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.FieldConstants;
 import org.firstinspires.ftc.teamcode.utils.pilotAutoBuilder.helperClasses.PilotGeometry;
 import org.firstinspires.ftc.teamcode.utils.bezierCurveDrive.buildingBlocks.BezierCurve;
@@ -40,6 +42,9 @@ public class BezierDrivePath implements Action {
     private boolean initialized = false;
     private Canvas canvas = null;
     private boolean isRed;
+
+    private final ElapsedTime loopTimer = new ElapsedTime();
+    private double loopMs = 0.0;
 
     private double segmentEntryHeadingRad = 0.0;
     private BezierCurve activeCurve;
@@ -74,6 +79,9 @@ public class BezierDrivePath implements Action {
     }
 
     private void execute(TelemetryPacket packet) {
+        loopMs = loopTimer.milliseconds();
+        loopTimer.reset();
+
         if (finished || currentPathIndex >= paths.length) {
             finished = true;
             return;
@@ -84,6 +92,10 @@ public class BezierDrivePath implements Action {
         Pose2d robotPose = drive.localizer.getPose();
         Vector2d robotPos = robotPose.position;
         double robotHeadingRad = robotPose.heading.toDouble();
+
+        // Cached from the opmode's updatePoseEstimate() call — updating the localizer a second
+        // time in the same cycle yields a near-zero dt and a meaningless velocity.
+        Vector2d fieldVelocity = PilotGeometry.rotate(drive.lastVelRobot().linearVel, robotHeadingRad);
 
         double closestT;
         if (currentPathIndex != lastPathIndex) {
@@ -124,6 +136,16 @@ public class BezierDrivePath implements Action {
             passPosition = dot < 0;
         }
 
+        if (packet != null) {
+            packet.put(preface() + "/end point x", endPoint.x);
+            packet.put(preface() + "/end point y", endPoint.y);
+            packet.put(preface() + "/current point x", robotPos.x);
+            packet.put(preface() + "/current point y", robotPos.y);
+            packet.put(preface() + "/in pos tol", inPositionTolerance);
+            packet.put(preface() + "/in heading tol", inHeadingTolerance);
+            packet.put(preface() + "/loop ms", loopMs);
+        }
+
         if ((inPositionTolerance && inHeadingTolerance) || passPosition) {
             currentPathIndex++;
 
@@ -151,30 +173,65 @@ public class BezierDrivePath implements Action {
             totalRemainingLength += PathFollowerUtils.estimateRemainingLength(nextCurve, 0, REMAINING_LENGTH_SAMPLES);
         }
 
-        Vector2d driveVector = PathFollowerUtils.calculateDriveVector(
-                activeCurve,
-                robotPos,
-                lookaheadPoint,
-                closestT,
-                totalRemainingLength,
-                basePath.params.speedKp,
-                basePath.params.speedKf,
-                basePath.params.correctivePower
-        );
+        // Unsigned remaining distance is correct while the robot is still short of the endpoint,
+        // and correct for every segment that has another one after it. On the final segment,
+        // once the robot reaches or passes the end of the curve, the sign has to come from which
+        // side of the endpoint it is actually on.
+        double signedRemainingLength = totalRemainingLength;
+        if (currentPathIndex == paths.length - 1 && closestT >= 1.0 - 1e-3) {
+            signedRemainingLength = PathFollowerUtils.projectOnTangent(
+                    activeCurve, closestT, robotToEndPoint);
+        }
 
-        Vector2d linearVector = driveVector.times(basePath.params.tolerance.getPositionDampening(robotToEndPoint));
+        Vector2d driveVector;
+        Vector2d linearVector;
+        if (PilotAutoBase.useVelocityProfile) {
+            driveVector = PathFollowerUtils.calculateProfiledDriveVector(
+                    activeCurve,
+                    robotPos,
+                    closestT,
+                    signedRemainingLength,
+                    fieldVelocity,
+                    cruiseVel(basePath),
+                    profileDecel(basePath),
+                    PilotAutoBase.velKv,
+                    PilotAutoBase.velKs,
+                    PilotAutoBase.velKp,
+                    PilotAutoBase.crossTrackKp
+            );
+            // No tolerance dampening here: the profile already shapes the approach, and scaling
+            // the command down near the target would blunt the braking term exactly when it
+            // matters most.
+            linearVector = driveVector;
+        } else {
+            driveVector = PathFollowerUtils.calculateDriveVector(
+                    activeCurve,
+                    robotPos,
+                    lookaheadPoint,
+                    closestT,
+                    totalRemainingLength,
+                    PilotAutoBase.speedkP,
+                    PilotAutoBase.speedkF,
+                    PilotAutoBase.speedkD,
+                    fieldVelocity,
+                    PilotAutoBase.correctivePower
+            );
+            linearVector = driveVector.times(basePath.params.tolerance.getPositionDampening(robotToEndPoint));
+        }
 
         double rotationPower = PathFollowerUtils.getRotationPower(
-                robotHeadingRad, targetHeadingRad, basePath.params.headingKp, basePath.params.headingKf);
+                robotHeadingRad, targetHeadingRad, PilotAutoBase.headingkP, PilotAutoBase.headingkF);
 
         double linearMagnitude = linearVector.norm();
 
-        if (linearMagnitude > 1e-6 && linearMagnitude < basePath.params.minLinearSpeed) {
-            linearVector = linearVector.times(basePath.params.minLinearSpeed / linearMagnitude);
-        }
+        if (!PilotAutoBase.useVelocityProfile) {
+            if (linearMagnitude > 1e-6 && linearMagnitude < basePath.params.minLinearSpeed) {
+                linearVector = linearVector.times(basePath.params.minLinearSpeed / linearMagnitude);
+            }
 
-        if (linearMagnitude > basePath.params.maxLinearSpeed) {
-            linearVector = linearVector.times(basePath.params.maxLinearSpeed / linearMagnitude);
+            if (linearMagnitude > basePath.params.maxLinearSpeed) {
+                linearVector = linearVector.times(basePath.params.maxLinearSpeed / linearMagnitude);
+            }
         }
 
         rotationPower = Math.max(-basePath.params.maxTurnPower, Math.min(basePath.params.maxTurnPower, rotationPower));
@@ -186,16 +243,20 @@ public class BezierDrivePath implements Action {
         ));
 
         if (packet != null) {
-            packet.put(preface() + "/end point x", endPoint.x);
-            packet.put(preface() + "/end point y", endPoint.y);
-            packet.put(preface() + "/current point x", robotPose.position.x);
-            packet.put(preface() + "/current point y", robotPose.position.y);
-            packet.put(preface() + "/in pos tol", inPositionTolerance);
-            packet.put(preface() + "/in heading tol", inHeadingTolerance);
             packet.put(preface() + "/is finished", finished);
             packet.put(preface() + "/axial power", robotRelativeLinear.x);
             packet.put(preface() + "/lateral power", robotRelativeLinear.y);
             packet.put(preface() + "/rotation power", rotationPower);
+            packet.put(preface() + "/remaining length", totalRemainingLength);
+            packet.put(preface() + "/commanded speed", PathFollowerUtils.commandedSpeed(
+                    totalRemainingLength, PilotAutoBase.speedkP, PilotAutoBase.speedkF));
+            packet.put(preface() + "/tangential vel", PathFollowerUtils.tangentialVelocity(
+                    activeCurve, closestT, fieldVelocity));
+            packet.put(preface() + "/linear power", linearVector.norm());
+            packet.put(preface() + "/signed remaining", signedRemainingLength);
+            packet.put(preface() + "/target vel", Math.signum(signedRemainingLength)
+                    * PathFollowerUtils.profileTargetVelocity(
+                            Math.abs(signedRemainingLength), cruiseVel(basePath), profileDecel(basePath)));
         }
 
         if (canvas != null) {
@@ -203,6 +264,16 @@ public class BezierDrivePath implements Action {
             canvas.strokeLine(robotPos.x, robotPos.y, robotPos.x + linearVector.x, robotPos.y + linearVector.y);
             canvas.strokeLine(robotPos.x, robotPos.y, robotPos.x + driveVector.x, robotPos.y + driveVector.y);
         }
+    }
+
+    /** Path's own `maxVel`, unless a tuning override is forcing one cruise speed everywhere. */
+    private static double cruiseVel(BezierPath path) {
+        return PilotAutoBase.overrideCruiseVel ? PilotAutoBase.cruiseVel : path.params.profileCruiseVel;
+    }
+
+    /** Path's own `maxAccel`, unless a tuning override is forcing one decel everywhere. */
+    private static double profileDecel(BezierPath path) {
+        return PilotAutoBase.overrideProfileDecel ? PilotAutoBase.profileDecel : path.params.profileDecel;
     }
 
     private void end() {

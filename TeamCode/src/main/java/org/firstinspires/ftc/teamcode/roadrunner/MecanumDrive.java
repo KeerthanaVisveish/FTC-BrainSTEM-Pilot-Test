@@ -43,6 +43,7 @@ import com.acmerobotics.roadrunner.ftc.LazyImu;
 import com.acmerobotics.roadrunner.ftc.OverflowEncoder;
 import com.acmerobotics.roadrunner.ftc.PositionVelocityPair;
 import com.acmerobotics.roadrunner.ftc.RawEncoder;
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -134,6 +135,7 @@ public class MecanumDrive {
 
     public final Localizer localizer;
     private final LinkedList<Pose2d> poseHistory = new LinkedList<>();
+    private PoseVelocity2d lastVelRobot = new PoseVelocity2d(new Vector2d(0, 0), 0);
 
     private final DownsampledWriter estimatedPoseWriter = new DownsampledWriter("ESTIMATED_POSE", 50_000_000);
     private final DownsampledWriter targetPoseWriter = new DownsampledWriter("TARGET_POSE", 50_000_000);
@@ -245,6 +247,10 @@ public class MecanumDrive {
         rightBack = hardwareMap.get(DcMotorEx.class, "BR");
         rightFront = hardwareMap.get(DcMotorEx.class, "FR");
 
+        for (LynxModule module : hardwareMap.getAll(LynxModule.class)) {
+            module.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
+
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -267,6 +273,10 @@ public class MecanumDrive {
     }
     public PinpointLocalizer pinpoint() {
         return (PinpointLocalizer) localizer;
+    }
+
+    public PoseVelocity2d lastVelRobot() {
+        return lastVelRobot;
     }
     public void setDrivePowers(PoseVelocity2d powers) {
         MecanumKinematics.WheelVelocities<Time> wheelVels = new MecanumKinematics(1).inverse(
@@ -506,6 +516,7 @@ public class MecanumDrive {
 
     public PoseVelocity2d updatePoseEstimate() {
         PoseVelocity2d vel = localizer.update();
+        lastVelRobot = vel;
         poseHistory.add(localizer.getPose());
 
         while (poseHistory.size() > 100)

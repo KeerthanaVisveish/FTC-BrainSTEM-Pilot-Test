@@ -1,72 +1,60 @@
 {
   "schemaVersion": 2,
   "id": "Auto",
-  "created_date": "2026-08-28T20:51:40.238Z",
-  "updated_date": "2026-08-28T22:13:09.807Z",
-  "name": "Tuning Auto",
+  "created_date": "2026-08-28T22:58:50.431Z",
+  "updated_date": "2026-08-28T22:59:23.889Z",
+  "name": "Forward Backward Tuning Auto",
   "sequence": [
     {
-      "id": "slot-1787950302999-7cp8n",
+      "id": "slot-1787957935732-4fyji",
       "type": "path",
       "pathId": "Path_10",
       "skip": false
     },
     {
-      "id": "slot-1787955132436-158p6",
+      "id": "slot-1787957937748-70cq9",
       "type": "path",
       "pathId": "Path_11",
       "skip": false
     },
     {
-      "id": "slot-1787955149928-5nwsr",
+      "id": "slot-1787957939182-tx7ed",
       "type": "path",
       "pathId": "Path_10",
       "skip": false
     },
     {
-      "id": "slot-1787955171693-5c9lg",
+      "id": "slot-1787957941282-jkeuq",
       "type": "path",
       "pathId": "Path_11",
       "skip": false
     },
     {
-      "id": "slot-1787955175693-6u76i",
+      "id": "slot-1787957943182-x3kco",
       "type": "path",
       "pathId": "Path_10",
       "skip": false
     },
     {
-      "id": "slot-1787955178909-wwu7p",
+      "id": "slot-1787957945064-plr24",
       "type": "path",
       "pathId": "Path_11",
       "skip": false
     },
     {
-      "id": "slot-1787955181093-7hkom",
+      "id": "slot-1787957946565-u59oc",
       "type": "path",
       "pathId": "Path_10",
       "skip": false
     },
     {
-      "id": "slot-1787955183009-uqu83",
+      "id": "slot-1787957948532-j7b65",
       "type": "path",
       "pathId": "Path_11",
       "skip": false
     },
     {
-      "id": "slot-1787955184677-uqrnu",
-      "type": "path",
-      "pathId": "Path_10",
-      "skip": false
-    },
-    {
-      "id": "slot-1787955186593-nuwlt",
-      "type": "path",
-      "pathId": "Path_11",
-      "skip": false
-    },
-    {
-      "id": "slot-1787955189293-gzkrk",
+      "id": "slot-1787957949932-v2w0m",
       "type": "path",
       "pathId": "Path_10",
       "skip": false
@@ -76,5 +64,6 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²"
+  "accelUnit": "in/s²",
+  "folder": "Auto Gain Tuning"
 }
