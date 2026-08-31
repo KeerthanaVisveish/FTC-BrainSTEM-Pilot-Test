@@ -62,13 +62,14 @@ import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumLocalizerInputsMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.PoseMessage;
 import org.firstinspires.ftc.teamcode.utils.misc.BatteryVoltageFilter;
+import org.brainstemfirst.pilot.ftc.model.PilotDrive;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 @Config
-public class MecanumDrive {
+public class MecanumDrive implements PilotDrive {
     public static boolean betterPathCorrection = false;
 
     public static class Params {
@@ -271,6 +272,10 @@ public class MecanumDrive {
         localizer = new PinpointLocalizer(hardwareMap, pose);
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
+    public Pose2d getPose() {
+        return localizer.getPose();
+    }
+
     public PinpointLocalizer pinpoint() {
         return (PinpointLocalizer) localizer;
     }
@@ -278,6 +283,12 @@ public class MecanumDrive {
     public PoseVelocity2d lastVelRobot() {
         return lastVelRobot;
     }
+
+    @Override
+    public double maxAngVel() {
+        return PARAMS.maxAngVel;
+    }
+
     public void setDrivePowers(PoseVelocity2d powers) {
         MecanumKinematics.WheelVelocities<Time> wheelVels = new MecanumKinematics(1).inverse(
                 PoseVelocity2dDual.constant(powers, 1));

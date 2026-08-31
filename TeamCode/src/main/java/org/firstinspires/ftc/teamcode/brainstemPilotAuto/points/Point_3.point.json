@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 2,
+  "id": "Point_3",
+  "created_date": "2026-08-31T00:10:08.426Z",
+  "updated_date": "2026-08-31T00:10:37.398Z",
+  "name": "Point 3",
+  "x": 0,
+  "y": 0,
+  "rotation": 0,
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

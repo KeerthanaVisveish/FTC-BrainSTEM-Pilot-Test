@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 2,
+  "id": "Auto",
+  "created_date": "2026-08-31T00:09:57.277Z",
+  "updated_date": "2026-08-31T01:13:04.756Z",
+  "name": "Heading Tuning",
+  "sequence": [
+    {
+      "id": "slot-1788135004607-jv7p3",
+      "type": "point",
+      "pointId": "Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788135008445-vxnim",
+      "type": "point",
+      "pointId": "Point_3",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137576360-hlvq9",
+      "type": "point",
+      "pointId": "Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137577726-9rakt",
+      "type": "point",
+      "pointId": "Point_3",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137578926-8m34i",
+      "type": "point",
+      "pointId": "Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137580242-x0vk9",
+      "type": "point",
+      "pointId": "Point_3",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137582276-379bd",
+      "type": "point",
+      "pointId": "Point_2",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    },
+    {
+      "id": "slot-1788137583659-q3fvl",
+      "type": "point",
+      "pointId": "Point_3",
+      "params": {},
+      "subsystemTriggers": [],
+      "skip": false
+    }
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²",
+  "folder": "Auto Gain Tuning"
+}

@@ -37,6 +37,7 @@ android {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     google()
     maven {
@@ -46,6 +47,8 @@ repositories {
 
 dependencies {
     implementation project(':FtcRobotController')
+
+    implementation 'org.brainstemfirst:pilot-ftc:0.1.0-SNAPSHOT'
 
     implementation 'com.fasterxml.jackson.core:jackson-core:2.13.5'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'
