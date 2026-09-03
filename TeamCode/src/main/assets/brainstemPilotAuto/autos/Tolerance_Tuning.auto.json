@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "id": "Auto_1",
+  "created_date": "2026-09-02T23:12:38.526Z",
+  "updated_date": "2026-09-02T23:12:44.946Z",
+  "name": "Tolerance Tuning",
+  "sequence": [
+    {
+      "id": "slot-1788390764426-1zwq4",
+      "type": "path",
+      "pathId": "Path_15",
+      "skip": false
+    }
+  ],
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

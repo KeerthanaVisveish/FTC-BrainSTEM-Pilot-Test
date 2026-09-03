@@ -1,28 +1,28 @@
 {
   "schemaVersion": 2,
-  "id": "Heading_Tune_Path",
-  "created_date": "2026-08-28T23:29:48.000Z",
-  "name": "Heading Tune Path",
+  "created_date": "2026-09-02T23:12:44.423Z",
+  "updated_date": "2026-09-03T00:35:13.665Z",
+  "name": "Path 15",
   "waypoints": [
     {
-      "x": 0,
-      "y": 60,
+      "x": -63.5,
+      "y": -64.5,
       "prevControl": null,
       "nextControl": {
-        "x": -24.9288,
-        "y": 34.7797
+        "x": 1.8093,
+        "y": -28.9496
       },
-      "rotation": -90
+      "rotation": 0.2391
     },
     {
-      "x": 1.8093,
-      "y": -45.4347,
+      "x": -36,
+      "y": 12,
       "prevControl": {
-        "x": 27.5423,
-        "y": -10.454
+        "x": -72,
+        "y": -21.5111
       },
       "nextControl": null,
-      "rotation": -90
+      "rotation": 90
     }
   ],
   "constraints": {
@@ -30,6 +30,7 @@
     "maxAccel": 40,
     "usingDefaults": true
   },
+  "id": "Path_15",
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",
