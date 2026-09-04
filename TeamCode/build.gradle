@@ -41,6 +41,9 @@ repositories {
     mavenCentral()
     google()
     maven {
+        url = 'https://brainstem-first.github.io/Brainstem-Pilot-UI/maven'
+    }
+    maven {
         url = 'https://maven.brott.dev/'
     }
 }
@@ -48,7 +51,7 @@ repositories {
 dependencies {
     implementation project(':FtcRobotController')
 
-    implementation 'org.brainstemfirst:pilot-ftc:0.1.0-SNAPSHOT'
+    implementation 'org.brainstemfirst:pilot-ftc:2026.1.0'
 
     implementation 'com.fasterxml.jackson.core:jackson-core:2.13.5'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'
