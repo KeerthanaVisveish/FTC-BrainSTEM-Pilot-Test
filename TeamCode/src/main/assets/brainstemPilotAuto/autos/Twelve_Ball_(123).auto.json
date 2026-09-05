@@ -2,7 +2,6 @@
   "schemaVersion": 2,
   "id": "Twelve_Ball_(123)",
   "created_date": "2026-08-27T01:44:37.535Z",
-  "updated_date": "2026-08-28T20:51:38.641Z",
   "name": "Twelve Ball (123)",
   "sequence": [
     {
@@ -274,5 +273,5 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²"
+  "accelUnit": "in/s\u00b2"
 }

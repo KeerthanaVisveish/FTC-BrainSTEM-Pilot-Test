@@ -2,7 +2,6 @@
   "schemaVersion": 2,
   "id": "Auto_1",
   "created_date": "2026-09-02T23:12:38.526Z",
-  "updated_date": "2026-09-02T23:12:44.946Z",
   "name": "Tolerance Tuning",
   "sequence": [
     {
@@ -16,5 +15,5 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²"
+  "accelUnit": "in/s\u00b2"
 }

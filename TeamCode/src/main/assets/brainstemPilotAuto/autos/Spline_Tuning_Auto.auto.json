@@ -2,7 +2,6 @@
   "schemaVersion": 2,
   "id": "Heading_Tuning_Auto",
   "created_date": "2026-08-28T23:00:33.397Z",
-  "updated_date": "2026-08-31T01:00:28.283Z",
   "name": "Spline Tuning Auto",
   "sequence": [
     {
@@ -22,6 +21,6 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²",
+  "accelUnit": "in/s\u00b2",
   "folder": "Auto Gain Tuning"
 }

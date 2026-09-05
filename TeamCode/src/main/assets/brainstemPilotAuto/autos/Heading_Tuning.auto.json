@@ -2,7 +2,6 @@
   "schemaVersion": 2,
   "id": "Auto",
   "created_date": "2026-08-31T00:09:57.277Z",
-  "updated_date": "2026-08-31T01:13:04.756Z",
   "name": "Heading Tuning",
   "sequence": [
     {
@@ -74,6 +73,6 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s²",
+  "accelUnit": "in/s\u00b2",
   "folder": "Auto Gain Tuning"
 }
