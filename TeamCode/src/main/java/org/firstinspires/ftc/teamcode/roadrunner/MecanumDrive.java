@@ -62,14 +62,13 @@ import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumCommandMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.MecanumLocalizerInputsMessage;
 import org.firstinspires.ftc.teamcode.roadrunner.messages.PoseMessage;
 import org.firstinspires.ftc.teamcode.utils.misc.BatteryVoltageFilter;
-import org.brainstemfirst.pilot.ftc.model.PilotDrive;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 @Config
-public class MecanumDrive implements PilotDrive {
+public class MecanumDrive {
     public static boolean betterPathCorrection = false;
 
     public static class Params {
@@ -284,7 +283,6 @@ public class MecanumDrive implements PilotDrive {
         return lastVelRobot;
     }
 
-    @Override
     public double maxAngVel() {
         return PARAMS.maxAngVel;
     }
