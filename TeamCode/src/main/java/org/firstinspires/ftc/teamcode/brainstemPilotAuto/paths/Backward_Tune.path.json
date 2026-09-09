@@ -28,7 +28,7 @@
   "constraints": {
     "maxVel": 60,
     "maxAccel": 40,
-    "usingDefaults": true
+    "usingDefaults": false
   },
   "coordinateSystem": "pedro-center",
   "units": "in",

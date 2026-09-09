@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "created_date": "2026-09-08T01:25:14.450Z",
+  "name": "Path 16",
+  "waypoints": [
+    {
+      "x": 39.4036,
+      "y": 62.523,
+      "prevControl": null,
+      "nextControl": {
+        "x": 19.9028,
+        "y": 38.8005
+      },
+      "rotation": -89.5932
+    },
+    {
+      "x": 12.0623,
+      "y": 20.707,
+      "prevControl": {
+        "x": 14.2737,
+        "y": 31.7641
+      },
+      "nextControl": {
+        "x": 9.8724,
+        "y": 9.7576
+      },
+      "rotation": 0
+    },
+    {
+      "x": 29.1506,
+      "y": -12.0623,
+      "prevControl": {
+        "x": 16.0831,
+        "y": -6.8353
+      },
+      "nextControl": null,
+      "rotation": 0
+    }
+  ],
+  "constraints": {
+    "maxVel": 60,
+    "maxAccel": 40,
+    "usingDefaults": true
+  },
+  "id": "Path_16",
+  "coordinateSystem": "pedro-center",
+  "units": "in",
+  "headingUnit": "deg",
+  "speedUnit": "in/s",
+  "accelUnit": "in/s²"
+}

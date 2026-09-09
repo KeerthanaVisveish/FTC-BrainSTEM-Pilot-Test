@@ -51,7 +51,7 @@ repositories {
 dependencies {
     implementation project(':FtcRobotController')
 
-    implementation 'org.brainstemfirst:pilot-ftc:2026.1.0'
+    implementation 'org.brainstemfirst:pilot-ftc:2026.1.1'
 
     implementation 'com.fasterxml.jackson.core:jackson-core:2.13.5'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'

@@ -1,32 +1,31 @@
 {
   "schemaVersion": 2,
-  "id": "Path_15",
-  "created_date": "2026-09-02T23:12:44.423Z",
-  "name": "Path 15",
+  "id": "Path_17",
+  "created_date": "2026-09-08T22:43:55.598Z",
+  "name": "Path 17",
   "waypoints": [
-    {
-      "x": -63.5,
-      "y": -64.5,
-      "prevControl": null,
-      "nextControl": {
-        "x": 1.8093,
-        "y": -28.9496
-      },
-      "rotation": 0.2391
-    },
     {
       "x": -34.1766,
       "y": 0.6031,
+      "prevControl": null,
+      "nextControl": {
+        "x": -13.4696,
+        "y": 27.3413
+      },
+      "rotation": 90
+    },
+    {
+      "x": 0,
+      "y": 62.7241,
       "prevControl": {
-        "x": -54.8836,
-        "y": -28.3465
+        "x": 2.0104,
+        "y": 13.8717
       },
       "nextControl": null,
       "rotation": 90,
       "params": {
         "distTol": 5,
-        "headingTol": 10,
-        "minLinearSpeed": 50
+        "headingTol": 5
       }
     }
   ],

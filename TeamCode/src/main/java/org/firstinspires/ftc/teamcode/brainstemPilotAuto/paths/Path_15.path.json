@@ -1,5 +1,6 @@
 {
   "schemaVersion": 2,
+  "id": "Path_15",
   "created_date": "2026-09-02T23:12:44.423Z",
   "name": "Path 15",
   "waypoints": [
@@ -14,14 +15,19 @@
       "rotation": 0.2391
     },
     {
-      "x": -36,
-      "y": 12,
+      "x": -34.1766,
+      "y": 0.6031,
       "prevControl": {
-        "x": -72,
-        "y": -21.5111
+        "x": -54.8836,
+        "y": -28.3465
       },
       "nextControl": null,
-      "rotation": 90
+      "rotation": 90,
+      "params": {
+        "distTol": 5,
+        "headingTol": 10,
+        "minLinearSpeed": 50
+      }
     }
   ],
   "constraints": {
@@ -29,7 +35,6 @@
     "maxAccel": 40,
     "usingDefaults": true
   },
-  "id": "Path_15",
   "coordinateSystem": "pedro-center",
   "units": "in",
   "headingUnit": "deg",

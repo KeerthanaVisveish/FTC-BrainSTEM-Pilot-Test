@@ -10,5 +10,5 @@
   "units": "in",
   "headingUnit": "deg",
   "speedUnit": "in/s",
-  "accelUnit": "in/s\u00b2"
+  "accelUnit": "in/s²"
 }
