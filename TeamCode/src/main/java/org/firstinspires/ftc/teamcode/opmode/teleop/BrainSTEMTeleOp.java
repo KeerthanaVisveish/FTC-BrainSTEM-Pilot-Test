@@ -192,17 +192,17 @@ public class BrainSTEMTeleOp extends LinearOpMode {
     }
 
     private void updateDrive() {
-        if(gp1.isFirstA())
-            if(currentDriveAxialAmp == 1) {
-                currentDriveAxialAmp = parkDriveAxialAmp;
-                currentDriveLateralAmp = parkDriveLateralAmp;
-                currentTurnAmp = slowTurnAmp;
-            }
-            else {
-                currentDriveAxialAmp = 1;
-                currentDriveLateralAmp = 1;
-                currentTurnAmp = 1;
-            }
+//        if(gp1.isFirstA())
+//            if(currentDriveAxialAmp == 1) {
+//                currentDriveAxialAmp = parkDriveAxialAmp;
+//                currentDriveLateralAmp = parkDriveLateralAmp;
+//                currentTurnAmp = slowTurnAmp;
+//            }
+//            else {
+//                currentDriveAxialAmp = 1;
+//                currentDriveLateralAmp = 1;
+//                currentTurnAmp = 1;
+//            }
 
         robot.drive.setDrivePowers(new PoseVelocity2d(
                 new Vector2d(
@@ -224,26 +224,27 @@ public class BrainSTEMTeleOp extends LinearOpMode {
         }
 
         if (gp1.isFirstB()) {
-            if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED)
+            if (robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
                 robot.collector.setClutchState(Collector.ClutchState.DISENGAGED);
-            else {
                 robot.collector.setIntakeState(Collector.IntakeState.OFF);
+            } else {
+                robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
                 robot.collector.setClutchState(Collector.ClutchState.ENGAGED);
             }
         }
 
-        if(robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
-            if (gp1.isFirstA())
-                if (robot.collector.getIntakeState() != Collector.IntakeState.INTAKE)
-                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
-                else
-                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
-            else if(gp1.isFirstX())
-                if(robot.collector.getIntakeState() != Collector.IntakeState.INTAKE_SLOW)
-                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE_SLOW);
-                else
-                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
-        }
+//        if(robot.collector.getClutchState() == Collector.ClutchState.ENGAGED) {
+//            if (gp1.isFirstA())
+//                if (robot.collector.getIntakeState() != Collector.IntakeState.INTAKE)
+//                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE);
+//                else
+//                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
+//            else if(gp1.isFirstX())
+//                if(robot.collector.getIntakeState() != Collector.IntakeState.INTAKE_SLOW)
+//                    robot.collector.setIntakeState(Collector.IntakeState.INTAKE_SLOW);
+//                else
+//                    robot.collector.setIntakeState(Collector.IntakeState.OFF);
+//        }
 
 //        if (gp1.isFirstB() && !inCompetition) {
 //            if (robot.shootingSystem.turretCentered()) {

@@ -5,5 +5,5 @@ import com.acmerobotics.roadrunner.Pose2d;
 
 @Config
 public class PoseStorage {
-    public static double autoX = 0, autoY = 0, autoHeading = 0;
+    public static double autoX = 15, autoY = 62, autoHeading = Math.toRadians(-90);
 }
